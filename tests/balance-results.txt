@@ -1,0 +1,7 @@
+rookie/smart {"endings": {"perfect": 62, "champion": 65, "final4": 9, "runnerup": 13, "contender": 1}, "winPct": "0.942", "grades": {"A+": 115, "B": 13, "A": 21, "C": 1}}
+rookie/naive {"endings": {"runnerup": 42, "champion": 34, "missed": 7, "contender": 35, "final4": 29, "perfect": 3}, "winPct": "0.781", "grades": {"A": 32, "A+": 13, "B": 59, "D": 7, "C": 38, "F": 1}}
+varsity/smart {"endings": {"champion": 55, "final4": 26, "runnerup": 36, "perfect": 10, "missed": 3, "contender": 20}, "winPct": "0.817", "grades": {"A+": 34, "B": 49, "C": 21, "A": 43, "D": 3}}
+varsity/naive {"endings": {"contender": 58, "runnerup": 6, "missed": 75, "final4": 11}, "winPct": "0.518", "grades": {"C": 54, "B": 12, "F": 35, "D": 49}}
+legend/smart {"endings": {"final4": 30, "crisis": 9, "missed": 29, "contender": 41, "runnerup": 22, "champion": 19}, "winPct": "0.654", "grades": {"C": 44, "F": 26, "D": 19, "B": 42, "A": 16, "A+": 3}}
+legend/naive {"endings": {"missed": 132, "contender": 17, "final4": 1}, "winPct": "0.359", "grades": {"F": 99, "D": 39, "C": 11, "B": 1}}
+page errors: []
