@@ -66,6 +66,77 @@ function coachTip(key, html) {
   return `<div class="coach-tip" role="note">${icon('help', 'ico')}<div><b>Coach tip.</b> ${html}</div><button class="btn ghost sm x" data-act="tip-x" data-k="${key}" aria-label="Dismiss tip">Got it</button></div>`;
 }
 
+/* One tour per browser, independent of game saves and coach-tip resets. */
+const TUTORIAL_KEY = 'rtc-onboarding-seen-v1';
+const Tutorial = {
+  active: false, visited: false, index: 0, steps: [], target: null,
+  maybeStart() {
+    if (this.active || this.visited || store.get(TUTORIAL_KEY) || UI.screen !== 'hub' || UI.modal) return;
+    this.visited = true;
+    // Mark on entry so refresh, Skip, and a new career never restart the tour.
+    store.set(TUTORIAL_KEY, '1');
+    this.steps = [
+      ['.stepper', 'Welcome to the sidelines.', 'This is your weekly game plan: practice, handle a challenge, play your game, then review the result. Take it one step at a time.'],
+      ['.meters', 'Build a healthy program.', 'Keep an eye on your budget, morale, chemistry, fans and reputation. Your choices off the court matter just as much as the score.'],
+      ['.tabs', 'Your whole team, in one place.', 'Check your roster, follow the standings, buy upgrades in the front office and revisit your season log. This week brings you back to the next task.'],
+    ];
+    if ($('[data-act="preset"][data-k="balanced"]')) this.steps.push(
+      ['[data-act="preset"][data-k="balanced"]', 'Start with a balanced week.', 'Choose Balanced week to fill your practice days. You can then select any day and swap its drill. Mix skill work with recovery to keep players fresh.'],
+      ['[data-act="run-practice"]', 'Put your plan into action.', 'Once every day has a drill, Run practice week becomes available. Review the results, then move on to your first challenge. You’re ready, Coach.']
+    );
+    else this.steps.push(['#panel', 'Your next decision is here.', 'Continue the task in this panel. The weekly tracker above shows where you are, and the rulebook is always available with the ? key.']);
+    this.active = true; this.index = 0;
+    this.host = document.createElement('div'); this.host.id = 'coach-tour';
+    document.body.appendChild(this.host); $('#app').inert = true;
+    this.show();
+  },
+  show() {
+    const [selector, title, copy] = this.steps[this.index];
+    this.target = $(selector);
+    this.host.innerHTML = `<div class="tour-blocker"></div><div class="tour-spot" aria-hidden="true"></div><svg class="tour-arrow" aria-hidden="true"><defs><marker id="tour-arrowhead" markerWidth="10" markerHeight="10" refX="7" refY="4" orient="auto"><path d="M1,1 L7,4 L1,7" fill="none" stroke="currentColor" stroke-width="2"/></marker></defs><path class="tour-arrow-line" marker-end="url(#tour-arrowhead)"/></svg><section class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title" aria-describedby="tour-copy"><div class="tour-top"><span>COACH’S FIRST PLAYBOOK</span><button class="btn ghost sm" data-tour="skip">Skip tour</button></div><div class="tour-count">${String(this.index + 1).padStart(2, '0')} <span>/ ${String(this.steps.length).padStart(2, '0')}</span></div><h2 id="tour-title">${title}</h2><p id="tour-copy">${copy}</p><div class="tour-bottom"><div class="tour-dots" aria-hidden="true">${this.steps.map((_, i) => `<i class="${i === this.index ? 'current' : ''}"></i>`).join('')}</div><button class="btn" data-tour="back" ${this.index === 0 ? 'disabled' : ''}>Back</button><button class="btn tour-next" data-tour="next">${this.index === this.steps.length - 1 ? 'Let’s coach' : 'Next'} →</button></div></section>`;
+    if (this.target) this.target.scrollIntoView({ block: 'center', behavior: 'instant' });
+    this.position();
+    $('[data-tour="next"]', this.host).focus({ preventScroll: true });
+  },
+  position() {
+    if (!this.active || !this.target) return;
+    const r = this.target.getBoundingClientRect(), card = $('.tour-card', this.host);
+    const w = innerWidth, h = innerHeight, gap = 52, ch = card.offsetHeight;
+    const below = h - r.bottom >= ch + gap || r.top < ch + gap;
+    const left = Math.max(12, Math.min(w - card.offsetWidth - 12, r.left + r.width / 2 - card.offsetWidth / 2));
+    const top = Math.max(12, Math.min(h - ch - 12, below ? r.bottom + gap : r.top - ch - gap));
+    Object.assign(card.style, { left: left + 'px', top: top + 'px' });
+    const spot = $('.tour-spot', this.host);
+    Object.assign(spot.style, { left: Math.max(4, r.left - 5) + 'px', top: r.top - 5 + 'px', width: Math.min(w - 8, r.width + 10) + 'px', height: r.height + 10 + 'px' });
+    const x = Math.max(24, Math.min(w - 24, r.left + r.width / 2));
+    const sy = below ? top - 8 : top + ch + 8, ey = below ? r.bottom + 10 : r.top - 10;
+    $('.tour-arrow-line', this.host).setAttribute('d', `M ${left + card.offsetWidth / 2} ${sy} Q ${x + 25} ${(sy + ey) / 2} ${x} ${ey}`);
+  },
+  finish() {
+    this.active = false; this.host.remove(); $('#app').inert = false;
+    const target = $('[data-act="preset"][data-k="balanced"]') || $('#tab-week');
+    if (target) { target.scrollIntoView({ block: 'center', behavior: 'instant' }); target.focus({ preventScroll: true }); }
+  }
+};
+document.addEventListener('click', ev => {
+  const button = ev.target.closest('[data-tour]'); if (!button || !Tutorial.active) return;
+  const action = button.dataset.tour;
+  if (action === 'skip' || (action === 'next' && Tutorial.index === Tutorial.steps.length - 1)) Tutorial.finish();
+  else { Tutorial.index += action === 'back' ? -1 : 1; Tutorial.show(); }
+});
+document.addEventListener('keydown', ev => {
+  if (!Tutorial.active) return;
+  if (ev.key === 'Escape') { ev.preventDefault(); Tutorial.finish(); }
+  if (ev.key === 'Tab') {
+    const buttons = $$('button:not([disabled])', Tutorial.host), first = buttons[0], last = buttons[buttons.length - 1];
+    if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+    else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+  }
+  ev.stopImmediatePropagation();
+}, true);
+window.addEventListener('resize', () => Tutorial.position());
+window.addEventListener('scroll', () => Tutorial.position(), true);
+
 /* ---------- Router ---------- */
 function render(focusSel) {
   const app = $('#app'); if (UI.screen !== 'game' && Court.cv) Court.unmount();
@@ -78,6 +149,7 @@ function render(focusSel) {
   renderModal();
   const f = focusSel ? $(focusSel) : $('#app h1, #app h2');
   if (f) { if (!f.hasAttribute('tabindex') && !/^(BUTTON|A|INPUT|SELECT)$/.test(f.tagName)) f.setAttribute('tabindex', '-1'); f.focus({ preventScroll: !!focusSel }); }
+  requestAnimationFrame(() => Tutorial.maybeStart());
 }
 function go(screen, opts = {}) { UI.screen = screen; if (opts.tab) UI.tab = opts.tab; render(opts.focus); if (!opts.noScroll) window.scrollTo(0, 0); }
 
@@ -85,33 +157,33 @@ function go(screen, opts = {}) { UI.screen = screen; if (opts.tab) UI.tab = opts
 function renderTitle() {
   const saved = loadSave(); const c = PALETTES[0].c;
   const cont = saved && saved.phase !== 'career' ? `<button class="btn big primary" data-act="continue">${icon('ball')} Continue season <span class="sub">${E(saved.school.name)} · Season ${saved.season} · ${saved.phase === 'tryouts' ? 'Tryouts' : saved.phase === 'playoffs' ? 'Playoffs' : saved.phase === 'offseason' ? 'Offseason' : 'Week ' + saved.week}</span></button>` : '';
-  return `<div class="title-screen">
-  <header class="rafters">
-    <div class="beam"></div>
-    <div class="banners" aria-label="Championship banners to earn">${ROUNDS.map((r, i) => pennant(r.replace('Sectional', 'Sect.').replace('Championship', 'Title'), false, c[0], c[1], ['I', 'II', 'III', 'IV'][i])).join('')}</div>
-    <div class="title-hero">
-      <div class="logo-line">High school hoops · Four-year contract</div>
-      <h1>Road to the Championship</h1>
-      <p>Take over a varsity basketball program for four seasons. Recruit and develop players, manage the budget and the locker room, and outcoach your rivals on the road to State titles.</p>
-    </div>
-  </header>
-  <main class="title-floor" id="main">
-    <canvas id="floor" aria-hidden="true"></canvas>
-    <nav class="title-menu" aria-label="Main menu">
-      ${cont}
-      <fieldset class="diff-pick"><legend class="eyebrow">Difficulty</legend>
-        <div class="seg" role="radiogroup" aria-label="Difficulty" style="width:100%">${Object.entries(DIFF).map(([k, d]) => `<label style="flex:1"><input type="radio" name="tdiff" value="${k}" data-act="tdiff" ${SET.diff === k ? 'checked' : ''}><span style="text-align:center">${d.name}</span></label>`).join('')}</div>
-        <p class="muted" id="tdiff-d" style="font-size:.9rem;margin-top:6px">${DIFF[SET.diff].d}</p></fieldset>
-      <button class="btn big ${cont ? '' : 'primary'}" data-act="quick">${icon('bolts')} Quick Start <span class="sub">Jump in with a ready-made team</span></button>
-      <button class="btn big" data-act="new">${icon('knights')} New Season <span class="sub">Name your school, pick colors &amp; difficulty</span></button>
-      <div class="row2">
-        <button class="btn" data-act="help">${icon('help')} How to Play</button>
-        <button class="btn" data-act="settings">${icon('gear')} Settings</button>
-        <button class="btn" data-act="credits">${icon('star')} Credits</button>
-      </div>
-      <p class="save-note">Keyboard: <span class="kbd">Tab</span> to move · <span class="kbd">Enter</span> to select · <span class="kbd">?</span> opens the rulebook anytime</p>
-    </nav>
-  </main></div>`;
+  return `<div class="title-screen arena-title">
+    <header class="arena-mast"><span class="arena-brand">${icon('ball')} RTC <span>/ BASKETBALL OPERATIONS</span></span><span class="arena-edition">THE FOUR-SEASON CHALLENGE</span></header>
+    <main id="main" class="arena-main">
+      <section class="arena-story" aria-labelledby="game-title">
+        <div class="arena-kicker"><span></span> THE GYM IS OPEN. YOUR LEGACY STARTS HERE.</div>
+        <h1 id="game-title">ROAD TO THE<br><em>CHAMPIONSHIP.</em></h1>
+        <p class="arena-deck">Build the team.<br>Call the shots. <strong>Earn the banner.</strong></p>
+        <p class="arena-copy">Four seasons to turn a high school program into a State contender. Every practice, every player, every possession is your call.</p>
+        <div class="arena-court" aria-hidden="true"><canvas id="floor"></canvas><div class="arena-court-label">HOME COURT <span>EST. 2027</span></div><div class="arena-stamp">4<span>SEASONS</span><small>ONE LEGACY</small></div></div>
+        <div class="arena-pillars"><span><b>01</b> RECRUIT</span><span><b>02</b> DEVELOP</span><span><b>03</b> COMPETE</span></div>
+      </section>
+      <nav class="title-menu arena-menu" aria-label="Main menu">
+        <div class="arena-menu-head"><span class="eyebrow">COACH’S OFFICE</span><span class="arena-live">PRESEASON</span></div>
+        <h2>Your next chapter.</h2><p class="arena-menu-copy">The sidelines are waiting for you.</p>
+        ${cont}
+        <fieldset class="diff-pick"><legend class="eyebrow">Choose your challenge</legend>
+          <div class="seg" role="radiogroup" aria-label="Difficulty">${Object.entries(DIFF).map(([k, d]) => `<label><input type="radio" name="tdiff" value="${k}" data-act="tdiff" ${SET.diff === k ? 'checked' : ''}><span>${d.name}</span></label>`).join('')}</div>
+          <p id="tdiff-d">${DIFF[SET.diff].d}</p></fieldset>
+        <button class="btn big arena-start" data-act="quick"><span>${icon('bolts')} Quick Start<small>A ready-made team. Your first big decision.</small></span><span aria-hidden="true">↗</span></button>
+        <button class="btn big arena-custom" data-act="new"><span>Build your program<small>Name your school. Make it yours.</small></span><span aria-hidden="true">→</span></button>
+        <div class="row2"><button class="btn" data-act="help">How to Play</button><button class="btn" data-act="settings">Settings</button><button class="btn" data-act="credits">Credits</button></div>
+        <p class="save-note">AUTOSAVED LOCALLY · PICK UP WHERE YOU LEFT OFF</p>
+        <div class="arena-ticket"><span>YOUR MISSION</span><strong>From the first whistle<br>to the rafters.</strong><div class="banners" aria-label="Championship banners to earn">${ROUNDS.map((r, i) => pennant(r.replace('Sectional', 'Sect.').replace('Championship', 'Title'), false, c[0], c[1], ['I', 'II', 'III', 'IV'][i])).join('')}</div></div>
+      </nav>
+    </main>
+    <footer class="arena-footer"><span>FOUR YEARS. ONE PROGRAM. MAKE IT COUNT.</span><span><kbd>Tab</kbd> NAVIGATE <kbd>Enter</kbd> SELECT <kbd>?</kbd> RULEBOOK</span></footer>
+  </div>`;
 }
 
 /* ---------- SETUP ---------- */

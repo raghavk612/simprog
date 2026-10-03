@@ -410,6 +410,58 @@ body.rm *,body.rm *::before,body.rm *::after{animation:none!important;transition
   .sb-team .crest{display:none}
 }
 
+/* Opening night: title screen */
+.arena-title{--arena-navy:#101d2c;--arena-orange:#ff6335;--arena-paper:#f5f0e7;background:var(--arena-paper);color:var(--arena-navy);min-height:100svh;padding:0 clamp(20px,4vw,64px);overflow:hidden}
+.arena-mast,.arena-footer{display:flex;align-items:center;justify-content:space-between;gap:20px;font-family:var(--f-data);font-weight:600;letter-spacing:.12em;font-size:.75rem}
+.arena-mast{padding:24px 0;border-bottom:1px solid #101d2c33}
+.arena-brand{display:flex;align-items:center;gap:10px;font-size:1.3rem;font-weight:700}
+.arena-brand .ico{color:#c53f19}.arena-brand span{font-size:.7rem;letter-spacing:.13em;margin-left:12px}
+.arena-edition{border:1px solid #101d2c55;padding:6px 10px}
+.arena-main{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(340px,.85fr);gap:clamp(32px,5vw,80px);max-width:1440px;width:100%;margin:auto;padding:48px 0 36px;align-items:center}
+.arena-story{min-width:0;position:relative}
+.arena-kicker{display:flex;align-items:center;gap:8px;font-family:var(--f-data);font-size:.76rem;font-weight:600;letter-spacing:.1em}
+.arena-kicker>span{width:7px;height:7px;border-radius:50%;background:#c53f19;box-shadow:0 0 0 4px #c53f1918}
+.arena-story h1{font-family:var(--f-data);font-size:clamp(3rem,6.5vw,7rem);font-weight:700;line-height:.94;letter-spacing:-.04em;margin:25px 0;text-wrap:initial}
+.arena-story h1 em{font-style:normal;color:#c4401c;font-size:.91em;display:inline-block;letter-spacing:-.045em}
+.arena-deck{font-family:var(--f-data);font-size:clamp(1.5rem,2.4vw,2.1rem);line-height:1.12;font-weight:500}
+.arena-deck strong{font-weight:700}.arena-copy{max-width:47ch;margin-top:16px;color:#505761;font-size:.96rem;line-height:1.65}
+.arena-court{position:relative;height:220px;margin:30px 0 0;background:#c18e55;overflow:hidden;border:1px solid #101d2c26;border-radius:3px;transform:rotate(-2deg);box-shadow:9px 10px 0 #101d2c0c}
+.arena-court:after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,#22120933,transparent 60%);pointer-events:none}
+.arena-court canvas{width:100%;height:100%;position:absolute;inset:0}
+.arena-court-label{position:absolute;top:14px;left:16px;right:16px;display:flex;justify-content:space-between;color:#322318;font:600 .65rem var(--f-data);letter-spacing:.15em}
+.arena-stamp{position:absolute;right:24px;top:42px;width:125px;height:144px;background:#101d2c;color:#fff8eb;text-align:center;font:700 4.6rem/.9 var(--f-data);padding:13px 10px;transform:rotate(5deg);box-shadow:5px 5px 0 #101d2c30;border:1px solid #ffffff55;z-index:1}
+.arena-stamp span{display:block;font-size:1rem;letter-spacing:.2em;line-height:1.8}.arena-stamp small{font-size:.6rem;letter-spacing:.16em;display:block;color:#ffac74;border-top:1px solid #ffffff44;line-height:2}
+.arena-pillars{display:flex;justify-content:space-between;gap:10px;padding:24px 0 0;font:600 .8rem var(--f-data);letter-spacing:.14em}.arena-pillars b{color:#b74120;margin-right:8px}
+.arena-menu{--ink:#f5f0e7;--ink-2:#b8c4d0;--surface:#17283b;--surface-2:#253b52;--border-2:#496077;--focus:#ffc777;width:100%;max-width:none;background:#101d2c;color:#f5f0e7;border:0;border-radius:6px;padding:28px;gap:12px;box-shadow:0 22px 50px #14233525;align-self:center}
+.arena-menu-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.arena-menu-head .eyebrow{font-size:.72rem;letter-spacing:.15em;color:#b5c4d4}.arena-live{font:.62rem var(--f-data);letter-spacing:.1em;color:#ffb891;border:1px solid #ffb89155;padding:4px 7px;border-radius:3px}
+.arena-menu h2{font:600 2.2rem var(--f-data);letter-spacing:-.02em;margin-top:7px}.arena-menu-copy{color:#b8c4d0;font-size:.9rem;margin-top:-9px}
+.arena-menu .diff-pick{margin:13px 0 1px}.arena-menu legend{margin-bottom:8px;color:#b8c4d0;font-size:.72rem}.arena-menu .seg{background:#0b1420}.arena-menu .seg span{font-size:.95rem}.arena-menu .seg input:checked+span{background:#f5f0e7;color:#101d2c;border-color:#f5f0e7}.arena-menu #tdiff-d{font-size:.79rem;color:#b8c4d0;margin-top:8px;min-height:2.8em}
+.arena-menu .arena-start,.arena-menu .arena-custom{justify-content:space-between;padding:15px 17px;gap:12px;font-family:var(--f-data);font-size:1.3rem;letter-spacing:.015em}
+.arena-menu .arena-start{background:#ff7347;color:#131d29;border-color:#ff7347}.arena-menu .arena-start:hover{background:#ff956f;border-color:#ff956f;transform:translateY(-2px)}
+.arena-menu .arena-custom{background:#1c2c3e;border-color:#42566c;color:#f5f0e7}.arena-menu small{display:block;font-family:var(--f-body);font-size:.76rem;font-weight:400;letter-spacing:0;margin-top:3px}
+.arena-menu .row2{gap:6px;border-top:1px solid #ffffff24;padding-top:14px;margin-top:3px}.arena-menu .row2 .btn{background:transparent;border-color:transparent;padding:6px 2px;font-size:.77rem;min-height:40px;color:#dce4ec}.arena-menu .row2 .btn:hover{background:#253b52}
+.arena-menu .save-note{font:500 .61rem var(--f-data);letter-spacing:.08em;color:#a8b9ca}
+.arena-ticket{display:grid;grid-template-columns:1fr 1fr;align-items:center;column-gap:10px;border-top:1px dashed #ffffff40;padding-top:16px;margin-top:8px}.arena-ticket>span{grid-column:1;font:500 .66rem var(--f-data);letter-spacing:.14em;color:#ffb891}.arena-ticket>strong{font:500 1.2rem/1.1 var(--f-data)}.arena-ticket .banners{grid-column:2;grid-row:1/3;flex-wrap:nowrap;gap:4px}.arena-ticket .pennant{width:40px;max-width:24%}
+.arena-footer{padding:18px 0 24px;border-top:1px solid #101d2c33;color:#59616b;font-size:.65rem}.arena-footer kbd{font:inherit;border:1px solid #101d2c33;padding:1px 4px;margin-left:8px}
+.arena-story,.arena-menu{animation:arena-enter .7s ease-out both}.arena-menu{animation-delay:.12s}@keyframes arena-enter{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@media(min-width:1500px){.arena-story h1{font-size:6.8rem}}
+@media(max-width:1000px){.arena-main{gap:28px;grid-template-columns:minmax(0,1fr) minmax(300px,.85fr)}.arena-menu{padding:22px}.arena-story h1{font-size:5.5vw}.arena-kicker{font-size:.63rem}.arena-brand span{display:none}}
+@media(max-width:720px){.arena-main{grid-template-columns:1fr;padding:28px 0;gap:30px}.arena-mast{padding:18px 0}.arena-edition{font-size:.6rem}.arena-story h1{font-size:clamp(2.65rem,9.6vw,4.9rem);margin:20px 0}.arena-kicker{font-size:.64rem;letter-spacing:.04em}.arena-deck{font-size:1.55rem}.arena-copy{font-size:.9rem;max-width:48ch}.arena-court{height:150px;margin-top:22px}.arena-stamp{top:18px;right:20px;height:118px;width:105px;font-size:3.7rem}.arena-stamp span{font-size:.78rem}.arena-court-label{font-size:.55rem}.arena-pillars{padding-top:20px;font-size:.7rem}.arena-footer{align-items:flex-start;flex-direction:column;gap:8px}.arena-menu{padding:24px}.arena-menu h2{font-size:2rem}}
+/* First-entry guided tour */
+#coach-tour{position:fixed;inset:0;z-index:90;isolation:isolate}
+.tour-blocker{position:absolute;inset:0;touch-action:none}
+.tour-spot{position:fixed;border:2px solid #ffc16f;border-radius:8px;box-shadow:0 0 0 9999px #06111dcc;pointer-events:none;animation:tour-glow 1.8s ease-in-out infinite}
+.tour-card{position:fixed;width:min(370px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;background:#fff8ec;color:#142335;padding:20px;border:1px solid #d0b895;border-radius:12px;box-shadow:0 18px 60px #0007;animation:arena-enter .25s ease-out}
+.tour-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font:600 .66rem var(--f-data);letter-spacing:.1em;color:#655442}.tour-top .btn{color:#534637;font:400 .8rem var(--f-body);padding:3px 5px}.tour-top .btn:hover{background:#eedfc9}
+.tour-count{font:600 2.2rem var(--f-data);color:#ad3915;line-height:1.2;margin:10px 0}.tour-count span{font-size:1rem;color:#776450}.tour-card h2{font:600 1.75rem/1.05 var(--f-data);margin-bottom:10px}.tour-card p{font-size:.93rem;line-height:1.55;color:#4e5360}.tour-bottom{display:flex;align-items:center;gap:8px;margin-top:20px}.tour-bottom .btn{font-size:.85rem;background:#fff8ec;color:#142335;border-color:#b9ac9a;padding:8px 12px}.tour-bottom .tour-next{background:#142335;color:#fff8ec;border-color:#142335}.tour-dots{display:flex;gap:4px;margin-right:auto}.tour-dots i{width:5px;height:5px;border-radius:8px;background:#c1b6a7}.tour-dots .current{width:16px;background:#ad3915}
+.tour-arrow{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible;color:#ffc16f}.tour-arrow-line{fill:none;stroke:currentColor;stroke-width:3;stroke-dasharray:7 5;animation:tour-flow .8s linear infinite}
+@keyframes tour-flow{to{stroke-dashoffset:-24}}@keyframes tour-glow{50%{border-color:#fff5d8}}
+@media(max-width:400px){.tour-card{padding:16px}.tour-card h2{font-size:1.5rem}.tour-card p{font-size:.86rem}.tour-count{margin:5px 0}.tour-bottom{margin-top:14px}}
+.arena-ticket{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.arena-ticket .pl{display:none}
+.arena-menu .row2{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:360px){.arena-ticket>strong{font-size:1rem}.arena-menu{padding:20px}.arena-menu .row2 .btn{font-size:.7rem}}
+
 </style>
 <a class="skip" href="#main">Skip to content</a>
 <div id="app"></div>
@@ -1910,6 +1962,77 @@ function coachTip(key, html) {
   return `<div class="coach-tip" role="note">${icon('help', 'ico')}<div><b>Coach tip.</b> ${html}</div><button class="btn ghost sm x" data-act="tip-x" data-k="${key}" aria-label="Dismiss tip">Got it</button></div>`;
 }
 
+/* One tour per browser, independent of game saves and coach-tip resets. */
+const TUTORIAL_KEY = 'rtc-onboarding-seen-v1';
+const Tutorial = {
+  active: false, visited: false, index: 0, steps: [], target: null,
+  maybeStart() {
+    if (this.active || this.visited || store.get(TUTORIAL_KEY) || UI.screen !== 'hub' || UI.modal) return;
+    this.visited = true;
+    // Mark on entry so refresh, Skip, and a new career never restart the tour.
+    store.set(TUTORIAL_KEY, '1');
+    this.steps = [
+      ['.stepper', 'Welcome to the sidelines.', 'This is your weekly game plan: practice, handle a challenge, play your game, then review the result. Take it one step at a time.'],
+      ['.meters', 'Build a healthy program.', 'Keep an eye on your budget, morale, chemistry, fans and reputation. Your choices off the court matter just as much as the score.'],
+      ['.tabs', 'Your whole team, in one place.', 'Check your roster, follow the standings, buy upgrades in the front office and revisit your season log. This week brings you back to the next task.'],
+    ];
+    if ($('[data-act="preset"][data-k="balanced"]')) this.steps.push(
+      ['[data-act="preset"][data-k="balanced"]', 'Start with a balanced week.', 'Choose Balanced week to fill your practice days. You can then select any day and swap its drill. Mix skill work with recovery to keep players fresh.'],
+      ['[data-act="run-practice"]', 'Put your plan into action.', 'Once every day has a drill, Run practice week becomes available. Review the results, then move on to your first challenge. You’re ready, Coach.']
+    );
+    else this.steps.push(['#panel', 'Your next decision is here.', 'Continue the task in this panel. The weekly tracker above shows where you are, and the rulebook is always available with the ? key.']);
+    this.active = true; this.index = 0;
+    this.host = document.createElement('div'); this.host.id = 'coach-tour';
+    document.body.appendChild(this.host); $('#app').inert = true;
+    this.show();
+  },
+  show() {
+    const [selector, title, copy] = this.steps[this.index];
+    this.target = $(selector);
+    this.host.innerHTML = `<div class="tour-blocker"></div><div class="tour-spot" aria-hidden="true"></div><svg class="tour-arrow" aria-hidden="true"><defs><marker id="tour-arrowhead" markerWidth="10" markerHeight="10" refX="7" refY="4" orient="auto"><path d="M1,1 L7,4 L1,7" fill="none" stroke="currentColor" stroke-width="2"/></marker></defs><path class="tour-arrow-line" marker-end="url(#tour-arrowhead)"/></svg><section class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title" aria-describedby="tour-copy"><div class="tour-top"><span>COACH’S FIRST PLAYBOOK</span><button class="btn ghost sm" data-tour="skip">Skip tour</button></div><div class="tour-count">${String(this.index + 1).padStart(2, '0')} <span>/ ${String(this.steps.length).padStart(2, '0')}</span></div><h2 id="tour-title">${title}</h2><p id="tour-copy">${copy}</p><div class="tour-bottom"><div class="tour-dots" aria-hidden="true">${this.steps.map((_, i) => `<i class="${i === this.index ? 'current' : ''}"></i>`).join('')}</div><button class="btn" data-tour="back" ${this.index === 0 ? 'disabled' : ''}>Back</button><button class="btn tour-next" data-tour="next">${this.index === this.steps.length - 1 ? 'Let’s coach' : 'Next'} →</button></div></section>`;
+    if (this.target) this.target.scrollIntoView({ block: 'center', behavior: 'instant' });
+    this.position();
+    $('[data-tour="next"]', this.host).focus({ preventScroll: true });
+  },
+  position() {
+    if (!this.active || !this.target) return;
+    const r = this.target.getBoundingClientRect(), card = $('.tour-card', this.host);
+    const w = innerWidth, h = innerHeight, gap = 52, ch = card.offsetHeight;
+    const below = h - r.bottom >= ch + gap || r.top < ch + gap;
+    const left = Math.max(12, Math.min(w - card.offsetWidth - 12, r.left + r.width / 2 - card.offsetWidth / 2));
+    const top = Math.max(12, Math.min(h - ch - 12, below ? r.bottom + gap : r.top - ch - gap));
+    Object.assign(card.style, { left: left + 'px', top: top + 'px' });
+    const spot = $('.tour-spot', this.host);
+    Object.assign(spot.style, { left: Math.max(4, r.left - 5) + 'px', top: r.top - 5 + 'px', width: Math.min(w - 8, r.width + 10) + 'px', height: r.height + 10 + 'px' });
+    const x = Math.max(24, Math.min(w - 24, r.left + r.width / 2));
+    const sy = below ? top - 8 : top + ch + 8, ey = below ? r.bottom + 10 : r.top - 10;
+    $('.tour-arrow-line', this.host).setAttribute('d', `M ${left + card.offsetWidth / 2} ${sy} Q ${x + 25} ${(sy + ey) / 2} ${x} ${ey}`);
+  },
+  finish() {
+    this.active = false; this.host.remove(); $('#app').inert = false;
+    const target = $('[data-act="preset"][data-k="balanced"]') || $('#tab-week');
+    if (target) { target.scrollIntoView({ block: 'center', behavior: 'instant' }); target.focus({ preventScroll: true }); }
+  }
+};
+document.addEventListener('click', ev => {
+  const button = ev.target.closest('[data-tour]'); if (!button || !Tutorial.active) return;
+  const action = button.dataset.tour;
+  if (action === 'skip' || (action === 'next' && Tutorial.index === Tutorial.steps.length - 1)) Tutorial.finish();
+  else { Tutorial.index += action === 'back' ? -1 : 1; Tutorial.show(); }
+});
+document.addEventListener('keydown', ev => {
+  if (!Tutorial.active) return;
+  if (ev.key === 'Escape') { ev.preventDefault(); Tutorial.finish(); }
+  if (ev.key === 'Tab') {
+    const buttons = $$('button:not([disabled])', Tutorial.host), first = buttons[0], last = buttons[buttons.length - 1];
+    if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); }
+    else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); }
+  }
+  ev.stopImmediatePropagation();
+}, true);
+window.addEventListener('resize', () => Tutorial.position());
+window.addEventListener('scroll', () => Tutorial.position(), true);
+
 /* ---------- Router ---------- */
 function render(focusSel) {
   const app = $('#app'); if (UI.screen !== 'game' && Court.cv) Court.unmount();
@@ -1922,6 +2045,7 @@ function render(focusSel) {
   renderModal();
   const f = focusSel ? $(focusSel) : $('#app h1, #app h2');
   if (f) { if (!f.hasAttribute('tabindex') && !/^(BUTTON|A|INPUT|SELECT)$/.test(f.tagName)) f.setAttribute('tabindex', '-1'); f.focus({ preventScroll: !!focusSel }); }
+  requestAnimationFrame(() => Tutorial.maybeStart());
 }
 function go(screen, opts = {}) { UI.screen = screen; if (opts.tab) UI.tab = opts.tab; render(opts.focus); if (!opts.noScroll) window.scrollTo(0, 0); }
 
@@ -1929,33 +2053,33 @@ function go(screen, opts = {}) { UI.screen = screen; if (opts.tab) UI.tab = opts
 function renderTitle() {
   const saved = loadSave(); const c = PALETTES[0].c;
   const cont = saved && saved.phase !== 'career' ? `<button class="btn big primary" data-act="continue">${icon('ball')} Continue season <span class="sub">${E(saved.school.name)} · Season ${saved.season} · ${saved.phase === 'tryouts' ? 'Tryouts' : saved.phase === 'playoffs' ? 'Playoffs' : saved.phase === 'offseason' ? 'Offseason' : 'Week ' + saved.week}</span></button>` : '';
-  return `<div class="title-screen">
-  <header class="rafters">
-    <div class="beam"></div>
-    <div class="banners" aria-label="Championship banners to earn">${ROUNDS.map((r, i) => pennant(r.replace('Sectional', 'Sect.').replace('Championship', 'Title'), false, c[0], c[1], ['I', 'II', 'III', 'IV'][i])).join('')}</div>
-    <div class="title-hero">
-      <div class="logo-line">High school hoops · Four-year contract</div>
-      <h1>Road to the Championship</h1>
-      <p>Take over a varsity basketball program for four seasons. Recruit and develop players, manage the budget and the locker room, and outcoach your rivals on the road to State titles.</p>
-    </div>
-  </header>
-  <main class="title-floor" id="main">
-    <canvas id="floor" aria-hidden="true"></canvas>
-    <nav class="title-menu" aria-label="Main menu">
-      ${cont}
-      <fieldset class="diff-pick"><legend class="eyebrow">Difficulty</legend>
-        <div class="seg" role="radiogroup" aria-label="Difficulty" style="width:100%">${Object.entries(DIFF).map(([k, d]) => `<label style="flex:1"><input type="radio" name="tdiff" value="${k}" data-act="tdiff" ${SET.diff === k ? 'checked' : ''}><span style="text-align:center">${d.name}</span></label>`).join('')}</div>
-        <p class="muted" id="tdiff-d" style="font-size:.9rem;margin-top:6px">${DIFF[SET.diff].d}</p></fieldset>
-      <button class="btn big ${cont ? '' : 'primary'}" data-act="quick">${icon('bolts')} Quick Start <span class="sub">Jump in with a ready-made team</span></button>
-      <button class="btn big" data-act="new">${icon('knights')} New Season <span class="sub">Name your school, pick colors &amp; difficulty</span></button>
-      <div class="row2">
-        <button class="btn" data-act="help">${icon('help')} How to Play</button>
-        <button class="btn" data-act="settings">${icon('gear')} Settings</button>
-        <button class="btn" data-act="credits">${icon('star')} Credits</button>
-      </div>
-      <p class="save-note">Keyboard: <span class="kbd">Tab</span> to move · <span class="kbd">Enter</span> to select · <span class="kbd">?</span> opens the rulebook anytime</p>
-    </nav>
-  </main></div>`;
+  return `<div class="title-screen arena-title">
+    <header class="arena-mast"><span class="arena-brand">${icon('ball')} RTC <span>/ BASKETBALL OPERATIONS</span></span><span class="arena-edition">THE FOUR-SEASON CHALLENGE</span></header>
+    <main id="main" class="arena-main">
+      <section class="arena-story" aria-labelledby="game-title">
+        <div class="arena-kicker"><span></span> THE GYM IS OPEN. YOUR LEGACY STARTS HERE.</div>
+        <h1 id="game-title">ROAD TO THE<br><em>CHAMPIONSHIP.</em></h1>
+        <p class="arena-deck">Build the team.<br>Call the shots. <strong>Earn the banner.</strong></p>
+        <p class="arena-copy">Four seasons to turn a high school program into a State contender. Every practice, every player, every possession is your call.</p>
+        <div class="arena-court" aria-hidden="true"><canvas id="floor"></canvas><div class="arena-court-label">HOME COURT <span>EST. 2027</span></div><div class="arena-stamp">4<span>SEASONS</span><small>ONE LEGACY</small></div></div>
+        <div class="arena-pillars"><span><b>01</b> RECRUIT</span><span><b>02</b> DEVELOP</span><span><b>03</b> COMPETE</span></div>
+      </section>
+      <nav class="title-menu arena-menu" aria-label="Main menu">
+        <div class="arena-menu-head"><span class="eyebrow">COACH’S OFFICE</span><span class="arena-live">PRESEASON</span></div>
+        <h2>Your next chapter.</h2><p class="arena-menu-copy">The sidelines are waiting for you.</p>
+        ${cont}
+        <fieldset class="diff-pick"><legend class="eyebrow">Choose your challenge</legend>
+          <div class="seg" role="radiogroup" aria-label="Difficulty">${Object.entries(DIFF).map(([k, d]) => `<label><input type="radio" name="tdiff" value="${k}" data-act="tdiff" ${SET.diff === k ? 'checked' : ''}><span>${d.name}</span></label>`).join('')}</div>
+          <p id="tdiff-d">${DIFF[SET.diff].d}</p></fieldset>
+        <button class="btn big arena-start" data-act="quick"><span>${icon('bolts')} Quick Start<small>A ready-made team. Your first big decision.</small></span><span aria-hidden="true">↗</span></button>
+        <button class="btn big arena-custom" data-act="new"><span>Build your program<small>Name your school. Make it yours.</small></span><span aria-hidden="true">→</span></button>
+        <div class="row2"><button class="btn" data-act="help">How to Play</button><button class="btn" data-act="settings">Settings</button><button class="btn" data-act="credits">Credits</button></div>
+        <p class="save-note">AUTOSAVED LOCALLY · PICK UP WHERE YOU LEFT OFF</p>
+        <div class="arena-ticket"><span>YOUR MISSION</span><strong>From the first whistle<br>to the rafters.</strong><div class="banners" aria-label="Championship banners to earn">${ROUNDS.map((r, i) => pennant(r.replace('Sectional', 'Sect.').replace('Championship', 'Title'), false, c[0], c[1], ['I', 'II', 'III', 'IV'][i])).join('')}</div></div>
+      </nav>
+    </main>
+    <footer class="arena-footer"><span>FOUR YEARS. ONE PROGRAM. MAKE IT COUNT.</span><span><kbd>Tab</kbd> NAVIGATE <kbd>Enter</kbd> SELECT <kbd>?</kbd> RULEBOOK</span></footer>
+  </div>`;
 }
 
 /* ---------- SETUP ---------- */
