@@ -1,0 +1,42 @@
+{
+  "rookie/smart": {
+    "runnerup": 5,
+    "perfect": 29,
+    "champion": 21,
+    "final4": 5
+  },
+  "rookie/naive": {
+    "champion": 11,
+    "contender": 18,
+    "final4": 15,
+    "perfect": 4,
+    "runnerup": 10,
+    "missed": 2
+  },
+  "varsity/smart": {
+    "runnerup": 16,
+    "champion": 23,
+    "final4": 11,
+    "contender": 5,
+    "missed": 5
+  },
+  "varsity/naive": {
+    "missed": 30,
+    "final4": 9,
+    "contender": 17,
+    "runnerup": 4
+  },
+  "legend/smart": {
+    "contender": 15,
+    "missed": 16,
+    "champion": 6,
+    "crisis": 2,
+    "final4": 14,
+    "runnerup": 7
+  },
+  "legend/naive": {
+    "missed": 50,
+    "contender": 10
+  }
+}
+PASS: 360 one-season runs; replay isolation/determinism; compatible save migration.

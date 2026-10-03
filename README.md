@@ -1,40 +1,38 @@
 # Road to the Championship
 
-FBLA 2026–27 Computer Game & Simulation Programming. Topic: *Road to the Championship*.
+Created by **Ajisth Sareen, Raghav Krishnan, and Malhar Pawar**.
+
+A one-season high-school basketball coaching simulation for the FBLA 2026–27 Computer Game & Simulation Programming topic.
 
 ## Play
-- **Online:** https://raghavk612.github.io/simprog/
 
-- **Offline (use this at competition):** open `dist/road-to-the-championship-offline.html` in Chrome, Edge or Safari. No internet needed.
-- `dist/road-to-the-championship.html` is the version published as a Claude artifact. It has no `<html>`/`<head>` wrapper because the host adds one.
+- [Play online](https://raghavk612.github.io/simprog/).
+- Offline: open `dist/road-to-the-championship-offline.html` in a modern browser. Gameplay, illustrations, audio, credits and Decision Replay work without a network; typography falls back to system fonts.
+- Start with Quick Start, or build a school and recruit your roster. Complete 10 regular-season games, qualify in the district top four, then win four playoff rounds to claim State. Each replay starts a fresh season.
+- **What if, Coach?** Try the title-screen exhibition, or open Decision Replay after your own game. Compare two tactical branches from identical pregame conditions without altering your saved season.
+- Click a player card to edit first and last names. Credits & sources are available from the title, gameplay toolbar and season ending.
 
-## Project layout
-| Path | What it is |
-|---|---|
-| `src/engine.js` | Game logic: players, season, practice, possession-by-possession sim (timeouts, subs, final shot), playoffs, endings, multi-season career. No DOM access. |
-| `src/events.js` | The 22 off-court challenges and their effects |
-| `src/media.js` | Web Audio sound effects, crowd and soundtrack; SVG crests/icons; 7-segment scoreboard; Canvas court with players and crowd |
-| `src/ui.js` | Screens, input, accessibility, save/load |
-| `src/styles.css` | Design tokens and styles |
-| `build.py` | Combines `src/` into the two HTML files in `dist/` |
-| `tests/e2e.py` | Plays full seasons through the UI (desktop + phone) and screenshots each screen |
-| `tests/keyboard.py` | Keyboard-only and screen-reader checks |
-| `tests/balance.py` | Simulates hundreds of single seasons per difficulty and prints ending rates |
-| `tests/career_balance.py` | Simulates full 4-season careers and prints the title rate for each season |
-| `tests/overflow.py` | Checks every screen at phone width for sideways scrolling |
-| `design-spec.md` | Rubric-to-feature map, design tokens, user journey, test results |
+## Build and checks
 
-## Rebuild after editing
-```
+```sh
 python3 build.py
+node tests/season.test.cjs
 ```
 
-## Run the tests
-The tests need Python Playwright (`pip install playwright && playwright install chromium`). First change the `URL` / `goto` path at the top of each test file to point at your `dist/road-to-the-championship-offline.html`.
-```
-python3 tests/e2e.py
-python3 tests/keyboard.py
-python3 tests/balance.py 150
-python3 tests/career_balance.py 60
-python3 tests/overflow.py
-```
+The Node suite checks 360 complete one-season runs, first-season championship reachability on every difficulty, deterministic film experiments, live-state isolation (including failure recovery), and compatible save migration. No third-party test dependencies are needed.
+
+Python Playwright scripts in `tests/` cover full UI seasons, keyboard control and overflow. They require Python Playwright and Chromium. These scripts were updated for the one-season flow; the current change was validated through browser interaction and the Node suite, not a full rerun of all Python suites. `tests/archive/` holds obsolete multi-season tests/results for history only.
+
+## Files
+
+| Path | Purpose |
+|---|---|
+| `src/engine.js` | Seeded simulation, recruitment, practice, season outcomes, isolated Decision Replay |
+| `src/events.js` | Off-court challenges and consequences |
+| `src/media.js` | Inline vector art, live Canvas court, synthesized audio |
+| `src/ui.js` | Screens, player renaming, tour, local saves, credits |
+| `src/styles.css` | Responsive layout, visual identity, accessibility styles |
+| `build.py` | Standalone HTML and GitHub Pages entry point |
+| `docs/fbla-alignment.md` | Rubric cross-reference, evidence, remaining presentation work |
+
+Saves use `rtc-save-v5`. Compatible first-season v4 saves migrate without overwriting the old slot. Later multi-season saves remain stored separately and are not presented as one-season runs. The once-per-browser tutorial marker is unchanged.

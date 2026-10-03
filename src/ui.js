@@ -4,7 +4,7 @@
    ========================================================================= */
 'use strict';
 
-const SAVE_KEY = 'rtc-save-v4', SET_KEY = 'rtc-settings-v1';
+const SAVE_KEY = 'rtc-save-v5', SET_KEY = 'rtc-settings-v1';
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } },
@@ -19,7 +19,20 @@ function reduced() { return SET.motion === 'reduce' || (SET.motion === 'auto' &&
 function showExact() { return SET.exact != null ? SET.exact : (G && G.diff === 'rookie'); }
 function saveSettings() { store.set(SET_KEY, JSON.stringify(SET)); }
 function save() { if (!G) return; store.set(SAVE_KEY, JSON.stringify(G, (k, v) => k.startsWith('_') || k === 'gEnergy' ? undefined : v)); }
-function loadSave() { const raw = store.get(SAVE_KEY); if (!raw) return null; try { const g = JSON.parse(raw); return g && g.v === 4 ? g : null; } catch (e) { return null; } }
+function loadSave() {
+  try {
+    const current = JSON.parse(store.get(SAVE_KEY) || 'null');
+    if (current && current.v === 5) return current;
+    // Preserve the old slot. Only a first-season run can migrate without changing its progress.
+    const legacy = JSON.parse(store.get('rtc-save-v4') || 'null');
+    if (!legacy || legacy.v !== 4 || legacy.season !== 1) return null;
+    if (['offseason', 'career'].includes(legacy.phase)) {
+      if (!legacy.ending) return null;
+      legacy.phase = 'ended';
+    }
+    legacy.v = 5; return legacy;
+  } catch (e) { return null; }
+}
 
 function applySettings() {
   const b = document.body;
@@ -78,7 +91,7 @@ const Tutorial = {
     this.steps = [
       ['.stepper', 'Welcome to the sidelines.', 'This is your weekly game plan: practice, handle a challenge, play your game, then review the result. Take it one step at a time.'],
       ['.meters', 'Build a healthy program.', 'Keep an eye on your budget, morale, chemistry, fans and reputation. Your choices off the court matter just as much as the score.'],
-      ['.tabs', 'Your whole team, in one place.', 'Check your roster, follow the standings, buy upgrades in the front office and revisit your season log. This week brings you back to the next task.'],
+      ['.tabs', 'Your whole program, in one place.', 'Check your roster, follow the standings, buy upgrades in the front office and revisit your season log. Decision Replay lets you test another approach after a game. This week returns to your next task.'],
     ];
     if ($('[data-act="preset"][data-k="balanced"]')) this.steps.push(
       ['[data-act="preset"][data-k="balanced"]', 'Start with a balanced week.', 'Choose Balanced week to fill your practice days. You can then select any day and swap its drill. Mix skill work with recovery to keep players fresh.'],
@@ -141,7 +154,7 @@ window.addEventListener('scroll', () => Tutorial.position(), true);
 function render(focusSel) {
   const app = $('#app'); if (UI.screen !== 'game' && Court.cv) Court.unmount();
   applyTeamColors();
-  const html = { title: renderTitle, setup: renderSetup, tryouts: renderTryouts, hub: renderHub, game: renderGame, ending: renderEnding, offseason: renderOffseason, career: renderCareer }[UI.screen]();
+  const html = { title: renderTitle, setup: renderSetup, tryouts: renderTryouts, hub: renderHub, game: renderGame, ending: renderEnding }[UI.screen]();
   if (UI.screen !== 'game') Music.play();
   app.innerHTML = html;
   if (UI.screen === 'title') { const cv = $('#floor'); if (cv) requestAnimationFrame(() => drawTitleFloor(cv, G ? schoolColors()[0] : '#A6192E')); }
@@ -156,33 +169,34 @@ function go(screen, opts = {}) { UI.screen = screen; if (opts.tab) UI.tab = opts
 /* ---------- TITLE ---------- */
 function renderTitle() {
   const saved = loadSave(); const c = PALETTES[0].c;
-  const cont = saved && saved.phase !== 'career' ? `<button class="btn big primary" data-act="continue">${icon('ball')} Continue season <span class="sub">${E(saved.school.name)} · Season ${saved.season} · ${saved.phase === 'tryouts' ? 'Tryouts' : saved.phase === 'playoffs' ? 'Playoffs' : saved.phase === 'offseason' ? 'Offseason' : 'Week ' + saved.week}</span></button>` : '';
+  const cont = saved ? `<button class="btn big primary" data-act="continue">${icon('ball')} ${saved.phase === 'ended' ? 'Season results' : 'Continue season'} <span class="sub">${E(saved.school.name)} · ${saved.phase === 'ended' ? 'Complete' : saved.phase === 'tryouts' ? 'Tryouts' : saved.phase === 'playoffs' ? 'Playoffs' : 'Week ' + saved.week}</span></button>` : '';
   return `<div class="title-screen arena-title">
-    <header class="arena-mast"><span class="arena-brand">${icon('ball')} RTC <span>/ BASKETBALL OPERATIONS</span></span><span class="arena-edition">THE FOUR-SEASON CHALLENGE</span></header>
+    <header class="arena-mast"><span class="arena-brand">${icon('ball')} RTC <span>/ BASKETBALL OPERATIONS</span></span><span class="arena-edition">ONE SEASON. ONE SHOT AT STATE.</span></header>
     <main id="main" class="arena-main">
       <section class="arena-story" aria-labelledby="game-title">
         <div class="arena-kicker"><span></span> THE GYM IS OPEN. YOUR LEGACY STARTS HERE.</div>
         <h1 id="game-title">ROAD TO THE<br><em>CHAMPIONSHIP.</em></h1>
         <p class="arena-deck">Build the team.<br>Call the shots. <strong>Earn the banner.</strong></p>
-        <p class="arena-copy">Four seasons to turn a high school program into a State contender. Every practice, every player, every possession is your call.</p>
-        <div class="arena-court" aria-hidden="true"><canvas id="floor"></canvas><div class="arena-court-label">HOME COURT <span>EST. 2027</span></div><div class="arena-stamp">4<span>SEASONS</span><small>ONE LEGACY</small></div></div>
-        <div class="arena-pillars"><span><b>01</b> RECRUIT</span><span><b>02</b> DEVELOP</span><span><b>03</b> COMPETE</span></div>
+        <p class="arena-copy">One season to turn a high school program into State Champions. Every practice, every player, every possession is your call.</p>
+        <div class="arena-art">${courtsideArt("title")}<div class="art-caption"><span>10 REGULAR-SEASON GAMES</span><strong>4 PLAYOFF WINS → STATE CHAMPIONS</strong></div></div>
+        <button class="film-invite title-film" data-act="film-demo"><span>WHAT IF, COACH? · INTERACTIVE FILM ROOM</span><strong>Replay the decision. Rewrite the result.</strong><small>Try a tactical experiment — no season needed ↗</small></button><div class="arena-pillars"><span><b>01</b> RECRUIT</span><span><b>02</b> DEVELOP</span><span><b>03</b> COMPETE</span></div>
       </section>
       <nav class="title-menu arena-menu" aria-label="Main menu">
         <div class="arena-menu-head"><span class="eyebrow">COACH’S OFFICE</span><span class="arena-live">PRESEASON</span></div>
-        <h2>Your next chapter.</h2><p class="arena-menu-copy">The sidelines are waiting for you.</p>
+        <h2>Your season starts here.</h2><p class="arena-menu-copy">The sidelines are waiting for you.</p>
         ${cont}
+        ${!saved && store.get('rtc-save-v4') ? '<p class="legacy-note">This edition is a one-season challenge. Your earlier career save is kept separately; start a fresh season below.</p>' : ''}
         <fieldset class="diff-pick"><legend class="eyebrow">Choose your challenge</legend>
           <div class="seg" role="radiogroup" aria-label="Difficulty">${Object.entries(DIFF).map(([k, d]) => `<label><input type="radio" name="tdiff" value="${k}" data-act="tdiff" ${SET.diff === k ? 'checked' : ''}><span>${d.name}</span></label>`).join('')}</div>
           <p id="tdiff-d">${DIFF[SET.diff].d}</p></fieldset>
         <button class="btn big arena-start" data-act="quick"><span>${icon('bolts')} Quick Start<small>A ready-made team. Your first big decision.</small></span><span aria-hidden="true">↗</span></button>
         <button class="btn big arena-custom" data-act="new"><span>Build your program<small>Name your school. Make it yours.</small></span><span aria-hidden="true">→</span></button>
         <div class="row2"><button class="btn" data-act="help">How to Play</button><button class="btn" data-act="settings">Settings</button><button class="btn" data-act="credits">Credits</button></div>
-        <p class="save-note">AUTOSAVED LOCALLY · PICK UP WHERE YOU LEFT OFF</p>
+        <p class="save-note">AUTOSAVED LOCALLY · ONE COMPLETE SEASON</p>
         <div class="arena-ticket"><span>YOUR MISSION</span><strong>From the first whistle<br>to the rafters.</strong><div class="banners" aria-label="Championship banners to earn">${ROUNDS.map((r, i) => pennant(r.replace('Sectional', 'Sect.').replace('Championship', 'Title'), false, c[0], c[1], ['I', 'II', 'III', 'IV'][i])).join('')}</div></div>
       </nav>
     </main>
-    <footer class="arena-footer"><span>FOUR YEARS. ONE PROGRAM. MAKE IT COUNT.</span><span><kbd>Tab</kbd> NAVIGATE <kbd>Enter</kbd> SELECT <kbd>?</kbd> RULEBOOK</span></footer>
+    <footer class="arena-footer"><span>ONE SEASON. ONE PROGRAM. MAKE IT COUNT.</span><span><kbd>Tab</kbd> NAVIGATE <kbd>Enter</kbd> SELECT <kbd>?</kbd> RULEBOOK</span></footer>
   </div>`;
 }
 
@@ -239,6 +253,7 @@ function topbar(sub) {
       <button class="btn ghost sm" data-act="help" aria-label="Rulebook (question mark key)" title="Rulebook (?)">${icon('help')}<span class="sr-only">Rules</span></button>
       <button class="btn ghost sm" data-act="sound" aria-label="${SET.sound ? 'Mute sound' : 'Turn sound on'}" aria-pressed="${SET.sound}" title="Sound">${icon(SET.sound ? 'sound' : 'mute')}</button>
       <button class="btn ghost sm" data-act="settings" aria-label="Settings" title="Settings">${icon('gear')}</button>
+      <button class="btn ghost sm" data-act="credits" aria-label="Credits and sources" title="Credits and sources">${icon('star')}</button>
       <button class="btn ghost sm" data-act="menu" aria-label="Main menu" title="Main menu">${icon('home')}</button>
     </div></div></header>`;
 }
@@ -252,7 +267,7 @@ function renderTryouts() {
   return `${topbar(`Season ${G.season} · Tryouts`)}
   <main class="wrap" id="main" style="padding-block:16px 48px">
     <div class="stack">
-      <div><div class="eyebrow">${G.season === 1 ? 'Preseason · Step 2 of 2' : `Season ${G.season} of ${MAX_SEASONS} · ${seasonLabel(G.season)} · Program prestige ${G.prestige}`}</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:2rem">Tryouts</h1>
+      <div><div class="eyebrow">${G.season === 1 ? 'Preseason · Step 2 of 2' : `${seasonLabel(1)} · One-season challenge · Program prestige ${G.prestige}`}</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:2rem">Tryouts</h1>
       <p class="muted" style="max-width:68ch">You have ${G.roster.length} returning players. Sign up to <b>${mx} prospect${mx === 1 ? '' : 's'}</b>${mn ? ` (at least ${mn})` : ''}.${G.season > 1 ? ' Your program’s success sets how good this class is.' : ''} Their true ratings are fuzzy until you <b>scout</b> them. Scouting also reveals potential (★) and personality.</p></div>
       ${coachTip('tryouts', 'Look at the position counts. A team with no true point guard turns the ball over. Freshmen with high potential grow the most during the season.')}
       <div class="row">
@@ -296,14 +311,14 @@ function renderHub() {
   const wkLabel = G.phase === 'playoffs' ? ROUNDS[P.round] : `Week ${G.week} of 10`;
   const sub = G.phase === 'playoffs' ? `S${G.season} · Playoffs · ${recordStr()}` : `S${G.season} · Week ${G.week} · ${recordStr()}`;
   const steps = ['Practice', 'Challenge', 'Game day', 'Recap']; const si = stepIndex();
-  const tabs = [['week', 'This week'], ['roster', 'Roster'], ['standings', G.phase === 'playoffs' ? 'Bracket' : 'Standings'], ['office', 'Front office'], ['log', 'Season log']];
+  const tabs = [['week', 'This week'], ['roster', 'Roster'], ['standings', G.phase === 'playoffs' ? 'Bracket' : 'Standings'], ['office', 'Front office'], ['film', 'Decision Replay'], ['log', 'Season log']];
   return `${topbar(sub)}
   <main class="wrap hub" id="main">
     <div style="min-width:0">
       <section class="road" aria-label="Road to the championship">
         <div class="beam"></div>
         <div class="road-inner">
-          <div class="road-info"><div class="eyebrow">Season ${G.season} of ${MAX_SEASONS} · ${seasonLabel(G.season)} · ${G.phase === 'playoffs' ? 'Win or go home' : 'Regular season'}</div><h1 class="wk" style="font-weight:400">${wkLabel}</h1>
+          <div class="road-info"><div class="eyebrow">${seasonLabel(1)} · One-season challenge · ${G.phase === 'playoffs' ? 'Win or go home' : 'Regular season'}</div><h1 class="wk" style="font-weight:400">${wkLabel}</h1>
             <p style="color:#C9D2DC;margin-top:4px">${G.phase === 'playoffs' ? `Seed #${P.seed} · ${4 - P.round} win${4 - P.round > 1 ? 's' : ''} from the State title` : `Top 4 in the district make the playoffs · ${10 - G.week} week${10 - G.week === 1 ? '' : 's'} left after this`}</p>${G.banners.length ? `<div class="banner-row" aria-label="State title banners">${G.banners.map(b => `<span class="tbanner">${b.year}<small>STATE</small></span>`).join('')}</div>` : ''}</div>
           <div class="banners" aria-label="Playoff banners">${ROUNDS.map((r, i) => pennant(['Sect. Semi', 'Sect. Final', 'State Semi', 'State Title'][i], won(i), c1, c2, ['I', 'II', 'III', 'IV'][i])).join('')}</div>
         </div>
@@ -311,9 +326,10 @@ function renderHub() {
       ${UI.banner ? UI.banner : ''}
       <ol class="stepper" aria-label="This week's steps">${steps.map((s, i) => `<li class="${i < si ? 'done' : i === si ? 'cur' : ''}" ${i === si ? 'aria-current="step"' : ''}><span class="dot">${i < si ? '✓' : i + 1}</span>${s}</li>`).join('')}</ol>
       <div class="tabs" role="tablist" aria-label="Hub sections">${tabs.map(([k, l]) => `<button class="tab" role="tab" id="tab-${k}" aria-controls="panel" aria-selected="${UI.tab === k}" tabindex="${UI.tab === k ? 0 : -1}" data-act="tab" data-tab="${k}">${l}</button>`).join('')}</div>
-      <section class="tabpanel" id="panel" role="tabpanel" aria-labelledby="tab-${UI.tab}">${{ week: weekPanel, roster: rosterPanel, standings: standingsPanel, office: officePanel, log: logPanel }[UI.tab]()}</section>
+      <section class="tabpanel" id="panel" role="tabpanel" aria-labelledby="tab-${UI.tab}">${{ week: weekPanel, roster: rosterPanel, standings: standingsPanel, office: officePanel, film: filmPanel, log: logPanel }[UI.tab]()}</section>
     </div>
     <aside class="stack" aria-label="Next opponent and roster">
+      <div class="matchday-art">${courtsideArt("matchup")}<span>THE NEXT CHAPTER IS ON THE COURT</span></div>
       <section class="card"><div class="eyebrow">Next game · ${E(info.label)}</div>
         <div class="opp" style="margin-top:8px">${oppCrest(opp)}<div><div class="vs">${info.neutral ? 'vs' : info.home ? 'vs' : '@'} ${E(opp.name)} ${E(opp.mascot)}</div>
           <div class="facts"><span class="chip">${opp.nd || opp.st ? 'Non-district' : `${opp.w}–${opp.l}`}</span><span class="chip">OVR ${oppRating(opp)}</span><span class="chip">${info.neutral ? 'Neutral site' : info.home ? 'Home' : 'Away'}</span></div></div></div>
@@ -334,6 +350,7 @@ function practicePanel() {
   const risk = pr.injRisk > .09 ? ['High', 'down'] : pr.injRisk > .04 ? ['Medium', ''] : ['Low', 'up'];
   const growTxt = Object.entries(pr.grow).sort((a, b) => b[1] - a[1]).map(([k]) => ATTR_NAME[k]).slice(0, 3).join(', ') || 'None';
   return `${coachTip('practice', 'Pick a drill for each day. Tap a day, then a drill. Tired players (low energy) learn half as much and get hurt more, so mix in Rest. Repeating the same drill gives less each time.')}
+  <div class="practice-visual">${courtsideArt("practice")}<div><span class="eyebrow">THE WORK BEFORE THE WHISTLE</span><h3>Build your game, day by day.</h3><p>Plan. Recover. Show up ready.</p></div></div>
   <div class="whiteboard">
     <div class="row"><div class="wb-title">Practice plan · ${G.phase === 'playoffs' ? 'short playoff week' : 'Week ' + G.week}</div><span class="spacer"></span><span class="wb-note">Friday = game day!</span></div>
     <div class="days" style="--days:${n}" role="group" aria-label="Practice days">${days.map((d, i) => { const k = G.plan[i]; return `<button class="day ${i === active ? 'active' : ''} ${k ? 'filled' : ''}" data-act="slot" data-i="${i}" aria-pressed="${i === active}" aria-label="${d}: ${k ? DRILLS[k].name : 'empty'}${i === active ? ', selected' : ''}"><span class="dn">${d}</span><span class="dr ${k ? '' : 'empty'}">${k ? E(DRILLS[k].name) : 'Pick a drill'}</span></button>`; }).join('')}</div>
@@ -430,6 +447,7 @@ function recapPanel() {
   return `${coachTip('recap', 'After each game, morale and chemistry shift. Bench players who never see the floor lose morale. Home games earn gate money; road games cost travel.')}
   <div class="stack">
     <div class="result-banner ${g.win ? 'win' : ''}" role="status"><div class="big">${g.win ? 'WIN' : 'LOSS'} ${g.us}–${g.them}</div><div>${g.home ? 'vs' : g.neutral ? 'vs' : '@'} ${E(opp.name)} ${E(opp.mascot)}<br><span style="opacity:.85">${E(g.label)}</span></div></div>
+    ${G.filmBaseline ? '<button class="film-invite" data-act="open-film"><span>WHAT IF, COACH?</span><strong>One game. Two decisions. Two different stories.</strong><small>Enter Decision Replay →</small></button>' : ''}
     ${lineScore(g, opp)}
     <div class="grid2">
       <section class="card"><h2 class="eyebrow">Player of the game</h2>${mvp ? `<div class="row" style="margin-top:8px">${jersey(mvp)}<b>${pname(mvp)}</b><span class="chip team">${g.mvp.pts} PTS · ${g.mvp.reb} REB · ${g.mvp.ast} AST</span></div>` : ''}</section>
@@ -517,7 +535,7 @@ function gameControls() {
 function pbpLine(l) { return `<li class="${l.team === 'us' ? 'us' : ''} ${l.score ? 'score' : ''} ${l.big ? 'big' : ''}"><span class="tm">${l.tm}</span><span>${l.team === 'us' && l.score ? '<b>' + E(l.text) + '</b>' : E(l.text)}</span></li>`; }
 
 function startGame() {
-  SFX.init(); const sim = newGameSim(); UI.sim = sim;
+  SFX.init(); G.filmBaseline = filmSnapshot(); G.filmResult = null; save(); const sim = newGameSim(); UI.sim = sim;
   UI.play = { queue: [], timer: 0, paused: false, dUs: 0, dThem: 0, clock: 480, curQ: 0, lines: [], panel: null, panelHtml: '', final: false };
   UI.screen = 'game'; render(); SFX.whistle(); Music.stop(); SFX.crowdStart(sim.info.home || sim.info.neutral ? 1 : .6);
   G.log.push({ w: G.phase === 'playoffs' ? 'P' : G.week, t: `Game plan: ${sim.strat.tempo} tempo, ${sim.strat.def} defense, ${sim.strat.focus} focus.` });
@@ -669,7 +687,7 @@ function renderEnding() {
   const title = e.kind === 'missed' ? `${E0.title}: ${e.sub}` : E0.title; const text = e.why || E0.text;
   const P = G.playoffs; const won = i => P && (P.round > i || (P.round === i && G.lastGame && G.lastGame.win));
   return `<header class="rafters"><div class="beam"></div><div class="banners" style="padding-top:0">${ROUNDS.map((r, i) => pennant(['Sect. Semi', 'Sect. Final', 'State Semi', 'State Title'][i], won(i), c1, c2, ['I', 'II', 'III', 'IV'][i])).join('')}</div>
-    <div class="title-hero" style="padding-bottom:20px"><div class="logo-line">${E(myFull())} · Season ${G.season} of ${MAX_SEASONS} · ${seasonLabel(G.season)}</div><h1>${E(title)}</h1><p>${E(text)}</p></div></header>
+    <div class="title-hero" style="padding-bottom:20px"><div class="logo-line">${E(myFull())} · ${seasonLabel(1)} · One-season challenge</div><h1>${E(title)}</h1><p>${E(text)}</p></div></header>
   <main class="wrap stack" id="main" style="padding-block:20px 48px;gap:16px">
     <div class="grid2">
       <section class="card" style="text-align:center"><div class="eyebrow">Legacy grade</div><div class="grade">${L.grade}</div><div class="num" style="font-size:1.2rem">${L.total} / ${L.max} legacy points</div>
@@ -688,53 +706,28 @@ function renderEnding() {
     </div>
     <section><div class="panel-title"><h2>Achievements</h2><span class="muted">${e.ach.filter(a => a.got).length} of ${e.ach.length} unlocked</span></div>
       <div class="ach">${e.ach.map(a => `<div class="a ${a.got ? 'got' : 'no'}">${icon(a.got ? 'trophy' : 'lock')}<div><b>${a.n}</b><div class="muted" style="font-size:.88rem">${a.d}</div><span class="sr-only">${a.got ? 'Unlocked' : 'Locked'}</span></div></div>`).join('')}</div></section>
-    <div class="cta-bar">${canContinueCareer() ? `<span class="why">Season ${G.season} of ${MAX_SEASONS} done. Your seniors graduate; everyone else returns stronger.</span><button class="btn" data-act="retire">Retire now: career summary</button><button class="btn big primary" data-act="offseason">Start the offseason →</button>` : `<span class="why">${G.ending.kind === 'crisis' ? 'This ends your coaching career.' : 'That was the final season of your contract.'}</span><button class="btn big primary" data-act="retire">See your career summary →</button>`}</div>
+    <div class="cta-bar"><span class="why">Season complete. Every replay starts fresh: a new roster, new decisions, one shot at State.</span><button class="btn" data-act="last-film">Decision Replay</button><button class="btn" data-act="credits">Credits &amp; sources</button><button class="btn" data-act="to-title">Main menu</button><button class="btn big primary" data-act="again">Play a new season →</button></div>
   </main>`;
 }
 
-/* ---------- OFFSEASON ---------- */
-function renderOffseason() {
-  const O = G.offseason; const grads = G.roster.filter(p => O.grads.includes(p.id)); const ret = G.roster.filter(p => !O.grads.includes(p.id));
-  const b = nextBudgetPreview(O.summer); const last = G.career.at(-1);
-  return `${topbar(`Offseason · after season ${G.season}`)}
-  <main class="wrap stack" id="main" style="padding-block:16px 48px;gap:16px">
-    <div><div class="eyebrow">Offseason · Season ${G.season} → ${G.season + 1} of ${MAX_SEASONS}</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:2rem">Build for next year</h1>
-      <p class="muted" style="max-width:68ch">Last season: <b>${E(ENDINGS[last.kind].title)}</b>, ${last.rec.w}–${last.rec.l}, grade ${last.grade}. Long-term planning happens here: who you develop this summer and how you spend money shapes the next ${MAX_SEASONS - G.season} season${MAX_SEASONS - G.season > 1 ? 's' : ''}.</p></div>
-    ${coachTip('offseason', 'Seniors graduate, so a roster built only on seniors falls apart next year. Freshmen and sophomores with high potential (★) are your future. Winning raises program prestige, which brings better tryout classes.')}
-    <div class="grid2">
-      <section class="card"><div class="panel-title"><h2>Graduating seniors (${grads.length})</h2></div>
-        ${grads.length ? grads.map(p => `<div class="grad">${jersey(p)}<div><b>${pname(p)}</b> <span class="muted num">${p.pos} · OVR ${ovr(p)}</span>${p.joinedAsFr && G.season - (p.joined || 1) >= 3 ? ' <span class="chip team">4-year player</span>' : ''}<div class="muted num" style="font-size:.88rem">${((p.cs ? p.cs.pts : 0) + p.s.pts)} career points with you</div></div><span class="muted" style="font-size:.88rem">Thanks, #${p.num}</span></div>`).join('') : '<p class="muted">No seniors this year. Everyone returns.</p>'}</section>
-      <section class="card"><div class="panel-title"><h2>Returning (${ret.length})</h2><span class="muted">${Math.max(0, 10 - ret.length)} must be replaced at tryouts</span></div>
-        <div class="roster-list">${ret.sort((a, b) => ovr(b) - ovr(a)).map(p => `<div class="prow" style="cursor:default">${jersey(p)}<span style="min-width:0"><span class="nm" style="display:block">${pname(p)}</span><span class="meta">${p.pos} · ${YEAR[p.year]} → ${YEAR[Math.min(12, p.year + 1)]} · potential ${stars(p.pot, ovr(p))}</span></span><span class="ovr">${ovr(p)}<small>OVR</small></span></div>`).join('')}</div></section>
-    </div>
-    <section><div class="panel-title"><h2>Summer program</h2><span class="muted">Pick one. Returning players grow over the summer; this decides how.</span></div>
-      <div class="summer" role="radiogroup" aria-label="Summer program">${Object.entries(SUMMER).map(([k, v]) => `<label class="opt"><input type="radio" name="summer" value="${k}" data-act="summer" ${O.summer === k ? 'checked' : ''}><span class="face"><b>${v.name}</b><span class="chip" style="margin:2px 0">${v.cost ? U.money(v.cost) : 'Free'}</span><span style="font-size:.9rem;color:var(--ink-2)">${v.d}</span></span></label>`).join('')}</div></section>
-    <section class="card"><div class="panel-title"><h2>Next season’s budget</h2></div>
-      <div class="budget-lines num"><span>District base funding</span><span>${U.money(b.base)}</span><span>${b.carry >= 0 ? '35% of leftover money carries over' : 'Debt carried over'}</span><span>${U.money(b.carry)}</span><span>Booster bonus for last season’s finish</span><span>${U.money(b.bonus)}</span><span>Season-ticket sales (fan support ${G.res.fans})</span><span>${U.money(b.gate)}</span><span>Summer program</span><span>−${U.money(b.cost)}</span><span class="tot">Starting budget</span><span class="tot">${U.money(b.total)}</span></div>
-      <p class="muted" style="margin-top:8px;font-size:.9rem">Staff and services (assistant coach, trainer, scouting, tutoring) are one-year contracts and must be bought again. Facilities (recovery equipment, team store) stay.</p></section>
-    <div class="cta-bar"><button class="btn" data-act="retire">Retire instead</button><button class="btn big primary" data-act="next-season">Start season ${G.season + 1} tryouts →</button></div>
-  </main>`;
-}
-
-/* ---------- CAREER SUMMARY ---------- */
-function renderCareer() {
-  const C = G.careerEnd; const E0 = CAREER_END[C.kind]; const [c1, c2] = schoolColors();
-  const legends = G.alumni.concat(G.roster.map(p => ({ name: `${p.first} ${p.last}`, num: p.num, pos: p.pos, ovr: ovr(p), pts: (p.cs ? p.cs.pts : 0) + p.s.pts, gp: (p.cs ? p.cs.gp : 0) + p.s.gp }))).sort((a, b) => b.pts - a.pts).slice(0, 3);
-  return `<header class="rafters"><div class="beam"></div>
-    <div class="banners" style="padding-top:0" aria-label="State title banners">${G.banners.length ? G.banners.map(b => pennant(`State Champs`, true, c1, c2, String(b.year))).join('') : pennant('No titles', false, c1, c2, '—')}</div>
-    <div class="title-hero" style="padding-bottom:20px"><div class="logo-line">${E(myFull())} · Coaching career · ${G.career.length} season${G.career.length > 1 ? 's' : ''}</div><h1>${E(E0.title)}</h1><p>${E(E0.text)}</p></div></header>
-  <main class="wrap stack" id="main" style="padding-block:20px 48px;gap:16px">
-    <div class="grid2">
-      <section class="card" style="text-align:center"><div class="eyebrow">Career grade</div><div class="grade">${C.grade}</div>
-        <div class="row" style="justify-content:center;margin-top:8px"><span class="chip">Record ${C.w}–${C.l}</span><span class="chip">${C.titles} State title${C.titles === 1 ? '' : 's'}</span><span class="chip">${C.playoffs} playoff trip${C.playoffs === 1 ? '' : 's'}</span><span class="chip">Prestige ${G.prestige}</span></div></section>
-      <section class="card"><div class="eyebrow" style="margin-bottom:8px">Program legends</div><ul class="list-plain">${legends.map(l => `<li><span class="jersey" aria-hidden="true">${l.num}</span><span><b>${E(l.name)}</b> <span class="muted num">${l.pos} · ${l.pts} pts in ${l.gp} games</span></span></li>`).join('')}</ul></section>
-    </div>
-    <section><div class="panel-title"><h2>Season by season</h2></div><div class="table-wrap"><table class="data"><thead><tr><th scope="col">Season</th><th scope="col">Result</th><th class="n" scope="col">W–L</th><th class="n" scope="col">Seed</th><th class="n" scope="col">Team OVR</th><th scope="col">Grade</th></tr></thead><tbody>
-      ${G.career.map(c => `<tr><th scope="row">${c.label}</th><td>${E(ENDINGS[c.kind].title)}</td><td class="n">${c.rec.w}–${c.rec.l}</td><td class="n">${c.seed ? '#' + c.seed : '—'}</td><td class="n">${c.rating}</td><td>${c.grade}</td></tr>`).join('')}</tbody></table></div></section>
-    <section><div class="panel-title"><h2>Career achievements</h2><span class="muted">${C.ach.filter(a => a.got).length} of ${C.ach.length}</span></div>
-      <div class="ach">${C.ach.map(a => `<div class="a ${a.got ? 'got' : 'no'}">${icon(a.got ? 'trophy' : 'lock')}<div><b>${a.n}</b><div class="muted" style="font-size:.88rem">${a.d}</div><span class="sr-only">${a.got ? 'Unlocked' : 'Locked'}</span></div></div>`).join('')}</div></section>
-    <div class="cta-bar"><button class="btn" data-act="to-title">Main menu</button><button class="btn" data-act="new">New school</button><button class="btn big primary" data-act="again">New career at ${E(G.school.name)} →</button></div>
-  </main>`;
+/* ---------- DECISION REPLAY ---------- */
+function filmPanel() {
+  const demo = UI.modal && UI.modal.type === 'film';
+  const snapshot = demo ? UI.demoFilm : G && G.filmBaseline;
+  const result = demo ? UI.demoFilmResult : G && G.filmResult;
+  if (!snapshot) return `<section class="film-room"><div class="film-kicker">WHAT IF, COACH?</div><h2>The final score isn’t the final lesson.</h2><p>Play your first game, then return here to test a different tactical approach against the same opponent. Your season result stays yours.</p><button class="btn" data-act="film-demo">Try an exhibition replay →</button></section>`;
+  const strategy = result ? result.alternative.strategy : { tempo: 'fast', def: 'zone', focus: 'perimeter' };
+  const options = (key, label, values) => `<label>${label}<select name="film-${key}" id="film-${key}">${values.map(([value, text]) => `<option value="${value}" ${strategy[key] === value ? 'selected' : ''}>${text}</option>`).join('')}</select></label>`;
+  const a = result && result.original, b = result && result.alternative;
+  const line = (r, color) => {
+    const values = [0, ...r.quarters.map(q => q.us - q.them)], max = Math.max(10, ...a.quarters.concat(b.quarters).map(q => Math.abs(q.us - q.them)));
+    return `<polyline points="${values.map((v,i) => `${40 + i*440/Math.max(a.quarters.length,b.quarters.length)},${95-v/max*63}`).join(' ')}" fill="none" stroke="${color}" stroke-width="4" stroke-linejoin="round"/>`;
+  };
+  const score = (r, label, cls) => `<article class="film-score ${cls}"><span>${label}</span><strong>${r.us}<small>—</small>${r.them}</strong><p>${r.us>r.them?'WIN':'LOSS'} · ${r.strategy.tempo} / ${r.strategy.def} / ${r.strategy.focus}</p></article>`;
+  return `<section class="film-room"><div class="film-kicker">WHAT IF, COACH? <span>${demo && UI.filmIsDemo ? 'EXHIBITION LAB' : 'CONTROLLED REPLAY'}</span></div><h2>Change the call.<br>See the consequence.</h2><p class="film-intro">${E(snapshot.state.school.name)} vs ${E(snapshot.opponent)} · Same starting team. Same fatigue. Same random seed.</p>
+    <div class="film-controls">${options('tempo','Pace',[['slow','Slow it down'],['balanced','Balanced'],['fast','Push the pace']])}${options('def','Defense',[['man','Man-to-man'],['zone','Protect the paint'],['press','Full-court press']])}${options('focus','Attack',[['inside','Attack the rim'],['balanced','Balanced'],['perimeter','Hunt the three']])}<button class="btn" data-act="run-film">Run the experiment ↗</button></div>
+    ${result ? `<div class="film-scores">${score(a,'A / ORIGINAL TACTICS','film-a')}${score(b,'B / YOUR ALTERNATE CALL','film-b')}</div><figure class="film-chart"><figcaption>THE GAME BRANCHES HERE <span>Score margin by period · above the line = your team leads</span></figcaption><svg viewBox="0 0 520 190" role="img" aria-label="Original and alternate score margins by period. Final margins ${a.us-a.them} and ${b.us-b.them}."><path d="M40 95H480" stroke="#8392a6" stroke-dasharray="4 6"/><text x="7" y="99" fill="#b6c3d3" font-size="11">TIE</text>${line(a,'#70d7e0')}${line(b,'#ffb96a')}<g fill="#aabace" font-size="11"><text x="32" y="184">TIP</text>${Array.from({length:Math.max(a.quarters.length,b.quarters.length)},(_,i)=>`<text x="${40+(i+1)*440/Math.max(a.quarters.length,b.quarters.length)}" y="184" text-anchor="middle">${i<4?'Q'+(i+1):'OT'+(i-3)}</text>`).join('')}</g></svg></figure><div class="film-metrics">${[['3-pointers',a.threes,b.threes],['Rebounds',a.rebounds,b.rebounds],['Energy left',a.energy,b.energy]].map(([name,x,y])=>`<div><span>${name}</span><strong><i>${x}</i> → <b>${y}</b></strong></div>`).join('')}</div><p class="film-verdict">${b.us-b.them > a.us-a.them ? 'Your alternate call improved the simulated margin by '+((b.us-b.them)-(a.us-a.them))+' point'+(Math.abs((b.us-b.them)-(a.us-a.them))===1?'':'s')+'.' : b.us-b.them < a.us-a.them ? 'Your original tactics performed better by '+((a.us-a.them)-(b.us-b.them))+' points in this experiment.' : 'Both plans finished with the same margin. Compare the energy cost and shot mix.'}</p>` : '<div class="film-empty">A decision is a hypothesis.<br><strong>Put yours to the test.</strong></div>'}
+    <details class="film-method"><summary>How this experiment works</summary><p>Both branches replay the saved pregame state using automatic rotations and a calm halftime talk. Branch A uses your original starting tactics; Branch B uses the choices above. Neither includes manual in-game interventions, so A may differ from the score you actually played. One seeded experiment illustrates a possible outcome, not a guaranteed tactical advantage. Nothing here changes your record, resources, injuries or future randomness.</p></details></section>`;
 }
 function sparkChart(title, vals, hist, fixed) {
   if (vals.length < 2) return `<div><h3 class="eyebrow">${title}</h3><p class="muted">Not enough weeks to chart.</p></div>`;
@@ -757,28 +750,23 @@ function openModal(m) { UI.prevFocus = document.activeElement; UI.modal = m; ren
 function closeModal() { UI.modal = null; renderModal(); if (UI.prevFocus && document.body.contains(UI.prevFocus)) UI.prevFocus.focus(); if (UI.play && UI.play.autoPaused) { UI.play.autoPaused = false; UI.play.paused = false; refreshControls(); tick(); } }
 function renderModal() {
   const host = $('#modal-host'); if (!UI.modal) { host.innerHTML = ''; return; }
-  const m = UI.modal; const body = { help: helpBody, settings: settingsBody, credits: creditsBody, player: playerBody, confirm: confirmBody }[m.type](m);
-  const title = { help: 'Rulebook', settings: 'Settings', credits: 'Credits & tools', player: 'Player card', confirm: m.title }[m.type];
-  host.innerHTML = `<div class="modal-bg" data-act="modal-bg"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-h"><h2 id="modal-title">${E(title)}</h2><button class="btn ghost sm" data-act="close" aria-label="Close dialog">✕ <span class="kbd">Esc</span></button></div><div class="modal-b">${body}</div></div></div>`;
+  const m = UI.modal; const body = { help: helpBody, settings: settingsBody, credits: creditsBody, player: playerBody, confirm: confirmBody, film: filmPanel }[m.type](m);
+  const title = { help: 'Rulebook', settings: 'Settings', credits: 'Credits & sources', film: 'What if, Coach? — Decision Replay', player: 'Player card', confirm: m.title }[m.type];
+  host.innerHTML = `<div class="modal-bg" data-act="modal-bg"><div class="modal ${m.type === 'film' ? 'film-modal' : ''}" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div class="modal-h"><h2 id="modal-title">${E(title)}</h2><button class="btn ghost sm" data-act="close" aria-label="Close dialog">✕ <span class="kbd">Esc</span></button></div><div class="modal-b">${body}</div></div></div>`;
 }
 function helpBody() {
   const secs = [
-    ['goal', 'Goal', `<p>You are the new head coach on a <b>${MAX_SEASONS}-season contract</b>. Your goal each season is the <b>State Championship</b>. Your first team starts <b>weaker</b> than the best teams in the state, so you win by making smart decisions: developing players, managing money and morale, scouting, choosing the right strategy, and building a program that keeps getting better year after year.</p>`],
-    ['season', 'Season', `<ul><li><b>Preseason:</b> tryouts. Scout prospects and sign enough to reach a roster of 10–12.</li><li><b>Regular season:</b> 10 weeks, one game each. 7 district games and 3 non-district games.</li><li><b>Playoffs:</b> the top 4 in the district standings qualify. Four single-elimination rounds: Sectional Semifinal, Sectional Final, State Semifinal, State Championship.</li></ul>`],
-    ['career', 'Seasons & career', `<ul><li>After each season comes the <b>offseason</b>. Seniors graduate. Everyone else moves up a grade and grows over the summer, faster with more potential (★) and work ethic.</li><li>Pick one <b>summer program</b>: summer league (all skills), skills camp (shooting and passing), strength program (inside, rebounding and stamina), youth camp (stronger freshmen next year), or rest (free, happier players).</li><li><b>Program prestige</b> rises when you go deep in the playoffs and falls when you miss them. Higher prestige brings better tryout classes. Rivals and the state field also get tougher each year.</li><li><b>Money carries over:</b> 35% of your leftover budget, any debt, plus a booster bonus for your finish and season-ticket sales based on fan support. Staff and services are one-year contracts; facilities stay.</li><li>Your career ends after ${MAX_SEASONS} seasons, if you retire, or if the program falls into crisis. Career outcomes: <b>Dynasty Builder</b> (2+ titles), <b>Championship Coach</b>, <b>Program Builder</b> (playoffs at least every other year), <b>Journeyman Coach</b>, or <b>Contract Terminated</b>.</li></ul>`],
+    ['goal', 'Goal', `<p>You coach a high school team for <b>one season</b>. Win the <b>State Championship</b> by recruiting athletes, developing your roster and balancing money, morale, academics and strategy. Build toward the playoffs through weekly practice; no extra seasons or offseason upgrades are needed.</p>`],
+    ['season', 'Season', `<ul><li><b>Preseason:</b> scout and sign prospects for a 10–12 player roster.</li><li><b>Regular season:</b> 10 weeks, including 7 district games and 3 non-district games.</li><li><b>Playoffs:</b> finish in the district top 4, then win four elimination rounds: Sectional Semifinal, Sectional Final, State Semifinal and State Championship.</li><li><b>Finish:</b> view your season grade, achievements and player growth. A replay is a separate fresh season.</li></ul>`],
     ['week', 'Each week', `<ol><li><b>Practice:</b> plan 4 days (3 in the playoffs) on the whiteboard.</li><li><b>Challenge:</b> one off-court situation. Pick a response.</li><li><b>Game day:</b> set your starting five and game plan, then coach the game live.</li><li><b>Recap:</b> see what changed, then move on.</li></ol>`],
     ['gameday', 'Coaching the game', `<ul><li><b>Timeouts:</b> like real high school rules, you get three 60-second and two 30-second timeouts per game. A timeout resets <b>momentum</b> (runs make shots easier for the team on the run), gives your players energy (+8 or +3), and lets you change strategy and make substitutions.</li><li><b>Substitutions:</b> during any timeout or quarter break, pick who is on the floor. Set Rotation to <b>Manual</b> if you want full control with no auto-subs.</li><li><b>Final possession:</b> in the last 40 seconds of a close 4th quarter or overtime, the game stops so you can draw up the final play: who shoots, what kind of shot (with estimated make chances), and whether to hold the ball for the last shot.</li><li><b>Quarter breaks:</b> adjust strategy; at halftime give a team talk.</li><li>The other coach calls timeouts too, usually to stop your runs.</li></ul>`],
     ['res', 'Resources', `<ul><li><b>Budget:</b> earned from home games (more with more fans), fundraisers and deals. Spent on upgrades and challenge choices. Road games cost $150, operations $100/week. Below −$1,000 ends your season.</li><li><b>Morale</b> (0–100): each player’s happiness. Raises shooting. Wins, bonding and playing time help. Under 30, players may quit.</li><li><b>Chemistry</b> (0–100): better passing, fewer turnovers.</li><li><b>Fans</b> (0–100): more ticket money and a bigger home-court edge.</li><li><b>Reputation</b> (0–100): community trust. Unethical choices hurt it. At 0 the program is suspended.</li><li><b>Energy</b> (per player): drops with hard practice and minutes played. Tired players shoot worse, learn less and get hurt more.</li></ul>`],
     ['practice', 'Practice drills', `<ul>${Object.values(DRILLS).map(d => `<li><b>${d.name}:</b> ${d.d}</li>`).join('')}</ul><p>Repeating a drill in the same week gives less each time (100%, 80%, 60%...). Players grow faster when they have more <b>potential</b> (★), a strong work ethic, or the Hard Worker trait.</p>`],
     ['strategy', 'Strategy & counters', `<ul><li><b>Zone</b> beats inside-heavy teams but gives up threes and offensive rebounds.</li><li><b>Press</b> forces turnovers against weak passers but drains your energy and allows layups.</li><li><b>Man-to-man</b> is best when your defenders are good.</li><li><b>Perimeter focus</b> beats a zone. <b>Inside focus</b> beats man and press.</li><li><b>Tempo:</b> slow games have fewer possessions, which means more luck. That helps the underdog. Fast games help the better team.</li><li><b>Rotation:</b> tight keeps starters in longer; deep keeps legs fresh; manual means only you sub.</li><li><b>Scouting:</b> Film Study or the Scouting Service reveals the opponent’s plan and marks counters with ✓. Each matched counter improves your shooting and hurts theirs.</li><li><b>Halftime talk:</b> fire them up (needs chemistry), calm (energy), or adjust to their top scorer.</li><li>Opponents adapt too: they may press when behind or slow down when ahead.</li></ul>`],
     ['rules', 'Eligibility & injuries', `<ul><li>A player needs a <b>2.00 GPA</b> to play (based on real state rules such as Florida’s). Grades drift down each week; Study Hall and tutoring raise them.</li><li>Injuries happen in practice (Scrimmage is riskiest) and games (tired players are at higher risk). Injured players sit out for the listed weeks.</li><li>Traits: ${Object.entries(TRAITS).map(([k, v]) => `<b>${k}</b> (${v.d.replace(/\.$/, '')})`).join('; ')}.</li></ul>`],
-    ['outcomes', 'Endings', `<p><b>Each season</b> ends one of six ways: <b>State Champions</b> (or a <b>Perfect Season</b> if you never lose), <b>State Runner-Up</b>, <b>Final Four</b>, <b>Playoff Contender</b>, <b>Missed the Playoffs</b> (either “Foundation Laid” or “Back to the Drawing Board”), or <b>Program in Crisis</b> (reputation hits 0, the budget falls below −$1,000, or too many players quit). Every season gives a <b>Legacy grade</b> and up to 8 achievements.</p><p><b>Your career</b> ends with one of five outcomes (see Seasons & career), a career grade, program legends and 6 career achievements.</p>`],
-    ['controls', 'Controls', `<ul><li>Mouse, touch or keyboard. <span class="kbd">Tab</span> moves, <span class="kbd">Enter</span>/<span class="kbd">Space</span> selects.</li><li><span class="kbd">?</span> or <span class="kbd">H</span> opens this rulebook. <span class="kbd">Esc</span> closes dialogs.</li><li>Challenges: press <span class="kbd">1</span> <span class="kbd">2</span> <span class="kbd">3</span>.</li><li>During games: <span class="kbd">Space</span> pause, <span class="kbd">T</span> timeout, <span class="kbd">S</span> skip to the quarter break.</li><li>Your career saves automatically after every step.</li></ul>`],
-    ['sources', 'Sources', `<p>The game’s rules are based on real high school basketball. Everything else (schools, players, events) is fictional.</p><ul>
-      <li><b>Game length and timeouts</b> (four 8-minute quarters, 4-minute overtime, three 60-second and two 30-second timeouts): NCAA, <a href="https://ncaaorg.s3.amazonaws.com/championships/sports/basketball/rules/common/2025-26PRXBB_MajorRulesDifferences.pdf" target="_blank" rel="noopener">2025–26 NCAA/NFHS Major Basketball Rules Differences</a>.</li>
-      <li><b>Court size</b> (84 × 50 ft, 19′9″ three-point arc, 12-ft lane, free throw line 15 ft from the backboard): CoverSports, <a href="https://coversports.com/resources/gym-guides/high-school-basketball-court-dimensions-markings" target="_blank" rel="noopener">High School Basketball Court Dimensions &amp; Markings</a>.</li>
-      <li><b>2.0 GPA eligibility</b> (“a cumulative 2.0 grade point average on a 4.0 unweighted scale”): Florida High School Athletic Association, <a href="https://fhsaa.com/sports/2020/4/9/Academics.aspx" target="_blank" rel="noopener">Academics</a>. Rules vary by state.</li>
-      <li><b>2025–26 rule changes</b>: NFHS, <a href="https://nfhs.org/resources/sports/basketball-rules-changes-2025-26" target="_blank" rel="noopener">Basketball Rules Changes 2025–26</a>.</li></ul>`],
+    ['outcomes', 'Endings', `<p><b>Your season</b> ends one of six ways: <b>State Champions</b> (or a <b>Perfect Season</b> if you never lose), <b>State Runner-Up</b>, <b>Final Four</b>, <b>Playoff Contender</b>, <b>Missed the Playoffs</b> (either “Foundation Laid” or “Back to the Drawing Board”), or <b>Program in Crisis</b> (reputation hits 0, the budget falls below −$1,000, or too many players quit). Every season gives a <b>Legacy grade</b> and up to 8 achievements.</p>`],
+    ['controls', 'Controls', `<ul><li>Mouse, touch or keyboard. <span class="kbd">Tab</span> moves, <span class="kbd">Enter</span>/<span class="kbd">Space</span> selects.</li><li><span class="kbd">?</span> or <span class="kbd">H</span> opens this rulebook. <span class="kbd">Esc</span> closes dialogs.</li><li>Challenges: press <span class="kbd">1</span> <span class="kbd">2</span> <span class="kbd">3</span>.</li><li>During games: <span class="kbd">Space</span> pause, <span class="kbd">T</span> timeout, <span class="kbd">S</span> skip to the quarter break.</li><li>Your season saves automatically after every step.</li></ul>`],
+    ['sources', 'Sources', sourcesMarkup()],
   ];
   const cur = UI.ruleSec;
   return `<nav class="rules-nav" aria-label="Rule sections">${secs.map(([k, l]) => `<button class="btn sm ${k === cur ? 'primary' : ''}" data-act="rule" data-k="${k}" aria-pressed="${k === cur}">${l}</button>`).join('')}</nav>
@@ -797,21 +785,47 @@ function settingsBody() {
   <div class="settings-row"><div><b>Coach tips</b><div class="d">Short hints the first time you reach each step.</div></div><div class="seg" role="radiogroup" aria-label="Coach tips">${opt('tips', 'true', SET.tips, 'On')}${opt('tips', 'false', SET.tips, 'Off')}</div></div>
   ${G && G.phase !== 'ended' ? `<div class="settings-row"><div><b>Reset tips</b><div class="d">Show all coach tips again.</div></div><button class="btn sm" data-act="reset-tips">Show tips again</button></div>` : ''}`;
 }
+function sourcesMarkup() {
+  const link = (url, label) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+  return `<ul class="credits-sources">
+    <li>${link('https://greektrack-fbla-public.s3.us-east-1.amazonaws.com/files/1/High%20School%20Competitive%20Events%20Resources/Individual%20Guidelines/Presentation%20Events/Computer-Game-Simulation-Programming.pdf', 'FBLA · 2026–27 Computer Game &amp; Simulation Programming guidelines')}<small>Topic and presentation rubric, updated August 2026. This is a student project, not an official FBLA product.</small></li>
+    <li>${link('https://ncaaorg.s3.amazonaws.com/championships/sports/basketball/rules/common/2025-26PRXBB_MajorRulesDifferences.pdf', 'NCAA / NFHS · 2025–26 Major Basketball Rules Differences')}<small>Reference for high-school quarters, overtime and timeouts. The game simplifies basketball into a coaching simulation.</small></li>
+    <li>${link('https://www.nfhs.org/resources/sports/basketball-rules-changes-2025-26', 'NFHS · Basketball Rules Changes 2025–26')}<small>Basketball rules background used by the original project.</small></li>
+    <li>${link('https://coversports.com/resources/gym-guides/high-school-basketball-court-dimensions-markings', 'CoverSports · High School Basketball Court Dimensions &amp; Markings')}<small>Reference for the court illustration’s dimensions and markings.</small></li>
+    <li>${link('https://fhsaa.com/sports/2020/4/9/Academics.aspx', 'Florida High School Athletic Association · Academics')}<small>Inspiration for the game’s 2.0 GPA eligibility mechanic; actual eligibility requirements vary by state.</small></li>
+    <li>${link('https://gist.github.com/tommyettinger/46a874533244883189143505d203312c', 'Tommy Ettinger · Mulberry32')}<small>Seeded random-number algorithm, public-domain / CC0 reference. Used for reproducible seasons and controlled Decision Replay branches.</small></li>
+    <li>${link('https://github.com/bryc/code/blob/master/jshash/PRNGs.md', 'bryc · JavaScript PRNG and seed-hash implementations')}<small>Public-domain JavaScript reference for Mulberry32 and the xmur3-style seed mixing used in the engine.</small></li>
+  </ul>`;
+}
 function creditsBody() {
-  return `<div class="rules"><p><b>Road to the Championship</b> is a coaching and management simulation built for the FBLA 2026–27 Computer Game &amp; Simulation Programming topic, “Road to the Championship.”</p>
-  <h3>Tools & technology</h3><ul>
-    <li><b>Languages:</b> HTML5, CSS3 and JavaScript (ES2020). No game engine or framework. The whole game is one file that runs offline in any modern browser.</li>
-    <li><b>Graphics:</b> Canvas 2D API for the court, drawn to real NFHS dimensions (84 × 50 ft court, 19′9″ three-point arc, 12 ft lane). SVG for crests, banners, icons and the 7-segment scoreboard. All art is generated by code.</li>
-    <li><b>Audio:</b> Web Audio API. The swish, rim, whistle, buzzer, live crowd and the menu soundtrack are all synthesized from oscillators and filtered noise by a step sequencer, so there are no audio files.</li>
-    <li><b>Simulation:</b> possession-by-possession basketball engine (shot selection, turnovers, rebounds, fouls, fatigue, momentum, timeouts, substitutions), an adaptive opponent AI, a multi-season career model (graduation, aging, prestige-driven recruiting) and a seeded Mulberry32 random generator so any career can be replayed.</li>
-    <li><b>Accessibility:</b> WCAG contrast math chooses readable text on any team color; keyboard play; screen-reader announcements; reduced motion; high-contrast and color-blind modes.</li>
-    <li><b>Testing:</b> automated Playwright browser tests play full seasons and check every screen. A balance harness simulates hundreds of seasons to tune difficulty.</li></ul>
-  <h3>Fonts</h3><p>Graduate, Atkinson Hyperlegible, Barlow Condensed and Permanent Marker from Google Fonts, used under the SIL Open Font License. When offline, the game falls back to system fonts.</p>
-  <h3>Content</h3><p>All schools, players, sponsors and events are fictional. No copyrighted images, logos or sounds are used. The music is an original loop composed in code. Real-world rules the game is based on are cited in the Rulebook under <b>Sources</b>.</p></div>`;
+  const font = (path, name, people, license, file) => `<li><a href="https://fonts.google.com/specimen/${name.replaceAll(' ', '+')}" target="_blank" rel="noopener noreferrer">${name}</a> — ${people}. <a href="https://github.com/google/fonts/blob/main/${path}/${file}" target="_blank" rel="noopener noreferrer">${license}</a>.</li>`;
+  return `<div class="rules"><section class="credits-hero"><div class="eyebrow">ROAD TO THE CHAMPIONSHIP</div><h3>Meet the creators.</h3><ul class="creator-list"><li><span>01</span>Ajisth Sareen</li><li><span>02</span>Raghav Krishnan</li><li><span>03</span>Malhar Pawar</li></ul></section>
+  <h3>Art, audio &amp; development</h3><p>Basketballs, hoop, trophy, practice equipment, jerseys, fictional team crests and interface illustrations are drawn in project code with SVG and CSS. The live game court uses Canvas 2D. The soundtrack, crowd and effects are synthesized with Web Audio; no sampled recordings or stock photographs are included.</p>
+  <p>Built with HTML, CSS and JavaScript, without a game framework. Python combines the sources into standalone HTML. Decision Replay runs two isolated copies of a pregame snapshot to explore tactical trade-offs. OpenAI Codex assisted with code, interface development and testing. All teams, athletes and story events are fictional.</p>
+  <h3>Fonts &amp; licenses</h3><p>Typefaces are served by Google Fonts while online. System fonts are used offline.</p><ul class="credits-sources">
+  ${font('ofl/atkinsonhyperlegible','Atkinson Hyperlegible','Braille Institute; Applied Design Works; Elliott Scott, Megan Eiswerth, Linus Boman and Theodore Petrosky','SIL Open Font License 1.1','OFL.txt')}
+  ${font('ofl/barlowcondensed','Barlow Condensed','Jeremy Tribby','SIL Open Font License 1.1','OFL.txt')}
+  ${font('ofl/graduate','Graduate','Eduardo Tunni','SIL Open Font License 1.1','OFL.txt')}
+  ${font('apache/permanentmarker','Permanent Marker','Font Diner','Apache License 2.0','LICENSE.txt')}
+  </ul><h3>Research &amp; online references</h3>${sourcesMarkup()}<p class="muted">Source and font attribution reviewed October 2026. Links open a new tab; these credits remain readable offline.</p></div>`;
+}
+function renamePlayer(form) {
+  const p = G.roster.find(x => String(x.id) === form.dataset.id) || (G.prospects || []).find(x => String(x.id) === form.dataset.id);
+  if (!p) return;
+  const first = form.elements.first.value.trim().replace(/\s+/g, ' '), last = form.elements.last.value.trim().replace(/\s+/g, ' ');
+  if (!first || !last) { $('#rename-status').textContent = 'Enter both a first and last name.'; return; }
+  p.first = first.slice(0, 24); p.last = last.slice(0, 24); save();
+  // Refresh the background without restarting a live game simulation.
+  if (UI.screen !== 'game') render(); else renderModal();
+  UI.prevFocus = $(`[data-act="player"][data-id="${p.id}"]`) || UI.prevFocus;
+  $('#rename-status').textContent = 'Player name saved.';
+  $('#player-first').focus({ preventScroll: true });
+  announce('Player name saved.');
 }
 function playerBody(m) {
   const p = G.roster.find(x => x.id === m.id) || (G.prospects || []).find(x => x.id === m.id); if (!p) return '<p>Player not found.</p>'; const o = ovr(p);
   return `<div class="row">${jersey(p)}<div><div style="font-family:var(--f-display);font-size:1.4rem">${pname(p)}</div><div class="muted">${POS_NAME[p.pos]} · ${YEAR[p.year]} · <span title="${E(TRAITS[p.trait].d)}">${E(p.trait)}</span></div></div><span class="spacer"></span><div class="ovr" style="font-size:2rem">${o}<small>OVR${p.start && o > p.start ? ` (+${o - p.start})` : ''}</small></div></div>
+  <form id="rename-player-form" class="rename-player" data-id="${p.id}"><div class="row"><label>First name<input id="player-first" name="first" type="text" maxlength="24" required value="${E(p.first)}" autocomplete="off"></label><label>Last name<input id="player-last" name="last" type="text" maxlength="24" required value="${E(p.last)}" autocomplete="off"></label><button class="btn" type="submit">Save player name</button></div><p id="rename-status" role="status">Names appear on your roster, in lineups and in future game commentary.</p></form>
   <p class="muted">${E(p.trait)}: ${E(TRAITS[p.trait].d)}</p>
   ${attrBars(p, true)}<p class="muted" style="font-size:.85rem">Dotted bar = room to grow toward potential ${p.pot}.</p>
   <div class="row"><span class="chip">Energy ${Math.round(p.energy)}</span><span class="chip">Morale ${Math.round(p.morale)}</span><span class="chip ${p.gpa < 2 ? 'bad' : ''}">GPA ${p.gpa.toFixed(2)}</span><span class="chip">Potential ${stars(p.pot, o)}</span>${statusChips(p)}</div>
@@ -823,10 +837,22 @@ function confirmBody(m) { return `<p>${E(m.body)}</p><div class="cta-bar"><butto
 function seenTip(k) { if (G) { G.tipsSeen = G.tipsSeen || {}; G.tipsSeen[k] = true; } }
 function startNew(opts) { newGame(opts); UI.tab = 'week'; UI.banner = null; UI.slot = null; save(); go('tryouts'); }
 const ACT = {
-  quick() { SFX.init(); SFX.click(); newGame({ name: 'Riverside', mascot: 'hawks', pal: 'crimson', diff: SET.diff }); autoSignBest(); finalizeTryouts(); UI.tab = 'week'; UI.banner = null; save(); go('hub'); toast(`Quick Start: Riverside Hawks, ${DIFF[SET.diff].name}, season 1 of 4. Best 4 prospects signed.`); },
+  'film-demo'() { UI.filmIsDemo = true; UI.demoFilm = filmDemo(); UI.demoFilmResult = filmExperiment(UI.demoFilm, { tempo: 'fast', def: 'zone', focus: 'perimeter' }); openModal({ type: 'film' }); },
+  'last-film'() { UI.filmIsDemo = !G.filmBaseline; UI.demoFilm = G.filmBaseline || filmDemo(); UI.demoFilmResult = G.filmResult || null; openModal({ type: 'film' }); },
+  'open-film'() { UI.tab = 'film'; render('#tab-film'); },
+  'run-film'() {
+    const demo = UI.modal && UI.modal.type === 'film';
+    const snapshot = demo ? UI.demoFilm : G.filmBaseline;
+    const alternative = { tempo: $('#film-tempo').value, def: $('#film-def').value, focus: $('#film-focus').value };
+    const result = filmExperiment(snapshot, alternative);
+    if (demo) { UI.demoFilmResult = result; renderModal(); } else { G.filmResult = result; save(); render(); }
+    $('[data-act="run-film"]').focus({ preventScroll: true });
+    announce('Experiment complete. Original tactics '+result.original.us+' to '+result.original.them+'. Alternate tactics '+result.alternative.us+' to '+result.alternative.them+'.');
+  },
+  quick() { SFX.init(); SFX.click(); newGame({ name: 'Riverside', mascot: 'hawks', pal: 'crimson', diff: SET.diff }); autoSignBest(); finalizeTryouts(); UI.tab = 'week'; UI.banner = null; save(); go('hub'); toast(`Quick Start: Riverside Hawks, ${DIFF[SET.diff].name}, one season to win State. Best 4 prospects signed.`); },
   new() { SFX.init(); const go2 = () => { UI.setup = { name: 'Riverside', mascot: 'hawks', pal: 'crimson', diff: SET.diff, seed: '' }; go('setup'); };
-    if (loadSave() && loadSave().phase !== 'career' && UI.screen === 'title') openModal({ type: 'confirm', title: 'Start a new season?', body: 'Your current season will be replaced.', yes: 'Start new season', onYes: go2 }); else go2(); },
-  continue() { SFX.init(); const s = loadSave(); if (!s) return; G = s; UI.tab = 'week'; UI.banner = null; go({ tryouts: 'tryouts', ended: 'ending', offseason: 'offseason', career: 'career' }[G.phase] || 'hub'); },
+    if (loadSave() && UI.screen === 'title') openModal({ type: 'confirm', title: 'Start a new season?', body: 'Your current season will be replaced.', yes: 'Start new season', onYes: go2 }); else go2(); },
+  continue() { SFX.init(); const s = loadSave(); if (!s) return; G = s; UI.tab = 'week'; UI.banner = null; go({ tryouts: 'tryouts', ended: 'ending' }[G.phase] || 'hub'); },
   'to-title'() { go('title'); },
   menu() { openModal({ type: 'confirm', title: 'Leave to the main menu?', body: UI.screen === 'game' ? 'This game will restart from game prep when you continue. Everything else is saved.' : 'Your season is saved. Continue anytime from the main menu.', yes: 'Go to main menu', onYes: () => { if (UI.play) { clearTimeout(UI.play.timer); UI.play = null; } SFX.crowdStop(); save(); go('title'); } }); },
   help() { UI.ruleSec = UI.ruleSec || 'goal'; openModal({ type: 'help' }); },
@@ -879,12 +905,7 @@ const ACT = {
   },
   buy(d, el) { const u = UPGRADES[d.k]; if (el.getAttribute('aria-disabled') === 'true' || G.res.budget < u.cost) { toast(`Not enough money. You need ${U.money(u.cost - G.res.budget)} more.`); return; } G.res.budget -= u.cost; G.upgrades[d.k] = true; G.log.push({ w: G.phase === 'playoffs' ? 'P' : G.week, t: `Bought ${u.name} (${U.money(u.cost)}).` }); SFX.good(); save(); render('#tab-office'); toast(`${u.name} added. ${u.d}`); },
   again() { const s = G.school; newGame({ name: s.name, mascot: s.mascot, pal: s.pal, diff: G.diff }); save(); go('tryouts'); },
-  offseason() { startOffseason(); save(); go('offseason'); },
   tdiff(d, el) { SET.diff = el.value; saveSettings(); SFX.click(); const t = $('#tdiff-d'); if (t) t.textContent = DIFF[SET.diff].d; },
-  summer(d, el) { G.offseason.summer = el.value; save(); render(`input[name="summer"][value="${el.value}"]`); },
-  'next-season'() { applyOffseason(G.offseason.summer); UI.tab = 'week'; UI.banner = null; save(); SFX.good(); go('tryouts'); toast(`Season ${G.season} begins. Program prestige ${G.prestige}.`); },
-  retire() { const doIt = () => { endCareer(); save(); if (G.careerEnd.titles) SFX.fanfare(); go('career'); };
-    if (canContinueCareer()) openModal({ type: 'confirm', title: 'Retire now?', body: `You still have ${MAX_SEASONS - G.season} season${MAX_SEASONS - G.season > 1 ? 's' : ''} left on your contract. Retiring ends your career here.`, yes: 'Retire and see my career', onYes: doIt }); else doIt(); },
   set(d, el) { let v = el.value; if (v === 'true') v = true; else if (v === 'false') v = false; else if (v === 'null') v = null; else if (!isNaN(+v) && d.k !== 'theme' && d.k !== 'motion') v = +v; SET[d.k] = v; saveSettings(); applySettings(); if ((d.k === 'music' || d.k === 'sound') && UI.screen !== 'game') Music.play(); if (d.k === 'motion' && Court.cv) Court.reduced = reduced(); if (UI.screen !== 'game') render(); else renderModal(); const back = $(`.modal input[name="${d.k}"][value="${el.value}"]`); if (back) back.focus(); },
   vol(d, el) { SET.vol = +el.value; saveSettings(); SFX.setVol(SET.vol); SFX.init(); SFX.click(); },
   mvol(d, el) { SET.mvol = +el.value; saveSettings(); Music.setVol(SET.mvol); },
@@ -902,11 +923,11 @@ document.addEventListener('change', ev => {
   const a = el.dataset && el.dataset.act; if (a && ACT[a]) ACT[a](el.dataset, el, ev);
 });
 document.addEventListener('input', ev => { if (ev.target.id === 'f-name') { UI.setup.name = ev.target.value.slice(0, 16); updateSetupPreview(); } if (ev.target.id === 'f-seed') UI.setup.seed = ev.target.value; });
-document.addEventListener('submit', ev => { ev.preventDefault(); if (ev.target.id === 'setup-form') ACT['setup-go']({}, null, ev); });
+document.addEventListener('submit', ev => { ev.preventDefault(); if (ev.target.id === 'setup-form') ACT['setup-go']({}, null, ev); if (ev.target.id === 'rename-player-form') renamePlayer(ev.target); });
 document.addEventListener('keydown', ev => {
   const tag = (ev.target.tagName || '').toLowerCase(); const typing = tag === 'input' && ev.target.type === 'text';
   if (ev.key === 'Escape' && UI.modal) { ev.preventDefault(); closeModal(); return; }
-  if (UI.modal && ev.key === 'Tab') { const f = $$('.modal button, .modal input, .modal select, .modal [tabindex]:not([tabindex="-1"])').filter(x => !x.disabled); if (f.length) { const first = f[0], last = f[f.length - 1]; if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); } else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); } } return; }
+  if (UI.modal && ev.key === 'Tab') { const f = $$('.modal button, .modal input, .modal select, .modal a[href], .modal summary, .modal [tabindex]:not([tabindex="-1"])').filter(x => !x.disabled); if (f.length) { const first = f[0], last = f[f.length - 1]; if (ev.shiftKey && document.activeElement === first) { ev.preventDefault(); last.focus(); } else if (!ev.shiftKey && document.activeElement === last) { ev.preventDefault(); first.focus(); } } return; }
   if (typing || UI.modal) return;
   if (ev.key === '?' || ev.key === 'h' || ev.key === 'H') { ev.preventDefault(); ACT.help(); return; }
   if (UI.screen === 'hub' && G && G.step === 'event' && !G.eventDone && /^[1-3]$/.test(ev.key)) { const b = $(`[data-act="choose"][data-i="${+ev.key - 1}"]`); if (b) { ev.preventDefault(); b.click(); } return; }
@@ -944,12 +965,7 @@ window.RTC = {
     return { kind: G.ending.kind, rec: allRecord(), grade: G.ending.legacy.grade, rating: myRating(), startR, boss, dist };
   },
   autoSeason(opts = {}) { newGame({ name: 'Test', diff: opts.diff || 'varsity', seed: opts.seed || String(Math.random()) }); return this.playSeason(opts.policy || 'smart'); },
-  // Plays a full career (up to 4 seasons) and returns each season's result.
-  autoCareer(opts = {}) {
-    newGame({ name: 'Test', diff: opts.diff || 'varsity', seed: opts.seed || String(Math.random()) }); const out = [];
-    for (;;) { out.push(this.playSeason(opts.policy || 'smart')); if (!canContinueCareer()) break; startOffseason(); applyOffseason(opts.summer || 'league'); }
-    endCareer(); return { seasons: out, career: G.careerEnd.kind, prestige: G.prestige };
-  },
+
 };
 
 /* ---------- Boot ---------- */

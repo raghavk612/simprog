@@ -176,13 +176,13 @@ function oppRating(t) { return Math.round(teamRating(t.roster)); }
 function starOf(roster) { return roster.filter(p => !p.inj).slice().sort((a, b) => (ovr(b) + b.r.sho * .3) - (ovr(a) + a.r.sho * .3))[0]; }
 
 /* ---------- New game / career ---------- */
-const MAX_SEASONS = 4;
+const MAX_SEASONS = 1;
 function seasonLabel(n) { return `${2025 + n}–${String(26 + n).padStart(2, '0')}`; }
 function titleYear(n) { return 2026 + n; }
 function newGame(opts) {
   const seedStr = (opts.seed || '').trim() || String(Date.now());
-  G = { v: 4, seed: seedStr, rs: U.hash(seedStr), diff: opts.diff || 'varsity', school: { name: opts.name || 'Riverside', mascot: opts.mascot || 'hawks', pal: opts.pal || 'crimson' },
-    season: 1, career: [], banners: [], prestige: 50, campBoost: 0, alumni: [],
+  G = { v: 5, seed: seedStr, rs: U.hash(seedStr), diff: opts.diff || 'varsity', school: { name: opts.name || 'Riverside', mascot: opts.mascot || 'hawks', pal: opts.pal || 'crimson' },
+    season: 1, banners: [],
     strategy: { tempo: 'balanced', def: 'man', focus: 'balanced', rot: 'normal' }, lineup: [],
     res: { budget: DIFF[opts.diff || 'varsity'].budget, fans: 45, rep: 60, chem: 50 }, upgrades: {}, tips: true };
   const d = DIFF[G.diff];
@@ -192,7 +192,7 @@ function newGame(opts) {
   G.roster = plan.map((pos, i) => genPlayer(51 + d.you - (i >= 5 ? 5 : 0) + gauss() * 1.5, pos, ri(10, 12), taken));
   G.roster.forEach(p => p.joined = 1);
   setupSeason();
-  G.log.push({ w: 0, t: `Hired as head coach of the ${G.school.name} ${MASCOTS[G.school.mascot].name} on a ${MAX_SEASONS}-year contract. Goal: win State.` });
+  G.log.push({ w: 0, t: `Hired as head coach of the ${G.school.name} ${MASCOTS[G.school.mascot].name} for one season. Goal: win the State Championship this season.` });
   return G;
 }
 /* Fresh world for a season: prospects, opponents, schedule. Your roster/school carry over. */
@@ -202,98 +202,20 @@ function setupSeason() {
     flags: {}, usedEvents: [], log: [], hist: [], games: [], scoutPts: d.scout, scouted: {}, signed: [], playoffs: null, ending: null, offseason: null,
     lastGame: null, injuriesTotal: 0, comeback: false, giantSlayer: false, startBudget: G.res.budget });
   const taken = usedNums(G.roster);
-  // Prospects: winning programs (higher prestige) attract better players; a youth camp improves freshmen.
-  const pres = (G.prestige - 50) / 6;
+  // A fresh recruiting class for this one-season challenge.
+  const pres = 0;
   G.prospects = [];
   const pp = shuffle(['PG', 'SG', 'SF', 'PF', 'C', 'PG', 'C', 'SF', 'SG', 'PF']);
-  pp.forEach((pos, i) => { const yr = i < 4 ? 9 : ri(9, 11); const base = 46 + d.you + pres + (yr === 9 ? G.campBoost : 0) + gauss() * 5.5 + (i === 0 ? 7 : 0) + (i === 1 ? 4 : 0); const p = genPlayer(base, pos, yr, taken); p.joined = n; G.prospects.push(p); });
+  pp.forEach((pos, i) => { const yr = i < 4 ? 9 : ri(9, 11); const base = 46 + d.you + pres + 0 + gauss() * 5.5 + (i === 0 ? 7 : 0) + (i === 1 ? 4 : 0); const p = genPlayer(base, pos, yr, taken); p.joined = n; G.prospects.push(p); });
   G.prospects.forEach(p => { p.fog = ri(4, 8); p.fogShift = ri(-3, 3); p.transfer = p.year >= 10 && chance(.5); });
-  G.campBoost = 0;
   G.maxSign = Math.max(0, 12 - G.roster.length); G.minSign = Math.max(0, 10 - G.roster.length);
-  // Rivals reload every year and the state field gets tougher as your program rises.
-  const grow = (n - 1) * 3.2;
+  // The State bracket is reachable within this season through player development.
+  const grow = 0;
   const bases = shuffle([50, 52.5, 54, 55.5, 57, 58.5, 60.5]);
   G.teams = DISTRICT.map((t, i) => makeOpp(t, bases[i] + d.opp + grow));
   G.nondistrict = NONDISTRICT.map((t, i) => makeOpp(t, [53, 55.5, 58][i] + d.opp + grow));
   G.stateField = STATE_FIELD.map((t, i) => makeOpp(t, [61.5, 64, 66.5][i] + d.opp + grow * 1.55, { st: true }));
   buildSchedule();
-}
-function canContinueCareer() { return G.ending && G.ending.kind !== 'crisis' && G.season < MAX_SEASONS; }
-const SUMMER = {
-  league:   { name: 'Summer league', cost: 600, d: 'Every returning player grows across all skills.', grow: { sho: .7, ins: .7, def: .7, pas: .7, reb: .7, sta: .7 } },
-  skills:   { name: 'Shooting & skills camp', cost: 450, d: 'Big jump in Shooting and Passing.', grow: { sho: 2.2, pas: 1.6 } },
-  strength: { name: 'Strength program', cost: 450, d: 'Big jump in Inside, Rebounding and Stamina.', grow: { ins: 1.6, reb: 1.6, sta: 1.4 } },
-  youth:    { name: 'Youth camp for middle schoolers', cost: 500, d: 'No growth now, but next year’s freshmen tryout class is much stronger. Fans +5.', grow: {} },
-  rest:     { name: 'Rest & family time', cost: 0, d: 'Free. Players return happy (morale +10) with only natural growth.', grow: {} },
-};
-function startOffseason() {
-  const grads = G.roster.filter(p => p.year >= 12);
-  G.phase = 'offseason';
-  G.offseason = { grads: grads.map(p => p.id), summer: 'league' };
-}
-function nextBudgetPreview(summerKey) {
-  const left = G.res.budget; const k = G.ending.kind;
-  const bonus = { perfect: 600, champion: 500, runnerup: 400, final4: 300, contender: 200, missed: 0, crisis: 0 }[k] || 0;
-  const base = DIFF[G.diff].budget; const carry = left >= 0 ? Math.round(left * .35) : left; const gate = Math.round(G.res.fans * 4);
-  const cost = SUMMER[summerKey] ? SUMMER[summerKey].cost : 0;
-  return { base, carry, bonus, gate, cost, total: base + carry + bonus + gate - cost };
-}
-function applyOffseason(summerKey) {
-  const sp = SUMMER[summerKey] || SUMMER.rest; const n = G.season; const k = G.ending.kind;
-  const b = nextBudgetPreview(summerKey);
-  // graduation
-  const grads = G.roster.filter(p => p.year >= 12);
-  grads.forEach(p => G.alumni.push({ name: `${p.first} ${p.last}`, num: p.num, pos: p.pos, ovr: ovr(p), joined: p.joined || 1, joinedYear: p.joinedYear || p.year, pts: (p.cs ? p.cs.pts : 0) + p.s.pts, gp: (p.cs ? p.cs.gp : 0) + p.s.gp, left: n, fourYear: (p.joinedAsFr && n - (p.joined || 1) >= 3) }));
-  G.roster = G.roster.filter(p => p.year < 12);
-  // returning players: age, grow, reset
-  G.roster.forEach(p => {
-    p.cs = p.cs || { gp: 0, pts: 0, reb: 0, ast: 0, min: 0 }; for (const key in p.s) p.cs[key] += p.s[key];
-    p.s = { gp: 0, pts: 0, reb: 0, ast: 0, min: 0 };
-    p.year++;
-    const room = Math.max(0, p.pot - ovr(p)); const nat = (1.2 + room * .18) * (.6 + p.ethic * .6);
-    for (const a of ATTR) p.r[a] = U.clamp(p.r[a] + nat * .5 + (sp.grow[a] || 0) * (.7 + p.ethic * .6) + gauss() * .6, 20, 99);
-    p.start = ovr(p); p.energy = 100; p.inj = 0; p.suspended = false; p.suspendWeeks = 0;
-    p.morale = U.clamp(Math.round(p.morale * .4 + 62 * .6 + (summerKey === 'rest' ? 10 : 0)), 0, 100);
-    p.gpa = U.clamp(+((p.gpaBase || 2.8) * .7 + p.gpa * .3 + (R() - .5) * .2).toFixed(2), 1.6, 4); // new school year: grades reset toward the player's norm
-  });
-  if (summerKey === 'youth') { G.campBoost = 5; }
-  // program-level carryover
-  const succ = { perfect: 25, champion: 22, runnerup: 14, final4: 10, contender: 5, missed: -4, crisis: -10 }[k] || 0;
-  G.prestige = U.clamp(Math.round(G.prestige * .6 + (50 + succ * 1.4) * .4 + succ * .5), 20, 95);
-  G.res.fans = U.clamp(Math.round(G.res.fans * .7 + 45 * .3 + succ * .4 + (summerKey === 'youth' ? 5 : 0)), 10, 100);
-  G.res.rep = U.clamp(Math.round(G.res.rep * .8 + 60 * .2), 5, 100);
-  G.res.chem = U.clamp(Math.round(G.res.chem * .5 + 48 * .5), 0, 100);
-  G.res.budget = b.total;
-  ['assistant', 'trainer', 'scouting', 'tutoring'].forEach(u => delete G.upgrades[u]); // yearly contracts; facilities stay
-  G.season = n + 1;
-  setupSeason();
-  G.log.push({ w: 0, t: `Season ${G.season} (${seasonLabel(G.season)}) begins. ${grads.length} senior${grads.length === 1 ? '' : 's'} graduated. Summer: ${sp.name}. Program prestige ${G.prestige}.` });
-}
-const CAREER_END = {
-  dynasty:  { title: 'Dynasty Builder', text: 'Multiple State titles. Your name goes on the gym floor.' },
-  champion: { title: 'Championship Coach', text: 'You brought a State title home. The banner hangs forever.' },
-  builder:  { title: 'Program Builder', text: 'Year after year in the playoffs. You turned this into a winning program.' },
-  journey:  { title: 'Journeyman Coach', text: 'Some good moments, but the program never broke through.' },
-  fired:    { title: 'Contract Terminated', text: 'The school ended your contract after the program fell into crisis.' },
-};
-function endCareer() {
-  const titles = G.career.filter(c => c.kind === 'champion' || c.kind === 'perfect').length;
-  const playoffs = G.career.filter(c => !['missed', 'crisis'].includes(c.kind)).length;
-  const fired = G.career.some(c => c.kind === 'crisis');
-  const kind = fired ? 'fired' : titles >= 2 ? 'dynasty' : titles === 1 ? 'champion' : playoffs >= Math.ceil(G.career.length / 2) ? 'builder' : 'journey';
-  const w = U.sum(G.career.map(c => c.rec.w)), l = U.sum(G.career.map(c => c.rec.l));
-  const avgPct = U.avg(G.career.map(c => c.total / c.max));
-  const grade = avgPct >= .9 ? 'A+' : avgPct >= .8 ? 'A' : avgPct >= .7 ? 'B' : avgPct >= .58 ? 'C' : avgPct >= .45 ? 'D' : 'F';
-  let streak = 0, b2b = false; G.career.forEach(c => { if (c.kind === 'champion' || c.kind === 'perfect') { streak++; if (streak >= 2) b2b = true; } else streak = 0; });
-  const ach = [
-    { n: 'Back-to-Back', d: 'Win State in consecutive seasons.', got: b2b },
-    { n: 'Dynasty', d: 'Win two or more State titles.', got: titles >= 2 },
-    { n: 'Full Contract', d: `Coach all ${MAX_SEASONS} seasons.`, got: G.career.length >= MAX_SEASONS && !fired },
-    { n: 'Homegrown Hero', d: 'Coach a player from freshman tryouts all the way to graduation.', got: G.alumni.some(a => a.fourYear) },
-    { n: 'Perennial Contender', d: 'Make the playoffs every season.', got: G.career.length > 1 && playoffs === G.career.length },
-    { n: 'Packed Program', d: 'Reach 80 program prestige.', got: G.prestige >= 80 },
-  ];
-  G.phase = 'career'; G.careerEnd = { kind, titles, playoffs, w, l, grade, ach };
 }
 function buildSchedule() {
   // circle method round robin for 8 teams (index 0 = you)
@@ -831,11 +753,10 @@ function endSeason(kind, why) {
   if (k === 'missed') {
     const dev = U.sum(G.roster.map(p => ovr(p) - p.start));
     G.ending.sub = (teamMorale() >= 60 && dev >= 25) ? 'Foundation Laid' : 'Back to the Drawing Board';
-    G.ending.why = G.ending.sub === 'Foundation Laid' ? 'You finished outside the top 4, but your young roster grew a lot and the locker room believes. Next year looks bright.' : 'Outside the top 4, and the program needs a new plan. Try balancing development, morale and scouting.';
+    G.ending.why = G.ending.sub === 'Foundation Laid' ? 'You finished outside the top 4, but your young roster grew a lot and the locker room believes. Your season is complete. Replay to try a different route to State.' : 'Outside the top 4, and the program needs a new plan. Try balancing development, morale and scouting.';
   }
   G.ending.legacy = legacy(); G.ending.ach = achievements();
   if (k === 'champion' || k === 'perfect') G.banners.push({ year: titleYear(G.season), season: G.season });
-  G.career.push({ season: G.season, label: seasonLabel(G.season), kind: k, rec, grade: G.ending.legacy.grade, total: G.ending.legacy.total, max: G.ending.legacy.max, seed: G.playoffs ? G.playoffs.seed : (G.hist.at(-1) && G.hist.at(-1).seed) || null, rating: myRating() });
   G.log.push({ w: 'END', t: `Season over: ${ENDINGS[k].title}.` });
 }
 function allRecord() { return { w: G.games.filter(g => g.win).length, l: G.games.filter(g => !g.win).length }; }
@@ -866,3 +787,37 @@ const ACH = [
   { id: 'culture', n: 'Culture Builder', d: 'Finish with morale 75+ and chemistry 75+.', t: () => teamMorale() >= 75 && G.res.chem >= 75 },
 ];
 function achievements() { return ACH.map(a => ({ id: a.id, n: a.n, d: a.d, got: !!a.t() })); }
+
+/* What if, Coach? Controlled counterfactual replays never advance the saved season. */
+function filmSnapshot() {
+  const { filmBaseline, filmResult, ...state } = G;
+  return { state: U.clone(state), opponent: currentGameInfo().opp.name, label: currentGameInfo().label };
+}
+function filmExperiment(snapshot, alternative) {
+  const live = G;
+  const run = strategy => {
+    G = U.clone(snapshot.state);
+    G.strategy = { ...G.strategy, ...strategy };
+    if (G.strategy.rot === 'manual') G.strategy.rot = 'normal';
+    const sim = newGameSim(); sim.headless = true;
+    const quarters = [];
+    for (let guard = 0; !sim.done && guard < 30; guard++) {
+      if (sim.q === 2 && !sim.halfTalk) applyHalftime(sim, 'calm');
+      simQuarter(sim); quarters.push({ us: sim.us, them: sim.them });
+    }
+    if (!sim.done) throw new Error('Replay exceeded its simulation limit.');
+    const box = sim.my.map(id => sim.box[id]);
+    return { us: sim.us, them: sim.them, quarters, threes: U.sum(box.map(b => b.tpm)), rebounds: U.sum(box.map(b => b.reb)), energy: Math.round(U.avg(G.roster.filter(eligible).map(p => p.gEnergy ?? p.energy))), strategy: { ...G.strategy } };
+  };
+  try {
+    return { original: run(snapshot.state.strategy), alternative: run(alternative) };
+  } finally { G = live; }
+}
+function filmDemo() {
+  const live = G;
+  try {
+    newGame({ name: 'Riverside', seed: 'DECISION-REPLAY-2027', diff: 'varsity' });
+    autoSignBest(); finalizeTryouts();
+    return filmSnapshot();
+  } finally { G = live; }
+}

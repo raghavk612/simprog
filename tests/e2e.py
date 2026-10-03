@@ -1,7 +1,8 @@
+from pathlib import Path
 import sys, os
 from playwright.sync_api import sync_playwright
-URL = 'file:///home/claude/rtc/dist/road-to-the-championship-offline.html'
-OUT = '/home/claude/rtc/tests/shots'; os.makedirs(OUT, exist_ok=True)
+URL = (Path(__file__).resolve().parents[1] / 'dist' / 'road-to-the-championship-offline.html').as_uri()
+OUT = str(Path(__file__).resolve().parent / 'shots'); os.makedirs(OUT, exist_ok=True)
 errors = []; stats = {'clutch': 0, 'timeouts': 0, 'subs': 0}
 def shot(pg, name): pg.screenshot(path=f'{OUT}/{name}.png', full_page=True)
 def finish_game(pg, tag, snap):
@@ -57,6 +58,7 @@ with sync_playwright() as p:
         ctx = b.new_context(viewport=vp); pg = ctx.new_page()
         pg.on('pageerror', lambda e, tag=tag: errors.append(f'{tag} pageerror: {e}'))
         pg.on('console', lambda m, tag=tag: errors.append(f'{tag} console.{m.type}: {m.text}') if m.type == 'error' and 'fonts.g' not in m.text and 'ERR_' not in m.text else None)
+        pg.add_init_script("localStorage.setItem('rtc-onboarding-seen-v1','1')")
         pg.goto(URL); pg.wait_for_load_state('load'); pg.wait_for_timeout(300)
         pg.check('input[name="tdiff"][value="rookie"]', force=True)
         assert 'Easy' in pg.inner_text('.diff-pick') and '$3,200' in pg.inner_text('#tdiff-d')
@@ -71,25 +73,14 @@ with sync_playwright() as p:
         w = play_season(pg, f'{tag}-s1', first_snap=(tag == 'desk'))
         shot(pg, f'{tag}-s1-ending')
         print(tag, 'S1 weeks:', w, '|', pg.inner_text('.title-hero h1'))
-        # offseason → season 2
-        pg.click('[data-act="offseason"]'); pg.wait_for_selector('.summer'); shot(pg, f'{tag}-05-offseason')
-        pg.check('input[name="summer"][value="skills"]', force=True)
-        pg.click('[data-act="next-season"]'); pg.wait_for_selector('.try-grid'); shot(pg, f'{tag}-06-tryouts-s2')
-        mn = pg.evaluate('RTC.G.minSign'); mx = pg.evaluate('RTC.G.maxSign'); print(tag, 'S2 roster', pg.evaluate('RTC.G.roster.length'), 'min/max sign', mn, mx)
-        pg.click('[data-act="auto-sign"]'); pg.click('[data-act="finalize"]'); pg.wait_for_selector('.stepper'); shot(pg, f'{tag}-07-hub-s2')
-        if tag == 'desk':
-            # play seasons 2–4 through the UI to reach the career summary
-            for sn in (2, 3, 4):
-                w = play_season(pg, f'{tag}-s{sn}'); print(tag, f'S{sn} weeks:', w, '|', pg.inner_text('.title-hero h1'))
-                if pg.query_selector('[data-act="offseason"]'):
-                    pg.click('[data-act="offseason"]'); pg.wait_for_selector('.summer'); pg.click('[data-act="next-season"]'); pg.wait_for_selector('.try-grid')
-                    pg.click('[data-act="auto-sign"]'); pg.click('[data-act="finalize"]'); pg.wait_for_selector('.stepper')
-                else: break
-            pg.click('[data-act="retire"]')
-            if pg.query_selector('[data-act="confirm-yes"]'): pg.click('[data-act="confirm-yes"]')
-            pg.wait_for_selector('text=Season by season'); shot(pg, f'{tag}-99-career')
-            print(tag, 'career:', pg.inner_text('.title-hero h1'))
-            pg.keyboard.press('?'); pg.click('[data-act="rule"][data-k="sources"]'); shot(pg, f'{tag}-rules-sources'); pg.keyboard.press('Escape')
+        assert not pg.query_selector('[data-act="offseason"]')
+        assert not pg.query_selector('[data-act="retire"]')
+        assert pg.query_selector('[data-act="again"]')
+        assert pg.evaluate('RTC.G.season') == 1
+        assert w <= 14
+        pg.click('[data-act="credits"]'); pg.wait_for_selector('text=Ajisth Sareen'); pg.keyboard.press('Escape')
+        pg.click('[data-act="again"]'); pg.wait_for_selector('.try-grid')
+        assert pg.evaluate('RTC.G.week') == 1
         ow = pg.evaluate('document.documentElement.scrollWidth > window.innerWidth + 1'); print(tag, 'horizontal overflow:', ow)
         ctx.close()
     b.close()

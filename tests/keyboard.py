@@ -1,12 +1,14 @@
+from pathlib import Path
 from playwright.sync_api import sync_playwright
-URL='file:///home/claude/rtc/dist/road-to-the-championship-offline.html'
+URL=(Path(__file__).resolve().parents[1] / 'dist' / 'road-to-the-championship-offline.html').as_uri()
 errs=[]
 with sync_playwright() as p:
     b=p.chromium.launch(headless=True); pg=b.new_page(viewport={'width':1280,'height':850})
     pg.on('pageerror', lambda e: errs.append(str(e)))
+    pg.add_init_script("localStorage.setItem('rtc-onboarding-seen-v1','1')")
     pg.goto(URL); pg.wait_for_load_state('load')
     # Keyboard-only: Tab to Quick Start and press Enter
-    for _ in range(6):
+    for _ in range(14):
         pg.keyboard.press('Tab')
         if pg.evaluate("document.activeElement.dataset.act") == 'quick': break
     pg.keyboard.press('Enter'); pg.wait_for_selector('.stepper')

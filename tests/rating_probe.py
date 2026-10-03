@@ -1,6 +1,7 @@
+from pathlib import Path
 from playwright.sync_api import sync_playwright
 with sync_playwright() as p:
-    b=p.chromium.launch(); pg=b.new_page(); pg.goto('file:///home/claude/rtc/dist/road-to-the-championship-offline.html')
+    b=p.chromium.launch(); pg=b.new_page(); pg.goto((Path(__file__).resolve().parents[1] / 'dist' / 'road-to-the-championship-offline.html').as_uri())
     for diff in ['varsity','legend']:
       for pol in ['smart','naive']:
         r=pg.evaluate("""([diff,pol])=>{ const a=[[],[],[],[]]; for(let i=0;i<30;i++){ const c=RTC.autoCareer({diff,policy:pol,seed:'pr'+i}); c.seasons.forEach((s,j)=>a[j].push(s)); }
