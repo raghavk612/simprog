@@ -4,14 +4,14 @@
    ========================================================================= */
 'use strict';
 
-const SAVE_KEY = 'rtc-save-v3', SET_KEY = 'rtc-settings-v1';
+const SAVE_KEY = 'rtc-save-v4', SET_KEY = 'rtc-settings-v1';
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
   set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } },
   del(k) { try { localStorage.removeItem(k); } catch (e) {} },
 };
 const UI = { screen: 'title', tab: 'week', modal: null, setup: null, sim: null, play: null, banner: null, prevFocus: null, ruleSec: 'goal' };
-const SET = Object.assign({ theme: 'auto', text: 1, motion: 'auto', sound: true, vol: .6, cb: false, speed: 1, exact: null, tips: true }, (() => { try { return JSON.parse(store.get(SET_KEY) || '{}'); } catch (e) { return {}; } })());
+const SET = Object.assign({ theme: 'auto', text: 1, motion: 'auto', sound: true, vol: .6, music: true, mvol: .35, diff: 'varsity', cb: false, speed: 1, exact: null, tips: true }, (() => { try { return JSON.parse(store.get(SET_KEY) || '{}'); } catch (e) { return {}; } })());
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -19,7 +19,7 @@ function reduced() { return SET.motion === 'reduce' || (SET.motion === 'auto' &&
 function showExact() { return SET.exact != null ? SET.exact : (G && G.diff === 'rookie'); }
 function saveSettings() { store.set(SET_KEY, JSON.stringify(SET)); }
 function save() { if (!G) return; store.set(SAVE_KEY, JSON.stringify(G, (k, v) => k.startsWith('_') || k === 'gEnergy' ? undefined : v)); }
-function loadSave() { const raw = store.get(SAVE_KEY); if (!raw) return null; try { const g = JSON.parse(raw); return g && g.v === 3 ? g : null; } catch (e) { return null; } }
+function loadSave() { const raw = store.get(SAVE_KEY); if (!raw) return null; try { const g = JSON.parse(raw); return g && g.v === 4 ? g : null; } catch (e) { return null; } }
 
 function applySettings() {
   const b = document.body;
@@ -27,7 +27,7 @@ function applySettings() {
   document.documentElement.style.setProperty('--fs', (16 * SET.text) + 'px');
   b.classList.toggle('rm', SET.motion === 'reduce'); b.classList.toggle('motion-on', SET.motion === 'full');
   b.classList.toggle('cb', !!SET.cb);
-  SFX.on = SET.sound; SFX.setVol(SET.vol);
+  SFX.on = SET.sound; SFX.setVol(SET.vol); Music.on = SET.music; Music.setVol(SET.mvol); if (!SET.sound || !SET.music) Music.stop(); if (!SET.sound) SFX.crowdStop();
 }
 function applyTeamColors() {
   const [c1, c2] = G ? schoolColors() : PALETTES[0].c; const r = document.documentElement.style;
@@ -70,7 +70,8 @@ function coachTip(key, html) {
 function render(focusSel) {
   const app = $('#app'); if (UI.screen !== 'game' && Court.cv) Court.unmount();
   applyTeamColors();
-  const html = { title: renderTitle, setup: renderSetup, tryouts: renderTryouts, hub: renderHub, game: renderGame, ending: renderEnding }[UI.screen]();
+  const html = { title: renderTitle, setup: renderSetup, tryouts: renderTryouts, hub: renderHub, game: renderGame, ending: renderEnding, offseason: renderOffseason, career: renderCareer }[UI.screen]();
+  if (UI.screen !== 'game') Music.play();
   app.innerHTML = html;
   if (UI.screen === 'title') { const cv = $('#floor'); if (cv) requestAnimationFrame(() => drawTitleFloor(cv, G ? schoolColors()[0] : '#A6192E')); }
   if (UI.screen === 'game') mountGame();
@@ -83,21 +84,24 @@ function go(screen, opts = {}) { UI.screen = screen; if (opts.tab) UI.tab = opts
 /* ---------- TITLE ---------- */
 function renderTitle() {
   const saved = loadSave(); const c = PALETTES[0].c;
-  const cont = saved && saved.phase !== 'ended' ? `<button class="btn big primary" data-act="continue">${icon('ball')} Continue season <span class="sub">${E(saved.school.name)} · ${saved.phase === 'tryouts' ? 'Tryouts' : saved.phase === 'playoffs' ? 'Playoffs' : 'Week ' + saved.week}</span></button>` : '';
+  const cont = saved && saved.phase !== 'career' ? `<button class="btn big primary" data-act="continue">${icon('ball')} Continue season <span class="sub">${E(saved.school.name)} · Season ${saved.season} · ${saved.phase === 'tryouts' ? 'Tryouts' : saved.phase === 'playoffs' ? 'Playoffs' : saved.phase === 'offseason' ? 'Offseason' : 'Week ' + saved.week}</span></button>` : '';
   return `<div class="title-screen">
   <header class="rafters">
     <div class="beam"></div>
     <div class="banners" aria-label="Championship banners to earn">${ROUNDS.map((r, i) => pennant(r.replace('Sectional', 'Sect.').replace('Championship', 'Title'), false, c[0], c[1], ['I', 'II', 'III', 'IV'][i])).join('')}</div>
     <div class="title-hero">
-      <div class="logo-line">High school hoops · One season</div>
+      <div class="logo-line">High school hoops · Four-year contract</div>
       <h1>Road to the Championship</h1>
-      <p>Take over a varsity basketball program. Recruit, develop players, manage the budget and the locker room, and outcoach your rivals all the way to the State title.</p>
+      <p>Take over a varsity basketball program for four seasons. Recruit and develop players, manage the budget and the locker room, and outcoach your rivals on the road to State titles.</p>
     </div>
   </header>
   <main class="title-floor" id="main">
     <canvas id="floor" aria-hidden="true"></canvas>
     <nav class="title-menu" aria-label="Main menu">
       ${cont}
+      <fieldset class="diff-pick"><legend class="eyebrow">Difficulty</legend>
+        <div class="seg" role="radiogroup" aria-label="Difficulty" style="width:100%">${Object.entries(DIFF).map(([k, d]) => `<label style="flex:1"><input type="radio" name="tdiff" value="${k}" data-act="tdiff" ${SET.diff === k ? 'checked' : ''}><span style="text-align:center">${d.name}</span></label>`).join('')}</div>
+        <p class="muted" id="tdiff-d" style="font-size:.9rem;margin-top:6px">${DIFF[SET.diff].d}</p></fieldset>
       <button class="btn big ${cont ? '' : 'primary'}" data-act="quick">${icon('bolts')} Quick Start <span class="sub">Jump in with a ready-made team</span></button>
       <button class="btn big" data-act="new">${icon('knights')} New Season <span class="sub">Name your school, pick colors &amp; difficulty</span></button>
       <div class="row2">
@@ -171,26 +175,26 @@ function recordStr() { const r = allRecord(); return `${r.w}–${r.l}`; }
 /* ---------- TRYOUTS ---------- */
 function renderTryouts() {
   const counts = {}; POS.forEach(p => counts[p] = 0); G.roster.forEach(p => counts[p.pos]++); G.prospects.filter(p => G.signed.includes(p.id)).forEach(p => counts[p.pos]++);
-  const n = G.signed.length; const total = G.roster.length + n;
-  const why = n < 2 ? `Sign at least ${2 - n} more to fill a 10-player roster.` : n < 4 ? `${4 - n} roster spot${4 - n > 1 ? 's' : ''} still open (max 12 players).` : 'Roster full: 12 players.';
-  return `${topbar('Preseason · Tryouts')}
+  const n = G.signed.length; const total = G.roster.length + n; const mx = G.maxSign, mn = G.minSign;
+  const why = n < mn ? `Sign at least ${mn - n} more to fill a 10-player roster.` : n < mx ? `${mx - n} roster spot${mx - n > 1 ? 's' : ''} still open (max 12 players).` : `Roster full: ${total} players.`;
+  return `${topbar(`Season ${G.season} · Tryouts`)}
   <main class="wrap" id="main" style="padding-block:16px 48px">
     <div class="stack">
-      <div><div class="eyebrow">Preseason · Step 2 of 2</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:2rem">Tryouts</h1>
-      <p class="muted" style="max-width:68ch">You have 8 returning players. Sign up to <b>4 prospects</b>. Their true ratings are fuzzy until you <b>scout</b> them. Scouting also reveals potential (★) and personality.</p></div>
+      <div><div class="eyebrow">${G.season === 1 ? 'Preseason · Step 2 of 2' : `Season ${G.season} of ${MAX_SEASONS} · ${seasonLabel(G.season)} · Program prestige ${G.prestige}`}</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:2rem">Tryouts</h1>
+      <p class="muted" style="max-width:68ch">You have ${G.roster.length} returning players. Sign up to <b>${mx} prospect${mx === 1 ? '' : 's'}</b>${mn ? ` (at least ${mn})` : ''}.${G.season > 1 ? ' Your program’s success sets how good this class is.' : ''} Their true ratings are fuzzy until you <b>scout</b> them. Scouting also reveals potential (★) and personality.</p></div>
       ${coachTip('tryouts', 'Look at the position counts. A team with no true point guard turns the ball over. Freshmen with high potential grow the most during the season.')}
       <div class="row">
         <span class="chip team">Scout points: <b class="num">&nbsp;${G.scoutPts}</b></span>
-        <span class="chip">Signed ${n} / 4</span>
+        <span class="chip">Signed ${n} / ${mx}</span>
         <div class="needs" aria-label="Players per position">${POS.map(p => `<span class="chip ${counts[p] < 2 ? 'warn' : ''}" title="${POS_NAME[p]}">${p} ${counts[p]}</span>`).join('')}</div>
         <span class="spacer"></span>
-        <button class="btn sm" data-act="auto-sign">Auto-pick best 4</button>
+        <button class="btn sm" data-act="auto-sign" ${mx ? '' : 'disabled'}>Auto-pick best ${mx}</button>
       </div>
       <div class="try-grid">${G.prospects.map(prospectCard).join('')}</div>
       <details class="card"><summary style="cursor:pointer;font-weight:700">Returning players (${G.roster.length})</summary>
         <div class="roster-list" style="margin-top:8px">${G.roster.map(rosterRow).join('')}</div></details>
       <div class="cta-bar"><span class="why" id="try-why">${why}</span>
-        <button class="btn big primary" data-act="finalize" ${n < 2 ? 'aria-disabled="true"' : ''} aria-describedby="try-why">Finalize roster (${total}) →</button></div>
+        <button class="btn big primary" data-act="finalize" ${n < mn ? 'aria-disabled="true"' : ''} aria-describedby="try-why">Finalize roster (${total}) →</button></div>
     </div></main>`;
 }
 function prospectCard(p) {
@@ -202,7 +206,7 @@ function prospectCard(p) {
     <div class="row" style="gap:6px">${sc ? `<span class="chip" title="${E(TRAITS[p.trait].d)}">${E(p.trait)}</span><span class="chip">Potential ${stars(p.pot, o)}</span><span class="chip">GPA ${p.gpa.toFixed(2)}</span>` : '<span class="chip">Potential ?</span><span class="chip">Personality ?</span>'}</div>
     <div class="acts">
       ${sc ? '' : `<button class="btn sm" data-act="scout" data-id="${p.id}" ${G.scoutPts <= 0 ? 'disabled title="No scout points left"' : ''}>Scout (1 pt)</button>`}
-      <button class="btn sm ${sel ? '' : 'primary'}" data-act="sign" data-id="${p.id}" aria-pressed="${sel}" ${!sel && G.signed.length >= 4 ? 'disabled title="Roster is full"' : ''}>${sel ? 'Release' : 'Sign'}</button>
+      <button class="btn sm ${sel ? '' : 'primary'}" data-act="sign" data-id="${p.id}" aria-pressed="${sel}" ${!sel && G.signed.length >= G.maxSign ? 'disabled title="Roster is full"' : ''}>${sel ? 'Release' : 'Sign'}</button>
     </div></article>`;
 }
 function attrBars(p, showPot) {
@@ -218,7 +222,7 @@ function renderHub() {
   const info = currentGameInfo(); const opp = info.opp; const [c1, c2] = schoolColors();
   const P = G.playoffs; const won = r => P && (P.round > r || (P.round === r && G.step === 'recap' && G.lastGame && G.lastGame.win));
   const wkLabel = G.phase === 'playoffs' ? ROUNDS[P.round] : `Week ${G.week} of 10`;
-  const sub = G.phase === 'playoffs' ? `Playoffs · ${recordStr()}` : `Week ${G.week} · ${recordStr()}`;
+  const sub = G.phase === 'playoffs' ? `S${G.season} · Playoffs · ${recordStr()}` : `S${G.season} · Week ${G.week} · ${recordStr()}`;
   const steps = ['Practice', 'Challenge', 'Game day', 'Recap']; const si = stepIndex();
   const tabs = [['week', 'This week'], ['roster', 'Roster'], ['standings', G.phase === 'playoffs' ? 'Bracket' : 'Standings'], ['office', 'Front office'], ['log', 'Season log']];
   return `${topbar(sub)}
@@ -227,8 +231,8 @@ function renderHub() {
       <section class="road" aria-label="Road to the championship">
         <div class="beam"></div>
         <div class="road-inner">
-          <div class="road-info"><div class="eyebrow">${G.phase === 'playoffs' ? 'Win or go home' : 'Regular season'}</div><h1 class="wk" style="font-weight:400">${wkLabel}</h1>
-            <p style="color:#C9D2DC;margin-top:4px">${G.phase === 'playoffs' ? `Seed #${P.seed} · ${4 - P.round} win${4 - P.round > 1 ? 's' : ''} from the State title` : `Top 4 in the district make the playoffs · ${10 - G.week} week${10 - G.week === 1 ? '' : 's'} left after this`}</p></div>
+          <div class="road-info"><div class="eyebrow">Season ${G.season} of ${MAX_SEASONS} · ${seasonLabel(G.season)} · ${G.phase === 'playoffs' ? 'Win or go home' : 'Regular season'}</div><h1 class="wk" style="font-weight:400">${wkLabel}</h1>
+            <p style="color:#C9D2DC;margin-top:4px">${G.phase === 'playoffs' ? `Seed #${P.seed} · ${4 - P.round} win${4 - P.round > 1 ? 's' : ''} from the State title` : `Top 4 in the district make the playoffs · ${10 - G.week} week${10 - G.week === 1 ? '' : 's'} left after this`}</p>${G.banners.length ? `<div class="banner-row" aria-label="State title banners">${G.banners.map(b => `<span class="tbanner">${b.year}<small>STATE</small></span>`).join('')}</div>` : ''}</div>
           <div class="banners" aria-label="Playoff banners">${ROUNDS.map((r, i) => pennant(['Sect. Semi', 'Sect. Final', 'State Semi', 'State Title'][i], won(i), c1, c2, ['I', 'II', 'III', 'IV'][i])).join('')}</div>
         </div>
       </section>
@@ -307,13 +311,14 @@ function eventPanel() {
 function prepPanel() {
   validateLineup();
   const info = currentGameInfo(); const opp = info.opp; const sc = isScouted(); const { rec, why } = recommend(opp); const st = G.strategy; const star = starOf(opp.roster);
+  if (G.roster.filter(eligible).length < 5) { ensureFive(); save(); }
   const avail = G.roster.filter(eligible); const out = G.roster.filter(p => !eligible(p));
   const seg = (key, opts) => `<div class="seg" role="radiogroup" aria-label="${key}">${opts.map(([v, l]) => `<label><input type="radio" name="st-${key}" value="${v}" data-act="strat" data-k="${key}" ${st[key] === v ? 'checked' : ''}><span>${l}${sc && rec[key] === v ? ' ✓' : ''}</span></label>`).join('')}</div>`;
   const hints = {
     tempo: { slow: 'Fewer possessions. More randomness helps an underdog.', balanced: 'Normal pace.', fast: 'More possessions: the better team usually wins. Tires players.' },
     def: { man: 'Your best defenders guard their best players.', zone: 'Protects the paint and hides weak defenders. Gives up threes and rebounds.', press: 'Forces turnovers from weak passers. Drains your energy fast.' },
     focus: { inside: 'Post-ups and drives. Great against man and press.', balanced: 'Take what the defense gives.', perimeter: 'Look for threes. Great against a zone.' },
-    rot: { tight: 'Starters play heavy minutes.', normal: 'Standard rotation.', deep: 'Fresh legs, more bench minutes.' },
+    rot: { tight: 'Starters play heavy minutes.', normal: 'Standard rotation.', deep: 'Fresh legs, more bench minutes.', manual: 'No auto-subs. You sub during timeouts and breaks.' },
   };
   return `${coachTip('prep', 'Pick your five starters and a game plan. Film Study (or the Scouting Service) reveals the opponent’s style, and ✓ marks the counters. Matching counters gives a real edge.')}
   <div class="prep">
@@ -333,7 +338,7 @@ function prepPanel() {
         <div><div class="eyebrow">Tempo</div>${seg('tempo', [['slow', 'Slow'], ['balanced', 'Balanced'], ['fast', 'Fast']])}<p class="hint">${hints.tempo[st.tempo]}</p></div>
         <div><div class="eyebrow">Defense</div>${seg('def', [['man', 'Man'], ['zone', 'Zone'], ['press', 'Press']])}<p class="hint">${hints.def[st.def]}</p></div>
         <div><div class="eyebrow">Offense focus</div>${seg('focus', [['inside', 'Inside'], ['balanced', 'Balanced'], ['perimeter', 'Perimeter']])}<p class="hint">${hints.focus[st.focus]}</p></div>
-        <div><div class="eyebrow">Rotation</div>${seg('rot', [['tight', 'Tight'], ['normal', 'Normal'], ['deep', 'Deep']])}<p class="hint">${hints.rot[st.rot]}</p></div>
+        <div><div class="eyebrow">Rotation</div>${seg('rot', [['tight', 'Tight'], ['normal', 'Normal'], ['deep', 'Deep'], ['manual', 'Manual']])}<p class="hint">${hints.rot[st.rot]}</p></div>
       </div></section>
     <div class="cta-bar"><span class="why">${sc ? `Counters matched: ${['def', 'focus', 'tempo'].filter(k => st[k] === rec[k]).length} of 3` : 'You can still adjust at every quarter break.'}</span><button class="btn big primary" data-act="tipoff">${icon('ball')} Tip off</button></div>
   </div>`;
@@ -402,23 +407,24 @@ function logPanel() {
 }
 
 /* ---------- GAME ---------- */
+function toPips(to) { return `<span class="tol" role="img" aria-label="${to.full} sixty-second and ${to.short} thirty-second timeouts left">${'<i class="f on"></i>'.repeat(to.full)}${'<i class="f"></i>'.repeat(3 - to.full)}${'<i class="s on"></i>'.repeat(to.short)}${'<i class="s"></i>'.repeat(2 - to.short)}</span>`; }
 function renderGame() {
   const s = UI.sim; const info = s.info; const opp = info.opp;
   return `${topbar(`${E(info.label)} · ${recordStr()}`)}
   <main class="wrap game" id="main">
     <h1 class="sr-only">Live game vs ${E(opp.name)}</h1>
     <section class="scoreboard" aria-label="Scoreboard">
-      <div class="sb-team">${myCrest()}<div style="min-width:0"><div class="tn">${E(G.school.name)}</div><div class="sb-score" id="sb-us">${seg7(String(UI.play.dUs).padStart(2, ' '), 46)}</div></div></div>
+      <div class="sb-team">${myCrest()}<div style="min-width:0"><div class="tn">${E(G.school.name)}</div><div class="sb-score" id="sb-us">${seg7(String(UI.play.dUs).padStart(2, ' '), 46)}</div><div id="tol-us">${toPips(s.to)}</div></div></div>
       <div class="sb-mid"><div class="q" id="sb-q">${qLabel(UI.play.curQ || 0)}</div><div id="sb-clock">${seg7(fmtClock(UI.play.clock), 28, 'var(--led-red)')}</div><div class="q">${info.neutral ? 'Neutral' : info.home ? 'Home' : 'Away'}</div></div>
-      <div class="sb-team r">${oppCrest(opp)}<div style="min-width:0"><div class="tn">${E(opp.name)}</div><div class="sb-score" id="sb-them" style="justify-content:flex-end">${seg7(String(UI.play.dThem).padStart(2, ' '), 46)}</div></div></div>
+      <div class="sb-team r">${oppCrest(opp)}<div style="min-width:0"><div class="tn">${E(opp.name)}</div><div class="sb-score" id="sb-them" style="justify-content:flex-end">${seg7(String(UI.play.dThem).padStart(2, ' '), 46)}</div><div class="q" id="tol-them" style="text-align:right">TO left: ${s.oppTO}</div></div></div>
       <span class="sr-only" id="sb-text">${E(G.school.name)} ${UI.play.dUs}, ${E(opp.name)} ${UI.play.dThem}</span>
     </section>
     <div class="game-main">
       <div class="stack" style="min-width:0">
         <div class="court-wrap"><canvas id="court" role="img" aria-label="Court view. Your team attacks the right basket. Made shots are filled circles, misses are X marks."></canvas></div>
-        <div class="court-legend"><span><b style="color:var(--team)">●</b> made · <b>✕</b> missed</span><span>Your team attacks → right basket</span><span>Striped dots = ${E(opp.name)}</span></div>
+        <div class="court-legend"><span><b style="color:var(--team)">●</b> made · <b>✕</b> missed</span><span>Your team attacks → right basket</span><span>Your players wear ${E(G.school.name)} colors; ${E(opp.name)} in theirs</span></div>
         <div class="controls" id="controls">${gameControls()}</div>
-        <div id="break">${UI.play.breakHtml || ''}</div>
+        <div id="break">${UI.play.panelHtml || ''}</div>
       </div>
       <section class="pbp" aria-label="Play-by-play"><h3>Play-by-play</h3><ol id="pbp" aria-live="off">${UI.play.lines.slice(0, 60).map(pbpLine).join('')}</ol></section>
     </div>
@@ -427,101 +433,159 @@ function renderGame() {
 }
 function qLabel(q) { return q >= 4 ? (q === 4 ? 'OT' : `${q - 3}OT`) : ['1st', '2nd', '3rd', '4th'][q] + ' Qtr'; }
 function gameControls() {
-  const P = UI.play; if (P.breakHtml || P.final) return `<span class="muted">${P.final ? 'Game over.' : 'Timeout: make adjustments below.'}</span>`;
+  const P = UI.play; const s = UI.sim;
+  if (P.panel) return `<span class="muted">${P.final ? 'Game over.' : P.panel === 'clutch' ? 'Final possession: call the play below.' : 'Play is stopped: make your changes below.'}</span>`;
   return `<button class="btn" data-act="pause" aria-pressed="${P.paused}">${P.paused ? '▶ Resume' : '❚❚ Pause'} <span class="kbd">Space</span></button>
     <div class="seg" role="radiogroup" aria-label="Simulation speed">${[1, 2, 4].map(v => `<label><input type="radio" name="spd" value="${v}" data-act="speed" ${SET.speed === v ? 'checked' : ''}><span>${v}×</span></label>`).join('')}</div>
-    <button class="btn" data-act="skipq">Skip to quarter end</button>
-    <div class="momentum" role="img" aria-label="Momentum" title="Momentum"><i id="mom"></i></div>`;
+    <button class="btn" data-act="timeout" data-k="full" ${s.to.full ? '' : 'disabled'} title="Stops the run (resets momentum), +8 energy, change strategy & subs">60s timeout <span class="chip">${s.to.full}</span></button>
+    <button class="btn" data-act="timeout" data-k="short" ${s.to.short ? '' : 'disabled'} title="Stops the run, +3 energy, change strategy & subs">30s timeout <span class="chip">${s.to.short}</span></button>
+    <button class="btn ghost" data-act="skipq">Skip to quarter end <span class="kbd">S</span></button>
+    <div class="momentum" role="img" aria-label="Momentum" title="Momentum: runs make shots easier. A timeout resets it."><i id="mom"></i></div>`;
 }
 function pbpLine(l) { return `<li class="${l.team === 'us' ? 'us' : ''} ${l.score ? 'score' : ''} ${l.big ? 'big' : ''}"><span class="tm">${l.tm}</span><span>${l.team === 'us' && l.score ? '<b>' + E(l.text) + '</b>' : E(l.text)}</span></li>`; }
 
 function startGame() {
   SFX.init(); const sim = newGameSim(); UI.sim = sim;
-  UI.play = { queue: [], timer: 0, paused: false, dUs: 0, dThem: 0, clock: 480, lines: [], breakHtml: '', final: false };
-  UI.screen = 'game'; render(); SFX.whistle();
+  UI.play = { queue: [], timer: 0, paused: false, dUs: 0, dThem: 0, clock: 480, curQ: 0, lines: [], panel: null, panelHtml: '', final: false };
+  UI.screen = 'game'; render(); SFX.whistle(); Music.stop(); SFX.crowdStart(sim.info.home || sim.info.neutral ? 1 : .6);
   G.log.push({ w: G.phase === 'playoffs' ? 'P' : G.week, t: `Game plan: ${sim.strat.tempo} tempo, ${sim.strat.def} defense, ${sim.strat.focus} focus.` });
   nextQuarter();
 }
-function mountGame() {
-  const cv = $('#court'); if (!cv) return; const opp = UI.sim.info.opp; const [c1] = schoolColors();
-  const home = !UI.sim.info.away && UI.sim.info.home; const paint = UI.sim.info.neutral ? '#2F4A6A' : home ? c1 : opp.c[0];
-  const themClr = contrast(opp.c[0], c1) < 1.6 ? opp.c[1] : opp.c[0];
-  Court.mount(cv, { us: c1, usInk: inkOn(c1), them: themClr, themInk: inkOn(themClr), paint, paintInk: inkOn(paint), initials: UI.sim.info.neutral ? 'STATE' : initials(home ? G.school.name : opp.name) }, reduced());
-  updateLiveBox(); updateMomentum();
+function courtLineups() {
+  const s = UI.sim; if (!s || !Court.cv) return; const opp = s.info.opp;
+  Court.setLineups(s.onUs.map(id => simPlayer(s, id)), s.onThem.map(id => simPlayer(s, id)));
 }
-function nextQuarter() { const s = UI.sim; UI.play.curQ = s.q; UI.play.clock = s.q >= 4 ? 240 : 480; const evs = simQuarter(s); UI.play.queue = evs.slice(); UI.play.breakHtml = ''; refreshControls(); Court.clearMarks(); Court.formation('us', true); tick(); }
-function delayFor(ev) { const base = { shot: 1150, to: 800, oreb: 550, note: 1100, inj: 1400, end: 400 }[ev.k] || 700; return base / (SET.speed || 1); }
+function mountGame() {
+  const cv = $('#court'); if (!cv) return; const opp = UI.sim.info.opp; const [c1, c2] = schoolColors();
+  const home = !UI.sim.info.neutral && UI.sim.info.home; const paint = UI.sim.info.neutral ? '#2F4A6A' : home ? c1 : opp.c[0];
+  const themClr = contrast(opp.c[0], c1) < 1.6 ? opp.c[1] : opp.c[0]; const themTrim = themClr === opp.c[0] ? opp.c[1] : opp.c[0];
+  Court.mount(cv, { us: c1, usInk: inkOn(c1), usTrim: c2, them: themClr, themInk: inkOn(themClr), themTrim, paint, paintInk: inkOn(paint), initials: UI.sim.info.neutral ? 'STATE' : initials(home ? G.school.name : opp.name), crowdHome: home ? [c1, c2] : UI.sim.info.neutral ? [c1, opp.c[0]] : [opp.c[0], opp.c[1]] }, reduced());
+  courtLineups(); updateLiveBox(); updateMomentum();
+}
+function nextQuarter() { const s = UI.sim; const P = UI.play; P.curQ = s.q; P.clock = s.q >= 4 ? 240 : 480; P.queue = []; P.panel = null; P.panelHtml = ''; refreshControls(); updateBoard(); Court.clearMarks(); Court.formation('us', true); tick(); }
+function delayFor(ev) { const base = { shot: 1150, to: 800, oreb: 550, note: 1300, inj: 1400, end: 400 }[ev.k] || 700; return base / (SET.speed || 1); }
+function nextEvent() { const P = UI.play; if (!P.queue.length) P.queue = simStep(UI.sim).slice(); return P.queue.shift(); }
+function tiredWarning() {
+  const s = UI.sim; const P = UI.play; if (s.strat.rot !== 'manual') return;
+  P.warned = P.warned || {}; const key = q => `${q}`;
+  for (const id of s.onUs) { const p = simPlayer(s, id); const k = id + ':' + (P.curQ || 0); if (p.gEnergy < 30 && !P.warned[k]) { P.warned[k] = true; const ev = { k: 'note', team: 'us', q: P.curQ || 0, clock: P.clock, text: `${p.first} ${p.last} is exhausted (energy ${Math.round(p.gEnergy)}). Call a timeout to sub him out.` }; showEvent(ev, true); announce(ev.text, true); toast(`${p.last} is exhausted. Press T for a timeout.`); return; } }
+}
 function tick() {
-  const P = UI.play; clearTimeout(P.timer); if (P.paused || UI.screen !== 'game') return;
-  const ev = P.queue.shift(); if (!ev) return;
+  const P = UI.play; if (!P) return; clearTimeout(P.timer); if (P.paused || P.panel || UI.screen !== 'game') return;
+  tiredWarning();
+  const ev = nextEvent(); if (!ev) return;
   showEvent(ev, true);
+  if (ev.k === 'clutch') return openClutch(ev);
   if (ev.k === 'end') return onBreak(ev);
   P.timer = setTimeout(tick, delayFor(ev));
 }
 function showEvent(ev, animate) {
-  const P = UI.play; const s = UI.sim; P.clock = ev.clock;
+  const P = UI.play; const s = UI.sim; P.clock = ev.clock; P.curQ = ev.q;
   const q = ev.q >= 4 ? (ev.q === 4 ? 'OT' : (ev.q - 3) + 'OT') : 'Q' + (ev.q + 1);
   const tm = `${q} ${fmtClock(ev.clock)}`;
   let score = false, big = false;
+  if (animate) courtLineups();
   if (ev.k === 'shot') {
-    if (animate) { Court.formation(ev.team); Court.shoot(ev.team, ev.loc, ev.made, reduced() ? 0 : Math.min(700, 900 / (SET.speed || 1))); }
-    else Court.marks.push({ ...(() => { const [x, y] = Court.toCourt(ev.team, ev.loc); return { x, y }; })(), made: ev.made, side: ev.team });
+    const lineup = ev.team === 'us' ? s.onUs : s.onThem; const idx = Math.max(0, lineup.indexOf(ev.pid));
+    const shooter = simPlayer(s, ev.pid);
+    if (animate) { Court.formation(ev.team); Court.shoot(ev.team, ev.loc, ev.made, reduced() ? 0 : Math.min(700, 900 / (SET.speed || 1)), idx, `#${shooter.num} ${shooter.last}`); }
+    else { const [x, y] = Court.toCourt(ev.team, ev.loc); Court.marks.push({ x, y, made: ev.made, side: ev.team }); }
     if (ev.pts) { score = true; P.dUs = ev.us; P.dThem = ev.them;
-      if (animate) { setTimeout(() => { if (ev.made) SFX.swish(); else SFX.rim(); if (ev.team === 'us' && ev.pts >= 3) { SFX.cheer(); Court.text(ev.pts === 3 ? '+3!' : 'AND ONE!', 'us'); } }, reduced() ? 0 : Math.min(650, 850 / (SET.speed || 1))); }
+      if (animate) { setTimeout(() => { if (ev.made) SFX.swish(); else SFX.rim(); if (ev.team === 'us') { SFX.crowdSwell(ev.pts >= 3 ? 1 : .6); Court.cheer(); if (ev.pts >= 3) Court.text(ev.pts === 3 ? '+3!' : 'AND ONE!', 'us'); } }, reduced() ? 0 : Math.min(650, 850 / (SET.speed || 1))); }
       const lead = P.dUs - P.dThem; if (P.lastLead != null && Math.sign(lead) !== Math.sign(P.lastLead) && lead !== 0) { big = true; announce(`Lead change. ${G.school.name} ${P.dUs}, ${s.info.opp.name} ${P.dThem}.`); } P.lastLead = lead;
     } else if (animate) setTimeout(() => SFX.rim(), reduced() ? 0 : Math.min(650, 850 / (SET.speed || 1)));
+    if (ev.clutch) { big = true; announce(ev.text, true); if (animate && ev.pts) Court.text('CLUTCH!', 'us'); }
   } else if (ev.k === 'to' && animate) { Court.formation(ev.team === 'us' ? 'them' : 'us'); }
   else if (ev.k === 'inj') { big = true; if (animate) SFX.bad(); announce(ev.text, true); }
-  else if (ev.k === 'note') big = true;
+  else if (ev.k === 'note') { big = true; if (animate && /timeout/.test(ev.text)) SFX.whistle(); const t = $('#tol-them'); if (t) t.textContent = `TO left: ${s.oppTO}`; }
+  else if (ev.k === 'clutch') big = true;
   if (ev.k === 'end') { P.dUs = ev.us; P.dThem = ev.them; big = true; }
-  const who = ev.team === 'us' ? G.school.name : ev.team === 'them' ? s.info.opp.name : '';
-  const line = { tm, text: (ev.k === 'shot' || ev.k === 'to' || ev.k === 'oreb') && who ? `${ev.text}` : ev.text, team: ev.team, score, big };
+  const line = { tm, text: ev.text, team: ev.team, score, big };
   P.lines.unshift(line);
   if (animate) { const ol = $('#pbp'); if (ol) { ol.insertAdjacentHTML('afterbegin', pbpLine(line)); while (ol.children.length > 60) ol.lastChild.remove(); } updateBoard(); updateMomentum(); }
 }
 function updateBoard() {
-  const P = UI.play; const u = $('#sb-us'), t = $('#sb-them'), c = $('#sb-clock'), q = $('#sb-q'), tx = $('#sb-text');
+  const P = UI.play; const u = $('#sb-us'), t = $('#sb-them'), c = $('#sb-clock'), q = $('#sb-q'), tx = $('#sb-text'), to = $('#tol-us');
   if (u) u.innerHTML = seg7(String(P.dUs).padStart(2, ' '), 46); if (t) t.innerHTML = seg7(String(P.dThem).padStart(2, ' '), 46);
   if (c) c.innerHTML = seg7(fmtClock(P.clock), 28, 'var(--led-red)');
   if (q) q.textContent = qLabel(P.curQ || 0);
   if (tx) tx.textContent = `${G.school.name} ${P.dUs}, ${UI.sim.info.opp.name} ${P.dThem}`;
+  if (to) to.innerHTML = toPips(UI.sim.to);
 }
 function updateMomentum() { const m = $('#mom'); if (!m) return; const v = UI.sim.momentum / 6; m.style.left = v >= 0 ? '50%' : `${50 + v * 50}%`; m.style.width = `${Math.abs(v) * 50}%`; m.style.background = v >= 0 ? 'var(--team)' : 'var(--ink-3)'; }
 function updateLiveBox() { const b = $('#live-box-body'); if (!b || !UI.sim) return; b.innerHTML = boxTable(UI.sim.box, G.roster, 'Your team') + boxTable(UI.sim.box, UI.sim.info.opp.roster, UI.sim.info.opp.name); }
-function refreshControls() { const c = $('#controls'); if (c) c.innerHTML = gameControls(); const b = $('#break'); if (b) b.innerHTML = UI.play.breakHtml || ''; }
+function refreshControls() { const c = $('#controls'); if (c) c.innerHTML = gameControls(); const b = $('#break'); if (b) b.innerHTML = UI.play.panelHtml || ''; }
+function setPanel(kind, html, focusSel) { const P = UI.play; P.panel = kind; P.panelHtml = html; clearTimeout(P.timer); refreshControls(); const f = focusSel && $(focusSel); if (f) f.focus({ preventScroll: true }); }
 function skipQuarter() {
-  const P = UI.play; clearTimeout(P.timer); let ev;
-  while ((ev = P.queue.shift())) { showEvent(ev, false); if (ev.k === 'end') { const ol = $('#pbp'); if (ol) ol.innerHTML = P.lines.slice(0, 60).map(pbpLine).join(''); updateBoard(); updateMomentum(); return onBreak(ev); } }
+  const P = UI.play; clearTimeout(P.timer);
+  for (let g = 0; g < 400; g++) {
+    const ev = nextEvent(); if (!ev) break;
+    showEvent(ev, false);
+    if (ev.k === 'clutch' || ev.k === 'end') { const ol = $('#pbp'); if (ol) ol.innerHTML = P.lines.slice(0, 60).map(pbpLine).join(''); updateBoard(); updateMomentum(); courtLineups(); return ev.k === 'clutch' ? openClutch(ev) : onBreak(ev); }
+  }
+}
+/* Shared panel: strategy + substitutions */
+function adjustBlock() {
+  const s = UI.sim; const st = s.strat;
+  const seg = (key, opts) => `<div class="seg" role="radiogroup" aria-label="${key}">${opts.map(([v, l]) => `<label><input type="radio" name="tq-${key}" value="${v}" data-act="qstrat" data-k="${key}" ${st[key] === v ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div>`;
+  const avail = s.my.map(id => simPlayer(s, id)).filter(p => !p.inj);
+  const subs = s.onUs.map((id, i) => { const cur = simPlayer(s, id); return `<div class="slot"><label for="sub-${i}">On court ${i + 1}</label><select id="sub-${i}" data-act="sub" data-i="${i}">${avail.map(p => `<option value="${p.id}" ${p.id === id ? 'selected' : ''}>#${p.num} ${E(p.last)} · E${Math.round(p.gEnergy)}</option>`).join('')}</select><div class="num muted" style="font-size:.85rem;margin-top:4px">${cur.pos} · OVR ${ovr(cur)}</div><div>${ebar(cur.gEnergy)}</div></div>`; }).join('');
+  return `<div class="strat"><div><div class="eyebrow">Tempo</div>${seg('tempo', [['slow', 'Slow'], ['balanced', 'Balanced'], ['fast', 'Fast']])}</div><div><div class="eyebrow">Defense</div>${seg('def', [['man', 'Man'], ['zone', 'Zone'], ['press', 'Press']])}</div><div><div class="eyebrow">Offense</div>${seg('focus', [['inside', 'Inside'], ['balanced', 'Balanced'], ['perimeter', 'Perimeter']])}</div><div><div class="eyebrow">Rotation</div>${seg('rot', [['tight', 'Tight'], ['normal', 'Normal'], ['deep', 'Deep'], ['manual', 'Manual']])}</div></div>
+    <h3 class="eyebrow" style="margin-top:14px">Substitutions <span style="text-transform:none;letter-spacing:0;font-family:var(--f-body)">· E = energy. Pick a bench player to send him in. <span id="sub-note">${st.rot === 'manual' ? 'Manual rotation: nobody subs unless you do.' : 'Auto-subs still run based on your rotation.'}</span></span></h3>
+    <div class="lineup" style="margin-top:6px">${subs}</div>`;
 }
 function onBreak(ev) {
   const s = UI.sim; const P = UI.play; updateLiveBox(); updateBoard();
   const lead = s.us - s.them; const opp = s.info.opp;
   if (s.done) {
-    SFX.buzzer(); P.final = true; const win = s.us > s.them;
+    SFX.buzzer(); P.final = true; const win = s.us > s.them; SFX.crowdSwell(win ? 1.2 : .3); setTimeout(() => SFX.crowdStop(), 2500);
     setTimeout(() => { if (win) SFX.good(); else SFX.bad(); }, 900);
     announce(`Final. ${win ? 'You win' : 'You lose'}, ${s.us} to ${s.them}.`, true);
-    P.breakHtml = `<div class="timeout" role="region" aria-label="Final"><h2>Final: ${win ? 'You win!' : 'Tough loss.'} ${s.us}–${s.them}</h2><p class="muted" style="margin-top:4px">${win ? 'The locker room is loud.' : 'Learn from the tape and bounce back.'}</p><div class="cta-bar"><button class="btn big primary" data-act="to-recap" id="to-recap">See game recap →</button></div></div>`;
-    refreshControls(); $('#to-recap') && $('#to-recap').focus(); return;
+    setPanel('final', `<div class="timeout" role="region" aria-label="Final"><h2>Final: ${win ? 'You win!' : 'Tough loss.'} ${s.us}–${s.them}</h2><p class="muted" style="margin-top:4px">${win ? 'The locker room is loud.' : 'Learn from the tape and bounce back.'}</p><div class="cta-bar"><button class="btn big primary" data-act="to-recap" id="to-recap">See game recap →</button></div></div>`, '#to-recap');
+    return;
   }
   SFX.whistle();
-  const half = s.q === 2; const st = s.strat; const quarterName = s.q >= 4 ? 'overtime' : ['', 'first quarter', 'halftime', 'third quarter'][s.q];
-  announce(`${half ? 'Halftime' : 'End of the ' + quarterName}. ${G.school.name} ${s.us}, ${opp.name} ${s.them}.`);
-  const seg = (key, opts) => `<div class="seg" role="radiogroup" aria-label="${key}">${opts.map(([v, l]) => `<label><input type="radio" name="tq-${key}" value="${v}" data-act="qstrat" data-k="${key}" ${st[key] === v ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div>`;
-  const tired = s.my.map(id => simPlayer(s, id)).filter(p => s.onUs.includes(p.id)).sort((a, b) => a.gEnergy - b.gEnergy)[0];
-  P.breakHtml = `<div class="timeout" role="region" aria-labelledby="to-h"><h2 id="to-h">${half ? 'Halftime' : s.q >= 4 ? 'Overtime' : 'Timeout'}: ${lead > 0 ? `up ${lead}` : lead < 0 ? `down ${-lead}` : 'tied'}</h2>
-    <p class="muted" style="margin:4px 0 12px">${lead < -8 ? 'You need a change. Try a press or a faster tempo to create more chances.' : lead > 8 ? 'Protect the lead: slow the tempo and keep legs fresh.' : 'A close one. Small adjustments matter.'} ${tired ? `Most tired starter: ${pname(tired)} (energy ${Math.round(tired.gEnergy)}).` : ''}</p>
+  const half = s.q === 2; const quarterName = s.q >= 4 ? 'overtime' : ['', 'first quarter', 'halftime', 'third quarter'][s.q];
+  if (!ev.silent) announce(`${half ? 'Halftime' : 'End of the ' + quarterName}. ${G.school.name} ${s.us}, ${opp.name} ${s.them}.`);
+  const tired = s.onUs.map(id => simPlayer(s, id)).sort((a, b) => a.gEnergy - b.gEnergy)[0];
+  setPanel('break', `<div class="timeout" role="region" aria-labelledby="to-h"><h2 id="to-h">${half ? 'Halftime' : s.q >= 4 ? 'Overtime' : 'Quarter break'}: ${lead > 0 ? `up ${lead}` : lead < 0 ? `down ${-lead}` : 'tied'}</h2>
+    <p class="muted" style="margin:4px 0 12px">${lead < -8 ? 'You need a change. Try a press or a faster tempo to create more chances.' : lead > 8 ? 'Protect the lead: slow the tempo and keep legs fresh.' : 'A close one. Small adjustments matter.'} ${tired ? `Most tired player on the floor: ${pname(tired)} (energy ${Math.round(tired.gEnergy)}).` : ''}</p>
     ${half && !s.halfTalk ? `<fieldset style="border:0;padding:0;margin:0 0 12px"><legend class="eyebrow">Halftime talk (pick one)</legend><div class="choices" style="margin-top:6px">
       <button class="choice" data-act="talk" data-t="fire"><span class="k">1</span><span class="t">Fire them up</span><span class="tags"><span class="chip">Shooting boost</span><span class="chip">Needs chemistry 50+ or it may backfire</span></span></button>
       <button class="choice" data-act="talk" data-t="calm"><span class="k">2</span><span class="t">Stay calm, catch your breath</span><span class="tags"><span class="chip">Energy +10 for everyone</span></span></button>
       <button class="choice" data-act="talk" data-t="star"><span class="k">3</span><span class="t">Adjust to their top scorer</span><span class="tags"><span class="chip">Their star shoots worse</span></span></button></div></fieldset>` : ''}
     ${s.talkMsg ? `<p class="outcome" style="margin:0 0 12px">${E(s.talkMsg)}</p>` : ''}
-    <div class="strat"><div><div class="eyebrow">Tempo</div>${seg('tempo', [['slow', 'Slow'], ['balanced', 'Balanced'], ['fast', 'Fast']])}</div><div><div class="eyebrow">Defense</div>${seg('def', [['man', 'Man'], ['zone', 'Zone'], ['press', 'Press']])}</div><div><div class="eyebrow">Offense</div>${seg('focus', [['inside', 'Inside'], ['balanced', 'Balanced'], ['perimeter', 'Perimeter']])}</div><div><div class="eyebrow">Rotation</div>${seg('rot', [['tight', 'Tight'], ['normal', 'Normal'], ['deep', 'Deep']])}</div></div>
-    <div class="cta-bar"><button class="btn" data-act="sim-rest">Sim to final</button><button class="btn big primary" data-act="resume-q" id="resume-q">${s.q >= 4 ? 'Start overtime' : `Start the ${['', '2nd', '3rd', '4th'][s.q]} quarter`} →</button></div></div>`;
-  refreshControls(); const b = $('#resume-q'); if (b) b.focus({ preventScroll: true });
+    ${adjustBlock()}
+    <div class="cta-bar"><button class="btn" data-act="sim-rest">Sim to final</button><button class="btn big primary" data-act="resume-q" id="resume-q">${s.q >= 4 ? 'Start overtime' : `Start the ${['', '2nd', '3rd', '4th'][s.q]} quarter`} →</button></div></div>`, '#resume-q');
+}
+function openTimeout(kind) {
+  const s = UI.sim; const ev = callTimeout(s, kind); if (!ev) { toast('No timeouts of that length left.'); return; }
+  clearTimeout(UI.play.timer); SFX.whistle(); showEvent(ev, true); updateMomentum();
+  announce(`Timeout called. ${G.school.name} ${s.us}, ${s.info.opp.name} ${s.them}.`);
+  setPanel('timeout', `<div class="timeout" role="region" aria-labelledby="to-h"><h2 id="to-h">${kind === 'full' ? '60-second' : '30-second'} timeout</h2>
+    <p class="muted" style="margin:4px 0 12px">Momentum reset to even. Your players recovered ${kind === 'full' ? 8 : 3} energy. Make changes, then get back out there. Left: ${s.to.full} × 60s, ${s.to.short} × 30s.</p>
+    ${adjustBlock()}
+    <div class="cta-bar"><button class="btn big primary" data-act="resume-play" id="resume-play">Back to the game →</button></div></div>`, '#resume-play');
+}
+function openClutch(ev) {
+  const s = UI.sim; SFX.whistle(); SFX.crowdSwell(.8);
+  const O = s.onUs.map(id => simPlayer(s, id));
+  const best = O.slice().sort((a, b) => clutchOdds(s, b.id, 'three') * 1.5 - clutchOdds(s, a.id, 'three') * 1.5)[0];
+  UI.clutch = UI.clutch && O.some(p => p.id === UI.clutch.pid) ? UI.clutch : { pid: best.id, type: s.us >= s.them ? 'mid' : (s.them - s.us >= 3 ? 'three' : 'mid'), hold: Math.abs(s.us - s.them) <= 2 && s.us >= s.them };
+  const c = UI.clutch; const types = [['three', '3-pointer'], ['mid', 'Jumper'], ['inside', 'Drive']];
+  setPanel('clutch', `<div class="timeout" role="region" aria-labelledby="cl-h" style="border-width:3px"><h2 id="cl-h">Final possession</h2>
+    <p style="margin:4px 0 12px"><b>${E(ev.text)}</b> ${s.them - s.us === 3 ? 'Down 3: only a three ties it.' : s.us > s.them ? 'Holding the ball runs out the clock so they get no answer.' : 'Score here or the game may be over.'}</p>
+    <fieldset style="border:0;padding:0;margin:0"><legend class="eyebrow">Who takes the shot?</legend><div class="choices" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">${O.map(p => `<label class="choice" style="cursor:pointer"><input type="radio" name="cl-p" value="${p.id}" data-act="clutch-set" data-k="pid" ${c.pid === p.id ? 'checked' : ''} style="grid-row:1/3;width:20px;height:20px;margin:4px"><span class="t">#${p.num} ${pname(p)}${p.trait === 'Clutch' ? ' · Clutch' : ''}</span><span class="num muted" style="font-size:.88rem">3PT ${clutchOdds(s, p.id, 'three')}% · Jumper ${clutchOdds(s, p.id, 'mid')}% · Drive ${clutchOdds(s, p.id, 'inside')}% · E${Math.round(p.gEnergy)}</span></label>`).join('')}</div></fieldset>
+    <div class="strat" style="margin-top:12px"><div><div class="eyebrow">Shot</div><div class="seg" role="radiogroup" aria-label="Shot type">${types.map(([v, l]) => `<label><input type="radio" name="cl-t" value="${v}" data-act="clutch-set" data-k="type" ${c.type === v ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div></div>
+      <div><div class="eyebrow">Clock</div><div class="seg" role="radiogroup" aria-label="Clock"><label><input type="radio" name="cl-h" value="0" data-act="clutch-set" data-k="hold" ${!c.hold ? 'checked' : ''}><span>Shoot now</span></label><label><input type="radio" name="cl-h" value="1" data-act="clutch-set" data-k="hold" ${c.hold ? 'checked' : ''}><span>Hold for the last shot</span></label></div></div></div>
+    <p class="num" style="margin-top:10px;font-size:1.1rem">Estimated make chance: <b id="cl-odds">${clutchOdds(s, c.pid, c.type)}%</b> for ${c.type === 'three' ? '3' : '2'} points${c.hold ? ', then no time for them to answer' : ''}</p>
+    <div class="cta-bar"><button class="btn big primary" data-act="clutch-go" id="clutch-go">Run the play →</button></div></div>`, '#clutch-go');
 }
 function simRest() {
   const s = UI.sim; const P = UI.play; clearTimeout(P.timer); if (s.q === 2 && !s.halfTalk) s.talkMsg = applyHalftime(s, 'calm');
-  while (!s.done) { P.clock = 0; P.curQ = s.q; const evs = simQuarter(s); evs.forEach(e => showEvent(e, false)); }
+  s.headless = true; P.queue = [];
+  for (let g = 0; g < 2000 && !s.done; g++) { const evs = simStep(s); evs.forEach(e => showEvent(e, false)); }
+  s.headless = false;
   const ol = $('#pbp'); if (ol) ol.innerHTML = P.lines.slice(0, 60).map(pbpLine).join('');
   updateMomentum(); onBreak({});
 }
@@ -533,7 +597,7 @@ function renderEnding() {
   const title = e.kind === 'missed' ? `${E0.title}: ${e.sub}` : E0.title; const text = e.why || E0.text;
   const P = G.playoffs; const won = i => P && (P.round > i || (P.round === i && G.lastGame && G.lastGame.win));
   return `<header class="rafters"><div class="beam"></div><div class="banners" style="padding-top:0">${ROUNDS.map((r, i) => pennant(['Sect. Semi', 'Sect. Final', 'State Semi', 'State Title'][i], won(i), c1, c2, ['I', 'II', 'III', 'IV'][i])).join('')}</div>
-    <div class="title-hero" style="padding-bottom:20px"><div class="logo-line">${E(myFull())} · Season complete</div><h1>${E(title)}</h1><p>${E(text)}</p></div></header>
+    <div class="title-hero" style="padding-bottom:20px"><div class="logo-line">${E(myFull())} · Season ${G.season} of ${MAX_SEASONS} · ${seasonLabel(G.season)}</div><h1>${E(title)}</h1><p>${E(text)}</p></div></header>
   <main class="wrap stack" id="main" style="padding-block:20px 48px;gap:16px">
     <div class="grid2">
       <section class="card" style="text-align:center"><div class="eyebrow">Legacy grade</div><div class="grade">${L.grade}</div><div class="num" style="font-size:1.2rem">${L.total} / ${L.max} legacy points</div>
@@ -552,7 +616,52 @@ function renderEnding() {
     </div>
     <section><div class="panel-title"><h2>Achievements</h2><span class="muted">${e.ach.filter(a => a.got).length} of ${e.ach.length} unlocked</span></div>
       <div class="ach">${e.ach.map(a => `<div class="a ${a.got ? 'got' : 'no'}">${icon(a.got ? 'trophy' : 'lock')}<div><b>${a.n}</b><div class="muted" style="font-size:.88rem">${a.d}</div><span class="sr-only">${a.got ? 'Unlocked' : 'Locked'}</span></div></div>`).join('')}</div></section>
-    <div class="cta-bar"><button class="btn" data-act="to-title">Main menu</button><button class="btn" data-act="new">New school</button><button class="btn big primary" data-act="again">Play again with ${E(G.school.name)} →</button></div>
+    <div class="cta-bar">${canContinueCareer() ? `<span class="why">Season ${G.season} of ${MAX_SEASONS} done. Your seniors graduate; everyone else returns stronger.</span><button class="btn" data-act="retire">Retire now: career summary</button><button class="btn big primary" data-act="offseason">Start the offseason →</button>` : `<span class="why">${G.ending.kind === 'crisis' ? 'This ends your coaching career.' : 'That was the final season of your contract.'}</span><button class="btn big primary" data-act="retire">See your career summary →</button>`}</div>
+  </main>`;
+}
+
+/* ---------- OFFSEASON ---------- */
+function renderOffseason() {
+  const O = G.offseason; const grads = G.roster.filter(p => O.grads.includes(p.id)); const ret = G.roster.filter(p => !O.grads.includes(p.id));
+  const b = nextBudgetPreview(O.summer); const last = G.career.at(-1);
+  return `${topbar(`Offseason · after season ${G.season}`)}
+  <main class="wrap stack" id="main" style="padding-block:16px 48px;gap:16px">
+    <div><div class="eyebrow">Offseason · Season ${G.season} → ${G.season + 1} of ${MAX_SEASONS}</div><h1 style="font-family:var(--f-display);font-weight:400;font-size:2rem">Build for next year</h1>
+      <p class="muted" style="max-width:68ch">Last season: <b>${E(ENDINGS[last.kind].title)}</b>, ${last.rec.w}–${last.rec.l}, grade ${last.grade}. Long-term planning happens here: who you develop this summer and how you spend money shapes the next ${MAX_SEASONS - G.season} season${MAX_SEASONS - G.season > 1 ? 's' : ''}.</p></div>
+    ${coachTip('offseason', 'Seniors graduate, so a roster built only on seniors falls apart next year. Freshmen and sophomores with high potential (★) are your future. Winning raises program prestige, which brings better tryout classes.')}
+    <div class="grid2">
+      <section class="card"><div class="panel-title"><h2>Graduating seniors (${grads.length})</h2></div>
+        ${grads.length ? grads.map(p => `<div class="grad">${jersey(p)}<div><b>${pname(p)}</b> <span class="muted num">${p.pos} · OVR ${ovr(p)}</span>${p.joinedAsFr && G.season - (p.joined || 1) >= 3 ? ' <span class="chip team">4-year player</span>' : ''}<div class="muted num" style="font-size:.88rem">${((p.cs ? p.cs.pts : 0) + p.s.pts)} career points with you</div></div><span class="muted" style="font-size:.88rem">Thanks, #${p.num}</span></div>`).join('') : '<p class="muted">No seniors this year. Everyone returns.</p>'}</section>
+      <section class="card"><div class="panel-title"><h2>Returning (${ret.length})</h2><span class="muted">${Math.max(0, 10 - ret.length)} must be replaced at tryouts</span></div>
+        <div class="roster-list">${ret.sort((a, b) => ovr(b) - ovr(a)).map(p => `<div class="prow" style="cursor:default">${jersey(p)}<span style="min-width:0"><span class="nm" style="display:block">${pname(p)}</span><span class="meta">${p.pos} · ${YEAR[p.year]} → ${YEAR[Math.min(12, p.year + 1)]} · potential ${stars(p.pot, ovr(p))}</span></span><span class="ovr">${ovr(p)}<small>OVR</small></span></div>`).join('')}</div></section>
+    </div>
+    <section><div class="panel-title"><h2>Summer program</h2><span class="muted">Pick one. Returning players grow over the summer; this decides how.</span></div>
+      <div class="summer" role="radiogroup" aria-label="Summer program">${Object.entries(SUMMER).map(([k, v]) => `<label class="opt"><input type="radio" name="summer" value="${k}" data-act="summer" ${O.summer === k ? 'checked' : ''}><span class="face"><b>${v.name}</b><span class="chip" style="margin:2px 0">${v.cost ? U.money(v.cost) : 'Free'}</span><span style="font-size:.9rem;color:var(--ink-2)">${v.d}</span></span></label>`).join('')}</div></section>
+    <section class="card"><div class="panel-title"><h2>Next season’s budget</h2></div>
+      <div class="budget-lines num"><span>District base funding</span><span>${U.money(b.base)}</span><span>${b.carry >= 0 ? '35% of leftover money carries over' : 'Debt carried over'}</span><span>${U.money(b.carry)}</span><span>Booster bonus for last season’s finish</span><span>${U.money(b.bonus)}</span><span>Season-ticket sales (fan support ${G.res.fans})</span><span>${U.money(b.gate)}</span><span>Summer program</span><span>−${U.money(b.cost)}</span><span class="tot">Starting budget</span><span class="tot">${U.money(b.total)}</span></div>
+      <p class="muted" style="margin-top:8px;font-size:.9rem">Staff and services (assistant coach, trainer, scouting, tutoring) are one-year contracts and must be bought again. Facilities (recovery equipment, team store) stay.</p></section>
+    <div class="cta-bar"><button class="btn" data-act="retire">Retire instead</button><button class="btn big primary" data-act="next-season">Start season ${G.season + 1} tryouts →</button></div>
+  </main>`;
+}
+
+/* ---------- CAREER SUMMARY ---------- */
+function renderCareer() {
+  const C = G.careerEnd; const E0 = CAREER_END[C.kind]; const [c1, c2] = schoolColors();
+  const legends = G.alumni.concat(G.roster.map(p => ({ name: `${p.first} ${p.last}`, num: p.num, pos: p.pos, ovr: ovr(p), pts: (p.cs ? p.cs.pts : 0) + p.s.pts, gp: (p.cs ? p.cs.gp : 0) + p.s.gp }))).sort((a, b) => b.pts - a.pts).slice(0, 3);
+  return `<header class="rafters"><div class="beam"></div>
+    <div class="banners" style="padding-top:0" aria-label="State title banners">${G.banners.length ? G.banners.map(b => pennant(`State Champs`, true, c1, c2, String(b.year))).join('') : pennant('No titles', false, c1, c2, '—')}</div>
+    <div class="title-hero" style="padding-bottom:20px"><div class="logo-line">${E(myFull())} · Coaching career · ${G.career.length} season${G.career.length > 1 ? 's' : ''}</div><h1>${E(E0.title)}</h1><p>${E(E0.text)}</p></div></header>
+  <main class="wrap stack" id="main" style="padding-block:20px 48px;gap:16px">
+    <div class="grid2">
+      <section class="card" style="text-align:center"><div class="eyebrow">Career grade</div><div class="grade">${C.grade}</div>
+        <div class="row" style="justify-content:center;margin-top:8px"><span class="chip">Record ${C.w}–${C.l}</span><span class="chip">${C.titles} State title${C.titles === 1 ? '' : 's'}</span><span class="chip">${C.playoffs} playoff trip${C.playoffs === 1 ? '' : 's'}</span><span class="chip">Prestige ${G.prestige}</span></div></section>
+      <section class="card"><div class="eyebrow" style="margin-bottom:8px">Program legends</div><ul class="list-plain">${legends.map(l => `<li><span class="jersey" aria-hidden="true">${l.num}</span><span><b>${E(l.name)}</b> <span class="muted num">${l.pos} · ${l.pts} pts in ${l.gp} games</span></span></li>`).join('')}</ul></section>
+    </div>
+    <section><div class="panel-title"><h2>Season by season</h2></div><div class="table-wrap"><table class="data"><thead><tr><th scope="col">Season</th><th scope="col">Result</th><th class="n" scope="col">W–L</th><th class="n" scope="col">Seed</th><th class="n" scope="col">Team OVR</th><th scope="col">Grade</th></tr></thead><tbody>
+      ${G.career.map(c => `<tr><th scope="row">${c.label}</th><td>${E(ENDINGS[c.kind].title)}</td><td class="n">${c.rec.w}–${c.rec.l}</td><td class="n">${c.seed ? '#' + c.seed : '—'}</td><td class="n">${c.rating}</td><td>${c.grade}</td></tr>`).join('')}</tbody></table></div></section>
+    <section><div class="panel-title"><h2>Career achievements</h2><span class="muted">${C.ach.filter(a => a.got).length} of ${C.ach.length}</span></div>
+      <div class="ach">${C.ach.map(a => `<div class="a ${a.got ? 'got' : 'no'}">${icon(a.got ? 'trophy' : 'lock')}<div><b>${a.n}</b><div class="muted" style="font-size:.88rem">${a.d}</div><span class="sr-only">${a.got ? 'Unlocked' : 'Locked'}</span></div></div>`).join('')}</div></section>
+    <div class="cta-bar"><button class="btn" data-act="to-title">Main menu</button><button class="btn" data-act="new">New school</button><button class="btn big primary" data-act="again">New career at ${E(G.school.name)} →</button></div>
   </main>`;
 }
 function sparkChart(title, vals, hist, fixed) {
@@ -572,7 +681,7 @@ function sparkChart(title, vals, hist, fixed) {
 }
 
 /* ---------- MODALS ---------- */
-function openModal(m) { UI.prevFocus = document.activeElement; UI.modal = m; renderModal(); const f = $('.modal [data-autofocus]') || $('.modal .modal-h button') ; if (f) f.focus(); if (UI.play && !UI.play.paused && UI.screen === 'game') { UI.play.paused = true; UI.play.autoPaused = true; clearTimeout(UI.play.timer); } }
+function openModal(m) { UI.prevFocus = document.activeElement; UI.modal = m; renderModal(); const f = $('.modal [data-autofocus]') || $('.modal .modal-h button') ; if (f) f.focus(); if (UI.play && !UI.play.paused && !UI.play.panel && UI.screen === 'game') { UI.play.paused = true; UI.play.autoPaused = true; clearTimeout(UI.play.timer); } }
 function closeModal() { UI.modal = null; renderModal(); if (UI.prevFocus && document.body.contains(UI.prevFocus)) UI.prevFocus.focus(); if (UI.play && UI.play.autoPaused) { UI.play.autoPaused = false; UI.play.paused = false; refreshControls(); tick(); } }
 function renderModal() {
   const host = $('#modal-host'); if (!UI.modal) { host.innerHTML = ''; return; }
@@ -582,15 +691,22 @@ function renderModal() {
 }
 function helpBody() {
   const secs = [
-    ['goal', 'Goal', `<p>You are the new head coach. Win the <b>State Championship</b> in one season. Your team starts <b>weaker</b> than the best teams in the state, so you win by making smart decisions: developing players, managing money and morale, scouting, and choosing the right strategy.</p>`],
-    ['season', 'Season', `<ul><li><b>Preseason:</b> tryouts. Scout prospects and sign up to 4 (roster of 10–12).</li><li><b>Regular season:</b> 10 weeks, one game each. 7 district games and 3 non-district games.</li><li><b>Playoffs:</b> the top 4 in the district standings qualify. Four single-elimination rounds: Sectional Semifinal, Sectional Final, State Semifinal, State Championship.</li></ul>`],
-    ['week', 'Each week', `<ol><li><b>Practice:</b> plan 4 days (3 in the playoffs) on the whiteboard.</li><li><b>Challenge:</b> one off-court situation. Pick a response.</li><li><b>Game day:</b> set your starting five and game plan, then coach the game live. Adjust at every quarter break.</li><li><b>Recap:</b> see what changed, then move on.</li></ol>`],
+    ['goal', 'Goal', `<p>You are the new head coach on a <b>${MAX_SEASONS}-season contract</b>. Your goal each season is the <b>State Championship</b>. Your first team starts <b>weaker</b> than the best teams in the state, so you win by making smart decisions: developing players, managing money and morale, scouting, choosing the right strategy, and building a program that keeps getting better year after year.</p>`],
+    ['season', 'Season', `<ul><li><b>Preseason:</b> tryouts. Scout prospects and sign enough to reach a roster of 10–12.</li><li><b>Regular season:</b> 10 weeks, one game each. 7 district games and 3 non-district games.</li><li><b>Playoffs:</b> the top 4 in the district standings qualify. Four single-elimination rounds: Sectional Semifinal, Sectional Final, State Semifinal, State Championship.</li></ul>`],
+    ['career', 'Seasons & career', `<ul><li>After each season comes the <b>offseason</b>. Seniors graduate. Everyone else moves up a grade and grows over the summer, faster with more potential (★) and work ethic.</li><li>Pick one <b>summer program</b>: summer league (all skills), skills camp (shooting and passing), strength program (inside, rebounding and stamina), youth camp (stronger freshmen next year), or rest (free, happier players).</li><li><b>Program prestige</b> rises when you go deep in the playoffs and falls when you miss them. Higher prestige brings better tryout classes. Rivals and the state field also get tougher each year.</li><li><b>Money carries over:</b> 35% of your leftover budget, any debt, plus a booster bonus for your finish and season-ticket sales based on fan support. Staff and services are one-year contracts; facilities stay.</li><li>Your career ends after ${MAX_SEASONS} seasons, if you retire, or if the program falls into crisis. Career outcomes: <b>Dynasty Builder</b> (2+ titles), <b>Championship Coach</b>, <b>Program Builder</b> (playoffs at least every other year), <b>Journeyman Coach</b>, or <b>Contract Terminated</b>.</li></ul>`],
+    ['week', 'Each week', `<ol><li><b>Practice:</b> plan 4 days (3 in the playoffs) on the whiteboard.</li><li><b>Challenge:</b> one off-court situation. Pick a response.</li><li><b>Game day:</b> set your starting five and game plan, then coach the game live.</li><li><b>Recap:</b> see what changed, then move on.</li></ol>`],
+    ['gameday', 'Coaching the game', `<ul><li><b>Timeouts:</b> like real high school rules, you get three 60-second and two 30-second timeouts per game. A timeout resets <b>momentum</b> (runs make shots easier for the team on the run), gives your players energy (+8 or +3), and lets you change strategy and make substitutions.</li><li><b>Substitutions:</b> during any timeout or quarter break, pick who is on the floor. Set Rotation to <b>Manual</b> if you want full control with no auto-subs.</li><li><b>Final possession:</b> in the last 40 seconds of a close 4th quarter or overtime, the game stops so you can draw up the final play: who shoots, what kind of shot (with estimated make chances), and whether to hold the ball for the last shot.</li><li><b>Quarter breaks:</b> adjust strategy; at halftime give a team talk.</li><li>The other coach calls timeouts too, usually to stop your runs.</li></ul>`],
     ['res', 'Resources', `<ul><li><b>Budget:</b> earned from home games (more with more fans), fundraisers and deals. Spent on upgrades and challenge choices. Road games cost $150, operations $100/week. Below −$1,000 ends your season.</li><li><b>Morale</b> (0–100): each player’s happiness. Raises shooting. Wins, bonding and playing time help. Under 30, players may quit.</li><li><b>Chemistry</b> (0–100): better passing, fewer turnovers.</li><li><b>Fans</b> (0–100): more ticket money and a bigger home-court edge.</li><li><b>Reputation</b> (0–100): community trust. Unethical choices hurt it. At 0 the program is suspended.</li><li><b>Energy</b> (per player): drops with hard practice and minutes played. Tired players shoot worse, learn less and get hurt more.</li></ul>`],
     ['practice', 'Practice drills', `<ul>${Object.values(DRILLS).map(d => `<li><b>${d.name}:</b> ${d.d}</li>`).join('')}</ul><p>Repeating a drill in the same week gives less each time (100%, 80%, 60%...). Players grow faster when they have more <b>potential</b> (★), a strong work ethic, or the Hard Worker trait.</p>`],
-    ['strategy', 'Strategy & counters', `<ul><li><b>Zone</b> beats inside-heavy teams but gives up threes and offensive rebounds.</li><li><b>Press</b> forces turnovers against weak passers but drains your energy and allows layups.</li><li><b>Man-to-man</b> is best when your defenders are good.</li><li><b>Perimeter focus</b> beats a zone. <b>Inside focus</b> beats man and press.</li><li><b>Tempo:</b> slow games have fewer possessions, which means more luck. That helps the underdog. Fast games help the better team.</li><li><b>Rotation:</b> tight keeps starters in longer; deep keeps legs fresh.</li><li><b>Scouting:</b> Film Study or the Scouting Service reveals the opponent’s plan and marks counters with ✓. Each matched counter improves your shooting and hurts theirs.</li><li><b>Halftime talk:</b> fire them up (needs chemistry), calm (energy), or adjust to their top scorer.</li><li>Opponents adapt too: they may press when behind or slow down when ahead.</li></ul>`],
-    ['rules', 'Eligibility & injuries', `<ul><li>A player needs a <b>2.00 GPA</b> to play. Grades drift down each week; Study Hall and tutoring raise them.</li><li>Injuries happen in practice (Scrimmage is riskiest) and games (tired players are at higher risk). Injured players sit out for the listed weeks.</li><li>Traits: ${Object.entries(TRAITS).map(([k, v]) => `<b>${k}</b> (${v.d.replace(/\.$/, '')})`).join('; ')}.</li></ul>`],
-    ['outcomes', 'Endings', `<p>Your season can end six ways: <b>State Champions</b> (or a <b>Perfect Season</b> if you never lose), <b>State Runner-Up</b>, <b>Final Four</b>, <b>Playoff Contender</b>, <b>Missed the Playoffs</b> (either “Foundation Laid” or “Back to the Drawing Board”), or <b>Program in Crisis</b> (reputation hits 0, the budget falls below −$1,000, or too many players quit). Every ending gives a <b>Legacy grade</b> and up to 8 achievements.</p>`],
-    ['controls', 'Controls', `<ul><li>Mouse, touch or keyboard. <span class="kbd">Tab</span> moves, <span class="kbd">Enter</span>/<span class="kbd">Space</span> selects.</li><li><span class="kbd">?</span> or <span class="kbd">H</span> opens this rulebook. <span class="kbd">Esc</span> closes dialogs.</li><li>Challenges: press <span class="kbd">1</span> <span class="kbd">2</span> <span class="kbd">3</span>.</li><li>During games: <span class="kbd">Space</span> pause, <span class="kbd">S</span> skip to the quarter break.</li><li>Your season saves automatically after every step.</li></ul>`],
+    ['strategy', 'Strategy & counters', `<ul><li><b>Zone</b> beats inside-heavy teams but gives up threes and offensive rebounds.</li><li><b>Press</b> forces turnovers against weak passers but drains your energy and allows layups.</li><li><b>Man-to-man</b> is best when your defenders are good.</li><li><b>Perimeter focus</b> beats a zone. <b>Inside focus</b> beats man and press.</li><li><b>Tempo:</b> slow games have fewer possessions, which means more luck. That helps the underdog. Fast games help the better team.</li><li><b>Rotation:</b> tight keeps starters in longer; deep keeps legs fresh; manual means only you sub.</li><li><b>Scouting:</b> Film Study or the Scouting Service reveals the opponent’s plan and marks counters with ✓. Each matched counter improves your shooting and hurts theirs.</li><li><b>Halftime talk:</b> fire them up (needs chemistry), calm (energy), or adjust to their top scorer.</li><li>Opponents adapt too: they may press when behind or slow down when ahead.</li></ul>`],
+    ['rules', 'Eligibility & injuries', `<ul><li>A player needs a <b>2.00 GPA</b> to play (based on real state rules such as Florida’s). Grades drift down each week; Study Hall and tutoring raise them.</li><li>Injuries happen in practice (Scrimmage is riskiest) and games (tired players are at higher risk). Injured players sit out for the listed weeks.</li><li>Traits: ${Object.entries(TRAITS).map(([k, v]) => `<b>${k}</b> (${v.d.replace(/\.$/, '')})`).join('; ')}.</li></ul>`],
+    ['outcomes', 'Endings', `<p><b>Each season</b> ends one of six ways: <b>State Champions</b> (or a <b>Perfect Season</b> if you never lose), <b>State Runner-Up</b>, <b>Final Four</b>, <b>Playoff Contender</b>, <b>Missed the Playoffs</b> (either “Foundation Laid” or “Back to the Drawing Board”), or <b>Program in Crisis</b> (reputation hits 0, the budget falls below −$1,000, or too many players quit). Every season gives a <b>Legacy grade</b> and up to 8 achievements.</p><p><b>Your career</b> ends with one of five outcomes (see Seasons & career), a career grade, program legends and 6 career achievements.</p>`],
+    ['controls', 'Controls', `<ul><li>Mouse, touch or keyboard. <span class="kbd">Tab</span> moves, <span class="kbd">Enter</span>/<span class="kbd">Space</span> selects.</li><li><span class="kbd">?</span> or <span class="kbd">H</span> opens this rulebook. <span class="kbd">Esc</span> closes dialogs.</li><li>Challenges: press <span class="kbd">1</span> <span class="kbd">2</span> <span class="kbd">3</span>.</li><li>During games: <span class="kbd">Space</span> pause, <span class="kbd">T</span> timeout, <span class="kbd">S</span> skip to the quarter break.</li><li>Your career saves automatically after every step.</li></ul>`],
+    ['sources', 'Sources', `<p>The game’s rules are based on real high school basketball. Everything else (schools, players, events) is fictional.</p><ul>
+      <li><b>Game length and timeouts</b> (four 8-minute quarters, 4-minute overtime, three 60-second and two 30-second timeouts): NCAA, <a href="https://ncaaorg.s3.amazonaws.com/championships/sports/basketball/rules/common/2025-26PRXBB_MajorRulesDifferences.pdf" target="_blank" rel="noopener">2025–26 NCAA/NFHS Major Basketball Rules Differences</a>.</li>
+      <li><b>Court size</b> (84 × 50 ft, 19′9″ three-point arc, 12-ft lane, free throw line 15 ft from the backboard): CoverSports, <a href="https://coversports.com/resources/gym-guides/high-school-basketball-court-dimensions-markings" target="_blank" rel="noopener">High School Basketball Court Dimensions &amp; Markings</a>.</li>
+      <li><b>2.0 GPA eligibility</b> (“a cumulative 2.0 grade point average on a 4.0 unweighted scale”): Florida High School Athletic Association, <a href="https://fhsaa.com/sports/2020/4/9/Academics.aspx" target="_blank" rel="noopener">Academics</a>. Rules vary by state.</li>
+      <li><b>2025–26 rule changes</b>: NFHS, <a href="https://nfhs.org/resources/sports/basketball-rules-changes-2025-26" target="_blank" rel="noopener">Basketball Rules Changes 2025–26</a>.</li></ul>`],
   ];
   const cur = UI.ruleSec;
   return `<nav class="rules-nav" aria-label="Rule sections">${secs.map(([k, l]) => `<button class="btn sm ${k === cur ? 'primary' : ''}" data-act="rule" data-k="${k}" aria-pressed="${k === cur}">${l}</button>`).join('')}</nav>
@@ -602,7 +718,8 @@ function settingsBody() {
   <div class="settings-row"><div><b>Text size</b></div><div class="seg" role="radiogroup" aria-label="Text size">${opt('text', 1, SET.text, '100%')}${opt('text', 1.15, SET.text, '115%')}${opt('text', 1.3, SET.text, '130%')}</div></div>
   <div class="settings-row"><div><b>Motion</b><div class="d">Reduced turns off ball flights and animations. Auto follows your device.</div></div><div class="seg" role="radiogroup" aria-label="Motion">${opt('motion', 'auto', SET.motion, 'Auto')}${opt('motion', 'reduce', SET.motion, 'Reduced')}${opt('motion', 'full', SET.motion, 'Full')}</div></div>
   <div class="settings-row"><div><b>Color-blind friendly</b><div class="d">Swaps green/red for blue/orange. Shapes and labels always carry meaning too.</div></div><div class="seg" role="radiogroup" aria-label="Color-blind mode">${opt('cb', 'false', SET.cb, 'Off')}${opt('cb', 'true', SET.cb, 'On')}</div></div>
-  <div class="settings-row"><div><b>Sound</b><div class="d">All sounds are generated live by the game.</div></div><div class="row"><div class="seg" role="radiogroup" aria-label="Sound">${opt('sound', 'true', SET.sound, 'On')}${opt('sound', 'false', SET.sound, 'Off')}</div><label for="vol" class="sr-only">Volume</label><input type="range" id="vol" min="0" max="1" step=".1" value="${SET.vol}" data-act="vol"></div></div>
+  <div class="settings-row"><div><b>Sound</b><div class="d">Master switch for all audio. Sound effects and crowd are generated live by the game.</div></div><div class="row"><div class="seg" role="radiogroup" aria-label="Sound">${opt('sound', 'true', SET.sound, 'On')}${opt('sound', 'false', SET.sound, 'Off')}</div><label for="vol" class="sr-only">Volume</label><input type="range" id="vol" min="0" max="1" step=".1" value="${SET.vol}" data-act="vol"></div></div>
+  <div class="settings-row"><div><b>Music</b><div class="d">An original soundtrack generated live by the game. Plays on menus; the crowd takes over during games.</div></div><div class="row"><div class="seg" role="radiogroup" aria-label="Music">${opt('music', 'true', SET.music, 'On')}${opt('music', 'false', SET.music, 'Off')}</div><label for="mvol" class="sr-only">Music volume</label><input type="range" id="mvol" min="0" max="1" step=".05" value="${SET.mvol}" data-act="mvol"></div></div>
   <div class="settings-row"><div><b>Default game speed</b></div><div class="seg" role="radiogroup" aria-label="Game speed">${opt('speed', 1, SET.speed, '1×')}${opt('speed', 2, SET.speed, '2×')}${opt('speed', 4, SET.speed, '4×')}</div></div>
   <div class="settings-row"><div><b>Exact numbers on choices</b><div class="d">Show exact amounts (like “−$400”) instead of ▲/▼ arrows. On by default in Rookie.</div></div><div class="seg" role="radiogroup" aria-label="Exact numbers">${opt('exact', 'null', SET.exact, 'By difficulty')}${opt('exact', 'true', SET.exact, 'Always')}${opt('exact', 'false', SET.exact, 'Arrows')}</div></div>
   <div class="settings-row"><div><b>Coach tips</b><div class="d">Short hints the first time you reach each step.</div></div><div class="seg" role="radiogroup" aria-label="Coach tips">${opt('tips', 'true', SET.tips, 'On')}${opt('tips', 'false', SET.tips, 'Off')}</div></div>
@@ -613,12 +730,12 @@ function creditsBody() {
   <h3>Tools & technology</h3><ul>
     <li><b>Languages:</b> HTML5, CSS3 and JavaScript (ES2020). No game engine or framework. The whole game is one file that runs offline in any modern browser.</li>
     <li><b>Graphics:</b> Canvas 2D API for the court, drawn to real NFHS dimensions (84 × 50 ft court, 19′9″ three-point arc, 12 ft lane). SVG for crests, banners, icons and the 7-segment scoreboard. All art is generated by code.</li>
-    <li><b>Audio:</b> Web Audio API. The swish, rim, whistle, buzzer and crowd are synthesized from oscillators and filtered noise, so there are no audio files.</li>
-    <li><b>Simulation:</b> possession-by-possession basketball engine (shot selection, turnovers, rebounds, fouls, fatigue, substitutions), an adaptive opponent AI and a seeded Mulberry32 random generator so any season can be replayed.</li>
+    <li><b>Audio:</b> Web Audio API. The swish, rim, whistle, buzzer, live crowd and the menu soundtrack are all synthesized from oscillators and filtered noise by a step sequencer, so there are no audio files.</li>
+    <li><b>Simulation:</b> possession-by-possession basketball engine (shot selection, turnovers, rebounds, fouls, fatigue, momentum, timeouts, substitutions), an adaptive opponent AI, a multi-season career model (graduation, aging, prestige-driven recruiting) and a seeded Mulberry32 random generator so any career can be replayed.</li>
     <li><b>Accessibility:</b> WCAG contrast math chooses readable text on any team color; keyboard play; screen-reader announcements; reduced motion; high-contrast and color-blind modes.</li>
     <li><b>Testing:</b> automated Playwright browser tests play full seasons and check every screen. A balance harness simulates hundreds of seasons to tune difficulty.</li></ul>
   <h3>Fonts</h3><p>Graduate, Atkinson Hyperlegible, Barlow Condensed and Permanent Marker from Google Fonts, used under the SIL Open Font License. When offline, the game falls back to system fonts.</p>
-  <h3>Content</h3><p>All schools, players, sponsors and events are fictional. No copyrighted images, logos or sounds are used.</p></div>`;
+  <h3>Content</h3><p>All schools, players, sponsors and events are fictional. No copyrighted images, logos or sounds are used. The music is an original loop composed in code. Real-world rules the game is based on are cited in the Rulebook under <b>Sources</b>.</p></div>`;
 }
 function playerBody(m) {
   const p = G.roster.find(x => x.id === m.id) || (G.prospects || []).find(x => x.id === m.id); if (!p) return '<p>Player not found.</p>'; const o = ovr(p);
@@ -634,12 +751,12 @@ function confirmBody(m) { return `<p>${E(m.body)}</p><div class="cta-bar"><butto
 function seenTip(k) { if (G) { G.tipsSeen = G.tipsSeen || {}; G.tipsSeen[k] = true; } }
 function startNew(opts) { newGame(opts); UI.tab = 'week'; UI.banner = null; UI.slot = null; save(); go('tryouts'); }
 const ACT = {
-  quick() { SFX.init(); SFX.click(); newGame({ name: 'Riverside', mascot: 'hawks', pal: 'crimson', diff: 'varsity' }); autoSignBest(); finalizeTryouts(); UI.tab = 'week'; UI.banner = null; save(); go('hub'); toast('Quick Start: Riverside Hawks, Varsity. Best 4 prospects signed.'); },
-  new() { SFX.init(); const go2 = () => { UI.setup = { name: 'Riverside', mascot: 'hawks', pal: 'crimson', diff: 'varsity', seed: '' }; go('setup'); };
-    if (loadSave() && loadSave().phase !== 'ended' && UI.screen === 'title') openModal({ type: 'confirm', title: 'Start a new season?', body: 'Your current season will be replaced.', yes: 'Start new season', onYes: go2 }); else go2(); },
-  continue() { SFX.init(); const s = loadSave(); if (!s) return; G = s; UI.tab = 'week'; UI.banner = null; go(G.phase === 'tryouts' ? 'tryouts' : G.phase === 'ended' ? 'ending' : 'hub'); },
+  quick() { SFX.init(); SFX.click(); newGame({ name: 'Riverside', mascot: 'hawks', pal: 'crimson', diff: SET.diff }); autoSignBest(); finalizeTryouts(); UI.tab = 'week'; UI.banner = null; save(); go('hub'); toast(`Quick Start: Riverside Hawks, ${DIFF[SET.diff].name}, season 1 of 4. Best 4 prospects signed.`); },
+  new() { SFX.init(); const go2 = () => { UI.setup = { name: 'Riverside', mascot: 'hawks', pal: 'crimson', diff: SET.diff, seed: '' }; go('setup'); };
+    if (loadSave() && loadSave().phase !== 'career' && UI.screen === 'title') openModal({ type: 'confirm', title: 'Start a new season?', body: 'Your current season will be replaced.', yes: 'Start new season', onYes: go2 }); else go2(); },
+  continue() { SFX.init(); const s = loadSave(); if (!s) return; G = s; UI.tab = 'week'; UI.banner = null; go({ tryouts: 'tryouts', ended: 'ending', offseason: 'offseason', career: 'career' }[G.phase] || 'hub'); },
   'to-title'() { go('title'); },
-  menu() { openModal({ type: 'confirm', title: 'Leave to the main menu?', body: UI.screen === 'game' ? 'This game will restart from game prep when you continue. Everything else is saved.' : 'Your season is saved. Continue anytime from the main menu.', yes: 'Go to main menu', onYes: () => { if (UI.play) { clearTimeout(UI.play.timer); UI.play = null; } save(); go('title'); } }); },
+  menu() { openModal({ type: 'confirm', title: 'Leave to the main menu?', body: UI.screen === 'game' ? 'This game will restart from game prep when you continue. Everything else is saved.' : 'Your season is saved. Continue anytime from the main menu.', yes: 'Go to main menu', onYes: () => { if (UI.play) { clearTimeout(UI.play.timer); UI.play = null; } SFX.crowdStop(); save(); go('title'); } }); },
   help() { UI.ruleSec = UI.ruleSec || 'goal'; openModal({ type: 'help' }); },
   settings() { openModal({ type: 'settings' }); },
   credits() { openModal({ type: 'credits' }); },
@@ -647,13 +764,13 @@ const ACT = {
   'modal-bg'(d, el, ev) { if (ev.target === el) closeModal(); },
   'confirm-yes'() { const f = UI.modal.onYes; UI.modal = null; renderModal(); f(); },
   rule(d) { UI.ruleSec = d.k; renderModal(); const b = $(`.rules-nav [data-k="${d.k}"]`); if (b) b.focus(); },
-  sound() { SET.sound = !SET.sound; saveSettings(); applySettings(); SFX.init(); if (SET.sound) SFX.click(); const b = $('[data-act="sound"]'); if (b) { b.setAttribute('aria-pressed', SET.sound); b.setAttribute('aria-label', SET.sound ? 'Mute sound' : 'Turn sound on'); b.innerHTML = icon(SET.sound ? 'sound' : 'mute'); } },
+  sound() { SET.sound = !SET.sound; saveSettings(); applySettings(); SFX.init(); if (SET.sound) { SFX.click(); if (UI.screen !== 'game') Music.play(); else if (UI.sim) SFX.crowdStart(); } const b = $('[data-act="sound"]'); if (b) { b.setAttribute('aria-pressed', SET.sound); b.setAttribute('aria-label', SET.sound ? 'Mute sound' : 'Turn sound on'); b.innerHTML = icon(SET.sound ? 'sound' : 'mute'); } },
   'tip-x'(d) { seenTip(d.k); save(); const t = $('.coach-tip'); if (t) t.remove(); },
   'reset-tips'() { if (G) G.tipsSeen = {}; SET.tips = true; saveSettings(); save(); renderModal(); toast('Coach tips will show again.'); },
   'setup-go'(d, el, ev) { ev && ev.preventDefault(); const s = UI.setup; s.name = ($('#f-name').value || '').trim().replace(/\s+/g, ' ') || 'Riverside'; s.seed = $('#f-seed').value; SFX.click(); startNew(s); },
   scout(d) { if (scoutProspect(d.id)) { SFX.click(); save(); render(`[data-act="sign"][data-id="${d.id}"]`); announce('Scouted. True ratings revealed.'); } },
-  sign(d) { const i = G.signed.indexOf(d.id); if (i >= 0) G.signed.splice(i, 1); else if (G.signed.length < 4) G.signed.push(d.id); SFX.click(); save(); render(`[data-act="sign"][data-id="${d.id}"]`); },
-  'auto-sign'() { autoSignBest(); save(); render('[data-act="finalize"]'); toast('Signed the 4 best-looking prospects.'); },
+  sign(d) { const i = G.signed.indexOf(d.id); if (i >= 0) G.signed.splice(i, 1); else if (G.signed.length < G.maxSign) G.signed.push(d.id); SFX.click(); save(); render(`[data-act="sign"][data-id="${d.id}"]`); },
+  'auto-sign'() { autoSignBest(); save(); render('[data-act="finalize"]'); toast(`Signed the ${G.signed.length} best-looking prospects.`); },
   finalize(d, el) { if (el.getAttribute('aria-disabled') === 'true') { toast($('#try-why').textContent); return; } finalizeTryouts(); UI.tab = 'week'; save(); SFX.good(); go('hub'); },
   tab(d) { UI.tab = d.tab; render(`#tab-${d.tab}`); },
   player(d) { openModal({ type: 'player', id: d.id }); },
@@ -672,11 +789,16 @@ const ACT = {
   pause() { const P = UI.play; P.paused = !P.paused; refreshControls(); $('[data-act="pause"]') && $('[data-act="pause"]').focus(); if (!P.paused) tick(); else clearTimeout(P.timer); },
   speed(d, el) { SET.speed = +el.value; saveSettings(); },
   skipq() { skipQuarter(); },
-  qstrat(d, el) { UI.sim.strat[d.k] = el.value; G.strategy[d.k] = el.value; },
-  talk(d) { const s = UI.sim; s.talkMsg = applyHalftime(s, d.t); SFX.click(); onBreak({}); announce(s.talkMsg); },
-  'resume-q'() { const s = UI.sim; if (s.q === 2 && !s.halfTalk) s.talkMsg = applyHalftime(s, 'calm'); SFX.whistle(); nextQuarter(); },
+  qstrat(d, el) { UI.sim.strat[d.k] = el.value; G.strategy[d.k] = el.value; if (d.k === 'rot') { const n = $('#sub-note'); if (n) n.textContent = el.value === 'manual' ? 'Manual rotation: nobody subs unless you do.' : 'Auto-subs still run based on your rotation.'; } },
+  sub(d, el) { const s = UI.sim; if (setOnCourt(s, +d.i, el.value)) { const p = simPlayer(s, el.value); SFX.click(); announce(`${p.first} ${p.last} checks in.`); s.events.push({ k: 'note', team: 'us', text: `Sub: ${p.last} checks in.` }); const panel = UI.play.panel; const wrap = $('#break .lineup'); if (wrap) { const tmp = document.createElement('div'); tmp.innerHTML = adjustBlock(); const nl = tmp.querySelector('.lineup'); wrap.replaceWith(nl); const f = $(`#sub-${d.i}`); if (f) f.focus(); } courtLineups(); } },
+  timeout(d) { if (!UI.play || UI.play.panel) return; openTimeout(d.k); },
+  'resume-play'() { const P = UI.play; P.panel = null; P.panelHtml = ''; P.paused = false; refreshControls(); courtLineups(); SFX.whistle(); tick(); },
+  'clutch-set'(d, el) { const c = UI.clutch; c[d.k] = d.k === 'hold' ? el.value === '1' : el.value; const o = $('#cl-odds'); if (o) o.textContent = clutchOdds(UI.sim, c.pid, c.type) + '%'; },
+  'clutch-go'() { const c = UI.clutch; UI.sim.forced = { pid: c.pid, type: c.type, hold: c.hold }; UI.clutch = null; const P = UI.play; P.panel = null; P.panelHtml = ''; refreshControls(); SFX.click(); tick(); },
+  talk(d) { const s = UI.sim; s.talkMsg = applyHalftime(s, d.t); SFX.click(); onBreak({ silent: true }); announce(s.talkMsg); },
+  'resume-q'() { const s = UI.sim; if (s.q === 2 && !s.halfTalk) s.talkMsg = applyHalftime(s, 'calm'); SFX.whistle(); UI.play.panel = null; nextQuarter(); },
   'sim-rest'() { simRest(); },
-  'to-recap'() { const res = finishGame(UI.sim); UI.sim = null; clearTimeout(UI.play.timer); UI.play = null; G.step = 'recap'; seenTip('game'); save(); UI.tab = 'week'; go('hub', { focus: '.result-banner' }); if (res.win && G.phase === 'playoffs' && G.playoffs.round === 3) SFX.fanfare(); },
+  'to-recap'() { const res = finishGame(UI.sim); UI.sim = null; clearTimeout(UI.play.timer); UI.play = null; SFX.crowdStop(); Music.play(); G.step = 'recap'; seenTip('game'); save(); UI.tab = 'week'; go('hub', { focus: '.result-banner' }); if (res.win && G.phase === 'playoffs' && G.playoffs.round === 3) SFX.fanfare(); },
   'end-week'() {
     const r = endWeek(); UI.banner = null; save();
     if (r === 'ended') { if (G.ending.kind === 'champion' || G.ending.kind === 'perfect') SFX.fanfare(); go('ending'); return; }
@@ -685,8 +807,15 @@ const ACT = {
   },
   buy(d, el) { const u = UPGRADES[d.k]; if (el.getAttribute('aria-disabled') === 'true' || G.res.budget < u.cost) { toast(`Not enough money. You need ${U.money(u.cost - G.res.budget)} more.`); return; } G.res.budget -= u.cost; G.upgrades[d.k] = true; G.log.push({ w: G.phase === 'playoffs' ? 'P' : G.week, t: `Bought ${u.name} (${U.money(u.cost)}).` }); SFX.good(); save(); render('#tab-office'); toast(`${u.name} added. ${u.d}`); },
   again() { const s = G.school; newGame({ name: s.name, mascot: s.mascot, pal: s.pal, diff: G.diff }); save(); go('tryouts'); },
-  set(d, el) { let v = el.value; if (v === 'true') v = true; else if (v === 'false') v = false; else if (v === 'null') v = null; else if (!isNaN(+v) && d.k !== 'theme' && d.k !== 'motion') v = +v; SET[d.k] = v; saveSettings(); applySettings(); if (d.k === 'motion' && Court.cv) Court.reduced = reduced(); if (UI.screen !== 'game') render(); else renderModal(); const back = $(`.modal input[name="${d.k}"][value="${el.value}"]`); if (back) back.focus(); },
+  offseason() { startOffseason(); save(); go('offseason'); },
+  tdiff(d, el) { SET.diff = el.value; saveSettings(); SFX.click(); const t = $('#tdiff-d'); if (t) t.textContent = DIFF[SET.diff].d; },
+  summer(d, el) { G.offseason.summer = el.value; save(); render(`input[name="summer"][value="${el.value}"]`); },
+  'next-season'() { applyOffseason(G.offseason.summer); UI.tab = 'week'; UI.banner = null; save(); SFX.good(); go('tryouts'); toast(`Season ${G.season} begins. Program prestige ${G.prestige}.`); },
+  retire() { const doIt = () => { endCareer(); save(); if (G.careerEnd.titles) SFX.fanfare(); go('career'); };
+    if (canContinueCareer()) openModal({ type: 'confirm', title: 'Retire now?', body: `You still have ${MAX_SEASONS - G.season} season${MAX_SEASONS - G.season > 1 ? 's' : ''} left on your contract. Retiring ends your career here.`, yes: 'Retire and see my career', onYes: doIt }); else doIt(); },
+  set(d, el) { let v = el.value; if (v === 'true') v = true; else if (v === 'false') v = false; else if (v === 'null') v = null; else if (!isNaN(+v) && d.k !== 'theme' && d.k !== 'motion') v = +v; SET[d.k] = v; saveSettings(); applySettings(); if ((d.k === 'music' || d.k === 'sound') && UI.screen !== 'game') Music.play(); if (d.k === 'motion' && Court.cv) Court.reduced = reduced(); if (UI.screen !== 'game') render(); else renderModal(); const back = $(`.modal input[name="${d.k}"][value="${el.value}"]`); if (back) back.focus(); },
   vol(d, el) { SET.vol = +el.value; saveSettings(); SFX.setVol(SET.vol); SFX.init(); SFX.click(); },
+  mvol(d, el) { SET.mvol = +el.value; saveSettings(); Music.setVol(SET.mvol); },
 };
 
 /* ---------- Wiring ---------- */
@@ -697,7 +826,7 @@ document.addEventListener('click', ev => {
   if (ACT[a]) { if (a === 'setup-go') ev.preventDefault(); ACT[a](el.dataset, el, ev); }
 });
 document.addEventListener('change', ev => {
-  const el = ev.target; if (UI.screen === 'setup' && el.name && ['mascot', 'pal', 'diff'].includes(el.name)) { UI.setup[el.name] = el.value; updateSetupPreview(); return; }
+  const el = ev.target; if (UI.screen === 'setup' && el.name && ['mascot', 'pal', 'diff'].includes(el.name)) { UI.setup[el.name] = el.value; if (el.name === 'diff') { SET.diff = el.value; saveSettings(); } updateSetupPreview(); return; }
   const a = el.dataset && el.dataset.act; if (a && ACT[a]) ACT[a](el.dataset, el, ev);
 });
 document.addEventListener('input', ev => { if (ev.target.id === 'f-name') { UI.setup.name = ev.target.value.slice(0, 16); updateSetupPreview(); } if (ev.target.id === 'f-seed') UI.setup.seed = ev.target.value; });
@@ -711,8 +840,9 @@ document.addEventListener('keydown', ev => {
   if (UI.screen === 'hub' && G && G.step === 'event' && !G.eventDone && /^[1-3]$/.test(ev.key)) { const b = $(`[data-act="choose"][data-i="${+ev.key - 1}"]`); if (b) { ev.preventDefault(); b.click(); } return; }
   if (UI.screen === 'game' && UI.play) {
     const tb = $('[data-act="talk"]'); if (tb && /^[1-3]$/.test(ev.key)) { const b = $$('[data-act="talk"]')[+ev.key - 1]; if (b) { ev.preventDefault(); b.click(); } return; }
-    if (ev.key === ' ' && !UI.play.breakHtml && !UI.play.final && tag !== 'button' && tag !== 'input') { ev.preventDefault(); ACT.pause(); }
-    if ((ev.key === 's' || ev.key === 'S') && !UI.play.breakHtml && !UI.play.final) { ev.preventDefault(); ACT.skipq(); }
+    if (ev.key === ' ' && !UI.play.panel && tag !== 'button' && tag !== 'input' && tag !== 'select') { ev.preventDefault(); ACT.pause(); }
+    if ((ev.key === 's' || ev.key === 'S') && !UI.play.panel) { ev.preventDefault(); ACT.skipq(); }
+    if ((ev.key === 't' || ev.key === 'T') && !UI.play.panel) { ev.preventDefault(); openTimeout(UI.sim.to.full ? 'full' : 'short'); }
   }
   if (ev.target.getAttribute && ev.target.getAttribute('role') === 'tab' && (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft')) { const tabs = $$('[role="tab"]'); const i = tabs.indexOf(ev.target); const n = tabs[(i + (ev.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length]; n.click(); }
 });
@@ -723,12 +853,10 @@ window.addEventListener('resize', () => { if (UI.screen === 'title') { const cv 
 window.RTC = {
   get G() { return G; }, UI, SET,
   newGame, finalizeTryouts, autoSignBest, runPractice, drawEvent, resolveEvent, newGameSim, simQuarter, applyHalftime, finishGame, endWeek, recommend, isScouted, currentGameInfo, myRating, oppRating, standings, PRESETS, EVENTS, DRILLS, UPGRADES,
-  // Plays a whole season headlessly with a simple policy. Returns the ending kind.
-  autoSeason(opts = {}) {
-    newGame({ name: 'Test', diff: opts.diff || 'varsity', seed: opts.seed || String(Math.random()) });
-    autoSignBest(); finalizeTryouts(); let guard = 0;
+  // Plays one season headlessly with a simple policy (assumes G exists and is at tryouts).
+  playSeason(pol = 'smart') {
+    autoSignBest(); finalizeTryouts(); let guard = 0; const startR = myRating(), boss = oppRating(G.stateField[2]), dist = Math.round(U.avg(G.teams.map(oppRating)));
     while (G.phase !== 'ended' && guard++ < 40) {
-      const pol = opts.policy || 'smart';
       if (pol === 'smart') {
         if (G.upgrades.assistant !== true && G.res.budget >= 1300) { G.res.budget -= 1200; G.upgrades.assistant = true; }
         else if (!G.upgrades.scouting && G.res.budget >= 600) { G.res.budget -= 500; G.upgrades.scouting = true; }
@@ -738,10 +866,17 @@ window.RTC = {
       runPractice(); G.step = 'event'; drawEvent(); const ev = EVENTS.find(x => x.id === G.event.id); resolveEvent(pol === 'smart' ? 0 : ri(0, ev.choices.length - 1)); G.step = 'prep';
       autoLineup();
       if (pol === 'smart') { const { rec } = recommend(currentOpp()); G.strategy = Object.assign({ rot: 'normal' }, rec); } else G.strategy = { tempo: 'balanced', def: 'man', focus: 'balanced', rot: 'normal' };
-      const sim = newGameSim(); while (!sim.done) { if (sim.q === 2 && !sim.halfTalk) applyHalftime(sim, 'calm'); simQuarter(sim); }
+      const sim = newGameSim(); sim.headless = true; while (!sim.done) { if (sim.q === 2 && !sim.halfTalk) applyHalftime(sim, 'calm'); simQuarter(sim); }
       finishGame(sim); G.step = 'recap'; endWeek();
     }
-    return { kind: G.ending.kind, rec: allRecord(), grade: G.ending.legacy.grade, rating: myRating() };
+    return { kind: G.ending.kind, rec: allRecord(), grade: G.ending.legacy.grade, rating: myRating(), startR, boss, dist };
+  },
+  autoSeason(opts = {}) { newGame({ name: 'Test', diff: opts.diff || 'varsity', seed: opts.seed || String(Math.random()) }); return this.playSeason(opts.policy || 'smart'); },
+  // Plays a full career (up to 4 seasons) and returns each season's result.
+  autoCareer(opts = {}) {
+    newGame({ name: 'Test', diff: opts.diff || 'varsity', seed: opts.seed || String(Math.random()) }); const out = [];
+    for (;;) { out.push(this.playSeason(opts.policy || 'smart')); if (!canContinueCareer()) break; startOffseason(); applyOffseason(opts.summer || 'league'); }
+    endCareer(); return { seasons: out, career: G.careerEnd.kind, prestige: G.prestige };
   },
 };
 
@@ -750,7 +885,8 @@ function boot() {
   applySettings();
   const s = loadSave(); if (s) G = s;
   if (G) applyTeamColors();
-  document.addEventListener('pointerdown', () => SFX.init(), { once: true });
+  const firstTouch = () => { SFX.init(); setTimeout(() => { if (UI.screen !== 'game') Music.play(); }, 50); };
+  document.addEventListener('pointerdown', firstTouch, { once: true }); document.addEventListener('keydown', firstTouch, { once: true });
   render();
 }
 boot();

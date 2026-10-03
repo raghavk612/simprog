@@ -11,15 +11,17 @@ FBLA 2026–27 Computer Game & Simulation Programming. Topic: *Road to the Champ
 ## Project layout
 | Path | What it is |
 |---|---|
-| `src/engine.js` | Game logic: players, season, practice, possession-by-possession sim, playoffs, endings. No DOM access. |
+| `src/engine.js` | Game logic: players, season, practice, possession-by-possession sim (timeouts, subs, final shot), playoffs, endings, multi-season career. No DOM access. |
 | `src/events.js` | The 22 off-court challenges and their effects |
-| `src/media.js` | Web Audio sound effects, SVG crests/icons, 7-segment scoreboard, Canvas court |
+| `src/media.js` | Web Audio sound effects, crowd and soundtrack; SVG crests/icons; 7-segment scoreboard; Canvas court with players and crowd |
 | `src/ui.js` | Screens, input, accessibility, save/load |
 | `src/styles.css` | Design tokens and styles |
 | `build.py` | Combines `src/` into the two HTML files in `dist/` |
 | `tests/e2e.py` | Plays full seasons through the UI (desktop + phone) and screenshots each screen |
 | `tests/keyboard.py` | Keyboard-only and screen-reader checks |
-| `tests/balance.py` | Simulates hundreds of seasons per difficulty and prints ending rates |
+| `tests/balance.py` | Simulates hundreds of single seasons per difficulty and prints ending rates |
+| `tests/career_balance.py` | Simulates full 4-season careers and prints the title rate for each season |
+| `tests/overflow.py` | Checks every screen at phone width for sideways scrolling |
 | `design-spec.md` | Rubric-to-feature map, design tokens, user journey, test results |
 
 ## Rebuild after editing
@@ -33,4 +35,6 @@ The tests need Python Playwright (`pip install playwright && playwright install 
 python3 tests/e2e.py
 python3 tests/keyboard.py
 python3 tests/balance.py 150
+python3 tests/career_balance.py 60
+python3 tests/overflow.py
 ```

@@ -1,0 +1,7 @@
+rookie/smart {"titleRateBySeason": ["0.83", "0.90", "0.88", "0.93"], "seasonsPlayed": [60, 60, 60, 60], "careers": {"dynasty": 60}}
+rookie/naive {"titleRateBySeason": ["0.25", "0.33", "0.28", "0.27"], "seasonsPlayed": [60, 60, 60, 60], "careers": {"dynasty": 19, "builder": 19, "champion": 22}}
+varsity/smart {"titleRateBySeason": ["0.38", "0.63", "0.63", "0.55"], "seasonsPlayed": [60, 60, 60, 60], "careers": {"dynasty": 43, "champion": 12, "builder": 5}}
+varsity/naive {"titleRateBySeason": ["0.00", "0.08", "0.05", "0.02"], "seasonsPlayed": [60, 60, 60, 60], "careers": {"builder": 44, "champion": 8, "journey": 7, "fired": 1}}
+legend/smart {"titleRateBySeason": ["0.10", "0.33", "0.38", "0.36"], "seasonsPlayed": [60, 58, 58, 58], "careers": {"dynasty": 19, "champion": 25, "builder": 14, "fired": 2}}
+legend/naive {"titleRateBySeason": ["0.00", "0.00", "0.00", "0.00"], "seasonsPlayed": [60, 60, 60, 60], "careers": {"journey": 45, "builder": 15}}
+page errors: []

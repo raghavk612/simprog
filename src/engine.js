@@ -103,11 +103,10 @@ const STATE_FIELD = [
 ];
 
 const DIFF = {
-  rookie: { name: 'Rookie', opp: -5, you: 2, budget: 3200, scout: 6, inj: .7, sev: .75, d: 'Weaker rivals, more money, exact numbers shown on every choice.' },
-  varsity:{ name: 'Varsity', opp: -1, you: 0, budget: 2400, scout: 4, inj: 1, sev: 1, d: 'The intended challenge. Smart planning wins titles.' },
-  legend: { name: 'Legend', opp: 2, you: -1, budget: 1700, scout: 3, inj: 1.25, sev: 1.25, d: 'Stacked opponents and tight money. For repeat coaches.' },
+  rookie: { name: 'Easy', opp: -5, you: 2, budget: 3200, scout: 6, inj: .7, sev: .75, d: 'More money ($3,200), weaker rivals, 6 scout points, fewer injuries, smaller penalties, exact numbers on every choice.' },
+  varsity:{ name: 'Medium', opp: -1, you: 0, budget: 2400, scout: 4, inj: 1, sev: 1, d: 'The intended challenge: $2,400, normal rivals, 4 scout points. Smart planning wins titles.' },
+  legend: { name: 'Hard', opp: 2, you: -1, budget: 1700, scout: 3, inj: 1.25, sev: 1.25, d: 'Tight money ($1,700), stacked rivals, 3 scout points, more injuries, bigger penalties.' },
 };
-
 const DRILLS = {
   shooting:   { name: 'Shooting Drills',  short: 'Shooting', grow: { sho: 1 }, energy: -5, morale: 0, chem: 0, inj: .010, d: 'Grow Shooting. Light fatigue.' },
   defense:    { name: 'Defensive Drills', short: 'Defense', grow: { def: 1, reb: .4 }, energy: -7, morale: -1, chem: 1, inj: .015, d: 'Grow Defense & Rebounding.' },
@@ -153,6 +152,7 @@ function genPlayer(base, pos, year, taken) {
   p.pot = U.clamp(o + ri(4, 16) + (12 - year) * 2, o + 3, 96);
   p.start = o;
   if (p.trait === 'Scholar') p.gpa = Math.max(p.gpa, 3.2);
+  p.gpaBase = p.gpa;
   return p;
 }
 function genRoster(base, n = 10) {
@@ -175,32 +175,125 @@ function makeOpp(def, base, extra = {}) {
 function oppRating(t) { return Math.round(teamRating(t.roster)); }
 function starOf(roster) { return roster.filter(p => !p.inj).slice().sort((a, b) => (ovr(b) + b.r.sho * .3) - (ovr(a) + a.r.sho * .3))[0]; }
 
-/* ---------- New game ---------- */
+/* ---------- New game / career ---------- */
+const MAX_SEASONS = 4;
+function seasonLabel(n) { return `${2025 + n}–${String(26 + n).padStart(2, '0')}`; }
+function titleYear(n) { return 2026 + n; }
 function newGame(opts) {
   const seedStr = (opts.seed || '').trim() || String(Date.now());
-  G = { v: 3, seed: seedStr, rs: U.hash(seedStr), diff: opts.diff || 'varsity', school: { name: opts.name || 'Riverside', mascot: opts.mascot || 'hawks', pal: opts.pal || 'crimson' },
-    phase: 'tryouts', week: 1, step: 'practice', plan: [], practiceDone: null, event: null, eventDone: null, strategy: { tempo: 'balanced', def: 'man', focus: 'balanced', rot: 'normal' }, lineup: [],
-    res: { budget: DIFF[opts.diff || 'varsity'].budget, fans: 45, rep: 60, chem: 50 }, upgrades: {}, flags: {}, usedEvents: [], log: [], hist: [], games: [],
-    scoutPts: DIFF[opts.diff || 'varsity'].scout, scouted: {}, signed: [], playoffs: null, ending: null, tips: true, lastGame: null, injuriesTotal: 0, comeback: false, giantSlayer: false, maxDeficitWin: 0 };
+  G = { v: 4, seed: seedStr, rs: U.hash(seedStr), diff: opts.diff || 'varsity', school: { name: opts.name || 'Riverside', mascot: opts.mascot || 'hawks', pal: opts.pal || 'crimson' },
+    season: 1, career: [], banners: [], prestige: 50, campBoost: 0, alumni: [],
+    strategy: { tempo: 'balanced', def: 'man', focus: 'balanced', rot: 'normal' }, lineup: [],
+    res: { budget: DIFF[opts.diff || 'varsity'].budget, fans: 45, rep: 60, chem: 50 }, upgrades: {}, tips: true };
   const d = DIFF[G.diff];
   // your returning roster: 8 players, slightly under the district middle
   const taken = new Set();
   const plan = ['PG', 'SG', 'SF', 'PF', 'C', 'SG', 'PF', 'SF'];
   G.roster = plan.map((pos, i) => genPlayer(51 + d.you - (i >= 5 ? 5 : 0) + gauss() * 1.5, pos, ri(10, 12), taken));
-  // prospects
+  G.roster.forEach(p => p.joined = 1);
+  setupSeason();
+  G.log.push({ w: 0, t: `Hired as head coach of the ${G.school.name} ${MASCOTS[G.school.mascot].name} on a ${MAX_SEASONS}-year contract. Goal: win State.` });
+  return G;
+}
+/* Fresh world for a season: prospects, opponents, schedule. Your roster/school carry over. */
+function setupSeason() {
+  const d = DIFF[G.diff]; const n = G.season;
+  Object.assign(G, { phase: 'tryouts', week: 1, step: 'practice', plan: [], practiceDone: null, event: null, eventDone: null,
+    flags: {}, usedEvents: [], log: [], hist: [], games: [], scoutPts: d.scout, scouted: {}, signed: [], playoffs: null, ending: null, offseason: null,
+    lastGame: null, injuriesTotal: 0, comeback: false, giantSlayer: false, startBudget: G.res.budget });
+  const taken = usedNums(G.roster);
+  // Prospects: winning programs (higher prestige) attract better players; a youth camp improves freshmen.
+  const pres = (G.prestige - 50) / 6;
   G.prospects = [];
   const pp = shuffle(['PG', 'SG', 'SF', 'PF', 'C', 'PG', 'C', 'SF', 'SG', 'PF']);
-  pp.forEach((pos, i) => { const yr = i < 4 ? 9 : ri(9, 11); const base = 46 + d.you + gauss() * 5.5 + (i === 0 ? 7 : 0) + (i === 1 ? 4 : 0); G.prospects.push(genPlayer(base, pos, yr, taken)); });
-  // hide true values behind ranges until scouted
+  pp.forEach((pos, i) => { const yr = i < 4 ? 9 : ri(9, 11); const base = 46 + d.you + pres + (yr === 9 ? G.campBoost : 0) + gauss() * 5.5 + (i === 0 ? 7 : 0) + (i === 1 ? 4 : 0); const p = genPlayer(base, pos, yr, taken); p.joined = n; G.prospects.push(p); });
   G.prospects.forEach(p => { p.fog = ri(4, 8); p.fogShift = ri(-3, 3); p.transfer = p.year >= 10 && chance(.5); });
-  // district
+  G.campBoost = 0;
+  G.maxSign = Math.max(0, 12 - G.roster.length); G.minSign = Math.max(0, 10 - G.roster.length);
+  // Rivals reload every year and the state field gets tougher as your program rises.
+  const grow = (n - 1) * 3.2;
   const bases = shuffle([50, 52.5, 54, 55.5, 57, 58.5, 60.5]);
-  G.teams = DISTRICT.map((t, i) => makeOpp(t, bases[i] + d.opp));
-  G.nondistrict = NONDISTRICT.map((t, i) => makeOpp(t, [53, 55.5, 58][i] + d.opp, { nd: true }));
-  G.stateField = STATE_FIELD.map((t, i) => makeOpp(t, [61.5, 64, 66.5][i] + d.opp, { st: true }));
+  G.teams = DISTRICT.map((t, i) => makeOpp(t, bases[i] + d.opp + grow));
+  G.nondistrict = NONDISTRICT.map((t, i) => makeOpp(t, [53, 55.5, 58][i] + d.opp + grow));
+  G.stateField = STATE_FIELD.map((t, i) => makeOpp(t, [61.5, 64, 66.5][i] + d.opp + grow * 1.55, { st: true }));
   buildSchedule();
-  G.log.push({ w: 0, t: `Hired as head coach of the ${G.school.name} ${MASCOTS[G.school.mascot].name}. Goal: win State.` });
-  return G;
+}
+function canContinueCareer() { return G.ending && G.ending.kind !== 'crisis' && G.season < MAX_SEASONS; }
+const SUMMER = {
+  league:   { name: 'Summer league', cost: 600, d: 'Every returning player grows across all skills.', grow: { sho: .7, ins: .7, def: .7, pas: .7, reb: .7, sta: .7 } },
+  skills:   { name: 'Shooting & skills camp', cost: 450, d: 'Big jump in Shooting and Passing.', grow: { sho: 2.2, pas: 1.6 } },
+  strength: { name: 'Strength program', cost: 450, d: 'Big jump in Inside, Rebounding and Stamina.', grow: { ins: 1.6, reb: 1.6, sta: 1.4 } },
+  youth:    { name: 'Youth camp for middle schoolers', cost: 500, d: 'No growth now, but next year’s freshmen tryout class is much stronger. Fans +5.', grow: {} },
+  rest:     { name: 'Rest & family time', cost: 0, d: 'Free. Players return happy (morale +10) with only natural growth.', grow: {} },
+};
+function startOffseason() {
+  const grads = G.roster.filter(p => p.year >= 12);
+  G.phase = 'offseason';
+  G.offseason = { grads: grads.map(p => p.id), summer: 'league' };
+}
+function nextBudgetPreview(summerKey) {
+  const left = G.res.budget; const k = G.ending.kind;
+  const bonus = { perfect: 600, champion: 500, runnerup: 400, final4: 300, contender: 200, missed: 0, crisis: 0 }[k] || 0;
+  const base = DIFF[G.diff].budget; const carry = left >= 0 ? Math.round(left * .35) : left; const gate = Math.round(G.res.fans * 4);
+  const cost = SUMMER[summerKey] ? SUMMER[summerKey].cost : 0;
+  return { base, carry, bonus, gate, cost, total: base + carry + bonus + gate - cost };
+}
+function applyOffseason(summerKey) {
+  const sp = SUMMER[summerKey] || SUMMER.rest; const n = G.season; const k = G.ending.kind;
+  const b = nextBudgetPreview(summerKey);
+  // graduation
+  const grads = G.roster.filter(p => p.year >= 12);
+  grads.forEach(p => G.alumni.push({ name: `${p.first} ${p.last}`, num: p.num, pos: p.pos, ovr: ovr(p), joined: p.joined || 1, joinedYear: p.joinedYear || p.year, pts: (p.cs ? p.cs.pts : 0) + p.s.pts, gp: (p.cs ? p.cs.gp : 0) + p.s.gp, left: n, fourYear: (p.joinedAsFr && n - (p.joined || 1) >= 3) }));
+  G.roster = G.roster.filter(p => p.year < 12);
+  // returning players: age, grow, reset
+  G.roster.forEach(p => {
+    p.cs = p.cs || { gp: 0, pts: 0, reb: 0, ast: 0, min: 0 }; for (const key in p.s) p.cs[key] += p.s[key];
+    p.s = { gp: 0, pts: 0, reb: 0, ast: 0, min: 0 };
+    p.year++;
+    const room = Math.max(0, p.pot - ovr(p)); const nat = (1.2 + room * .18) * (.6 + p.ethic * .6);
+    for (const a of ATTR) p.r[a] = U.clamp(p.r[a] + nat * .5 + (sp.grow[a] || 0) * (.7 + p.ethic * .6) + gauss() * .6, 20, 99);
+    p.start = ovr(p); p.energy = 100; p.inj = 0; p.suspended = false; p.suspendWeeks = 0;
+    p.morale = U.clamp(Math.round(p.morale * .4 + 62 * .6 + (summerKey === 'rest' ? 10 : 0)), 0, 100);
+    p.gpa = U.clamp(+((p.gpaBase || 2.8) * .7 + p.gpa * .3 + (R() - .5) * .2).toFixed(2), 1.6, 4); // new school year: grades reset toward the player's norm
+  });
+  if (summerKey === 'youth') { G.campBoost = 5; }
+  // program-level carryover
+  const succ = { perfect: 25, champion: 22, runnerup: 14, final4: 10, contender: 5, missed: -4, crisis: -10 }[k] || 0;
+  G.prestige = U.clamp(Math.round(G.prestige * .6 + (50 + succ * 1.4) * .4 + succ * .5), 20, 95);
+  G.res.fans = U.clamp(Math.round(G.res.fans * .7 + 45 * .3 + succ * .4 + (summerKey === 'youth' ? 5 : 0)), 10, 100);
+  G.res.rep = U.clamp(Math.round(G.res.rep * .8 + 60 * .2), 5, 100);
+  G.res.chem = U.clamp(Math.round(G.res.chem * .5 + 48 * .5), 0, 100);
+  G.res.budget = b.total;
+  ['assistant', 'trainer', 'scouting', 'tutoring'].forEach(u => delete G.upgrades[u]); // yearly contracts; facilities stay
+  G.season = n + 1;
+  setupSeason();
+  G.log.push({ w: 0, t: `Season ${G.season} (${seasonLabel(G.season)}) begins. ${grads.length} senior${grads.length === 1 ? '' : 's'} graduated. Summer: ${sp.name}. Program prestige ${G.prestige}.` });
+}
+const CAREER_END = {
+  dynasty:  { title: 'Dynasty Builder', text: 'Multiple State titles. Your name goes on the gym floor.' },
+  champion: { title: 'Championship Coach', text: 'You brought a State title home. The banner hangs forever.' },
+  builder:  { title: 'Program Builder', text: 'Year after year in the playoffs. You turned this into a winning program.' },
+  journey:  { title: 'Journeyman Coach', text: 'Some good moments, but the program never broke through.' },
+  fired:    { title: 'Contract Terminated', text: 'The school ended your contract after the program fell into crisis.' },
+};
+function endCareer() {
+  const titles = G.career.filter(c => c.kind === 'champion' || c.kind === 'perfect').length;
+  const playoffs = G.career.filter(c => !['missed', 'crisis'].includes(c.kind)).length;
+  const fired = G.career.some(c => c.kind === 'crisis');
+  const kind = fired ? 'fired' : titles >= 2 ? 'dynasty' : titles === 1 ? 'champion' : playoffs >= Math.ceil(G.career.length / 2) ? 'builder' : 'journey';
+  const w = U.sum(G.career.map(c => c.rec.w)), l = U.sum(G.career.map(c => c.rec.l));
+  const avgPct = U.avg(G.career.map(c => c.total / c.max));
+  const grade = avgPct >= .9 ? 'A+' : avgPct >= .8 ? 'A' : avgPct >= .7 ? 'B' : avgPct >= .58 ? 'C' : avgPct >= .45 ? 'D' : 'F';
+  let streak = 0, b2b = false; G.career.forEach(c => { if (c.kind === 'champion' || c.kind === 'perfect') { streak++; if (streak >= 2) b2b = true; } else streak = 0; });
+  const ach = [
+    { n: 'Back-to-Back', d: 'Win State in consecutive seasons.', got: b2b },
+    { n: 'Dynasty', d: 'Win two or more State titles.', got: titles >= 2 },
+    { n: 'Full Contract', d: `Coach all ${MAX_SEASONS} seasons.`, got: G.career.length >= MAX_SEASONS && !fired },
+    { n: 'Homegrown Hero', d: 'Coach a player from freshman tryouts all the way to graduation.', got: G.alumni.some(a => a.fourYear) },
+    { n: 'Perennial Contender', d: 'Make the playoffs every season.', got: G.career.length > 1 && playoffs === G.career.length },
+    { n: 'Packed Program', d: 'Reach 80 program prestige.', got: G.prestige >= 80 },
+  ];
+  G.phase = 'career'; G.careerEnd = { kind, titles, playoffs, w, l, grade, ach };
 }
 function buildSchedule() {
   // circle method round robin for 8 teams (index 0 = you)
@@ -245,14 +338,14 @@ function scoutProspect(id) { if (G.scoutPts <= 0 || G.scouted[id]) return false;
 function prospectRange(p) { const o = ovr(p); return [o - p.fog + p.fogShift, o + p.fog + p.fogShift]; }
 function finalizeTryouts() {
   const chosen = G.prospects.filter(p => G.signed.includes(p.id));
-  chosen.forEach(p => { delete p.fog; delete p.fogShift; p.start = ovr(p); G.roster.push(p); });
+  chosen.forEach(p => { delete p.fog; delete p.fogShift; p.start = ovr(p); p.joined = G.season; p.joinedAsFr = p.year === 9; G.roster.push(p); });
   G.log.push({ w: 0, t: `Signed ${chosen.length} player${chosen.length === 1 ? '' : 's'} at tryouts: ${chosen.map(p => p.first + ' ' + p.last).join(', ') || 'none'}.` });
   G.prospects = []; G.phase = 'season'; G.week = 1; G.step = 'practice'; G.plan = new Array(practiceSlots()).fill(null);
   weekStart(true);
   autoLineup();
 }
 function autoSignBest() {
-  const need = 4; const ranked = G.prospects.slice().sort((a, b) => (ovr(b) + (b.pot - ovr(b)) * .3) - (ovr(a) + (a.pot - ovr(a)) * .3));
+  const need = G.maxSign; const ranked = G.prospects.slice().sort((a, b) => (ovr(b) + (b.pot - ovr(b)) * .3) - (ovr(a) + (a.pot - ovr(a)) * .3));
   G.signed = ranked.slice(0, need).map(p => p.id);
 }
 
@@ -371,7 +464,15 @@ function eff(p, k, morale) {
   const m = morale != null ? morale : p.morale;
   return p.r[k] * (0.78 + 0.22 * p.gEnergy / 100) * (0.94 + 0.12 * m / 100);
 }
+/* Never let a game be unplayable: call up JV players if fewer than 5 are eligible. */
+function ensureFive() {
+  const short = 5 - G.roster.filter(eligible).length; const called = [];
+  for (let i = 0; i < short; i++) { const pos = POS[i % 5]; const p = genPlayer(42 + DIFF[G.diff].you + gauss() * 2, pos, ri(9, 10), usedNums(G.roster)); p.jv = true; p.joined = G.season; p.gpa = Math.max(p.gpa, 2.4); p.gpaBase = p.gpa; G.roster.push(p); called.push(p); }
+  if (called.length) { G.log.push({ w: G.phase === 'playoffs' ? 'P' : G.week, t: `Only ${5 - called.length} eligible players, so you called up ${called.map(p => p.first + ' ' + p.last).join(', ')} from JV.`, bad: true }); validateLineup(); }
+  return called;
+}
 function newGameSim() {
+  ensureFive();
   const info = currentGameInfo(); const opp = info.opp; validateLineup();
   const my = G.roster.filter(eligible).map(p => { p.gEnergy = p.energy; return p; });
   const them = opp.roster.filter(p => !p.inj).map(p => { p.gEnergy = 100; return p; });
@@ -381,6 +482,7 @@ function newGameSim() {
     onUs: G.lineup.slice(), onThem: them.slice().sort((a, b) => ovr(b) - ovr(a)).slice(0, 5).map(p => p.id),
     strat: Object.assign({}, G.strategy), oppStrat: Object.assign({}, opp.style), box: {}, momentum: 0, halfTalk: null, starStop: null,
     poss: 0, lead: [0, 0], counter: 0, bigDeficit: 0, injuries: [], ot: 0,
+    to: { full: 3, short: 2 }, oppTO: 3, Q: null, forced: null, totalPoss: 0, headless: false,
   };
   [...my, ...them].forEach(p => sim.box[p.id] = { pts: 0, reb: 0, ast: 0, fgm: 0, fga: 0, tpm: 0, tpa: 0, poss: 0 });
   // counter bonus: scouted and matching the recommendation
@@ -392,112 +494,161 @@ function counterScore(sim) {
   if (!sim.scouted) return 0; const { rec } = recommend(teamById(sim.oppId)); let c = 0;
   ['def', 'focus', 'tempo'].forEach(k => { if (sim.strat[k] === rec[k]) c++; }); return c;
 }
-function simQuarter(sim) {
-  const opp = teamById(sim.oppId); const q = sim.q; const evs = [];
-  const tempoAvg = (TEMPO_POSS[sim.strat.tempo] + TEMPO_POSS[sim.oppStrat.tempo]) / 2;
-  const possPer = Math.round(tempoAvg + (q === 4 ? -8 : 0)); // q===4 → overtime (4 min)
-  const qLen = q === 4 ? 240 : 480; const tick = qLen / (possPer * 2);
-  let clock = qLen; let offense = (q % 2 === 0) ? 'us' : 'them';
+/* Possession-level simulation. The UI steps one possession at a time so strategy changes,
+   timeouts and substitutions take effect immediately. simQuarter() runs a whole quarter (headless). */
+function tempoSecs(sim) { const t = (TEMPO_POSS[sim.strat.tempo] + TEMPO_POSS[sim.oppStrat.tempo]) / 2; return 480 / (t * 2); }
+function startQuarter(sim) {
+  const q = sim.q; const qLen = q >= 4 ? 240 : 480;
+  sim.Q = { q, qLen, clock: qLen, offense: q % 2 === 0 ? 'us' : 'them', clutchAsked: false, n: 0, lastOppTO: -99 };
+}
+function simStep(sim) {
+  if (!sim.Q) startQuarter(sim);
+  const Q = sim.Q;
+  if (Q.clock <= 0) return endQuarter(sim);
+  // Final-shot decision: your ball, last 40 seconds of the 4th/OT, within 3 points
+  if (!sim.headless && !sim.forced && Q.offense === 'us' && Q.q >= 3 && Q.clock <= 40 && Math.abs(sim.us - sim.them) <= 3 && !Q.clutchAsked) {
+    Q.clutchAsked = true;
+    return [{ k: 'clutch', team: 'us', q: Q.q, clock: Q.clock, diff: sim.us - sim.them, text: `${fmtSec(Q.clock)} left, ${sim.us === sim.them ? 'tied' : sim.us > sim.them ? 'up ' + (sim.us - sim.them) : 'down ' + (sim.them - sim.us)}. Your ball. Draw up the final play.` }];
+  }
+  const evs = simPossession(sim);
+  // Opponent coach calls timeout to stop your run
+  if (sim.momentum >= 4.2 && sim.oppTO > 0 && Q.n - Q.lastOppTO > 6 && Q.clock > 0) {
+    sim.oppTO--; Q.lastOppTO = Q.n; sim.momentum = 0; sim.their.forEach(id => { const p = simPlayer(sim, id); p.gEnergy = U.clamp(p.gEnergy + 6, 0, 100); });
+    evs.push({ k: 'note', team: 'them', q: Q.q, clock: Q.clock, text: `${teamById(sim.oppId).name} calls timeout to stop your run.` });
+  }
+  return evs;
+}
+function fmtSec(sec) { const m = Math.floor(sec / 60), s = Math.floor(sec % 60); return `${m}:${String(s).padStart(2, '0')}`; }
+function simQuarter(sim) { const evs = []; for (let g = 0; g < 200; g++) { const e = simStep(sim); evs.push(...e); if (e.some(x => x.k === 'end')) break; if (e.some(x => x.k === 'clutch')) { sim.forced = { auto: true }; } } return evs; }
+function callTimeout(sim, kind) {
+  if (!sim.to || sim.to[kind] <= 0) return null;
+  sim.to[kind]--; sim.momentum = 0;
+  const gain = kind === 'full' ? 8 : 3;
+  sim.my.forEach(id => { const p = simPlayer(sim, id); p.gEnergy = U.clamp(p.gEnergy + gain, 0, 100); });
+  const ev = { k: 'note', team: 'us', q: sim.Q ? sim.Q.q : sim.q, clock: sim.Q ? sim.Q.clock : 0, text: `${myName()} calls a ${kind === 'full' ? '60' : '30'}-second timeout.` };
+  sim.events.push(ev); return ev;
+}
+function setOnCourt(sim, slot, id) {
+  if (!sim.my.includes(id)) return false; const p = simPlayer(sim, id); if (p.inj) return false;
+  const j = sim.onUs.indexOf(id); if (j >= 0) { sim.onUs[j] = sim.onUs[slot]; }
+  sim.onUs[slot] = id; return true;
+}
+function simPossession(sim) {
+  const Q = sim.Q; const q = Q.q; const evs = []; const opp = teamById(sim.oppId);
+  const forced = sim.forced; sim.forced = null;
+  let secs = tempoSecs(sim) * (0.8 + R() * 0.4);
+  if (forced && forced.hold) secs = Q.clock; // run the clock down for the last shot
+  Q.clock = Math.max(0, Q.clock - secs); Q.n++;
+  const clock = Q.clock;
   const home = sim.info.neutral ? 0 : (sim.info.home ? 1 : -1);
   const cs = counterScore(sim);
-  sim.totalPoss = (sim.totalPoss || 0) + possPer * 2;
-  for (let i = 0; i < possPer * 2; i++) {
-    clock = Math.max(0, qLen - tick * (i + 1));
-    const off = offense, onO = off === 'us' ? sim.onUs : sim.onThem, onD = off === 'us' ? sim.onThem : sim.onUs;
-    const O = onO.map(id => simPlayer(sim, id)), D = onD.map(id => simPlayer(sim, id));
-    const oStrat = off === 'us' ? sim.strat : sim.oppStrat, dStrat = off === 'us' ? sim.oppStrat : sim.strat;
-    const mor = off === 'us' ? null : 62, dmor = off === 'us' ? 62 : null;
-    const chem = off === 'us' ? G.res.chem : 58;
-    const oPas = U.avg(O.map(p => eff(p, 'pas', mor))) * (0.9 + 0.2 * chem / 100);
-    let dDef = U.avg(D.map(p => eff(p, 'def', dmor)));
-    if (dStrat.def === 'zone') dDef = dDef * 0.85 + 9;
-    const oReb = U.avg(O.map(p => eff(p, 'reb', mor))), dReb = U.avg(D.map(p => eff(p, 'reb', dmor)));
-    const tempoMul = { slow: .85, balanced: 1, fast: 1.2 }[oStrat.tempo];
-    // fatigue
-    const drain = (p, press) => { p.gEnergy = U.clamp(p.gEnergy - 1.05 * tempoMul * (1.35 - p.r.sta / 100) * (press ? 1.35 : 1), 5, 100); };
-    O.forEach(p => { drain(p, false); sim.box[p.id].poss++; }); D.forEach(p => { drain(p, dStrat.def === 'press'); sim.box[p.id].poss++; });
-    const benchIds = (off === 'us' ? sim.my : sim.their).filter(id => !onO.includes(id)).concat((off === 'us' ? sim.their : sim.my).filter(id => !onD.includes(id)));
-    benchIds.forEach(id => { const p = simPlayer(sim, id); p.gEnergy = U.clamp(p.gEnergy + 1.3, 0, 100); });
-    // injuries (only on your side are persistent)
-    for (const p of (off === 'us' ? O : D)) {
-      let ir = 0.0003 * DIFF[G.diff].inj * (p.gEnergy < 40 ? 2.2 : 1) * (G.upgrades.trainer ? .6 : 1) * (G.flags.rushed === p.id ? 8 : 1);
-      if (chance(ir)) { p.inj = G.upgrades.trainer ? ri(1, 2) : ri(1, 3); G.injuriesTotal++; sim.injuries.push(p.id); evs.push({ k: 'inj', team: 'us', pid: p.id, clock, q, text: `${p.first} ${p.last} goes down hurt and heads to the bench.` }); subOut(sim, 'us', p.id, true); break; }
-    }
-    // turnover
-    let to = 0.125 - (oPas - 55) * 0.0018 + (dDef - 55) * 0.0008 - (chem - 50) * 0.0004;
-    if (dStrat.def === 'press') to += 0.045 + (55 - oPas) * 0.002;
-    if (off === 'us' && G.flags.hero) to += .015;
-    to = U.clamp(to, .05, .3);
-    const scorer = () => {
-      const f = oStrat.focus; const star = off === 'us' && G.flags.hero ? starOf(O) : null;
-      return wpick(O, p => { let w = Math.pow((p.r.sho * (f === 'perimeter' ? 1.3 : f === 'inside' ? .8 : 1) + p.r.ins * (f === 'inside' ? 1.3 : f === 'perimeter' ? .8 : 1)) / 100, 3); if (p === star) w *= 1.7; if (off === 'us' && G.flags.heavy === p.id) w *= 1.3; return w; });
-    };
-    if (chance(to)) {
-      const stealer = wpick(D, p => p.r.def);
-      const text = pick([`${stealer.last} jumps the passing lane. Steal.`, `Turnover. ${stealer.last} pokes it loose.`, `Bad pass, picked off by ${stealer.last}.`, `Traveling called. Turnover.`]);
-      sim.momentum += off === 'us' ? -1 : 1;
-      evs.push({ k: 'to', team: off, clock, q, text, pid: stealer.id });
-    } else {
-      let attempts = 0, done = false, assisted = null;
-      while (!done && attempts < 3) {
-        attempts++;
-        const sh = scorer();
-        const f = oStrat.focus;
-        let w3 = { perimeter: .45, balanced: .33, inside: .2 }[f], wi = { perimeter: .30, balanced: .40, inside: .55 }[f];
-        const shift = (sh.r.sho - sh.r.ins) / 220; w3 = U.clamp(w3 + shift, .05, .7); wi = U.clamp(wi - shift, .1, .8); const wm = Math.max(.1, 1 - w3 - wi);
-        const r = R() * (w3 + wi + wm); const type = r < w3 ? 'three' : r < w3 + wi ? 'inside' : 'mid';
-        const mor2 = off === 'us' ? null : 62;
-        const skill = type === 'inside' ? eff(sh, 'ins', mor2) : eff(sh, 'sho', mor2);
-        let p = { three: .335, mid: .405, inside: .545 }[type] + (skill - dDef) * 0.0045;
-        if (dStrat.def === 'zone') { if (type === 'inside') p -= .05; if (type === 'three') p += .03; }
-        if (dStrat.def === 'press' && type === 'inside') p += .035;
-        if (home) p += (off === 'us' ? 1 : -1) * home * (0.012 + G.res.fans / 5000);
-        if (off === 'us') { p += cs * 0.009; if (G.flags.motivated) p += .02; if (sim.halfTalk === 'fire' && q >= 2) p += sim.fireBonus || 0; if (sh.trait === 'Clutch' && q >= 3) p += .04; }
-        else { if (sim.starStop && sh.id === sim.starStop && q >= 2) p -= .08; p -= cs * 0.006; }
-        p = U.clamp(p, .12, .78);
-        // shooting foul
-        const fouled = type === 'inside' ? chance(.14) : type === 'mid' ? chance(.05) : chance(.02);
-        const made = chance(p);
-        const ftp = U.clamp(.5 + sh.r.sho / 250, .45, .9);
-        const box = sim.box[sh.id]; box.fga++; if (type === 'three') box.tpa++;
-        let pts = 0, ftm = 0;
-        if (made) { pts = type === 'three' ? 3 : 2; box.fgm++; if (type === 'three') box.tpm++; if (fouled && chance(ftp)) ftm = 1; }
-        else if (fouled) { const n = type === 'three' ? 3 : 2; for (let k = 0; k < n; k++) if (chance(ftp)) ftm++; }
-        pts += ftm; box.pts += pts;
-        if (made && attempts === 1 && chance(.58)) { const cands = O.filter(p2 => p2 !== sh); assisted = wpick(cands, p2 => p2.r.pas * p2.r.pas); sim.box[assisted.id].ast++; }
-        if (off === 'us') sim.us += pts; else sim.them += pts;
-        sim.qs[Math.min(q, 3)][off === 'us' ? 0 : 1] += q < 4 ? pts : 0;
-        if (q >= 4) { sim.otPts = sim.otPts || [0, 0]; sim.otPts[off === 'us' ? 0 : 1] += pts; }
-        const loc = shotLoc(type);
-        sim.momentum += (pts > 0 ? 1 : 0) * (off === 'us' ? 1 : -1);
-        const txt = shotText(sh, type, made, fouled, ftm, assisted);
-        evs.push({ k: 'shot', team: off, pid: sh.id, ast: assisted && assisted.id, type, made, pts, ftm, fouled, clock, q, loc, us: sim.us, them: sim.them, text: txt });
-        if (made || (fouled && !made)) { done = true; break; }
-        // rebound
-        let orp = U.clamp(0.27 + (oReb - dReb) * 0.004 + (dStrat.def === 'zone' ? .03 : 0), .12, .45);
-        if (chance(orp)) { const rb = wpick(O, p2 => Math.pow(p2.r.reb, 2)); sim.box[rb.id].reb++; evs.push({ k: 'oreb', team: off, pid: rb.id, clock, q, text: `Offensive board, ${rb.last}.` }); }
-        else { const rb = wpick(D, p2 => Math.pow(p2.r.reb, 2)); sim.box[rb.id].reb++; done = true; }
-      }
-    }
-    sim.momentum = U.clamp(sim.momentum * 0.92, -6, 6);
-    offense = off === 'us' ? 'them' : 'us';
-    sim.bigDeficit = Math.max(sim.bigDeficit, sim.them - sim.us);
-    // auto subs every other possession
-    if (i % 2 === 1) { autoSubs(sim, 'us'); autoSubs(sim, 'them'); }
+  sim.totalPoss = (sim.totalPoss || 0) + 1;
+  const off = Q.offense, onO = off === 'us' ? sim.onUs : sim.onThem, onD = off === 'us' ? sim.onThem : sim.onUs;
+  const O = onO.map(id => simPlayer(sim, id)), D = onD.map(id => simPlayer(sim, id));
+  const oStrat = off === 'us' ? sim.strat : sim.oppStrat, dStrat = off === 'us' ? sim.oppStrat : sim.strat;
+  const mor = off === 'us' ? null : 62, dmor = off === 'us' ? 62 : null;
+  const chem = off === 'us' ? G.res.chem : 58;
+  const oPas = U.avg(O.map(p => eff(p, 'pas', mor))) * (0.9 + 0.2 * chem / 100);
+  let dDef = U.avg(D.map(p => eff(p, 'def', dmor)));
+  if (dStrat.def === 'zone') dDef = dDef * 0.85 + 9;
+  const oReb = U.avg(O.map(p => eff(p, 'reb', mor))), dReb = U.avg(D.map(p => eff(p, 'reb', dmor)));
+  const tempoMul = { slow: .85, balanced: 1, fast: 1.2 }[oStrat.tempo];
+  const drain = (p, press) => { p.gEnergy = U.clamp(p.gEnergy - 1.05 * tempoMul * (1.35 - p.r.sta / 100) * (press ? 1.35 : 1), 5, 100); };
+  O.forEach(p => { drain(p, false); sim.box[p.id].poss++; }); D.forEach(p => { drain(p, dStrat.def === 'press'); sim.box[p.id].poss++; });
+  const benchIds = (off === 'us' ? sim.my : sim.their).filter(id => !onO.includes(id)).concat((off === 'us' ? sim.their : sim.my).filter(id => !onD.includes(id)));
+  benchIds.forEach(id => { const p = simPlayer(sim, id); p.gEnergy = U.clamp(p.gEnergy + 1.3, 0, 100); });
+  for (const p of (off === 'us' ? O : D)) {
+    const ir = 0.0003 * DIFF[G.diff].inj * (p.gEnergy < 40 ? 2.2 : 1) * (G.upgrades.trainer ? .6 : 1) * (G.flags.rushed === p.id ? 8 : 1);
+    if (chance(ir)) { p.inj = G.upgrades.trainer ? ri(1, 2) : ri(1, 3); G.injuriesTotal++; sim.injuries.push(p.id); evs.push({ k: 'inj', team: 'us', pid: p.id, clock, q, text: `${p.first} ${p.last} goes down hurt and heads to the bench.` }); subOut(sim, 'us', p.id, true); break; }
   }
-  // opponent AI adapts at halftime and before the 4th
+  let to = 0.125 - (oPas - 55) * 0.0018 + (dDef - 55) * 0.0008 - (chem - 50) * 0.0004;
+  if (dStrat.def === 'press') to += 0.045 + (55 - oPas) * 0.002;
+  if (off === 'us' && G.flags.hero) to += .015;
+  if (forced && !forced.auto) to *= .6; // a set play out of a timeout is cleaner
+  to = U.clamp(to, .04, .3);
+  const scorer = () => {
+    if (forced && forced.pid) { const fp = O.find(p => p.id === forced.pid); if (fp) return fp; }
+    const f = oStrat.focus; const star = off === 'us' && G.flags.hero ? starOf(O) : null;
+    return wpick(O, p => { let w = Math.pow((p.r.sho * (f === 'perimeter' ? 1.3 : f === 'inside' ? .8 : 1) + p.r.ins * (f === 'inside' ? 1.3 : f === 'perimeter' ? .8 : 1)) / 100, 3); if (p === star) w *= 1.7; if (off === 'us' && G.flags.heavy === p.id) w *= 1.3; return w; });
+  };
+  if (chance(to)) {
+    const stealer = wpick(D, p => p.r.def);
+    const text = pick([`${stealer.last} jumps the passing lane. Steal.`, `Turnover. ${stealer.last} pokes it loose.`, `Bad pass, picked off by ${stealer.last}.`, `Traveling called. Turnover.`]);
+    sim.momentum += off === 'us' ? -1 : 1;
+    evs.push({ k: 'to', team: off, clock, q, text, pid: stealer.id, handler: O[0].id });
+  } else {
+    let attempts = 0, done = false, assisted = null;
+    while (!done && attempts < 3) {
+      attempts++;
+      const sh = attempts === 1 ? scorer() : wpick(O, p2 => Math.pow(p2.r.sho + p2.r.ins, 2));
+      const f = oStrat.focus;
+      let w3 = { perimeter: .45, balanced: .33, inside: .2 }[f], wi = { perimeter: .30, balanced: .40, inside: .55 }[f];
+      const shift = (sh.r.sho - sh.r.ins) / 220; w3 = U.clamp(w3 + shift, .05, .7); wi = U.clamp(wi - shift, .1, .8); const wm = Math.max(.1, 1 - w3 - wi);
+      const r = R() * (w3 + wi + wm);
+      const type = (attempts === 1 && forced && forced.type) ? forced.type : (r < w3 ? 'three' : r < w3 + wi ? 'inside' : 'mid');
+      const p = shotChance(sim, sh, type, off, dStrat, dDef, home, cs, q);
+      const fouled = type === 'inside' ? chance(.14) : type === 'mid' ? chance(.05) : chance(.02);
+      const made = chance(p);
+      const ftp = U.clamp(.5 + sh.r.sho / 250, .45, .9);
+      const box = sim.box[sh.id]; box.fga++; if (type === 'three') box.tpa++;
+      let pts = 0, ftm = 0;
+      if (made) { pts = type === 'three' ? 3 : 2; box.fgm++; if (type === 'three') box.tpm++; if (fouled && chance(ftp)) ftm = 1; }
+      else if (fouled) { const n = type === 'three' ? 3 : 2; for (let k = 0; k < n; k++) if (chance(ftp)) ftm++; }
+      pts += ftm; box.pts += pts;
+      if (made && attempts === 1 && chance(.58)) { const cands = O.filter(p2 => p2 !== sh); if (cands.length) { assisted = wpick(cands, p2 => p2.r.pas * p2.r.pas); sim.box[assisted.id].ast++; } }
+      if (off === 'us') sim.us += pts; else sim.them += pts;
+      if (q < 4) sim.qs[q][off === 'us' ? 0 : 1] += pts; else { sim.otPts = sim.otPts || [0, 0]; sim.otPts[off === 'us' ? 0 : 1] += pts; }
+      const loc = shotLoc(type);
+      sim.momentum += (pts > 0 ? 1 : 0) * (off === 'us' ? 1 : -1);
+      const txt = shotText(sh, type, made, fouled, ftm, assisted);
+      evs.push({ k: 'shot', team: off, pid: sh.id, ast: assisted && assisted.id, type, made, pts, ftm, fouled, clock, q, loc, us: sim.us, them: sim.them, text: txt, clutch: !!(forced && !forced.auto), pct: Math.round(p * 100) });
+      if (made || fouled) { done = true; break; }
+      if (clock <= 0) { done = true; break; } // no time for a put-back
+      const orp = U.clamp(0.27 + (oReb - dReb) * 0.004 + (dStrat.def === 'zone' ? .03 : 0), .12, .45);
+      if (chance(orp)) { const rb = wpick(O, p2 => Math.pow(p2.r.reb, 2)); sim.box[rb.id].reb++; evs.push({ k: 'oreb', team: off, pid: rb.id, clock, q, text: `Offensive board, ${rb.last}.` }); }
+      else { const rb = wpick(D, p2 => Math.pow(p2.r.reb, 2)); sim.box[rb.id].reb++; done = true; }
+    }
+  }
+  sim.momentum = U.clamp(sim.momentum * 0.92, -6, 6);
+  Q.offense = off === 'us' ? 'them' : 'us';
+  sim.bigDeficit = Math.max(sim.bigDeficit, sim.them - sim.us);
+  if (Q.n % 2 === 0) { autoSubs(sim, 'us'); autoSubs(sim, 'them'); }
+  sim.events.push(...evs);
+  return evs;
+}
+function shotChance(sim, sh, type, off, dStrat, dDef, home, cs, q) {
+  const mor2 = off === 'us' ? null : 62;
+  const skill = type === 'inside' ? eff(sh, 'ins', mor2) : eff(sh, 'sho', mor2);
+  let p = { three: .335, mid: .405, inside: .545 }[type] + (skill - dDef) * 0.0045;
+  if (dStrat.def === 'zone') { if (type === 'inside') p -= .05; if (type === 'three') p += .03; }
+  if (dStrat.def === 'press' && type === 'inside') p += .035;
+  if (home) p += (off === 'us' ? 1 : -1) * home * (0.012 + G.res.fans / 5000);
+  p += (off === 'us' ? 1 : -1) * sim.momentum * 0.004; // runs feed on themselves; timeouts reset momentum
+  if (off === 'us') { p += cs * 0.009; if (G.flags.motivated) p += .02; if (sim.halfTalk === 'fire' && q >= 2) p += sim.fireBonus || 0; if (sh.trait === 'Clutch' && q >= 3) p += .04; }
+  else { if (sim.starStop && sh.id === sim.starStop && q >= 2) p -= .08; p -= cs * 0.006; }
+  return U.clamp(p, .12, .78);
+}
+/* Estimated make chance for the final-shot picker (no RNG used). */
+function clutchOdds(sim, pid, type) {
+  const sh = simPlayer(sim, pid); let dDef = U.avg(sim.onThem.map(id => eff(simPlayer(sim, id), 'def', 62)));
+  if (sim.oppStrat.def === 'zone') dDef = dDef * 0.85 + 9;
+  const home = sim.info.neutral ? 0 : (sim.info.home ? 1 : -1);
+  return Math.round(shotChance(sim, sh, type, 'us', sim.oppStrat, dDef, home, counterScore(sim), 3) * 100);
+}
+function endQuarter(sim) {
+  const opp = teamById(sim.oppId); const q = sim.Q.q; const evs = [];
   const diff = sim.them - sim.us;
   if (q === 1) sim.halfDeficit = diff;
   if (q === 1 || q === 2) {
     if (diff < -7 && sim.oppStrat.def !== 'press') { sim.oppStrat.def = 'press'; evs.push({ k: 'note', team: 'them', q, clock: 0, text: `${opp.name} switches to a full-court press to claw back.` }); }
     else if (diff > 9 && sim.oppStrat.tempo !== 'slow') { sim.oppStrat.tempo = 'slow'; evs.push({ k: 'note', team: 'them', q, clock: 0, text: `${opp.name} slows it down to protect the lead.` }); }
   }
-  sim.q++;
+  sim.Q = null; sim.q++;
   if (sim.q >= 4 && sim.us !== sim.them) sim.done = true;
-  if (sim.q > 7) { // safety: sudden death after 4 OTs
-    if (sim.us === sim.them) { sim.us++; } sim.done = true; }
-  evs.push({ k: 'end', q, clock: 0, us: sim.us, them: sim.them, text: sim.done ? 'Final buzzer!' : q === 1 ? 'Halftime.' : q >= 3 ? 'End of regulation. We’re going to overtime!' : `End of the ${['1st', '2nd', '3rd', '4th'][q]} quarter.` });
-  if (q >= 3 && !sim.done) evs[evs.length - 1].text = q === 3 ? 'Tied at the end of regulation. Overtime!' : 'Still tied. Another overtime!';
+  if (sim.q > 7) { if (sim.us === sim.them) sim.us++; sim.done = true; }
+  let text = sim.done ? 'Final buzzer!' : q === 1 ? 'Halftime.' : `End of the ${['1st', '2nd', '3rd', '4th'][q] || 'period'}.`;
+  if (q >= 3 && !sim.done) text = q === 3 ? 'Tied at the end of regulation. Overtime!' : 'Still tied. Another overtime!';
+  evs.push({ k: 'end', q, clock: 0, us: sim.us, them: sim.them, text });
   sim.events.push(...evs);
   return evs;
 }
@@ -520,10 +671,11 @@ function shotText(p, type, made, fouled, ftm, ast) {
   if (fouled) return `${n} is fouled on the ${type === 'three' ? 'three' : 'shot'} and hits ${ftm} of ${type === 'three' ? 3 : 2} free throws.`;
   return type === 'three' ? pick([`${n} misses from three.`, `${n}'s three rims out.`]) : type === 'mid' ? `${n} misses the jumper.` : pick([`${n} can’t finish inside.`, `${n} is blocked at the rim!`]);
 }
-function subThreshold(rot) { return { tight: 40, normal: 52, deep: 64 }[rot] || 52; }
+function subThreshold(rot) { return { tight: 40, normal: 52, deep: 64, manual: -1 }[rot] ?? 52; }
 function autoSubs(sim, side) {
   const on = side === 'us' ? sim.onUs : sim.onThem; const all = side === 'us' ? sim.my : sim.their;
   const th = side === 'us' ? subThreshold(sim.strat.rot) : 50;
+  if (th < 0) return; // Manual rotation: only you make substitutions
   for (let i = 0; i < on.length; i++) {
     const p = simPlayer(sim, on[i]); if (p.gEnergy >= th && !p.inj) continue;
     const bench = all.filter(id => !on.includes(id)).map(id => simPlayer(sim, id)).filter(b => !b.inj && b.gEnergy > th + 18);
@@ -682,6 +834,8 @@ function endSeason(kind, why) {
     G.ending.why = G.ending.sub === 'Foundation Laid' ? 'You finished outside the top 4, but your young roster grew a lot and the locker room believes. Next year looks bright.' : 'Outside the top 4, and the program needs a new plan. Try balancing development, morale and scouting.';
   }
   G.ending.legacy = legacy(); G.ending.ach = achievements();
+  if (k === 'champion' || k === 'perfect') G.banners.push({ year: titleYear(G.season), season: G.season });
+  G.career.push({ season: G.season, label: seasonLabel(G.season), kind: k, rec, grade: G.ending.legacy.grade, total: G.ending.legacy.total, max: G.ending.legacy.max, seed: G.playoffs ? G.playoffs.seed : (G.hist.at(-1) && G.hist.at(-1).seed) || null, rating: myRating() });
   G.log.push({ w: 'END', t: `Season over: ${ENDINGS[k].title}.` });
 }
 function allRecord() { return { w: G.games.filter(g => g.win).length, l: G.games.filter(g => !g.win).length }; }
@@ -707,7 +861,7 @@ const ACH = [
   { id: 'comeback', n: 'Comeback Kids', d: 'Win after trailing by 10+ at halftime.', t: () => G.comeback },
   { id: 'scholar', n: 'Scholar Squad', d: 'Finish with every player at a 3.0 GPA or higher.', t: () => G.roster.every(p => p.gpa >= 3.0) },
   { id: 'fans', n: 'Packed House', d: 'Reach 90 fan support.', t: () => G.res.fans >= 90 },
-  { id: 'black', n: 'In the Black', d: 'End with more money than you started with.', t: () => G.res.budget >= DIFF[G.diff].budget },
+  { id: 'black', n: 'In the Black', d: 'End with more money than you started the season with.', t: () => G.res.budget >= (G.startBudget ?? DIFF[G.diff].budget) },
   { id: 'iron', n: 'Iron Roster', d: 'Get through the season with zero injuries.', t: () => G.injuriesTotal === 0 },
   { id: 'culture', n: 'Culture Builder', d: 'Finish with morale 75+ and chemistry 75+.', t: () => teamMorale() >= 75 && G.res.chem >= 75 },
 ];
