@@ -47,3 +47,7 @@ Kenney's CC0 Furniture Kit includes FBX, OBJ, DAE and GLB assets. Five model typ
 The court, baskets/net lines, ball, spectators, stylized articulated players and jersey textures are original code-built geometry. The renderer uses shadow mapping, lighting, orbit controls and camera presets. HTML overlays provide accessible text, forms and keyboard interaction.
 
 See [sources and licenses](docs/sources.md), [FBLA alignment](docs/fbla-alignment.md), and [verification](docs/verification.md).
+
+### Watching a game
+
+Use **Watch live**, **Next play**, or **Pause game** on the court HUD. Choose **1× / 2× / 4×** viewing speed without changing outcomes. **Follow** tracks the action; **Wide** and **Courtside** provide alternate views. Expand **Play-by-play** or **Box score** for details. Recorded possessions in the season journal support replay and pause; postgame probability contributions are in the optional decision analysis.
