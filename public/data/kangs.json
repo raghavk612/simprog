@@ -1,0 +1,634 @@
+{
+  "season": "2025\u201326",
+  "checkedAt": "2026-10-21T04:52:52.778866+00:00",
+  "source": "https://thefinalscore.tv/wa/team/2025-2026/11097/kangaroos",
+  "players": [
+    {
+      "number": 0,
+      "name": "Matthew Adeeb",
+      "position": "Guard",
+      "height": "6' 0",
+      "year": "Senior",
+      "source": "https://thefinalscore.tv/wa/player/2025-2026/49448/matthew-adeeb",
+      "reportedGames": [
+        {
+          "date": "01/06/2026",
+          "opponent": "Bothell",
+          "points": 0
+        },
+        {
+          "date": "02/28/2026",
+          "opponent": "Puyallup",
+          "points": 4
+        },
+        {
+          "date": "03/05/2026",
+          "opponent": "Glacier Peak",
+          "points": 2
+        },
+        {
+          "date": "03/06/2026",
+          "opponent": "Richland",
+          "points": 8
+        },
+        {
+          "date": "03/07/2026",
+          "opponent": "Emerald Ridge",
+          "points": 5
+        }
+      ],
+      "reportedPPG": 3.8
+    },
+    {
+      "number": 1,
+      "name": "Ajay Ikeda",
+      "position": "Guard",
+      "height": "6' 0",
+      "year": "Junior",
+      "source": "https://thefinalscore.tv/wa/player/2025-2026/49449/ajay-ikeda",
+      "reportedGames": [
+        {
+          "date": "01/06/2026",
+          "opponent": "Bothell",
+          "points": 3
+        },
+        {
+          "date": "02/28/2026",
+          "opponent": "Puyallup",
+          "points": 0
+        },
+        {
+          "date": "03/05/2026",
+          "opponent": "Glacier Peak",
+          "points": 0
+        },
+        {
+          "date": "03/06/2026",
+          "opponent": "Richland",
+          "points": 0
+        },
+        {
+          "date": "03/07/2026",
+          "opponent": "Emerald Ridge",
+          "points": 0
+        }
+      ],
+      "reportedPPG": 0.6
+    },
+    {
+      "number": 2,
+      "name": "Hunter Phipps",
+      "position": "Guard",
+      "height": "6' 1",
+      "year": "Senior",
+      "source": "https://thefinalscore.tv/wa/player/2025-2026/49450/hunter-phipps",
+      "reportedGames": [
+        {
+          "date": "01/06/2026",
+          "opponent": "Bothell",
+          "points": 10
+        },
+        {
+          "date": "02/28/2026",
+          "opponent": "Puyallup",
+          "points": 19
+        },
+        {
+          "date": "03/05/2026",
+          "opponent": "Glacier Peak",
+          "points": 6
+        },
+        {
+          "date": "03/06/2026",
+          "opponent": "Richland",
+          "points": 6
+        },
+        {
+          "date": "03/07/2026",
+          "opponent": "Emerald Ridge",
+          "points": 0
+        }
+      ],
+      "reportedPPG": 8.2
+    },
+    {
+      "number": 3,
+      "name": "Jayden Hunt",
+      "position": "Guard",
+      "height": "6' 0",
+      "year": "Junior",
+      "source": "https://thefinalscore.tv/wa/player/2025-2026/49451/jayden-hunt",
+      "reportedGames": [
+        {
+          "date": "01/06/2026",
+          "opponent": "Bothell",
+          "points": 22
+        },
+        {
+          "date": "02/28/2026",
+          "opponent": "Puyallup",
+          "points": 24
+        },
+        {
+          "date": "03/05/2026",
+          "opponent": "Glacier Peak",
+          "points": 16
+        },
+        {
+          "date": "03/06/2026",
+          "opponent": "Richland",
+          "points": 28
+        },
+        {
+          "date": "03/07/2026",
+          "opponent": "Emerald Ridge",
+          "points": 29
+        }
+      ],
+      "reportedPPG": 23.8
+    },
+    {
+      "number": 4,
+      "name": "Mason Mazandarany",
+      "position": "Guard",
+      "height": "6' 0",
+      "year": "Junior",
+      "source": "https://thefinalscore.tv/wa/player/2025-2026/49452/mason-mazandarany",
+      "reportedGames": [
+        {
+          "date": "02/28/2026",
+          "opponent": "Puyallup",
+          "points": 0
+        }
+      ],
+      "reportedPPG": 0.0
+    },
+    {
+      "number": 5,
+      "name": "Matei Olteanu",
+      "position": "Guard",
+      "height": "6' 3",
+      "year": "Senior",
+      "source": "https://thefinalscore.tv/wa/player/2025-2026/49453/matei-olteanu",
+      "reportedGames": [
+        {
+          "date": "02/28/2026",
+          "opponent": "Puyallup",
+          "points": 0
+        }
+      ],
+      "reportedPPG": 0.0
+    },
+    {
+      "number": 10,
+      "name": "Logan O'Hare",
+      "position": "Guard",
+      "height": "6' 3",
+      "year": "Senior",
+      "source": "https://thefinalscore.tv/wa/player/2025-2026/49454/logan-ohare",
+      "reportedGames": [
+        {
+          "date": "02/28/2026",
+          "opponent": "Puyallup",
+          "points": 0
+        },
+        {
+          "date": "03/07/2026",
+          "opponent": "Emerald Ridge",
+          "points": 0
+        }
+      ],
+      "reportedPPG": 0.0
+    },
+    {
+      "number": 11,
+      "name": "Mateo Cummings",
+      "position": "Forward",
+      "height": "6' 7",
+      "year": "Senior",
+      "source": "https://thefinalscore.tv/wa/player/2025-2026/49455/mateo-cummings",
+      "reportedGames": [
+        {
+          "date": "01/06/2026",
+          "opponent": "Bothell",
+          "points": 16
+        },
+        {
+          "date": "02/28/2026",
+          "opponent": "Puyallup",
+          "points": 20
+        },
+        {
+          "date": "03/05/2026",
+          "opponent": "Glacier Peak",
+          "points": 10
+        },
+        {
+          "date": "03/06/2026",
+          "opponent": "Richland",
+          "points": 6
+        },
+        {
+          "date": "03/07/2026",
+          "opponent": "Emerald Ridge",
+          "points": 19
+        }
+      ],
+      "reportedPPG": 14.2
+    },
+    {
+      "number": 12,
+      "name": "Drew Roberts",
+      "position": "Forward",
+      "height": "6' 4",
+      "year": "Junior",
+      "source": "https://thefinalscore.tv/wa/player/2025-2026/49456/drew-roberts",
+      "reportedGames": [
+        {
+          "date": "02/28/2026",
+          "opponent": "Puyallup",
+          "points": 0
+        },
+        {
+          "date": "03/07/2026",
+          "opponent": "Emerald Ridge",
+          "points": 0
+        }
+      ],
+      "reportedPPG": 0.0
+    },
+    {
+      "number": 13,
+      "name": "Omer Ziklik",
+      "position": "Guard",
+      "height": "6' 0",
+      "year": "Junior",
+      "source": "https://thefinalscore.tv/wa/player/2025-2026/49457/omer-ziklik",
+      "reportedGames": [
+        {
+          "date": "02/28/2026",
+          "opponent": "Puyallup",
+          "points": 0
+        },
+        {
+          "date": "03/05/2026",
+          "opponent": "Glacier Peak",
+          "points": 13
+        },
+        {
+          "date": "03/06/2026",
+          "opponent": "Richland",
+          "points": 20
+        },
+        {
+          "date": "03/07/2026",
+          "opponent": "Emerald Ridge",
+          "points": 20
+        }
+      ],
+      "reportedPPG": 13.3
+    },
+    {
+      "number": 20,
+      "name": "Jacob Fox",
+      "position": "Forward",
+      "height": "6' 3",
+      "year": "Sophomore",
+      "source": "https://thefinalscore.tv/wa/player/2025-2026/49458/jacob-fox",
+      "reportedGames": [
+        {
+          "date": "01/06/2026",
+          "opponent": "Bothell",
+          "points": 6
+        },
+        {
+          "date": "02/28/2026",
+          "opponent": "Puyallup",
+          "points": 0
+        },
+        {
+          "date": "03/07/2026",
+          "opponent": "Emerald Ridge",
+          "points": 0
+        }
+      ],
+      "reportedPPG": 2.0
+    },
+    {
+      "number": 21,
+      "name": "Connor Fagan",
+      "position": "Forward",
+      "height": "6' 7",
+      "year": "Senior",
+      "source": "https://thefinalscore.tv/wa/player/2025-2026/49459/connor-fagan",
+      "reportedGames": [
+        {
+          "date": "02/28/2026",
+          "opponent": "Puyallup",
+          "points": 0
+        },
+        {
+          "date": "03/07/2026",
+          "opponent": "Emerald Ridge",
+          "points": 0
+        }
+      ],
+      "reportedPPG": 0.0
+    },
+    {
+      "number": 30,
+      "name": "Julien Deblieck",
+      "position": "Forward",
+      "height": "6' 7",
+      "year": "Senior",
+      "source": "https://thefinalscore.tv/wa/player/2025-2026/49460/julien-deblieck",
+      "reportedGames": [
+        {
+          "date": "01/06/2026",
+          "opponent": "Bothell",
+          "points": 10
+        },
+        {
+          "date": "02/28/2026",
+          "opponent": "Puyallup",
+          "points": 5
+        },
+        {
+          "date": "03/05/2026",
+          "opponent": "Glacier Peak",
+          "points": 2
+        },
+        {
+          "date": "03/06/2026",
+          "opponent": "Richland",
+          "points": 2
+        },
+        {
+          "date": "03/07/2026",
+          "opponent": "Emerald Ridge",
+          "points": 1
+        }
+      ],
+      "reportedPPG": 4.0
+    },
+    {
+      "number": 35,
+      "name": "Liam O'Hare",
+      "position": "Forward",
+      "height": "6' 4",
+      "year": "Sophomore",
+      "source": "https://thefinalscore.tv/wa/player/2025-2026/49461/liam-ohare",
+      "reportedGames": [
+        {
+          "date": "02/28/2026",
+          "opponent": "Puyallup",
+          "points": 0
+        }
+      ],
+      "reportedPPG": 0.0
+    }
+  ],
+  "games": [
+    {
+      "date": "12/2/2025",
+      "opponent": "North Creek",
+      "points": 51,
+      "against": 49,
+      "venue": "North Creek HS Aux Gym",
+      "time": "7:00 PM"
+    },
+    {
+      "date": "12/5/2025",
+      "opponent": "Issaquah",
+      "points": 66,
+      "against": 57,
+      "venue": "Lake Washington HS",
+      "time": "7:15 PM"
+    },
+    {
+      "date": "12/6/2025",
+      "opponent": "Bainbridge",
+      "points": 93,
+      "against": 60,
+      "venue": "Bainbridge HS",
+      "time": "3:00 PM"
+    },
+    {
+      "date": "12/9/2025",
+      "opponent": "Bear Creek School",
+      "points": 81,
+      "against": 49,
+      "venue": "Lake Washington HS",
+      "time": "7:00 PM"
+    },
+    {
+      "date": "12/12/2025",
+      "opponent": "Bellevue",
+      "points": 63,
+      "against": 42,
+      "venue": "Lake Washington HS",
+      "time": "7:15 PM"
+    },
+    {
+      "date": "12/20/2025",
+      "opponent": "Liberty-Issaquah",
+      "points": 56,
+      "against": 64,
+      "venue": "Liberty HS",
+      "time": "6:00 PM"
+    },
+    {
+      "date": "12/26/2025",
+      "opponent": "La Joya Community HS (CA)",
+      "points": 79,
+      "against": 35,
+      "venue": "Palm Springs HS (CA)",
+      "time": "9:30 PM"
+    },
+    {
+      "date": "12/27/2025",
+      "opponent": "Westchester HS (CA)",
+      "points": 71,
+      "against": 41,
+      "venue": "Rancho Mirage HS (CA)",
+      "time": "4:00 PM"
+    },
+    {
+      "date": "12/29/2025",
+      "opponent": "Great Oak HS (CA)",
+      "points": 60,
+      "against": 47,
+      "venue": "Cathedral City HS (CA)",
+      "time": "5:30 PM"
+    },
+    {
+      "date": "12/30/2025",
+      "opponent": "Corona Del Mar HS (CA)",
+      "points": 87,
+      "against": 82,
+      "venue": "Rancho Mirage HS (CA)",
+      "time": "3:50 PM"
+    },
+    {
+      "date": "1/6/2026",
+      "opponent": "Bothell",
+      "points": 78,
+      "against": 66,
+      "venue": "Lake Washington HS",
+      "time": "7:15 PM"
+    },
+    {
+      "date": "1/9/2026",
+      "opponent": "Woodinville",
+      "points": 61,
+      "against": 44,
+      "venue": "Lake Washington HS",
+      "time": "7:30 PM"
+    },
+    {
+      "date": "1/13/2026",
+      "opponent": "Skyline",
+      "points": 45,
+      "against": 31,
+      "venue": "Skyline HS",
+      "time": "7:15 PM"
+    },
+    {
+      "date": "1/16/2026",
+      "opponent": "Coeur D' Alene (ID)",
+      "points": 69,
+      "against": 49,
+      "venue": "Lake Washington High School",
+      "time": "7:30 PM"
+    },
+    {
+      "date": "1/19/2026",
+      "opponent": "Kentwood",
+      "points": 62,
+      "against": 35,
+      "venue": "ShoWare Center",
+      "time": "7:30 PM"
+    },
+    {
+      "date": "1/20/2026",
+      "opponent": "Renton",
+      "points": 61,
+      "against": 53,
+      "venue": "Lake Washington HS",
+      "time": "7:15 PM"
+    },
+    {
+      "date": "1/23/2026",
+      "opponent": "Redmond",
+      "points": 59,
+      "against": 42,
+      "venue": "Redmond High School",
+      "time": "7:15 PM"
+    },
+    {
+      "date": "1/26/2026",
+      "opponent": "Tulalip Heritage",
+      "points": 84,
+      "against": 52,
+      "venue": "Lake Washington HS",
+      "time": "7:00 PM"
+    },
+    {
+      "date": "1/29/2026",
+      "opponent": "Juanita",
+      "points": 80,
+      "against": 30,
+      "venue": "Juanita HS",
+      "time": "7:15 PM"
+    },
+    {
+      "date": "1/31/2026",
+      "opponent": "Mount Si",
+      "points": 63,
+      "against": 67,
+      "venue": "Mount Si HS",
+      "time": "5:45 PM"
+    },
+    {
+      "date": "2/7/2026",
+      "opponent": "Lincoln-Seattle",
+      "points": 76,
+      "against": 45,
+      "venue": "Lake Washington HS",
+      "time": "7:30 PM"
+    },
+    {
+      "date": "2/11/2026",
+      "opponent": "Redmond",
+      "points": 56,
+      "against": 52,
+      "venue": "Newport High School",
+      "time": "3:30 PM"
+    },
+    {
+      "date": "2/13/2026",
+      "opponent": "Mount Si",
+      "points": 58,
+      "against": 67,
+      "venue": "Newport High School",
+      "time": "5:15 PM"
+    },
+    {
+      "date": "2/17/2026",
+      "opponent": "Issaquah",
+      "points": 85,
+      "against": 73,
+      "venue": "Lake Washington HS",
+      "time": "7:00 PM"
+    },
+    {
+      "date": "2/19/2026",
+      "opponent": "Glacier Peak",
+      "points": 60,
+      "against": 59,
+      "venue": "Glacier Peak HS",
+      "time": "7:00 PM"
+    },
+    {
+      "date": "2/21/2026",
+      "opponent": "Mount Si",
+      "points": 63,
+      "against": 70,
+      "venue": "Bellevue HS",
+      "time": "6:00 PM"
+    },
+    {
+      "date": "2/28/2026",
+      "opponent": "Puyallup",
+      "points": 72,
+      "against": 56,
+      "venue": "Bellevue College",
+      "time": "4:00 PM"
+    },
+    {
+      "date": "3/5/2026",
+      "opponent": "Glacier Peak",
+      "points": 49,
+      "against": 46,
+      "venue": "Tacoma Dome",
+      "time": "7:15 PM"
+    },
+    {
+      "date": "3/6/2026",
+      "opponent": "Richland",
+      "points": 70,
+      "against": 83,
+      "venue": "Tacoma Dome",
+      "time": "9:00 PM"
+    },
+    {
+      "date": "3/7/2026",
+      "opponent": "Emerald Ridge",
+      "points": 74,
+      "against": 67,
+      "venue": "Tacoma Dome",
+      "time": "1:00 PM"
+    }
+  ],
+  "notes": "Published historical snapshot, refreshed daily. Player PPG covers only games with reported points on the source, not a complete season average. Simulation attributes are fictional."
+}
