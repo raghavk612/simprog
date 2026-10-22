@@ -17,7 +17,7 @@ Open the URL Vite prints. Production files are in `dist/`; serve them over HTTP,
 
 ## Implemented
 
-- Named coach and three difficulties that pick which real team you coach: **Rookie** (the real C-Team), **All-Star** (the real JV) or **Hall of Fame** (the real varsity). One-time introductory tour, local saves and validated JSON import/export.
+- Named coach and three difficulties that pick which real team you coach: **C Team · Rookie**, **Junior Varsity · All-Star** or **Varsity · Hall of Fame**, each using that real team's roster. One-time introductory tour, local saves and validated JSON import/export.
 - 2K-style roster viewer: cycle players with arrows or ← →, generated avatars, OVR and letter-grade ratings (INS / MID / 3PT / PER D / INS D). Before a player's first game, stats are 2025–26 estimates built from the team's real points per game (no per-player stats are published on KingCo or MaxPreps).
 - Broadcast score bug, four camera views including a first-person Player view, and keyboard shortcuts (Space, W, T, 1–4, H). The handbook is a tabbed guide with key-cap icons.
 - Real 2025–26 rosters and completed schedules for all three levels from KingCo Athletics: Varsity 12 players / 30 games, JV 12 / 19, C-Team 13 / 18. Creator Malhar Pawar plays as #11 on the real JV roster.

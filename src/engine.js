@@ -7,7 +7,7 @@ export const plans={shooting:{name:'Shooting lab',cost:90,skill:3,energy:-10,mor
 export const staff=[{name:'Development specialist',cost:300,detail:'+1 skill on skill practices',key:'development'},{name:'Sports recovery coach',cost:300,detail:'+8 energy on recovery; lower injury risk',key:'recovery'},{name:'Culture builder',cost:250,detail:'+3 morale and chemistry on team dinners',key:'culture'}];
 export const eligible=p=>p.gpa>=2&&p.injury===0&&p.energy>=15;
 /* Display names for the three difficulty keys. Keys stay the same so existing saves still load. */
-export const DIFFICULTIES={rookie:{label:'Rookie',short:'ROOKIE',blurb:'coach the real C-Team, more room to learn',level:'c'},standard:{label:'All-Star',short:'ALL-STAR',blurb:'coach the real JV, every decision matters',level:'jv'},elite:{label:'Hall of Fame',short:'HALL OF FAME',blurb:'coach the real varsity, small margins',level:'varsity'}};
+export const DIFFICULTIES={rookie:{label:'C Team',short:'C TEAM',blurb:'Rookie',tier:'ROOKIE',level:'c'},standard:{label:'Junior Varsity',short:'JV',blurb:'All-Star',tier:'ALL-STAR',level:'jv'},elite:{label:'Varsity',short:'VARSITY',blurb:'Hall of Fame',tier:'HALL OF FAME',level:'varsity'}};
 /* The real team a difficulty coaches. Older single-team data files fall back to their top-level roster. */
 export const teamFor=(data,difficulty)=>data.levels?.[DIFFICULTIES[difficulty]?.level]??{label:'Varsity',players:data.players,games:data.games,source:data.source};
 /* Season structure for any schedule length: the last four games are the elimination run; the qualifying bar is 46% wins before it (12 of 26 for a 30-game varsity season). */
