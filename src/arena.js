@@ -5,9 +5,9 @@ import {CLIP_SECONDS, SHOTS, sampleClip} from './basketball.js';
 const purple=0x6832ab;
 export class Arena{
  constructor(host){
-  this.speed=1;this.playTime=0;this.paused=false;this.host=host;this.models=0;this.people=[];this.time=0;this.motion=!window.matchMedia('(prefers-reduced-motion: reduce)').matches;this.mode='broadcast';this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#100e22');this.scene.fog=new THREE.Fog('#100e22',48,100);
+  this.speed=1;this.playTime=0;this.paused=false;this.host=host;this.models=0;this.people=[];this.time=0;this.motion=!window.matchMedia('(prefers-reduced-motion: reduce)').matches;this.shakeOn=true;this.shake=0;this.run=0;this.mode='broadcast';this.scene=new THREE.Scene();this.scene.background=new THREE.Color('#100e22');this.scene.fog=new THREE.Fog('#100e22',48,100);
   try{this.renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});}catch(e){host.innerHTML='<div class="fallback">3D graphics unavailable on this device. All coaching controls remain playable.</div>';this.failed=true;return;}
-  this.renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=.95;host.append(this.renderer.domElement);
+  this.renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=.95;this.renderer.domElement.setAttribute('aria-hidden','true');host.append(this.renderer.domElement);
   this.camera=new THREE.PerspectiveCamera(43,1,.1,180);this.camera.position.set(29,27,32);this.controls=new OrbitControls(this.camera,this.renderer.domElement);this.controls.target.set(0,0,0);this.controls.minDistance=12;this.controls.maxDistance=58;this.controls.maxPolarAngle=Math.PI*.46;this.controls.enableDamping=true;this.controls.enablePan=false;this.controls.addEventListener('start',()=>{if(this.mode==='follow')this.mode='court';});
   this.scene.add(new THREE.HemisphereLight(0xded5ff,0x181124,.85));const sun=new THREE.DirectionalLight(0xffeee2,2.2);sun.position.set(6,25,14);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-24,right:24,top:24,bottom:-24,near:1,far:70});sun.shadow.bias=-.0005;this.scene.add(sun);
   const fill=new THREE.PointLight(0x9e61ff,80,55);fill.position.set(-15,9,-10);this.scene.add(fill);
@@ -92,7 +92,7 @@ export class Arena{
   if(!this.event){const m=s?.match,r=s?.results.at(-1);this.score(m?.home??r?.home??0,m?.away??r?.away??0);}
  }
  play(event){
-  this.event=event;this.playTime=0;this.paused=false;this.clipIndex=-1;this.presentKey='';
+  this.event=event;this.run++;this.playTime=0;this.paused=false;this.clipIndex=-1;this.presentKey='';
   // Previous saves still replay; old events have no detailed action record.
   this.clips=event.plays?.length===2?event.plays:[{team:'home',kind:event.three?'catch':'pullup',player:event.player,id:event.id,jersey:event.jersey||11,lane:1,contest:'contested',outcome:event.points?'made':'miss',points:event.points,commentary:event.explanation},{team:'away',kind:'pullup',player:'Visitors',jersey:12,lane:-1,contest:'contested',outcome:event.away?'made':'miss',points:event.away||0,commentary:'Visitors complete their possession.'}];
  }
@@ -125,12 +125,16 @@ export class Arena{
    this.nets.forEach(n=>n.mesh.rotation.y=n.side===(clip.team==='home'?1:-1)?pose.net:0);
    this.trail.forEach((d,i)=>{d.visible=this.motion&&clipTime>CLIP_SECONDS*.61&&clipTime<CLIP_SECONDS*.9&&clip.outcome!=='steal';if(d.visible){const previous=sampleClip(clip,Math.max(0,clipTime-i*.025)).ball;d.position.set(previous.x,previous.y,previous.z);}});
    this.score(presentation.home,presentation.away);
+   const impact=`${this.run}|${index}`;if(presentation.resolved&&this.impactKey!==impact){this.impactKey=impact;if(clip.kind==='dunk'&&clip.points)this.shake=.24;else if(clip.outcome==='block')this.shake=.18;}
    const key=`${index}|${pose.phase}|${presentation.resolved}|${presentation.done}`;if(key!==this.presentKey){this.presentKey=key;this.onPresentation?.(presentation);}
   }else{
    // Idle gym: dribbling and movement only. No invisible automatic shot loop.
    this.people.forEach((p,i)=>{const k=i%5;this.posePlayer(p,{x:[-6,-2,4,8,1][k]+(i>=5?1:0),y:0,z:[-4,4,-3,3,0][k],yaw:i<5?Math.PI/2:-Math.PI/2,run:0,arms:i===2?'dribble':'relax'},this.time);});
    const p=this.people[2].position;this.ball.position.set(p.x+.4,.3+Math.abs(Math.sin(this.time*6))*.9,p.z+.25);this.trail.forEach(d=>d.visible=false);
   }
-  if(this.mode==='follow'&&this.event){const side=this.clipIndex===1?-1:1;const focus=this.people[side===1?0:5].position;const x=THREE.MathUtils.clamp(focus.x,-10,10);this.camera.position.lerp(new THREE.Vector3(x,8.5,14),.045);this.controls.target.lerp(new THREE.Vector3(x,1.2,0),.08);}this.controls.update();this.renderer.render(this.scene,this.camera);
+  if(this.mode==='follow'&&this.event){const side=this.clipIndex===1?-1:1;const focus=this.people[side===1?0:5].position;const x=THREE.MathUtils.clamp(focus.x,-10,10);this.camera.position.lerp(new THREE.Vector3(x,8.5,14),.045);this.controls.target.lerp(new THREE.Vector3(x,1.2,0),.08);}this.controls.update();
+  // Impact shake: a short camera jitter on dunks and blocks. Off with reduced motion or the screen-shake setting.
+  let jx=0,jy=0;if(this.shake>0){if(this.motion&&this.shakeOn){jx=(Math.random()-.5)*this.shake;jy=(Math.random()-.5)*this.shake;}this.shake*=Math.pow(.02,dt);if(this.shake<.004)this.shake=0;}
+  this.camera.position.x+=jx;this.camera.position.y+=jy;this.renderer.render(this.scene,this.camera);this.camera.position.x-=jx;this.camera.position.y-=jy;
  }
 }

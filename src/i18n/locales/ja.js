@@ -1,0 +1,256 @@
+// 日本語。キーと {{プレースホルダー}} は en.js と同一です。
+export default {
+ meta:{title:'KANGS • チャンピオンシップへの道',description:'ひとつのチーム、ひとつのシーズン、あなたの決断。3Dバスケットボール経営シミュレーションで Lake Washington Kangs を率いよう。'},
+ lang:{en:'英語',es:'スペイン語',zh:'中国語',fr:'フランス語',ja:'日本語',it:'イタリア語',hi:'ヒンディー語'},
+ a11y:{
+  skip:'メインコンテンツへ移動',closeDialog:'ダイアログを閉じる',stage:'操作できる3D Kangs体育館',pageOpened:'ページを開きました：{{page}}',newTab:'新しいタブで開きます',
+  score:'スコア：Kangs {{home}}、ビジター {{away}}。',soundOn:'効果音をオンにしました',soundOff:'効果音をオフにしました',motionOn:'モーションをオンにしました',motionOff:'モーションをオフにしました',
+  camera:'カメラビュー：{{view}}',speed:'視聴速度 {{speed}}',languageChanged:'言語を{{language}}に変更しました'
+ },
+ keys:{shortcut:'ショートカット：{{key}}'},
+ nav:{home:'プログラム本部',roster:'ロスターとローテーション',practice:'練習プランナー',recruit:'トライアウト',staff:'コーチ室',game:'試合当日',locker:'ロッカールーム',season:'シーズン日誌',data:'Kangs の実データ'},
+ top:{brand:'チャンピオンシップへの道',soundOn:'サウンド オン',soundOff:'サウンド オフ',motionOn:'モーション オン',motionOff:'モーション オフ',settings:'設定',export:'保存 / エクスポート',help:'ヘルプ',title:'タイトル'},
+ side:{sub:'バスケットボール運営',badge:'チャンピオンシッププロジェクト',nav:'プログラムのナビゲーション',rules:'ルールブックと操作',credits:'クレジットと出典',coach:'{{name}} コーチ',difficulty:'難易度：{{level}}',footer:'ひとつのチーム、ひとつのシーズン、あなたの決断。',footerNote:'ローカルに自動保存 · 架空のシミュレーション / 出典付きの公開ロスター'},
+ stage:{venue:'Kangs フィールドハウス',hint:'ドラッグで回転 · スクロールで拡大縮小',place:'ワシントン州カークランド',tagline:'ここは私たちのホーム。あなたのプログラム。',camera:'カメラビュー',wide:'ワイド',court:'コートサイド',follow:'追従'},
+ metrics:{record:'成績',tokens:'プログラムトークン',chemistry:'チームワーク',fans:'ファン'},
+ header:{complete:'シーズン終了',game:'第 {{n}} 戦 / 全 {{total}} 戦'},
+ level:{rookie:'ルーキー',standard:'スタンダード',elite:'エリート'},
+ difficulty:{rookie:'ルーキー · 学ぶ余裕が多め',standard:'バーシティ · すべての決断が重要',elite:'エリート · わずかな差が勝負'},
+ landing:{
+  school:'Lake Washington',program:'バスケットボールプログラム',badge:'コーチング・シミュレーション',tagline:'ひとつのチーム、ひとつのシーズン。',titleA:'チャンピオンシップへの',titleB:'道。',
+  intro:'Kangs の舵を取ろう。選手を育て、厳しい決断を下し、実在のシーズンに別の結末を描こう。',
+  name:'コーチの名前',namePlaceholder:'名前を入力',challenge:'チャレンジを選ぶ',start:'Kangs を率いる',continue:'保存したシーズンを続ける →',howTo:'遊び方',import:'シーズンをインポート',
+  ticketSeason:'2025—26 / 再構築',ticketA:'道は',ticketB:'ここから始まる。',ticketBody:'実在の選手14人 · 公表された30試合\nあなたの決断、あなたの結果。',
+  footer:'チャンピオンシップへの道',footerNote:'独立した学生プロジェクト · 学校の公認ではありません'
+ },
+ home:{
+  kicker:'プログラム',welcome:'おかえりなさい、{{name}} コーチ。',intro:'優勝は、ティップオフのずっと前から築かれる。',doneIntro:'あなたのシーズンに結末が訪れました。すべての決断がそれを描きました。',
+  quickRosterA:'先発5人を決める',quickRosterB:'ローテーションを組む',quickPracticeA:'練習に取り組む',quickPracticeB:'準備枠はあと {{n}} 回',quickStaffA:'まずは人',quickStaffB:'チームと話す',
+  sidebar:'次の試合と直近の結果',finalChapter:'最終章',nextOnSchedule:'次の試合予定',champions:'州チャンピオン。',seasonEnds:'シーズン終了。',
+  finalRecord:'{{w}} 勝 {{l}} 敗。あなたが築き上げたチームです。',viewStory:'シーズンの物語を見る',prepare:'ティップオフに備える →',bracketNote:'州トーナメント · 勝つか、そこで終わりか',seasonNote:'ひとつのシーズン。ひとつの優勝。',
+  rippleKicker:'波及効果',rippleTitle:'すべての選択が先へ響く。',rippleDefault:'練習、会話、回復が、コート上の出来事を変えます。あなたの決断の記録はここから始まります。'
+ },
+ roster:{
+  kicker:'ユニフォームの向こうにいる人たち',intro:'先発5人を選び、160選手分を配分します。健康、体力、学業資格が出場可否に影響します。',
+  spots:'ロスター枠 {{n}} / 15',minutes:'{{n}} / 160 分',auto:'出場可能なローテーションを作成',
+  notice:'名前と背番号は公開されているチーム情報です。以下のスキル、GPA、健康、士気、すべての試合結果は架空のシミュレーション値です。',
+  start:'先発',player:'選手',skill:'スキル',energy:'体力',morale:'士気',gpa:'模擬GPA',status:'状態',minutesCol:'出場時間',actions:'操作',
+  startAria:'先発：{{name}}',minutesAria:'{{name}} の出場時間',profile:'プロフィール',profileAria:'{{name}} のプロフィールを開く'
+ },
+ status:{injured:'負傷中',ineligible:'出場資格なし',exhausted:'疲労困憊',ready:'準備完了'},
+ pos:{guard:'ガード',forward:'フォワード'},
+ year:{senior:'3年生',junior:'2年生',sophomore:'1年生',prospect:'架空の候補選手',tryout:'トライアウト'},
+ practice:{
+  kicker:'選手を総合的に育てる',intro:'毎試合の前に準備枠が3回あります。目先の仕上がりと長期的な成長のバランスを取りましょう。',group:'練習対象',wholeTeam:'チーム全員',
+  slots:'利用可能な枠 {{n}} / 3',cost:'{{cost}} プログラムトークン · 1枠',effects:'練習の効果',fxSkill:'スキル {{n}}',fxEnergy:'体力 {{n}}',fxMorale:'士気 {{n}}',fxGpa:'GPA {{n}}',
+  schedule:'セッションを予定する →',planKicker:'意図をもって計画する',planTitle:'このあと何が起こる？',
+  planP1:'疲れた選手はシュートが入りにくくなります。まとまったチームは良いチャンスを作ります。自習室は先発メンバーの出場資格を守ります。',planP2:'すべてのセッションは、決断の記録と試合後の分析に残ります。'
+ },
+ plan:{
+  shooting:{name:'シューティング練習',desc:'反復練習が、フリーのチャンスを得点に変えます。スキルは上がりますが体力を消費します。'},
+  defense:{name:'ディフェンスのローテーション',desc:'みんなで動く。基本を磨き、チームワークを高めます。'},
+  recovery:{name:'回復とモビリティ',desc:'模擬の負傷からの回復を助け、試合当日に向けて体力を戻します。'},
+  study:{name:'自習室',desc:'出場資格を守ります。学業の準備も健全なプログラムの一部です。'},
+  bond:{name:'チームディナー',desc:'一緒に食事をすると、信頼、士気、つながりが育ちます。'}
+ },
+ staff:{
+  development:{name:'育成スペシャリスト',detail:'スキル練習でスキル +1'},
+  recovery:{name:'スポーツ回復コーチ',detail:'回復で体力 +8、負傷リスクが低下'},
+  culture:{name:'チーム文化づくり担当',detail:'チームディナーで士気とチームワーク +3'}
+ },
+ recruit:{
+  kicker:'次の流れを変える選手を見つけよう',intro:'架空の候補選手が、実在ロスターのシミュレーションに加わります。獲得にはプログラムトークンを使い、実際のお金は使いません。',tokens:'利用可能なトークン {{n}}',
+  tryout:'架空のトライアウト · {{pos}}',sign:'契約 · {{cost}} トークン',signAria:'{{name}} を {{cost}} トークンで契約',none:'トライアウトの候補はすべて契約済みです。'
+ },
+ office:{
+  kicker:'プログラムを率いる',intro:'スタッフとの関わりや会話は、スコアボードの外でもチームを形づくります。',weekly:'週ごとのチーム面談',title:'仲間のために時間を作ろう。',
+  body:'ベンチは声を聞いてほしい。チームには資源が必要。宿題は溜まっていく。準備枠を1回、どこに使うか選びましょう。',
+  listen:'ベンチの声を聞く',listenFx:'士気 +7 · チームワーク +5',fundraise:'地域クリニックを開く',fundraiseFx:'トークン +180 · ファン +40 · 体力 −5',academics:'学業面談',academicsFx:'模擬GPA +0.18',
+  assistantKicker:'アシスタントは1枠',buildStaff:'コーチングスタッフを編成しよう。',assistantBody:'アシスタントの役割は架空のゲーム上の選択です。ボーナスは準備セッションに適用されます。',
+  hired:'採用済み',cost:'{{cost}} トークン',hireAria:'{{name}} を {{cost}} トークンで採用',dismiss:'アシスタントを解任'
+ },
+ game:{
+  speed:'視聴速度',kangs:'Kangs',visitors:'ビジター',liveKicker:'フィールドハウスからライブ',prepKicker:'備えよ。適応せよ。実行せよ。',liveTitle:'試合当日。判断はあなた次第。',vs:'Kangs 対 {{opp}}',
+  alternateBracket:'もうひとつの州トーナメント',published:'公表された対戦 / シミュレーション結果',overtime:'延長戦',quarter:'第{{n}}Q',possessions:'{{n}} ポゼッション',
+  choosePlay:'プレーを選んで、ポゼッションの展開を見守ろう。',playByPlay:'プレーごとの実況',crowdReady:'観客は準備万端。最初のポゼッションを指示しよう。',
+  scouting:'スカウティングレポート',reference:'参考結果：Lake Washington {{a}}–{{b}}。あなたの結果はまだ書かれていません。',strength:'対戦相手の強さ（ゲーム内）',style:'スタイル',unscouted:'未分析',
+  advice:{perimeter:'シューターにしっかり寄せよう。ゾーンが推奨される守り方です。',paint:'ペイントエリアを守ろう。プレッシャーで相手のインサイドへのパスを乱せます。',transition:'リズムを支配しよう。バランスの取れた守備でチームの組織を保てます。'},
+  adviceNote:'このスカウト情報はシミュレーションの一部です。',scout:'相手の映像を見る · 50 トークン / 1枠',boxScore:'ボックススコア',controls:'試合の操作',sideline:'サイドライン',startingFive:'先発の5人',
+  callPlay:'プレーを指示',system:'システム',tempo:'テンポ',resumeFinal:'最後のプレーを再開',pauseFinal:'最後のプレーを一時停止',pause:'試合を一時停止',resume:'試合を再開',watch:'▶ ライブで見る',next:'次のプレー →',
+  timeout:'タイムアウト · 残り {{n}} 回',ready:'ティップオフの準備はいい？',minShort:'{{n}} 分',assigned:'{{n}} / 160 分を配分済み',adjust:'ローテーションを調整',tipOff:'ティップオフ →',
+  look:'{{player}} · {{phase}} · {{contest}}'
+ },
+ tactic:{balanced:'バランス',zone:'ゾーン / クローズアウト',pressure:'プレッシャーディフェンス',perimeter:'スペーシング / スリー重視'},
+ pace:{steady:'じっくり',fast:'速攻'},
+ style:{perimeter:'外角中心',paint:'インサイド中心',transition:'トランジション中心'},
+ shot:{catch:'キャッチ＆シュート（スリー）',pullup:'プルアップジャンパー',stepback:'ステップバックスリー',drive:'クロスオーバーからのレイアップ',floater:'ランニングフローター',hook:'ポストのフックシュート',dunk:'速攻ダンク',roll:'ピック＆ロールのフィニッシュ'},
+ phase:{pass:'パスと動き直し',attack:'攻撃とドリブル',gather:'ジャンプ準備とコンテスト',blocked:'シュートをブロック',turnover:'ターンオーバー',flight:'シュートが空中へ',basket:'ゴール',rebound:'リバウンド'},
+ contest:{open:'フリーでシュート',tight:'厳しいマークでシュート',contested:'マークされたシュート'},
+ outcome:{made:'成功',miss:'失敗',block:'ブロック',steal:'スティール'},
+ impact:{skill:'スキル',energy:'体力',morale:'士気',chemistry:'チームワーク',shotType:'シュートの種類',space:'スペース',tactics:'戦術'},
+ stats:{assists:'アシスト',blocks:'ブロック',steals:'スティール',rebounds:'リバウンド'},
+ replay:{kicker:'フィルムルーム',title:'プレーの展開を見よう。',intro:'記録されたアクションと結果です。リプレイしてもシーズンには影響しません。',recorded:'記録されたプレー',again:'もう一度リプレイ',pause:'リプレイを一時停止',resume:'リプレイを再開',back:'シーズン日誌に戻る'},
+ locker:{
+  kicker:'自分たちの個性をまとう',intro:'3D体育館で選手が着るユニフォームを選びます。選手の名前はロスターのプロフィールから変更できます。',issue:'Kangs チーム支給品',title:'自分たちらしく。',kits:'ユニフォーム',
+  home:'ホームのパープル',away:'アウェイのホワイト',alternate:'ミッドナイトのオルタネート',trim:'背番号の色',note:'学校のパープルとホワイトの伝統にヒントを得たオリジナルのユニフォームです。公式ロゴや実在の選手の肖像は使用していません。'
+ },
+ journal:{
+  kicker:'あなたのシーズンの物語',intro:'シミュレーション上の成績、決断、順位表、そして決定的な場面。',path:'シーズンの段階',regular:'レギュラーシーズン',district:'ディストリクト戦',state:'州選手権',
+  bannerYours:'優勝旗はあなたのもの',teaches:'どのシーズンも何かを教えてくれる',whistle:'試合終了のホイッスル。',
+  summary:'{{coach}} コーチは {{w}}–{{l}} でシーズンを終え、ファンを {{fans}} 人に増やし、チームワーク {{chem}} のチームを育てました。',newSeason:'新しいシーズンを始める',export:'このシーズンをエクスポート',
+  results:'あなたの試合結果',scoreboard:'スコアボードが語るのは一面だけ。',replay:'リプレイ ↗',noGames:'最初の試合をプレーして、あなたの物語を始めましょう。',standings:'プログラムの順位表',table:'シーズンの順位表',
+  tableNote:'架空のシーズン順位表：ほかの対戦相手は各ラウンドでシミュレーションされた試合を行います。KingCo の公式順位ではありません。',trail:'決断の記録',gameN:'第 {{n}} 戦',trailEmpty:'あなたの決断がここに表示されます。'
+ },
+ ending:{
+  kicker:'試合終了のホイッスル',won:'あなたが優勝を持ち帰った。',over:'あなたのシーズンは終わりました。',bannerTitle:'勝ち取った優勝旗。築き上げたチーム。',lossTitle:'違う結末は、違う決断から始まる。',
+  record:'最終成績：{{w}}–{{l}}。',championBody:'あなたのもうひとつのシーズンで、Kangs は優勝しました。',lossBody:'州大会は終わりました。決断の記録を振り返り、次の戦略を立てましょう。',story:'シーズンの物語を見る'
+ },
+ data:{
+  kicker:'実在のチーム。透明な出典。',title:'実在の Kangs',intro:'公表された2025–26年シーズンの男子バーシティの事実を、シミュレーションとは別に掲載しています。',badge:'日付付きの公開スナップショット',school:'Lake Washington · ワシントン州カークランド',
+  checked:'出典の最終確認（成功）：{{date}}。定期更新が毎日確認します。この過去のシーズンはライブのスコア配信ではありません。',
+  record:'チーム成績：{{w}}–{{l}}。チーム平均得点：{{avg}}（公表された {{n}} 試合）。',refresh:'更新されたスナップショットを確認',
+  notice:'以下の個人平均は、提供元が得点を報告している試合のみを使用しています。欠けている試合を0点として数えることはありません。シーズン全体の平均ではありません。出典を更新しても、保存済みのシミュレーションがシーズン途中で変わることはありません。',
+  rosterTable:'実在のロスター',realRoster:'実在のロスター',position:'ポジション',height:'身長',year:'学年',reportedGames:'データのある試合',ppg:'1試合平均得点（データのある試合）',notReported:'データなし',
+  scheduleTitle:'公表された日程と実際の結果',date:'日付',opponent:'対戦相手',score:'LW の実際のスコア',venue:'会場',source:'出典：{{link}}',sourceLink:'FinalScoreTV が公開しているロスター、日程、選手のボックススコア'
+ },
+ tutorial:{
+  label:'はじめてのコーチ向けツアー',kicker:'はじめてのコーチ · {{n}}/4',next:'次へ →',finish:'コーチを始めよう',skip:'ツアーをスキップ',
+  step1:{title:'あなたのプログラムへようこそ。',body:'まず先発5人を選び、160分を配分しましょう。'},
+  step2:{title:'選手を総合的に育てよう。',body:'3回の準備枠を、スキル、回復、勉強、チームの結束に使います。'},
+  step3:{title:'決断はついて回る。',body:'アシスタントを1人採用し、チームと話しましょう。士気とチームワークがパフォーマンスを変えます。'},
+  step4:{title:'試合を自分のものに。',body:'相手を分析し、ティップオフし、試合中に戦術を変えよう。この1シーズンで州トーナメントを制しましょう。'}
+ },
+ timeout:{kicker:'タイムアウト',title:'集まれ。',body:'1試合につきタイムアウトは3回。どちらの方法も次の8ポゼッションを後押しします。',calm:'チームを落ち着かせる · 体力 +4',belief:'信頼を示す · 士気 +3'},
+ credits:{
+  kicker:'バスケットボールへの愛を込めて',creators:'制作者',assets:'素材、ソフトウェア、調査',
+  kenney:'{{link}} — CC0。ベンチ、椅子、テーブル、キャビネット、観葉植物をGLB形式で読み込んでいます。このパックにはUnity対応のFBXファイルも含まれます。このシーンで読み込まれたモデル：{{loaded}}/5。',
+  three:'{{link}} — MIT。WebGLレンダリング、OrbitControls、GLTFLoader。',
+  fonts:'{{barlow}}（Jeremy Tribby）と {{dm}}（Colophon Foundry）— SIL Open Font License。ローカルに同梱しています。',
+  vite:'{{link}} — MIT。ビルドツール。',
+  finalscore:'{{link}} — 公開されている2025–26年のロスター、日程、結果、利用可能な選手の得点データ。各選手へのリンクは「Kangs の実データ」にあります。',
+  kangs:'{{link}} — 学校のプログラムの個性と背景。',
+  nfhs:'{{link}} — ルールの入門的な参考資料。詳細な審判の判定はゲーム内で簡略化しています。',
+  fbla:'{{event}}と {{guidelines}} のガイドラインおよび評価基準 — 「チャンピオンシップへの道」のテーマ。',
+  ecoquest:'設定、合成サウンド、言語切り替えの考え方は {{link}} を参考に取り入れています。',
+  generated:'コート、ボール、デフォルメされたキャラクター、ユニフォーム、インターフェース、合成サウンドはコードで生成しています。キャラクターは実在の生徒の似顔絵ではありません。AIコーディング支援（OpenAI Codex）を使って開発しました。学校の公式な承認はありません。',
+  render:'Three.js が3Dゲームを描画し、アクセシブルなHTMLのオーバーレイがフォームとコーチの操作を担当します。Unityのプレハブはブラウザでは実行されません。ライセンスされたエンジン間共通モデルはGLBとして読み込まれます。'
+ },
+ rules:{
+  kicker:'コーチのハンドブック',title:'ひとつのシーズン。ひとつの目標。',
+  steps:[
+   'コーチの名前を入力し、難易度を選びます。シーズンは決断のたびにこのブラウザへ保存されます。',
+   '先発をちょうど5人選びます。合計160分を配分し、1人あたり32分を超えないようにします。選手には、体力15以上、現在の模擬負傷がないこと、模擬GPA 2.0以上が必要です。',
+   '各試合の前に準備枠を最大3回使えます。練習、回復、勉強、結束、分析、会話は1枠を消費し、選手の獲得と1人きりのアシスタントはトークンを使います。',
+   'レギュラーシーズン20試合、続いてディストリクト段階の6試合をプレーします。26試合目の終了時点で通算12勝以上なら、4試合の州大会に進出できます。州大会はすべて一発勝負です。この簡略化したもうひとつのトーナメントは、公表された対戦相手の順序（もうひとつの決勝を含む）を使っており、実際のWIAAのトーナメントではありません。',
+   'ポゼッションごとに指示を出すか、ライブで観戦します。システムを変え、疲労を管理し、タイムアウトは最大3回まで取れます。同点なら延長戦です。各試合で160トークン、勝てばさらに70が得られます。',
+   '練習は体力を消費し、試合は体力と学業面の準備度を下げます。体力が低いとシュートの質が下がり、模擬負傷のリスクが上がります。回復は体力を戻し、負傷期間を短くします。出番のないベンチ選手は士気が下がることがあります。',
+   'ロスターの上限は15人です。トライアウトの選手とアシスタントの役割は架空です。選手を解雇しても返金はありません。試合中はローテーションの変更も練習もできません。'
+  ],
+  conduct:'バスケットボールとマナー',
+  conductP1:'フィールドゴールは2点、ロングシュートは3点です。このコーチングモデルはドライブ、ジャンパー、パス、スティール、ブロック、ディフェンスリバウンドをアニメーションで見せますが、個々のファウル、フリースロー、選手交代は簡略化しており、審判を完全に再現するシミュレーターではありません。32分の試合と160選手分の持ち分が、ローテーションの枠組みになります。',
+  conductP2:'チームメイト、対戦相手、審判を尊重しましょう。学業上の資格を満たさない選手はこのゲームに出場できません。2.0というしきい値はゲーム上のルールであり、学校の実際の方針を示すものではありません。獲得用トークンは抽象的なプログラム資源で、実在の選手への支払いではありません。負傷と回復は架空の仕組みです。',
+  guideTitle:'コート上のルールガイド',
+  guide:[
+   '正しいドリブルとピボットを守りましょう。トラベリングや、ドリブルを終えた後の再ドリブルは、相手ボールになることがあります。',
+   'ボールをコート内に保ちましょう。ラインや、その外の床に触れるとアウトオブバウンズになり、最後に触れた選手によってスローインが決まります。',
+   '不正な接触なしで守りましょう。パーソナルファウルは、プレーやチームファウルの状況に応じて、スローインやフリースローにつながります。',
+   'バスケットや保護されたシュートに干渉してはいけません。バスケットインターフェアやゴールテンディングは得点に影響し、スポーツマンらしくない行為はテクニカルファウルになることもあります。',
+   '審判と相手を尊重しましょう。テクニカルやフラグラントな行為は、判定に応じてフリースロー、ポゼッションの罰則、退場につながることがあります。'
+  ],
+  guideNote:'これは入門的なガイドです。審判に関する詳細は{{link}}と、適用される州のルールをご確認ください。このゲームはこうしたコート上の違反を簡略化しており、運営面への直接の影響は上に挙げたとおりです。',
+  controls:'操作とアクセシビリティ',
+  controlsP1:'マウス/タッチ：ドラッグで体育館を回転、スクロールで拡大縮小します。カメラボタンでプリセットの視点に切り替えられます。コーチの操作はすべてキーボードで行えます。サウンドは最初オフです。モーションをオフにすると、動きの代わりに静止したアクションポーズが表示されます。視聴速度（1×/2×/4×）は表示だけを変え、結果は決して変わりません。「保存 / エクスポート」で持ち運べるJSONセーブを作り、タイトル画面の「シーズンをインポート」で復元できます。',
+  shortcuts:'キーボードショートカット',
+  controlsP2:'「設定」を開くと、これらのキーの割り当て変更、サウンド、文字サイズ、色、モーション、再生速度の調整、言語の変更ができます。設定はこのブラウザに保存されます。',
+  dataNote:'実データは、毎日の公開ジョブが確認する日付付きの出典スナップショットです。あなた自身の試合の統計はポゼッションごとに更新されます。実際の統計で欠けているものは、作り出さずに「なし」のままにします。'
+ },
+ profile:{
+  kicker:'選手プロフィール · #{{n}}',ppg:'模擬平均得点',risk:'負傷リスク',elevated:'高め',low:'低い',injured:'模擬の負傷：回復まであと {{n}} ステップ。',
+  healthy:'表示されている健康状態は架空のものです。アスリートの個人情報は一切使用していません。',rename:'選手の表示名',save:'名前を保存',
+  original:'出典での元の名前：{{name}}。名前を変更しても、あなたのシミュレーションが変わるだけです。',release:'ロスターから外す'
+ },
+ result:{
+  kicker:'フィルムルーム · {{outcome}}',win:'勝利',loss:'敗北',before:'ティップオフ前にしたこと',noPrep:'この試合では準備セッションが記録されていません。',defining:'決定的なポゼッション',
+  shotQuality:'シュートの質：{{n}}%。',why:'なぜそうなったか · 決断の分析',
+  whyBody:'直近のポゼッション：基本のシュート確率に対する変化（パーセントポイント）。これらはモデル上の寄与であり、現実に何が起きたかを示すものではありません。',
+  scoring:'シミュレーションの得点',former:'元ロスターの選手',pts:'{{n}} 点'
+ },
+ notify:{
+  storage:'ブラウザのストレージを利用できません。進行状況を残すにはシーズンをエクスポートしてください。',checked:'スナップショットを確認しました：{{date}}。',snapshotFailed:'出典のスナップショットを利用できません。最後に確認済みのデータを使い続けます。',
+  finishFirst:'先に試合を終えてください。',minutes:'0〜32の整数の分数を入力してください。',exported:'シーズンをエクスポートしました。',tooLarge:'セーブファイルが大きすぎます',badSave:'互換性のある Kangs のシーズンファイルではありません。',saved:'保存しました。'
+ },
+ confirm:{replace:'このブラウザに保存されているシーズンを置き換えますか？残したい場合は先にエクスポートしてください。',import:'現在のローカルのシーズンをこのセーブで置き換えますか？',release:'この選手をシミュレーションのロスターから外しますか？'},
+ error:{title:'プログラムを読み込めませんでした。',body:'接続が回復したら再読み込みしてください。',reload:'再読み込み'},
+ errors:{
+  'This season is complete. Start a new season to play again.':'このシーズンは終了しました。もう一度遊ぶには新しいシーズンを始めてください。',
+  'Finish the current game first.':'先に現在の試合を終えてください。',
+  'Not enough program tokens.':'プログラムトークンが足りません。',
+  'Your three preparation slots are used. Play the next game.':'3回の準備枠を使い切りました。次の試合に進みましょう。',
+  'Unknown practice':'不明な練習です',
+  'Choose a player':'選手を選んでください',
+  'Prospect unavailable':'この候補選手は選べません',
+  'Roster full: release a player before signing.':'ロスターが満員です。契約する前に選手を1人外してください。',
+  'Keep at least five players.':'選手は最低5人残してください。',
+  'Player unavailable':'この選手は選べません',
+  'One assistant allowed. Dismiss your assistant first.':'アシスタントは1人までです。先に現在のアシスタントを解任してください。',
+  'Coach unavailable':'このコーチは選べません',
+  'This week’s team conversation is complete.':'今週のチームとの会話はすでに済んでいます。',
+  'Opponent already scouted.':'この相手はすでに分析済みです。',
+  'Select exactly five starters.':'先発をちょうど5人選んでください。',
+  'Each starter needs playing time.':'先発の全員に出場時間が必要です。',
+  'An assigned player is injured, exhausted, or below the game’s 2.0 GPA threshold.':'割り当てた選手が、負傷している、疲労している、またはゲームのGPA基準2.0を下回っています。',
+  'Minutes must be whole numbers from 0 to 32.':'分数は0〜32の整数にしてください。',
+  'Allocate exactly 160 player-minutes (five players × 32 minutes).':'ちょうど160選手分（5人 × 32分）を配分してください。',
+  'No timeouts remaining.':'タイムアウトが残っていません。',
+  'No game in progress':'進行中の試合はありません'
+ },
+ settings:{
+  title:'設定',eyebrow:'環境設定',done:'完了',activeCount:'初期設定から変更されたアクセシビリティ項目が {{n}} 件あります',
+  tabs:{controls:'操作',sound:'サウンド',accessibility:'アクセシビリティ',language:'言語'},
+  controls:{
+   intro:'ボタンを選び、使いたいキーを押してください。ダイアログが開いていないとき、ショートカットはゲーム画面で使えます。Escでキャンセルします。',
+   actions:{playPause:'ライブで見る / 一時停止',nextPlay:'次のプレー',timeout:'タイムアウト',camWide:'カメラ：ワイド',camCourt:'カメラ：コートサイド',camFollow:'カメラ：追従',speed:'視聴速度を切り替え',sound:'サウンドのオン / オフ',settings:'設定を開く'},
+   pressKey:'キーを押してください…',rebind:'「{{action}}」のキーを変更（現在：{{key}}）',keyUsed:'{{key}} はすでに「{{action}}」に使われています。',reserved:'{{key}} は予約されているため割り当てられません。',
+   bound:'「{{action}}」を {{key}} に変更しました',resetDefaults:'キー割り当てをリセット',resetToast:'キー割り当てを初期設定に戻しました。'
+  },
+  sound:{
+   title:'効果音',masterVolume:'マスター音量',masterVolumeDesc:'すべての効果音の音量を調整します',quiet:'小',loud:'大',sfxEnabled:'効果音',sfxEnabledDesc:'ゲームとインターフェースのすべての音をオン / オフします。最初はオフです。',
+   testSound:'サウンドテスト',testSoundDesc:'効果音がオフでもサンプルを再生します',play:'再生',individual:'個別のサウンド',individualDesc:'聞きたい音を選びましょう。',
+   resetAll:'サウンド設定をリセット',resetToast:'サウンド設定を初期設定に戻しました。',
+   items:{
+    swish:{name:'ゴール成功',desc:'2点シュートが決まったときのスウィッシュ音'},
+    three:{name:'スリーポイント',desc:'スリーが決まったときの明るい音を添えたスウィッシュ音'},
+    rim:{name:'シュート失敗',desc:'リムに当たる音'},
+    block:{name:'ブロック',desc:'シュートを叩き落としたときの鈍い音'},
+    steal:{name:'スティール',desc:'ボールを奪ったときの素早い音'},
+    whistle:{name:'ホイッスル',desc:'ティップオフとシーズン開始時の審判の笛'},
+    timeout:{name:'タイムアウト',desc:'タイムアウト中のベルの音'},
+    confirm:{name:'決断の確定',desc:'練習、会話、分析、保存'},
+    select:{name:'選択',desc:'選択を切り替えたときの軽い音'},
+    error:{name:'実行できません',desc:'操作が拒否されたときの低いブザー音'},
+    signing:{name:'契約',desc:'選手やアシスタントが加わったときのきらめく音'},
+    victory:{name:'勝利',desc:'勝利後のファンファーレ'},
+    defeat:{name:'敗北',desc:'敗北後の穏やかに下がるフレーズ'},
+    uiClick:{name:'インターフェースのクリック音',desc:'ボタンやメニューを使ったときのクリック音'}
+   }
+  },
+  accessibility:{
+   visual:'視覚',motorInput:'運動・入力',cognitive:'認知',
+   colorBlindMode:'色覚補正',colorBlindModeDesc:'色覚の特性がある場合に区別しやすくなるよう、色を調整します',
+   colorBlindOptions:{none:'オフ',deuteranopia:'2型色覚（緑）',protanopia:'1型色覚（赤）',tritanopia:'3型色覚（青）'},
+   highContrast:'ハイコントラスト',highContrastDesc:'黒い背景、白い枠線と文字、より太いフォーカスの輪郭',
+   reducedMotion:'モーションを減らす',reducedMotionDesc:'動きの代わりに静止したアクションポーズを表示し、インターフェースのアニメーションを無効にします',
+   screenShake:'画面の揺れ',screenShakeDesc:'ダンクやブロックの際にカメラが短く揺れます。「モーションを減らす」がオンのときは無効です。',
+   reduceFlashes:'点滅や明滅を減らす',reduceFlashesDesc:'点滅や脈動する効果、ホバー時の明るさの変化をオフにします',
+   fontFamily:'フォントスタイル',fontFamilyDesc:'インターフェースの書体を選びます',fontPreview:'いろはにほへと Quick brown fox',fontOptions:{default:'標準',modern:'モダン',readable:'読みやすい'},
+   textSize:'文字サイズ',textSizeDesc:'インターフェースのすべての文字を小さく、または大きくします',textSizeSmall:'小',textSizeLarge:'大',
+   playbackSpeed:'再生速度',playbackSpeedDesc:'各プレーをゆっくりにして、動きを追う時間を増やします。結果は決して変わりません。',
+   playbackSpeedOptions:{'0_5':'50%（ゆったり）','0_75':'75%（やさしい）','1':'100%（標準）'},
+   timingAssist:'タイミング補助',timingAssistDesc:'「ライブで見る」でプレーの間に間を置き、メッセージを長く表示します',
+   simplifiedUI:'シンプルな画面',simplifiedUIDesc:'装飾的なラベル、バッジ、補足を隠し、必要なものだけを残します',
+   resetAll:'アクセシビリティ設定をリセット',resetToast:'アクセシビリティ設定を初期設定に戻しました。',
+   statement:'アクセシビリティについて：Kangs は、キーボードとスクリーンリーダーで使えるように設計されています。3Dシーンは視覚的なので、すべてのプレーを文章でも表示します。オプションには、色覚補正、ハイコントラスト、モーション軽減、文字とフォントの調整、ゆっくりした再生、シンプルな画面があります。可能な範囲でWCAG 2.1の考え方に沿っていますが、正式なアクセシビリティ監査は受けていません。'
+  },
+  language:{title:'言語',desc:'インターフェースの言語を変更します。プレーごとの実況など、シミュレーションが生成する文章は英語のままです。'}
+ }
+};

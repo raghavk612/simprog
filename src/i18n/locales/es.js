@@ -1,0 +1,256 @@
+// Español. Mismas claves y {{marcadores}} que en.js.
+export default {
+ meta:{title:'KANGS • El camino al campeonato',description:'Un equipo. Una temporada. Tus decisiones. Dirige a los Lake Washington Kangs en una simulación 3D de gestión de baloncesto.'},
+ lang:{en:'Inglés',es:'Español',zh:'Chino',fr:'Francés',ja:'Japonés',it:'Italiano',hi:'Hindi'},
+ a11y:{
+  skip:'Saltar al contenido principal',closeDialog:'Cerrar el cuadro de diálogo',stage:'Gimnasio 3D interactivo de los Kangs',pageOpened:'Se abrió la página: {{page}}',newTab:'se abre en una pestaña nueva',
+  score:'Marcador: Kangs {{home}}, visitantes {{away}}.',soundOn:'Efectos de sonido activados',soundOff:'Efectos de sonido desactivados',motionOn:'Movimiento activado',motionOff:'Movimiento desactivado',
+  camera:'Vista de cámara: {{view}}',speed:'Velocidad de visualización {{speed}}',languageChanged:'Idioma cambiado a {{language}}'
+ },
+ keys:{shortcut:'Atajo: {{key}}'},
+ nav:{home:'Sede del programa',roster:'Plantilla y rotación',practice:'Plan de entrenamiento',recruit:'Pruebas',staff:'Despacho del entrenador',game:'Día de partido',locker:'Vestuario',season:'Diario de la temporada',data:'Datos reales de los Kangs'},
+ top:{brand:'El camino al campeonato',soundOn:'Sonido activado',soundOff:'Sonido desactivado',motionOn:'Movimiento activado',motionOff:'Movimiento desactivado',settings:'Ajustes',export:'Guardar / exportar',help:'Ayuda',title:'Inicio'},
+ side:{sub:'Operaciones de baloncesto',badge:'El proyecto del campeonato',nav:'Navegación del programa',rules:'Reglamento y controles',credits:'Créditos y fuentes',coach:'Entrenador {{name}}',difficulty:'dificultad {{level}}',footer:'Un equipo. Una temporada. Tus decisiones.',footerNote:'Guardado automático local · Simulación ficticia / plantilla pública con fuentes'},
+ stage:{venue:'Pabellón de los Kangs',hint:'Arrastra para orbitar · desplaza para acercar',place:'Kirkland, Washington',tagline:'Nuestra casa. Tu programa.',camera:'Vista de cámara',wide:'Panorámica',court:'Pie de cancha',follow:'Seguir'},
+ metrics:{record:'Récord',tokens:'Fichas del programa',chemistry:'Química',fans:'Aficionados'},
+ header:{complete:'Temporada completa',game:'Partido {{n}} / {{total}}'},
+ level:{rookie:'Novato',standard:'Estándar',elite:'Élite'},
+ difficulty:{rookie:'Novato · más margen para aprender',standard:'Varsity · cada decisión cuenta',elite:'Élite · márgenes mínimos'},
+ landing:{
+  school:'Lake Washington',program:'Programa de baloncesto',badge:'Una simulación de entrenador',tagline:'Un equipo. Una temporada.',titleA:'El camino al',titleB:'Campeonato.',
+  intro:'Toma las riendas de los Kangs. Desarrolla a tus jugadores, toma las decisiones difíciles y escribe un final distinto para una temporada real.',
+  name:'Tu nombre, entrenador',namePlaceholder:'Escribe tu nombre',challenge:'Elige tu desafío',start:'Dirigir a los Kangs',continue:'Continuar la temporada guardada →',howTo:'Cómo jugar',import:'Importar temporada',
+  ticketSeason:'2025—26 / Reimaginada',ticketA:'El camino',ticketB:'empieza aquí.',ticketBody:'14 jugadores reales · 30 partidos publicados\nTus decisiones. Tus resultados.',
+  footer:'El camino al campeonato',footerNote:'Proyecto estudiantil independiente · Sin respaldo de la escuela'
+ },
+ home:{
+  kicker:'El programa',welcome:'Bienvenido de nuevo, entrenador {{name}}.',intro:'Un campeonato se construye mucho antes del salto inicial.',doneIntro:'Tu temporada ya tiene su final. Cada decisión ayudó a escribirlo.',
+  quickRosterA:'Elige el cinco',quickRosterB:'Arma tu rotación',quickPracticeA:'Ponte a trabajar',quickPracticeB:'Quedan {{n}} turnos de preparación',quickStaffA:'Las personas primero',quickStaffB:'Habla con tu equipo',
+  sidebar:'Próximo partido y último resultado',finalChapter:'Capítulo final',nextOnSchedule:'Próximo en el calendario',champions:'Campeones estatales.',seasonEnds:'La temporada termina.',
+  finalRecord:'{{w}} victorias. {{l}} derrotas. Un programa que tú construiste.',viewStory:'Ver la historia de la temporada',prepare:'Prepárate para el salto inicial →',bracketNote:'Cuadro estatal · ganar o irse a casa',seasonNote:'Una temporada. Un campeonato.',
+  rippleKicker:'El efecto dominó',rippleTitle:'Cada decisión tiene consecuencias.',rippleDefault:'Los entrenamientos, las conversaciones y la recuperación cambian lo que pasa en la cancha. Tu registro de decisiones empieza aquí.'
+ },
+ roster:{
+  kicker:'Las personas detrás de la camiseta',intro:'Elige cinco titulares y reparte 160 minutos-jugador. La salud, la energía y la elegibilidad académica afectan la disponibilidad.',
+  spots:'{{n}} / 15 plazas en la plantilla',minutes:'{{n}} / 160 minutos',auto:'Crear rotación elegible',
+  notice:'Los nombres y los números de camiseta son datos públicos del equipo. Las habilidades, el promedio (GPA), la salud, la moral y todos los resultados de los partidos que aparecen abajo son valores ficticios de la simulación.',
+  start:'Titular',player:'Jugador',skill:'Habilidad',energy:'Energía',morale:'Moral',gpa:'GPA sim.',status:'Estado',minutesCol:'Minutos',actions:'Acciones',
+  startAria:'Titular: {{name}}',minutesAria:'Minutos de {{name}}',profile:'Perfil',profileAria:'Abrir el perfil de {{name}}'
+ },
+ status:{injured:'Lesionado',ineligible:'No elegible',exhausted:'Agotado',ready:'Listo'},
+ pos:{guard:'Base',forward:'Alero'},
+ year:{senior:'Último año',junior:'Penúltimo año',sophomore:'Segundo año',prospect:'Aspirante ficticio',tryout:'Prueba'},
+ practice:{
+  kicker:'Desarrolla al atleta completo',intro:'Tres turnos de preparación antes de cada partido. Equilibra la preparación inmediata con el desarrollo a largo plazo.',group:'Grupo de entrenamiento',wholeTeam:'Todo el equipo',
+  slots:'{{n}} / 3 turnos disponibles',cost:'{{cost}} fichas del programa · 1 turno',effects:'Efectos del entrenamiento',fxSkill:'Habilidad {{n}}',fxEnergy:'Energía {{n}}',fxMorale:'Moral {{n}}',fxGpa:'GPA {{n}}',
+  schedule:'Programar sesión →',planKicker:'Planifica con intención',planTitle:'¿Qué pasará después?',
+  planP1:'Los jugadores cansados anotan menos. Un equipo unido crea mejores tiros. La sala de estudio mantiene elegible a tu alineación.',planP2:'Cada sesión queda registrada en tu registro de decisiones y en el análisis posterior al partido.'
+ },
+ plan:{
+  shooting:{name:'Laboratorio de tiro',desc:'La repetición convierte los tiros abiertos en puntos. Mejora la habilidad pero cuesta energía.'},
+  defense:{name:'Rotaciones defensivas',desc:'Muévanse juntos. Afina los fundamentos y fortalece la química del equipo.'},
+  recovery:{name:'Recuperación y movilidad',desc:'Ayuda a recuperarse de una lesión simulada y repón energía para el día del partido.'},
+  study:{name:'Sala de estudio',desc:'Protege la elegibilidad. La preparación académica es parte de un programa sano.'},
+  bond:{name:'Cena de equipo',desc:'Compartir una comida crea confianza, moral y unión.'}
+ },
+ staff:{
+  development:{name:'Especialista en desarrollo',detail:'+1 de habilidad en los entrenamientos de habilidad'},
+  recovery:{name:'Entrenador de recuperación deportiva',detail:'+8 de energía al recuperarse; menos riesgo de lesión'},
+  culture:{name:'Impulsor de la cultura del equipo',detail:'+3 de moral y química en las cenas de equipo'}
+ },
+ recruit:{
+  kicker:'Encuentra al próximo jugador diferencial',intro:'Los candidatos ficticios se suman a tu simulación con la plantilla real. El reclutamiento usa fichas del programa, nunca dinero real.',tokens:'{{n}} fichas disponibles',
+  tryout:'Prueba ficticia · {{pos}}',sign:'Fichar · {{cost}} fichas',signAria:'Fichar a {{name}} por {{cost}} fichas',none:'Ya se fichó a todos los candidatos de las pruebas.'
+ },
+ office:{
+  kicker:'Dirige el programa',intro:'Tu cuerpo técnico y tus conversaciones moldean al equipo más allá del marcador.',weekly:'Reunión semanal con el equipo',title:'Dedica tiempo a tu gente.',
+  body:'El banquillo quiere ser escuchado. El equipo necesita recursos. Las tareas se acumulan. Elige en qué usar un turno de preparación.',
+  listen:'Escuchar al banquillo',listenFx:'+7 de moral · +5 de química',fundraise:'Organizar una clínica comunitaria',fundraiseFx:'+180 fichas · +40 aficionados · −5 de energía',academics:'Revisión académica',academicsFx:'+0,18 de GPA simulado',
+  assistantKicker:'Un puesto de asistente',buildStaff:'Forma tu cuerpo técnico.',assistantBody:'Los puestos de asistente son opciones ficticias del juego. Sus bonificaciones se aplican a tus sesiones de preparación.',
+  hired:'Contratado',cost:'{{cost}} fichas',hireAria:'Contratar a {{name}} por {{cost}} fichas',dismiss:'Despedir al asistente'
+ },
+ game:{
+  speed:'Velocidad de visualización',kangs:'Kangs',visitors:'Visitantes',liveKicker:'En directo desde el pabellón',prepKicker:'Prepara. Adáptate. Ejecuta.',liveTitle:'Día de partido. Tú decides.',vs:'Kangs contra {{opp}}',
+  alternateBracket:'Cuadro estatal alternativo',published:'Partido publicado / resultado simulado',overtime:'Prórroga',quarter:'C{{n}}',possessions:'{{n}} posesiones',
+  choosePlay:'Elige una jugada y mira cómo se desarrolla la posesión.',playByPlay:'Narración jugada a jugada',crowdReady:'La afición está lista. Pide la primera posesión.',
+  scouting:'Informe de exploración',reference:'Resultado de referencia: Lake Washington {{a}}–{{b}}. Tu resultado todavía no está escrito.',strength:'Fuerza del rival en el juego',style:'Estilo',unscouted:'Sin explorar',
+  advice:{perimeter:'Cierra sobre los tiradores. La zona es la respuesta defensiva recomendada.',paint:'Protege la pintura. La presión puede interrumpir sus pases de entrada.',transition:'Controla el ritmo. Una defensa equilibrada mantiene organizado a tu equipo.'},
+  adviceNote:'Este perfil de exploración forma parte de la simulación.',scout:'Ver vídeo del rival · 50 fichas / 1 turno',boxScore:'Estadísticas del partido',controls:'Controles del partido',sideline:'La banda',startingFive:'Tu quinteto titular',
+  callPlay:'Pide la jugada',system:'Sistema',tempo:'Ritmo',resumeFinal:'Reanudar la última jugada',pauseFinal:'Pausar la última jugada',pause:'Pausar partido',resume:'Reanudar partido',watch:'▶ Ver en directo',next:'Siguiente jugada →',
+  timeout:'Tiempo muerto · quedan {{n}}',ready:'¿Listo para el salto inicial?',minShort:'{{n}} min',assigned:'{{n}} / 160 minutos asignados',adjust:'Ajustar rotación',tipOff:'Salto inicial →',
+  look:'{{player}} · {{phase}} · {{contest}}'
+ },
+ tactic:{balanced:'Equilibrado',zone:'Zona / cierres',pressure:'Defensa presionante',perimeter:'Abrir la cancha / tiros de tres'},
+ pace:{steady:'Constante',fast:'Contraataque'},
+ style:{perimeter:'Perímetro',paint:'Pintura',transition:'Transición'},
+ shot:{catch:'Triple tras recibir',pullup:'Tiro tras bote',stepback:'Triple con paso atrás',drive:'Bandeja con cruce',floater:'Pañuelo en carrera',hook:'Gancho en poste',dunk:'Mate en contraataque',roll:'Finalización de bloqueo y continuación'},
+ phase:{pass:'Pase y desmarque',attack:'Ataque y bote',gather:'Preparación y defensa',blocked:'Tiro taponado',turnover:'Pérdida de balón',flight:'Tiro en el aire',basket:'Canasta',rebound:'Rebote'},
+ contest:{open:'tiro abierto',tight:'tiro muy defendido',contested:'tiro defendido'},
+ outcome:{made:'anotado',miss:'fallo',block:'tapón',steal:'robo'},
+ impact:{skill:'Habilidad',energy:'Energía',morale:'Moral',chemistry:'Química',shotType:'Tipo de tiro',space:'Espacio',tactics:'Táctica'},
+ stats:{assists:'asistencias',blocks:'tapones',steals:'robos',rebounds:'rebotes'},
+ replay:{kicker:'La sala de vídeo',title:'Mira cómo se desarrolla la jugada.',intro:'Acciones y resultados grabados. Repetir una jugada nunca cambia tu temporada.',recorded:'Jugada grabada',again:'Repetir otra vez',pause:'Pausar repetición',resume:'Reanudar repetición',back:'Volver al diario de la temporada'},
+ locker:{
+  kicker:'Viste tu identidad',intro:'Elige la equipación que llevan tus jugadores en el gimnasio 3D. Cambia el nombre de los jugadores desde sus perfiles de la plantilla.',issue:'Equipación del equipo Kangs',title:'Hazla tuya.',kits:'Equipaciones',
+  home:'Morada de local',away:'Blanca de visitante',alternate:'Alternativa de medianoche',trim:'Color del número de la camiseta',note:'Diseños de camiseta originales inspirados en la identidad morada y blanca de la escuela. No se usa ningún logotipo oficial ni la imagen de ningún deportista.'
+ },
+ journal:{
+  kicker:'La historia de tu temporada',intro:'Tu récord simulado, tus decisiones, la clasificación y los momentos decisivos.',path:'Etapas de la temporada',regular:'Temporada regular',district:'Tramo de distrito',state:'Campeonato estatal',
+  bannerYours:'La bandera es tuya',teaches:'Cada temporada te enseña algo',whistle:'El pitido final.',
+  summary:'El entrenador {{coach}} terminó {{w}}–{{l}}, hizo crecer la afición hasta {{fans}} y formó un equipo con {{chem}} de química.',newSeason:'Empezar una nueva temporada',export:'Exportar esta temporada',
+  results:'Tus resultados',scoreboard:'El marcador cuenta solo una parte.',replay:'Repetir ↗',noGames:'Juega tu primer partido para empezar tu historia.',standings:'Clasificación del programa',table:'La tabla de la campaña',
+  tableNote:'Clasificación ficticia de la campaña: los demás rivales juegan partidos simulados de fondo en cada ronda. No es la clasificación oficial de KingCo.',trail:'Registro de decisiones',gameN:'Partido {{n}}',trailEmpty:'Tus decisiones aparecerán aquí.'
+ },
+ ending:{
+  kicker:'El pitido final',won:'Lo lograste.',over:'Tu temporada ha terminado.',bannerTitle:'Una bandera ganada. Un programa construido.',lossTitle:'Un final distinto empieza con una decisión distinta.',
+  record:'Récord final: {{w}}–{{l}}.',championBody:'Los Kangs son campeones en tu temporada alternativa.',lossBody:'La fase estatal ha terminado. Revisa tu registro de decisiones y prepara tu próxima estrategia.',story:'Ver la historia de tu temporada'
+ },
+ data:{
+  kicker:'Programa real. Fuentes transparentes.',title:'Los Kangs reales',intro:'Datos publicados del equipo masculino varsity 2025–26, separados de tu simulación.',badge:'Instantánea pública con fecha',school:'Lake Washington · Kirkland, WA',
+  checked:'Última comprobación correcta de la fuente: {{date}}. El actualizador programado comprueba cada día; esta temporada histórica no es una fuente de marcadores en directo.',
+  record:'Récord del equipo: {{w}}–{{l}}. Promedio de anotación del equipo: {{avg}} en {{n}} partidos publicados.',refresh:'Buscar una instantánea actualizada',
+  notice:'Los promedios individuales de abajo solo usan los partidos en los que la fuente informa los puntos. Los partidos sin datos no cuentan como cero. No son promedios de la temporada completa. Actualizar las fuentes nunca cambia tu simulación guardada a mitad de temporada.',
+  rosterTable:'Plantilla real',realRoster:'Plantilla real',position:'Posición',height:'Estatura',year:'Curso',reportedGames:'Partidos con datos',ppg:'Puntos por partido (con datos)',notReported:'Sin datos',
+  scheduleTitle:'Calendario publicado y resultados reales',date:'Fecha',opponent:'Rival',score:'Marcador real de LW',venue:'Sede',source:'Fuente: {{link}}',sourceLink:'Plantilla, calendario y estadísticas de jugadores publicados por FinalScoreTV'
+ },
+ tutorial:{
+  label:'Recorrido para entrenadores nuevos',kicker:'Entrenador novato · {{n}}/4',next:'Siguiente →',finish:'¡A entrenar!',skip:'Omitir recorrido',
+  step1:{title:'Te damos la bienvenida a tu programa.',body:'Empieza eligiendo a tus cinco titulares y repartiendo los 160 minutos.'},
+  step2:{title:'Forma al atleta completo.',body:'Usa los tres turnos de preparación para habilidad, recuperación, estudio o unión del equipo.'},
+  step3:{title:'Tus decisiones te acompañan.',body:'Contrata a un asistente y habla con tu equipo. La moral y la química cambian el rendimiento.'},
+  step4:{title:'Haz el juego tuyo.',body:'Explora al rival, haz el salto inicial y cambia la táctica en directo. Gana el cuadro estatal en esta única temporada.'}
+ },
+ timeout:{kicker:'Tiempo muerto',title:'Acérquense.',body:'Tres tiempos muertos por partido. Ambas opciones mejoran las próximas ocho posesiones.',calm:'Calmar al equipo · +4 de energía',belief:'Transmitir confianza · +3 de moral'},
+ credits:{
+  kicker:'Creado por amor al juego',creators:'Creadores',assets:'Recursos, software e investigación',
+  kenney:'{{link}} — CC0. Se importaron en GLB un banco, una silla, una mesa, un armario y una planta. El paquete también incluye archivos FBX compatibles con Unity. Modelos cargados en esta escena: {{loaded}}/5.',
+  three:'{{link}} — MIT. Renderizado WebGL, OrbitControls y GLTFLoader.',
+  fonts:'{{barlow}} (Jeremy Tribby) y {{dm}} (Colophon Foundry) — SIL Open Font License, incluidas localmente.',
+  vite:'{{link}} — MIT. Herramientas de compilación.',
+  finalscore:'{{link}} — plantilla, calendario, resultados y datos de anotación de jugadores públicos de 2025–26. Los enlaces a cada jugador aparecen en Datos reales de los Kangs.',
+  kangs:'{{link}} — identidad y contexto del programa de la escuela.',
+  nfhs:'{{link}} — referencia introductoria del reglamento; el arbitraje detallado se simplifica en el juego.',
+  fbla:'{{event}} y las pautas y la rúbrica de {{guidelines}} — tema «El camino al campeonato».',
+  ecoquest:'El enfoque de ajustes, sonido sintetizado y cambio de idioma está adaptado de {{link}}.',
+  generated:'La cancha, el balón, los personajes estilizados, las camisetas, la interfaz y los sonidos sintetizados se generan con código. Los personajes no son retratos de estudiantes reales. Desarrollado con ayuda de programación con IA (OpenAI Codex). Sin respaldo oficial de la escuela.',
+  render:'Three.js dibuja el juego 3D; las capas HTML accesibles gestionan los formularios y los controles del entrenador. Los prefabs de Unity no se ejecutan en el navegador: los modelos con licencia entre motores se importan como GLB.'
+ },
+ rules:{
+  kicker:'El manual del entrenador',title:'Una temporada. Un objetivo.',
+  steps:[
+   'Escribe tu nombre de entrenador y elige una dificultad. Tu temporada se guarda en este navegador después de cada decisión.',
+   'Elige exactamente cinco titulares. Reparte 160 minutos en total, sin que ningún jugador pase de 32. Un jugador necesita energía ≥15, ninguna lesión simulada activa y un GPA simulado ≥2,0.',
+   'Usa hasta tres turnos de preparación antes de cada partido. Los entrenamientos, la recuperación, el estudio, la unión del equipo, la exploración y las conversaciones gastan un turno; los fichajes y tu único asistente gastan fichas.',
+   'Juega 20 partidos de temporada regular y después seis del tramo de distrito. Un mínimo de 12 victorias tras el partido 26 te clasifica para la fase estatal de cuatro partidos. Todos los partidos estatales son eliminatorias. Este cuadro alternativo simplificado usa la secuencia de rivales publicada, con una final alternativa; no es el cuadro real de la WIAA.',
+   'Pide cada posesión o míralas en directo. Cambia tu sistema, gestiona el cansancio y pide hasta tres tiempos muertos. Los empates se resuelven en prórroga. Cada partido da 160 fichas, más 70 si ganas.',
+   'Entrenar cuesta energía; los partidos reducen la energía y la preparación académica. Con poca energía baja la calidad de los tiros y sube el riesgo de lesión simulada. La recuperación repone energía y acorta las lesiones. Los suplentes que no juegan pueden perder moral.',
+   'La plantilla tiene un máximo de 15. Los jugadores de las pruebas y los puestos de asistente son ficticios. Despedir a un jugador no da reembolso. No puedes cambiar la rotación ni entrenar durante un partido.'
+  ],
+  conduct:'Baloncesto y conducta',
+  conductP1:'Dos puntos por canasta de campo, tres por tiro lejano. Este modelo de entrenador anima entradas, tiros, pases, robos, tapones y rebotes defensivos, pero simplifica las faltas individuales, los tiros libres y los cambios; no es un simulador completo de arbitraje. El partido de 32 minutos y el presupuesto de 160 minutos-jugador enmarcan tu rotación.',
+  conductP2:'Respeta a tus compañeros, a los rivales y a los árbitros. La falta de elegibilidad académica impide participar en este juego. El umbral de 2,0 es una regla del juego, no una declaración de la política real de la escuela. Las fichas de reclutamiento son un recurso abstracto del programa, no pagos a deportistas reales. Las lesiones y la recuperación son mecánicas ficticias.',
+  guideTitle:'Guía de reglas en la cancha',
+  guide:[
+   'Mantén un bote y un pivote legales. Caminar o volver a botar tras terminar el bote puede dar la posesión al rival.',
+   'Mantén el balón dentro de los límites. Tocar una línea o el suelo fuera de ella pone al jugador fuera de banda; la última persona que tocó el balón determina el saque.',
+   'Defiende sin contacto ilegal. Las faltas personales pueden dar un saque o tiros libres según la jugada y la situación de faltas del equipo.',
+   'No interfieras con el aro ni con un tiro protegido. La interferencia y la ayuda ilegal en el aro tienen consecuencias en el marcador; las acciones antideportivas también pueden suponer faltas técnicas.',
+   'Respeta a los árbitros y a los rivales. La conducta técnica o flagrante puede suponer tiros libres, sanciones de posesión o expulsión, según la decisión.'
+  ],
+  guideNote:'Esta es una guía introductoria. Consulta {{link}} y las reglas estatales aplicables para conocer todos los detalles del arbitraje. El juego simplifica esas infracciones en la cancha; sus consecuencias directas para la gestión se enumeran arriba.',
+  controls:'Controles y accesibilidad',
+  controlsP1:'Ratón/pantalla táctil: arrastra para orbitar el gimnasio y desplaza para acercar. Usa los botones de cámara para las vistas predefinidas. Todos los controles del entrenador funcionan con el teclado. El sonido empieza desactivado. Con el movimiento desactivado se muestran poses de acción estáticas en lugar de movimiento. La velocidad de visualización (1×/2×/4×) solo cambia la presentación; nunca cambia los resultados. Usa Guardar / exportar para obtener un archivo JSON portátil e Importar temporada en la pantalla de inicio para restaurarlo.',
+  shortcuts:'Atajos de teclado',
+  controlsP2:'Abre Ajustes para reasignar estas teclas, cambiar el sonido, el tamaño del texto, los colores, el movimiento y la velocidad de reproducción, o para cambiar el idioma. Los ajustes se guardan en este navegador.',
+  dataNote:'Los datos reales son una instantánea con fecha comprobada por la tarea diaria de publicación. Tus propias estadísticas del juego se actualizan en cada posesión. Las estadísticas reales que faltan siguen sin estar disponibles en lugar de inventarse.'
+ },
+ profile:{
+  kicker:'Perfil del jugador · n.º {{n}}',ppg:'PPP sim.',risk:'Riesgo de lesión',elevated:'Elevado',low:'Bajo',injured:'Lesión simulada: quedan {{n}} pasos de recuperación.',
+  healthy:'El estado de salud mostrado es ficticio; no se usa información privada de ningún deportista.',rename:'Nombre del jugador que se muestra',save:'Guardar nombre',
+  original:'Nombre original de la fuente: {{name}}. Cambiar el nombre solo afecta a tu simulación.',release:'Dar de baja de la plantilla'
+ },
+ result:{
+  kicker:'La sala de vídeo · {{outcome}}',win:'Victoria',loss:'Derrota',before:'Lo que hiciste antes del salto inicial',noPrep:'No se registraron sesiones de preparación para este partido.',defining:'Posesiones decisivas',
+  shotQuality:'Calidad del tiro: {{n}} %.',why:'Por qué ocurrió · análisis de decisiones',
+  whyBody:'Última posesión: cambios en la probabilidad base del tiro, en puntos porcentuales. Son aportaciones del modelo, no afirmaciones sobre lo que habría ocurrido en la vida real.',
+  scoring:'Anotación simulada',former:'Antiguo jugador de la plantilla',pts:'{{n}} PTS'
+ },
+ notify:{
+  storage:'El almacenamiento del navegador no está disponible. Exporta tu temporada para conservar el progreso.',checked:'Instantánea comprobada: {{date}}.',snapshotFailed:'La instantánea de la fuente no está disponible. Se conservan los últimos datos verificados.',
+  finishFirst:'Termina primero el partido.',minutes:'Escribe minutos enteros entre 0 y 32.',exported:'Temporada exportada.',tooLarge:'El archivo de guardado es demasiado grande',badSave:'Este no es un archivo de temporada de Kangs compatible.',saved:'Guardado.'
+ },
+ confirm:{replace:'¿Reemplazar la temporada guardada en este navegador? Expórtala primero si quieres conservarla.',import:'¿Reemplazar la temporada local actual con este archivo?',release:'¿Dar de baja a este jugador de tu plantilla de simulación?'},
+ error:{title:'No se pudo cargar el programa.',body:'Vuelve a cargar la página cuando se restablezca la conexión.',reload:'Volver a cargar'},
+ errors:{
+  'This season is complete. Start a new season to play again.':'Esta temporada ha terminado. Empieza una nueva temporada para volver a jugar.',
+  'Finish the current game first.':'Termina primero el partido en curso.',
+  'Not enough program tokens.':'No hay suficientes fichas del programa.',
+  'Your three preparation slots are used. Play the next game.':'Ya usaste tus tres turnos de preparación. Juega el siguiente partido.',
+  'Unknown practice':'Entrenamiento desconocido',
+  'Choose a player':'Elige un jugador',
+  'Prospect unavailable':'Aspirante no disponible',
+  'Roster full: release a player before signing.':'Plantilla completa: da de baja a un jugador antes de fichar.',
+  'Keep at least five players.':'Mantén al menos cinco jugadores.',
+  'Player unavailable':'Jugador no disponible',
+  'One assistant allowed. Dismiss your assistant first.':'Solo se permite un asistente. Despide primero a tu asistente.',
+  'Coach unavailable':'Entrenador no disponible',
+  'This week’s team conversation is complete.':'La conversación de equipo de esta semana ya se hizo.',
+  'Opponent already scouted.':'El rival ya fue explorado.',
+  'Select exactly five starters.':'Elige exactamente cinco titulares.',
+  'Each starter needs playing time.':'Cada titular necesita minutos de juego.',
+  'An assigned player is injured, exhausted, or below the game’s 2.0 GPA threshold.':'Un jugador asignado está lesionado, agotado o por debajo del umbral de GPA de 2,0 del juego.',
+  'Minutes must be whole numbers from 0 to 32.':'Los minutos deben ser números enteros de 0 a 32.',
+  'Allocate exactly 160 player-minutes (five players × 32 minutes).':'Reparte exactamente 160 minutos-jugador (cinco jugadores × 32 minutos).',
+  'No timeouts remaining.':'No quedan tiempos muertos.',
+  'No game in progress':'No hay ningún partido en curso'
+ },
+ settings:{
+  title:'Ajustes',eyebrow:'Preferencias',done:'Listo',activeCount:'{{n}} opciones de accesibilidad distintas de las predeterminadas',
+  tabs:{controls:'Controles',sound:'Sonido',accessibility:'Accesibilidad',language:'Idioma'},
+  controls:{
+   intro:'Elige un botón y pulsa la tecla que quieras usar. Los atajos funcionan en las pantallas del juego cuando no hay ningún cuadro de diálogo abierto. Escape cancela.',
+   actions:{playPause:'Ver en directo / pausar',nextPlay:'Siguiente jugada',timeout:'Tiempo muerto',camWide:'Cámara: panorámica',camCourt:'Cámara: pie de cancha',camFollow:'Cámara: seguir',speed:'Cambiar la velocidad de visualización',sound:'Activar o desactivar el sonido',settings:'Abrir ajustes'},
+   pressKey:'Pulsa una tecla…',rebind:'Cambiar la tecla de «{{action}}», actualmente {{key}}',keyUsed:'{{key}} ya se usa para «{{action}}».',reserved:'{{key}} está reservada y no se puede asignar.',
+   bound:'«{{action}}» ahora es {{key}}',resetDefaults:'Restablecer las teclas',resetToast:'Se restauraron las teclas predeterminadas.'
+  },
+  sound:{
+   title:'Efectos de sonido',masterVolume:'Volumen general',masterVolumeDesc:'Controla el volumen de todos los efectos de sonido',quiet:'Bajo',loud:'Alto',sfxEnabled:'Efectos de sonido',sfxEnabledDesc:'Activa o desactiva todos los sonidos del juego y de la interfaz. Empiezan desactivados.',
+   testSound:'Probar sonido',testSoundDesc:'Reproduce una muestra aunque los efectos de sonido estén desactivados',play:'Reproducir',individual:'Sonidos individuales',individualDesc:'Elige qué sonidos quieres oír.',
+   resetAll:'Restablecer los ajustes de sonido',resetToast:'Se restauraron los ajustes de sonido predeterminados.',
+   items:{
+    swish:{name:'Canasta anotada',desc:'Un «swish» cuando entra un tiro de dos'},
+    three:{name:'Triple',desc:'Un «swish» con un tono brillante para los triples'},
+    rim:{name:'Tiro fallado',desc:'Un golpe en el aro'},
+    block:{name:'Tapón',desc:'Un golpe seco cuando se tapona un tiro'},
+    steal:{name:'Robo',desc:'Un barrido rápido cuando se roba el balón'},
+    whistle:{name:'Silbato',desc:'El silbato del árbitro en el salto inicial y al empezar una temporada'},
+    timeout:{name:'Tiempo muerto',desc:'Tonos de campana en el tiempo muerto'},
+    confirm:{name:'Decisión confirmada',desc:'Entrenamientos, conversaciones, exploración y guardado'},
+    select:{name:'Selección',desc:'Un clic suave cuando cambias una opción'},
+    error:{name:'No permitido',desc:'Un zumbido grave cuando se rechaza una acción'},
+    signing:{name:'Fichaje',desc:'Destellos cuando se suma un jugador o un asistente'},
+    victory:{name:'Victoria',desc:'Una fanfarria tras ganar'},
+    defeat:{name:'Derrota',desc:'Una frase suave y descendente tras perder'},
+    uiClick:{name:'Clics de la interfaz',desc:'Clics al usar botones y menús'}
+   }
+  },
+  accessibility:{
+   visual:'Visual',motorInput:'Motricidad y entrada',cognitive:'Cognitivo',
+   colorBlindMode:'Corrección de la visión del color',colorBlindModeDesc:'Cambia los colores para que sean más fáciles de distinguir si tienes una deficiencia de la visión del color',
+   colorBlindOptions:{none:'Desactivada',deuteranopia:'Deuteranopía (verde)',protanopia:'Protanopía (rojo)',tritanopia:'Tritanopía (azul)'},
+   highContrast:'Alto contraste',highContrastDesc:'Fondo negro, bordes y texto blancos, contornos de foco más gruesos',
+   reducedMotion:'Movimiento reducido',reducedMotionDesc:'Poses de acción estáticas en lugar de movimiento y sin animaciones en la interfaz',
+   screenShake:'Sacudida de pantalla',screenShakeDesc:'Una breve sacudida de cámara en los mates y los tapones. Se ignora si el movimiento reducido está activado.',
+   reduceFlashes:'Reducir destellos y pulsaciones',reduceFlashesDesc:'Desactiva los efectos intermitentes y pulsantes y los cambios de brillo al pasar el cursor',
+   fontFamily:'Estilo de letra',fontFamilyDesc:'Elige un tipo de letra para la interfaz',fontPreview:'El veloz murciélago hindú',fontOptions:{default:'Predeterminada',modern:'Moderna',readable:'Legible'},
+   textSize:'Tamaño del texto',textSizeDesc:'Hace más pequeño o más grande todo el texto de la interfaz',textSizeSmall:'Pequeño',textSizeLarge:'Grande',
+   playbackSpeed:'Velocidad de reproducción',playbackSpeedDesc:'Ralentiza cada jugada para tener más tiempo de seguir la acción. Los resultados nunca cambian.',
+   playbackSpeedOptions:{'0_5':'50 % (relajada)','0_75':'75 % (fácil)','1':'100 % (normal)'},
+   timingAssist:'Ayuda de tiempos',timingAssistDesc:'Añade una pausa entre jugadas en «Ver en directo» y mantiene los mensajes más tiempo en pantalla',
+   simplifiedUI:'Interfaz simplificada',simplifiedUIDesc:'Oculta etiquetas decorativas, insignias y notas adicionales para dejar solo lo esencial',
+   resetAll:'Restablecer los ajustes de accesibilidad',resetToast:'Se restauraron los ajustes de accesibilidad predeterminados.',
+   statement:'Accesibilidad: Kangs está diseñado para funcionar con teclado y lector de pantalla. Cada jugada también se escribe en texto, porque la escena 3D es visual. Las opciones incluyen corrección de la visión del color, alto contraste, movimiento reducido, texto y letra ajustables, reproducción más lenta e interfaz simplificada. Seguimos las prácticas de WCAG 2.1 siempre que podemos, pero el juego no ha pasado una auditoría formal de accesibilidad.'
+  },
+  language:{title:'Idioma',desc:'Cambia el idioma de la interfaz. El texto que escribe la simulación, como la narración jugada a jugada, sigue en inglés.'}
+ }
+};
