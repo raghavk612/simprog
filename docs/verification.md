@@ -1,7 +1,7 @@
 # Verification — rebuild
 
 - `npm test`: 17 passing tests, including 150 complete seeded campaigns (50 per level). Covers KingCo data integrity for all three levels, opponent rosters and real-name play-by-play, ESPN-style stat lines that add up to the score, per-game leaders that never show zero, resource and roster limits, eligible rotations, training/recovery, timeout cap, deterministic save/resume, box score totals, standings balance and one-season termination.
-- Championship is reachable on every level. Over 300 seeded seasons per level with the tested preparation policy: C Team 92% titles, Junior Varsity 41%, Varsity 31%. This is a reachability and ordering check, not an estimate of human difficulty.
+- Championship is reachable on every level. Over 300 seeded seasons per level with the tested preparation policy: Rookie (C-Team) 92% titles, All-Star (JV) 41%, Hall of Fame (Varsity) 31%. This is a reachability and ordering check, not an estimate of human difficulty.
 - Production build succeeds. Vite reports a non-blocking large-bundle warning for the Three.js renderer; compressed application JS is approximately 175 KB.
 - Browser: coach creation, difficulty selection, four-step first-use tour, training, assistant hire, conversation, scouting, timeout, 64-possession complete game, postgame breakdown, rename, recruit, kit change, sources and credit dialogs verified.
 - All five external model types loaded. No browser runtime errors in tested flows.
