@@ -21,8 +21,6 @@ export function t(key,params){
  const text=lookup(packs[current],key)??lookup(en,key);
  return typeof text==='string'?fill(text,params):key;
 }
-// Multi-line strings use \n; this turns them into <br> for HTML templates.
-export const tb=(key,params)=>t(key,params).replace(/\n/g,'<br>');
 // The design uses all-caps labels. Strings are stored in normal case (better for screen readers) and capitalised by language rules here.
 export const tu=(key,params)=>t(key,params).toLocaleUpperCase(localeTag());
 export const up=text=>String(text).toLocaleUpperCase(localeTag());
@@ -46,6 +44,7 @@ function applyDocument(){
  document.documentElement.lang=current;document.title=t('meta.title');
  document.querySelector('meta[name="description"]')?.setAttribute('content',t('meta.description'));
  const skip=document.querySelector('.skip-link');if(skip)skip.textContent=t('a11y.skip');
+ const toast=document.querySelector('#toast');if(toast)toast.setAttribute('aria-label',t('a11y.notifications'));
 }
 export async function setLanguage(code,{persist=true}={}){
  if(!supported(code))code='en';

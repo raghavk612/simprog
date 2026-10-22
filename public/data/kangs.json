@@ -1,634 +1,3901 @@
 {
   "season": "2025\u201326",
-  "checkedAt": "2026-10-21T04:52:52.778866+00:00",
-  "source": "https://thefinalscore.tv/wa/team/2025-2026/11097/kangaroos",
-  "players": [
-    {
-      "number": 0,
-      "name": "Matthew Adeeb",
-      "position": "Guard",
-      "height": "6' 0",
-      "year": "Senior",
-      "source": "https://thefinalscore.tv/wa/player/2025-2026/49448/matthew-adeeb",
-      "reportedGames": [
+  "checkedAt": "2026-10-22T05:08:21.598425+00:00",
+  "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3",
+  "levels": {
+    "varsity": {
+      "label": "Varsity",
+      "levelId": 12,
+      "difficulty": "elite",
+      "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=12",
+      "players": [
         {
-          "date": "01/06/2026",
+          "number": 0,
+          "name": "Matthew Adeeb",
+          "position": "Guard",
+          "height": "6' 0\"",
+          "year": "Senior",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=12"
+        },
+        {
+          "number": 1,
+          "name": "Ajay Ikeda",
+          "position": "Guard",
+          "height": "6' 0\"",
+          "year": "Junior",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=12"
+        },
+        {
+          "number": 2,
+          "name": "Hunter Phipps",
+          "position": "Guard",
+          "height": "6' 1\"",
+          "year": "Senior",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=12"
+        },
+        {
+          "number": 3,
+          "name": "Jayden Hunt",
+          "position": "Guard",
+          "height": "6' 0\"",
+          "year": "Junior",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=12"
+        },
+        {
+          "number": 4,
+          "name": "Mason Mazandarany",
+          "position": "Guard",
+          "height": "6' 0\"",
+          "year": "Junior",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=12"
+        },
+        {
+          "number": 10,
+          "name": "Logan O'Hare",
+          "position": "Guard",
+          "height": "6' 3\"",
+          "year": "Senior",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=12"
+        },
+        {
+          "number": 11,
+          "name": "Mateo Cummings",
+          "position": "Forward",
+          "height": "6' 7\"",
+          "year": "Senior",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=12"
+        },
+        {
+          "number": 12,
+          "name": "Drew Roberts",
+          "position": "Forward",
+          "height": "6' 4\"",
+          "year": "Junior",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=12"
+        },
+        {
+          "number": 13,
+          "name": "Omer Ziklik",
+          "position": "Guard",
+          "height": "6' 0\"",
+          "year": "Junior",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=12"
+        },
+        {
+          "number": 20,
+          "name": "Jacob Fox",
+          "position": "Forward",
+          "height": "6' 3\"",
+          "year": "Sophomore",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=12"
+        },
+        {
+          "number": 21,
+          "name": "Connor Fagan",
+          "position": "Forward",
+          "height": "6' 7\"",
+          "year": "Senior",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=12"
+        },
+        {
+          "number": 30,
+          "name": "Julien Deblieck",
+          "position": "Forward",
+          "height": "6' 7\"",
+          "year": "Senior",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=12"
+        }
+      ],
+      "games": [
+        {
+          "date": "12/2/2025",
+          "opponent": "North Creek",
+          "points": 51,
+          "against": 49,
+          "venue": "North Creek HS Gym",
+          "time": "7:00 PM",
+          "type": "Conference",
+          "home": false
+        },
+        {
+          "date": "12/5/2025",
+          "opponent": "Issaquah",
+          "points": 66,
+          "against": 57,
+          "venue": "Lake Washington HS",
+          "time": "7:15 PM",
+          "type": "Conference",
+          "home": true
+        },
+        {
+          "date": "12/6/2025",
+          "opponent": "Bainbridge",
+          "points": 93,
+          "against": 60,
+          "venue": "Bainbridge HS",
+          "time": "3:00 PM",
+          "type": "Non-Conference",
+          "home": false
+        },
+        {
+          "date": "12/9/2025",
+          "opponent": "Bear Creek",
+          "points": 81,
+          "against": 49,
+          "venue": "Lake Washington HS",
+          "time": "7:00 PM",
+          "type": "Non-Conference",
+          "home": true
+        },
+        {
+          "date": "12/12/2025",
+          "opponent": "Bellevue",
+          "points": 63,
+          "against": 42,
+          "venue": "Lake Washington HS",
+          "time": "7:15 PM",
+          "type": "Conference",
+          "home": true
+        },
+        {
+          "date": "12/20/2025",
+          "opponent": "Liberty (Renton)",
+          "points": 56,
+          "against": 64,
+          "venue": "Liberty HS",
+          "time": "6:00 PM",
+          "type": "Conference",
+          "home": false
+        },
+        {
+          "date": "12/26/2025",
+          "opponent": "La Joya Community High School",
+          "points": 79,
+          "against": 35,
+          "venue": "Palm Springs HS",
+          "time": "9:30 PM",
+          "type": "Non-Conference",
+          "home": true
+        },
+        {
+          "date": "12/27/2025",
+          "opponent": "Westchester High School",
+          "points": 71,
+          "against": 41,
+          "venue": "Rancho Mirage HS",
+          "time": "4:00 PM",
+          "type": "Non-Conference",
+          "home": false
+        },
+        {
+          "date": "12/29/2025",
+          "opponent": "Great Oak High School",
+          "points": 60,
+          "against": 47,
+          "venue": "Cathedral City HS",
+          "time": "5:30 PM",
+          "type": "Non-Conference",
+          "home": false
+        },
+        {
+          "date": "12/30/2025",
+          "opponent": "Corona Del Mar High School",
+          "points": 87,
+          "against": 82,
+          "venue": "Rancho Mirage HS",
+          "time": "3:50 PM",
+          "type": "Non-Conference",
+          "home": false
+        },
+        {
+          "date": "1/6/2026",
           "opponent": "Bothell",
-          "points": 0
+          "points": 78,
+          "against": 66,
+          "venue": "Lake Washington HS",
+          "time": "7:15 PM",
+          "type": "Conference",
+          "home": true
         },
         {
-          "date": "02/28/2026",
-          "opponent": "Puyallup",
-          "points": 4
+          "date": "1/9/2026",
+          "opponent": "Woodinville",
+          "points": 61,
+          "against": 44,
+          "venue": "Lake Washington HS",
+          "time": "7:30 PM",
+          "type": "Conference",
+          "home": true
         },
         {
-          "date": "03/05/2026",
+          "date": "1/13/2026",
+          "opponent": "Skyline",
+          "points": 45,
+          "against": 31,
+          "venue": "Skyline HS",
+          "time": "7:15 PM",
+          "type": "Conference",
+          "home": false
+        },
+        {
+          "date": "1/16/2026",
+          "opponent": "Coeur d'Alene",
+          "points": 69,
+          "against": 49,
+          "venue": "Lake Washington HS",
+          "time": "7:30 PM",
+          "type": "Non-Conference",
+          "home": true
+        },
+        {
+          "date": "1/19/2026",
+          "opponent": "Kentwood",
+          "points": 62,
+          "against": 35,
+          "venue": "ShoWare Center",
+          "time": "7:30 PM",
+          "type": "Non-Conference",
+          "home": false
+        },
+        {
+          "date": "1/20/2026",
+          "opponent": "Renton",
+          "points": 61,
+          "against": 53,
+          "venue": "Lake Washington HS",
+          "time": "7:15 PM",
+          "type": "Conference",
+          "home": true
+        },
+        {
+          "date": "1/23/2026",
+          "opponent": "Redmond",
+          "points": 59,
+          "against": 42,
+          "venue": "Redmond HS",
+          "time": "7:15 PM",
+          "type": "Conference",
+          "home": false
+        },
+        {
+          "date": "1/26/2026",
+          "opponent": "Tulalip Heritage",
+          "points": 84,
+          "against": 52,
+          "venue": "Lake Washington HS",
+          "time": "7:00 PM",
+          "type": "Non-Conference",
+          "home": true
+        },
+        {
+          "date": "1/29/2026",
+          "opponent": "Juanita",
+          "points": 80,
+          "against": 30,
+          "venue": "Juanita HS",
+          "time": "7:15 PM",
+          "type": "Non-Conference",
+          "home": false
+        },
+        {
+          "date": "1/31/2026",
+          "opponent": "Mount Si",
+          "points": 63,
+          "against": 67,
+          "venue": "Mount Si HS",
+          "time": "5:45 PM",
+          "type": "Conference",
+          "home": false
+        },
+        {
+          "date": "2/7/2026",
+          "opponent": "Lincoln (Seattle)",
+          "points": 76,
+          "against": 45,
+          "venue": "Lake Washington HS",
+          "time": "7:30 PM",
+          "type": "Postseason",
+          "home": true
+        },
+        {
+          "date": "2/11/2026",
+          "opponent": "Redmond",
+          "points": 56,
+          "against": 52,
+          "venue": "Newport HS",
+          "time": "3:30 PM",
+          "type": "Postseason",
+          "home": true
+        },
+        {
+          "date": "2/13/2026",
+          "opponent": "Mount Si",
+          "points": 58,
+          "against": 67,
+          "venue": "Newport HS",
+          "time": "5:15 PM",
+          "type": "Postseason",
+          "home": false
+        },
+        {
+          "date": "2/17/2026",
+          "opponent": "Issaquah",
+          "points": 85,
+          "against": 73,
+          "venue": "Lake Washington HS",
+          "time": "7:00 PM",
+          "type": "Postseason",
+          "home": true
+        },
+        {
+          "date": "2/19/2026",
           "opponent": "Glacier Peak",
-          "points": 2
+          "points": 60,
+          "against": 59,
+          "venue": "Glacier Peak HS",
+          "time": "7:00 PM",
+          "type": "Postseason",
+          "home": false
         },
         {
-          "date": "03/06/2026",
+          "date": "2/21/2026",
+          "opponent": "Mount Si",
+          "points": 63,
+          "against": 70,
+          "venue": "Bellevue HS",
+          "time": "6:00 PM",
+          "type": "Postseason",
+          "home": false
+        },
+        {
+          "date": "2/28/2026",
+          "opponent": "Puyallup",
+          "points": 72,
+          "against": 56,
+          "venue": "Bellevue College",
+          "time": "4:00 PM",
+          "type": "Postseason",
+          "home": true
+        },
+        {
+          "date": "3/5/2026",
+          "opponent": "Glacier Peak",
+          "points": 49,
+          "against": 46,
+          "venue": "Tacoma Dome",
+          "time": "7:15 PM",
+          "type": "Postseason",
+          "home": true
+        },
+        {
+          "date": "3/6/2026",
           "opponent": "Richland",
-          "points": 8
+          "points": 70,
+          "against": 83,
+          "venue": "Tacoma Dome",
+          "time": "9:00 PM",
+          "type": "Postseason",
+          "home": false
         },
         {
-          "date": "03/07/2026",
+          "date": "3/7/2026",
           "opponent": "Emerald Ridge",
-          "points": 5
+          "points": 74,
+          "against": 67,
+          "venue": "Tacoma Dome",
+          "time": "1:00 PM",
+          "type": "Postseason",
+          "home": true
         }
       ],
-      "reportedPPG": 3.8
+      "opponents": {
+        "North Creek": {
+          "real": true,
+          "schoolId": 2616,
+          "players": [
+            {
+              "number": 1,
+              "name": "Yousef Brooks"
+            },
+            {
+              "number": 3,
+              "name": "Jason Dragan"
+            },
+            {
+              "number": 5,
+              "name": "Luke Prior"
+            },
+            {
+              "number": 11,
+              "name": "Elijah Gallup"
+            },
+            {
+              "number": 15,
+              "name": "Maddox Keim"
+            },
+            {
+              "number": 21,
+              "name": "Shayan Kanji"
+            },
+            {
+              "number": 23,
+              "name": "Kellen Joyner"
+            },
+            {
+              "number": 25,
+              "name": "Thon Gatdet"
+            },
+            {
+              "number": 31,
+              "name": "Nassir Gatdet"
+            },
+            {
+              "number": 33,
+              "name": "Stefan Savovic"
+            },
+            {
+              "number": 43,
+              "name": "Ved Dalvi"
+            },
+            {
+              "number": 45,
+              "name": "Carter Cohen"
+            }
+          ]
+        },
+        "Issaquah": {
+          "real": true,
+          "schoolId": 65,
+          "players": [
+            {
+              "number": 0,
+              "name": "Mac Pond"
+            },
+            {
+              "number": 1,
+              "name": "Rowan Miller"
+            },
+            {
+              "number": 2,
+              "name": "Walter Pond"
+            },
+            {
+              "number": 3,
+              "name": "Jackson Battistoni"
+            },
+            {
+              "number": 4,
+              "name": "Alexander Kirkpatrick"
+            },
+            {
+              "number": 5,
+              "name": "Ian Nakayama"
+            },
+            {
+              "number": 12,
+              "name": "Cade Sunderland"
+            },
+            {
+              "number": 20,
+              "name": "Murray Brightbill"
+            },
+            {
+              "number": 22,
+              "name": "Adam Desouky"
+            },
+            {
+              "number": 23,
+              "name": "Grady Pond"
+            },
+            {
+              "number": 24,
+              "name": "Julian Hollywood"
+            },
+            {
+              "number": 32,
+              "name": "Zach Stone O'Brien"
+            }
+          ]
+        },
+        "Bainbridge": {
+          "real": true,
+          "schoolId": 72,
+          "players": [
+            {
+              "number": 0,
+              "name": "Tom McFadden"
+            },
+            {
+              "number": 1,
+              "name": "Haden Fink"
+            },
+            {
+              "number": 2,
+              "name": "Julien Zupan"
+            },
+            {
+              "number": 3,
+              "name": "Sam Hodus"
+            },
+            {
+              "number": 4,
+              "name": "Braden French"
+            },
+            {
+              "number": 10,
+              "name": "Ryan Rohrbacher"
+            },
+            {
+              "number": 11,
+              "name": "Leo Koch"
+            },
+            {
+              "number": 12,
+              "name": "Will Rohrbacher"
+            },
+            {
+              "number": 21,
+              "name": "Kaden Thielman"
+            },
+            {
+              "number": 23,
+              "name": "Garza Wooten"
+            },
+            {
+              "number": 24,
+              "name": "Kethan Reed"
+            },
+            {
+              "number": 34,
+              "name": "Lane McFadden"
+            }
+          ]
+        },
+        "Bear Creek": {
+          "real": true,
+          "schoolId": 102,
+          "players": [
+            {
+              "number": 1,
+              "name": "Conner Jensen"
+            },
+            {
+              "number": 2,
+              "name": "Finn Hermansen"
+            },
+            {
+              "number": 3,
+              "name": "Jake Hannah"
+            },
+            {
+              "number": 4,
+              "name": "Jack Schwartz"
+            },
+            {
+              "number": 10,
+              "name": "Daniel Weintraub"
+            },
+            {
+              "number": 12,
+              "name": "Andrew Liu"
+            },
+            {
+              "number": 15,
+              "name": "Noah Luedke"
+            },
+            {
+              "number": 20,
+              "name": "Luke Hysom"
+            },
+            {
+              "number": 21,
+              "name": "Alex Komola"
+            },
+            {
+              "number": 23,
+              "name": "Ethan Katz"
+            },
+            {
+              "number": 33,
+              "name": "James Whitlock"
+            },
+            {
+              "number": 34,
+              "name": "Jola Ajeyori"
+            }
+          ]
+        },
+        "Bellevue": {
+          "real": true,
+          "schoolId": 86,
+          "players": [
+            {
+              "number": 1,
+              "name": "Max Harrity"
+            },
+            {
+              "number": 2,
+              "name": "Nicolas Norrah"
+            },
+            {
+              "number": 3,
+              "name": "Jackson Skaggs"
+            },
+            {
+              "number": 4,
+              "name": "Tayten Jones"
+            },
+            {
+              "number": 5,
+              "name": "Avery Carter"
+            },
+            {
+              "number": 10,
+              "name": "Braden Tam"
+            },
+            {
+              "number": 11,
+              "name": "Linkin King"
+            },
+            {
+              "number": 12,
+              "name": "Paras Duggal"
+            },
+            {
+              "number": 13,
+              "name": "Will Oeltjen"
+            },
+            {
+              "number": 20,
+              "name": "Trevin King"
+            },
+            {
+              "number": 21,
+              "name": "Eduardo Molina"
+            },
+            {
+              "number": 23,
+              "name": "Ben Reed"
+            }
+          ]
+        },
+        "Liberty (Renton)": {
+          "real": true,
+          "schoolId": 89,
+          "players": [
+            {
+              "number": 0,
+              "name": "Joseph Hwang"
+            },
+            {
+              "number": 2,
+              "name": "Naveen Kindra"
+            },
+            {
+              "number": 3,
+              "name": "Royce Rowe"
+            },
+            {
+              "number": 4,
+              "name": "Elijah Nordland"
+            },
+            {
+              "number": 5,
+              "name": "Mason Miller"
+            },
+            {
+              "number": 11,
+              "name": "Mason Chin"
+            },
+            {
+              "number": 14,
+              "name": "Theo Kalasountas"
+            },
+            {
+              "number": 20,
+              "name": "Lucas Park"
+            },
+            {
+              "number": 22,
+              "name": "Jackson Whitaker"
+            },
+            {
+              "number": 23,
+              "name": "Connor Mayer"
+            },
+            {
+              "number": 24,
+              "name": "Tyson Burley"
+            },
+            {
+              "number": 25,
+              "name": "Tate Tuininga"
+            }
+          ]
+        },
+        "La Joya Community High School": {
+          "real": false,
+          "schoolId": null,
+          "players": [
+            {
+              "number": 0,
+              "name": "Xavier Brooks"
+            },
+            {
+              "number": 2,
+              "name": "Darius Bennett"
+            },
+            {
+              "number": 4,
+              "name": "Micah Nguyen"
+            },
+            {
+              "number": 10,
+              "name": "Julian Hale"
+            },
+            {
+              "number": 12,
+              "name": "Theo Quinn"
+            },
+            {
+              "number": 14,
+              "name": "Mateo Hayes"
+            },
+            {
+              "number": 20,
+              "name": "Jonah Pryor"
+            },
+            {
+              "number": 22,
+              "name": "Andre Quinn"
+            },
+            {
+              "number": 24,
+              "name": "Noah Bennett"
+            },
+            {
+              "number": 30,
+              "name": "Marcus Tran"
+            },
+            {
+              "number": 33,
+              "name": "Caleb Hale"
+            },
+            {
+              "number": 35,
+              "name": "Isaiah Delgado"
+            }
+          ]
+        },
+        "Westchester High School": {
+          "real": false,
+          "schoolId": null,
+          "players": [
+            {
+              "number": 0,
+              "name": "Devin Mendez"
+            },
+            {
+              "number": 2,
+              "name": "Kai Brooks"
+            },
+            {
+              "number": 4,
+              "name": "Owen Holloway"
+            },
+            {
+              "number": 10,
+              "name": "Gabe Duarte"
+            },
+            {
+              "number": 12,
+              "name": "Eli Barrett"
+            },
+            {
+              "number": 14,
+              "name": "Nico Holloway"
+            },
+            {
+              "number": 20,
+              "name": "Xavier Nguyen"
+            },
+            {
+              "number": 22,
+              "name": "Darius Sutton"
+            },
+            {
+              "number": 24,
+              "name": "Micah Delgado"
+            },
+            {
+              "number": 30,
+              "name": "Julian Novak"
+            },
+            {
+              "number": 33,
+              "name": "Theo Vance"
+            },
+            {
+              "number": 35,
+              "name": "Mateo Marsh"
+            }
+          ]
+        },
+        "Great Oak High School": {
+          "real": false,
+          "schoolId": null,
+          "players": [
+            {
+              "number": 0,
+              "name": "Cole Nguyen"
+            },
+            {
+              "number": 2,
+              "name": "Devin Hayes"
+            },
+            {
+              "number": 4,
+              "name": "Kai Harlow"
+            },
+            {
+              "number": 10,
+              "name": "Owen Rhodes"
+            },
+            {
+              "number": 12,
+              "name": "Gabe Vance"
+            },
+            {
+              "number": 14,
+              "name": "Eli Ortega"
+            },
+            {
+              "number": 20,
+              "name": "Nico Sutton"
+            },
+            {
+              "number": 22,
+              "name": "Xavier Pierce"
+            },
+            {
+              "number": 24,
+              "name": "Darius Brooks"
+            },
+            {
+              "number": 30,
+              "name": "Micah Tran"
+            },
+            {
+              "number": 33,
+              "name": "Julian Reyes"
+            },
+            {
+              "number": 35,
+              "name": "Theo Barrett"
+            }
+          ]
+        },
+        "Corona Del Mar High School": {
+          "real": false,
+          "schoolId": null,
+          "players": [
+            {
+              "number": 0,
+              "name": "Owen Mendez"
+            },
+            {
+              "number": 2,
+              "name": "Gabe Tran"
+            },
+            {
+              "number": 4,
+              "name": "Eli Rhodes"
+            },
+            {
+              "number": 10,
+              "name": "Nico Brooks"
+            },
+            {
+              "number": 12,
+              "name": "Xavier Harlow"
+            },
+            {
+              "number": 14,
+              "name": "Darius Pierce"
+            },
+            {
+              "number": 20,
+              "name": "Micah Delgado"
+            },
+            {
+              "number": 22,
+              "name": "Julian Okafor"
+            },
+            {
+              "number": 24,
+              "name": "Theo Mendez"
+            },
+            {
+              "number": 30,
+              "name": "Mateo Nguyen"
+            },
+            {
+              "number": 33,
+              "name": "Jonah Pierce"
+            },
+            {
+              "number": 35,
+              "name": "Andre Coleman"
+            }
+          ]
+        },
+        "Bothell": {
+          "real": true,
+          "schoolId": 61,
+          "players": [
+            {
+              "number": 1,
+              "name": "Jaylen McLaughlin"
+            },
+            {
+              "number": 3,
+              "name": "Brenden Behen"
+            },
+            {
+              "number": 4,
+              "name": "Brayden Blanchard"
+            },
+            {
+              "number": 5,
+              "name": "Deng Deng"
+            },
+            {
+              "number": 10,
+              "name": "Mateo Fonseca"
+            },
+            {
+              "number": 11,
+              "name": "Austin Caldwell"
+            },
+            {
+              "number": 12,
+              "name": "Carter Vance"
+            },
+            {
+              "number": 13,
+              "name": "Kendric Harris"
+            },
+            {
+              "number": 15,
+              "name": "Tyler Johnson"
+            },
+            {
+              "number": 20,
+              "name": "Brent Hall"
+            },
+            {
+              "number": 23,
+              "name": "Logan Christy"
+            },
+            {
+              "number": 24,
+              "name": "Raider Finau"
+            }
+          ]
+        },
+        "Woodinville": {
+          "real": true,
+          "schoolId": 71,
+          "players": [
+            {
+              "number": 0,
+              "name": "Elijah Price"
+            },
+            {
+              "number": 1,
+              "name": "Luke Unruh"
+            },
+            {
+              "number": 2,
+              "name": "Drake Spooner"
+            },
+            {
+              "number": 3,
+              "name": "Nolan Bickerdike"
+            },
+            {
+              "number": 4,
+              "name": "Dexter Chastney"
+            },
+            {
+              "number": 5,
+              "name": "Drake Penberthy"
+            },
+            {
+              "number": 11,
+              "name": "Mekhi Clanton"
+            },
+            {
+              "number": 12,
+              "name": "Jonathan Adams"
+            },
+            {
+              "number": 15,
+              "name": "Joshua Hong"
+            },
+            {
+              "number": 20,
+              "name": "Rowan Kelly"
+            },
+            {
+              "number": 30,
+              "name": "Mason Hwang"
+            },
+            {
+              "number": 32,
+              "name": "Luke Flinn"
+            }
+          ]
+        },
+        "Skyline": {
+          "real": true,
+          "schoolId": 70,
+          "players": [
+            {
+              "number": 1,
+              "name": "Siddharth Koneru"
+            },
+            {
+              "number": 0,
+              "name": "Owen Alderman"
+            },
+            {
+              "number": 2,
+              "name": "Aalay Shah"
+            },
+            {
+              "number": 3,
+              "name": "Jake Thompson"
+            },
+            {
+              "number": 4,
+              "name": "Harper McGillis"
+            },
+            {
+              "number": 10,
+              "name": "Jaiden Walcolm"
+            },
+            {
+              "number": 12,
+              "name": "Saif Desouky"
+            },
+            {
+              "number": 13,
+              "name": "Leo Houpis"
+            },
+            {
+              "number": 20,
+              "name": "Kamran Ghassemieh"
+            },
+            {
+              "number": 21,
+              "name": "Aiden Kurisingal"
+            },
+            {
+              "number": 22,
+              "name": "Gavin Simmons"
+            },
+            {
+              "number": 23,
+              "name": "Sawyer Hudman"
+            },
+            {
+              "number": 34,
+              "name": "Sam Gowing"
+            }
+          ]
+        },
+        "Coeur d'Alene": {
+          "real": false,
+          "schoolId": null,
+          "players": [
+            {
+              "number": 0,
+              "name": "Gabe Vance"
+            },
+            {
+              "number": 2,
+              "name": "Eli Brooks"
+            },
+            {
+              "number": 4,
+              "name": "Nico Marsh"
+            },
+            {
+              "number": 10,
+              "name": "Xavier Sutton"
+            },
+            {
+              "number": 12,
+              "name": "Darius Ortega"
+            },
+            {
+              "number": 14,
+              "name": "Micah Hayes"
+            },
+            {
+              "number": 20,
+              "name": "Julian Carter"
+            },
+            {
+              "number": 22,
+              "name": "Theo Ortega"
+            },
+            {
+              "number": 24,
+              "name": "Mateo Hayes"
+            },
+            {
+              "number": 30,
+              "name": "Jonah Bennett"
+            },
+            {
+              "number": 33,
+              "name": "Andre Vance"
+            },
+            {
+              "number": 35,
+              "name": "Noah Grant"
+            }
+          ]
+        },
+        "Kentwood": {
+          "real": true,
+          "schoolId": 133,
+          "players": [
+            {
+              "number": 0,
+              "name": "Lucas Tran"
+            },
+            {
+              "number": 1,
+              "name": "Bryson Manaway"
+            },
+            {
+              "number": 2,
+              "name": "Brandon Tagle"
+            },
+            {
+              "number": 3,
+              "name": "Jacob Bail"
+            },
+            {
+              "number": 4,
+              "name": "Caleb Ross"
+            },
+            {
+              "number": 5,
+              "name": "Daniel Washington"
+            },
+            {
+              "number": 10,
+              "name": "Darian Williams"
+            },
+            {
+              "number": 13,
+              "name": "Adrisen Joertin Gabriel"
+            },
+            {
+              "number": 20,
+              "name": "Gavin Flaherty"
+            },
+            {
+              "number": 21,
+              "name": "James Armstrong"
+            },
+            {
+              "number": 23,
+              "name": "Brent Simmons"
+            },
+            {
+              "number": 24,
+              "name": "Trey Bass Iii"
+            }
+          ]
+        },
+        "Renton": {
+          "real": true,
+          "schoolId": 157,
+          "players": [
+            {
+              "number": 0,
+              "name": "Jayden Holifield"
+            },
+            {
+              "number": 1,
+              "name": "Anthony Porter"
+            },
+            {
+              "number": 2,
+              "name": "Sudan Luok"
+            },
+            {
+              "number": 3,
+              "name": "Isaac Elegan"
+            },
+            {
+              "number": 4,
+              "name": "Nate Omar"
+            },
+            {
+              "number": 5,
+              "name": "Blake Ervin"
+            },
+            {
+              "number": 11,
+              "name": "Juice White-Kelley"
+            },
+            {
+              "number": 20,
+              "name": "James Pattenaude"
+            },
+            {
+              "number": 22,
+              "name": "Jalen Taylor"
+            },
+            {
+              "number": 24,
+              "name": "Adan Abdi"
+            },
+            {
+              "number": 32,
+              "name": "Shane Von Bruck"
+            },
+            {
+              "number": 34,
+              "name": "Samson Mullen"
+            }
+          ]
+        },
+        "Redmond": {
+          "real": true,
+          "schoolId": 68,
+          "players": [
+            {
+              "number": 0,
+              "name": "Matthew Grabarski"
+            },
+            {
+              "number": 2,
+              "name": "Adrian Higgs"
+            },
+            {
+              "number": 3,
+              "name": "Lane Asobo"
+            },
+            {
+              "number": 20,
+              "name": "Beckett Cushman"
+            },
+            {
+              "number": 21,
+              "name": "Baer Epple"
+            },
+            {
+              "number": 23,
+              "name": "Yahia Ahmed"
+            }
+          ]
+        },
+        "Tulalip Heritage": {
+          "real": false,
+          "schoolId": null,
+          "players": [
+            {
+              "number": 0,
+              "name": "Nico Holloway"
+            },
+            {
+              "number": 2,
+              "name": "Xavier Hayes"
+            },
+            {
+              "number": 4,
+              "name": "Darius Coleman"
+            },
+            {
+              "number": 10,
+              "name": "Micah Carter"
+            },
+            {
+              "number": 12,
+              "name": "Julian Castillo"
+            },
+            {
+              "number": 14,
+              "name": "Theo Duarte"
+            },
+            {
+              "number": 20,
+              "name": "Mateo Sutton"
+            },
+            {
+              "number": 22,
+              "name": "Jonah Pierce"
+            },
+            {
+              "number": 24,
+              "name": "Andre Holloway"
+            },
+            {
+              "number": 30,
+              "name": "Noah Delgado"
+            },
+            {
+              "number": 33,
+              "name": "Marcus Holloway"
+            },
+            {
+              "number": 35,
+              "name": "Caleb Winslow"
+            }
+          ]
+        },
+        "Juanita": {
+          "real": true,
+          "schoolId": 88,
+          "players": [
+            {
+              "number": 0,
+              "name": "Cooper Williams"
+            },
+            {
+              "number": 1,
+              "name": "Quincy Parsadmehr"
+            },
+            {
+              "number": 3,
+              "name": "Lucca Marcello"
+            },
+            {
+              "number": 5,
+              "name": "Connor Cook"
+            },
+            {
+              "number": 11,
+              "name": "Kaylen Moore"
+            },
+            {
+              "number": 13,
+              "name": "Carson Edmonds"
+            },
+            {
+              "number": 15,
+              "name": "Owen Dhara"
+            },
+            {
+              "number": 21,
+              "name": "Mohannad Benmaatoug"
+            },
+            {
+              "number": 23,
+              "name": "Ayden Kinnard"
+            },
+            {
+              "number": 24,
+              "name": "Josiah Lee"
+            },
+            {
+              "number": 32,
+              "name": "Mainor Valentin-goings"
+            },
+            {
+              "number": 34,
+              "name": "Sammy Nyigow"
+            }
+          ]
+        },
+        "Mount Si": {
+          "real": true,
+          "schoolId": 91,
+          "players": [
+            {
+              "number": 0,
+              "name": "Hudson Moscrip"
+            },
+            {
+              "number": 1,
+              "name": "Chase Mentink"
+            },
+            {
+              "number": 2,
+              "name": "Marcus Heide"
+            },
+            {
+              "number": 3,
+              "name": "Latt Ford"
+            },
+            {
+              "number": 4,
+              "name": "Drenden Knaevelsrud"
+            },
+            {
+              "number": 5,
+              "name": "Brady Hennig"
+            },
+            {
+              "number": 10,
+              "name": "Cooper Hansen"
+            },
+            {
+              "number": 11,
+              "name": "Blake Roberts"
+            },
+            {
+              "number": 14,
+              "name": "Jackson Jones"
+            },
+            {
+              "number": 24,
+              "name": "Taylor Standfield"
+            },
+            {
+              "number": 33,
+              "name": "Jimmy Pratapas"
+            },
+            {
+              "number": 40,
+              "name": "Liam Heide"
+            }
+          ]
+        },
+        "Lincoln (Seattle)": {
+          "real": true,
+          "schoolId": 1961,
+          "players": [
+            {
+              "number": 1,
+              "name": "Kvaughn Kirkland"
+            },
+            {
+              "number": 2,
+              "name": "Julius Han"
+            },
+            {
+              "number": 4,
+              "name": "Kingston Jamal Evans"
+            },
+            {
+              "number": 5,
+              "name": "Luke Dagg"
+            },
+            {
+              "number": 10,
+              "name": "Jack Eyler"
+            },
+            {
+              "number": 11,
+              "name": "Josiah Smith"
+            },
+            {
+              "number": 12,
+              "name": "Austin Downing"
+            },
+            {
+              "number": 13,
+              "name": "Ben Ward"
+            },
+            {
+              "number": 14,
+              "name": "Kai Chatwin"
+            },
+            {
+              "number": 15,
+              "name": "Jude Kashyap"
+            },
+            {
+              "number": 21,
+              "name": "Dylan Tefft"
+            },
+            {
+              "number": 23,
+              "name": "Quincy Duckett"
+            }
+          ]
+        },
+        "Glacier Peak": {
+          "real": true,
+          "schoolId": 34,
+          "players": [
+            {
+              "number": 1,
+              "name": "Brody Pierpoint"
+            },
+            {
+              "number": 2,
+              "name": "Aaron Thomas"
+            },
+            {
+              "number": 3,
+              "name": "Reece Rondeau"
+            },
+            {
+              "number": 4,
+              "name": "Justin Vinson"
+            },
+            {
+              "number": 5,
+              "name": "Edison Kan"
+            },
+            {
+              "number": 10,
+              "name": "Matteo Alverio"
+            },
+            {
+              "number": 11,
+              "name": "Reed Nagel"
+            },
+            {
+              "number": 12,
+              "name": "Owen Rainey"
+            },
+            {
+              "number": 15,
+              "name": "Liam Dossman"
+            },
+            {
+              "number": 20,
+              "name": "Zach Albright"
+            },
+            {
+              "number": 23,
+              "name": "Paulos Mulugeta"
+            },
+            {
+              "number": 33,
+              "name": "Cohen Ganje"
+            }
+          ]
+        },
+        "Puyallup": {
+          "real": false,
+          "schoolId": null,
+          "players": [
+            {
+              "number": 0,
+              "name": "Marcus Delgado"
+            },
+            {
+              "number": 2,
+              "name": "Caleb Rhodes"
+            },
+            {
+              "number": 4,
+              "name": "Isaiah Ellis"
+            },
+            {
+              "number": 10,
+              "name": "Evan Okafor"
+            },
+            {
+              "number": 12,
+              "name": "Bryce Rhodes"
+            },
+            {
+              "number": 14,
+              "name": "Rashad Okafor"
+            },
+            {
+              "number": 20,
+              "name": "Jalen Carter"
+            },
+            {
+              "number": 22,
+              "name": "Aiden Bennett"
+            },
+            {
+              "number": 24,
+              "name": "Wes Ortega"
+            },
+            {
+              "number": 30,
+              "name": "Omar Tran"
+            },
+            {
+              "number": 33,
+              "name": "Silas Brooks"
+            },
+            {
+              "number": 35,
+              "name": "Ty Carter"
+            }
+          ]
+        },
+        "Richland": {
+          "real": false,
+          "schoolId": null,
+          "players": [
+            {
+              "number": 0,
+              "name": "Evan Harlow"
+            },
+            {
+              "number": 2,
+              "name": "Bryce Holloway"
+            },
+            {
+              "number": 4,
+              "name": "Rashad Carter"
+            },
+            {
+              "number": 10,
+              "name": "Jalen Marsh"
+            },
+            {
+              "number": 12,
+              "name": "Aiden Reyes"
+            },
+            {
+              "number": 14,
+              "name": "Wes Rhodes"
+            },
+            {
+              "number": 20,
+              "name": "Omar Coleman"
+            },
+            {
+              "number": 22,
+              "name": "Silas Harlow"
+            },
+            {
+              "number": 24,
+              "name": "Ty Novak"
+            },
+            {
+              "number": 30,
+              "name": "Luis Bennett"
+            },
+            {
+              "number": 33,
+              "name": "Leo Reyes"
+            },
+            {
+              "number": 35,
+              "name": "Dante Delgado"
+            }
+          ]
+        },
+        "Emerald Ridge": {
+          "real": true,
+          "schoolId": 140,
+          "players": [
+            {
+              "number": 2,
+              "name": "Darius Alexander"
+            },
+            {
+              "number": 3,
+              "name": "Christopher Grant"
+            },
+            {
+              "number": 4,
+              "name": "Jordan Bennett"
+            },
+            {
+              "number": 5,
+              "name": "Brandon Phillips"
+            },
+            {
+              "number": 10,
+              "name": "Isaiah Kilbourne"
+            },
+            {
+              "number": 11,
+              "name": "Mychal Turner"
+            },
+            {
+              "number": 14,
+              "name": "Ellis Mosley"
+            },
+            {
+              "number": 15,
+              "name": "Adrian Chavez"
+            },
+            {
+              "number": 20,
+              "name": "Jamaize McGriff"
+            },
+            {
+              "number": 21,
+              "name": "Kaleb Ausen"
+            },
+            {
+              "number": 22,
+              "name": "Corbin Williams"
+            },
+            {
+              "number": 32,
+              "name": "Gurshane Bhandal"
+            }
+          ]
+        }
+      }
     },
-    {
-      "number": 1,
-      "name": "Ajay Ikeda",
-      "position": "Guard",
-      "height": "6' 0",
-      "year": "Junior",
-      "source": "https://thefinalscore.tv/wa/player/2025-2026/49449/ajay-ikeda",
-      "reportedGames": [
+    "jv": {
+      "label": "Junior Varsity",
+      "levelId": 11,
+      "difficulty": "standard",
+      "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=11",
+      "players": [
         {
-          "date": "01/06/2026",
+          "number": 1,
+          "name": "Karter Martin",
+          "position": "Guard",
+          "height": "5' 11\"",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=11"
+        },
+        {
+          "number": 2,
+          "name": "Faris Alamran",
+          "position": "Guard",
+          "height": "5' 10\"",
+          "year": "Sophomore",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=11"
+        },
+        {
+          "number": 3,
+          "name": "Mitchell Balser",
+          "position": "Guard",
+          "height": "5' 11\"",
+          "year": "Sophomore",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=11"
+        },
+        {
+          "number": 10,
+          "name": "Brock Roberts",
+          "position": "Forward",
+          "height": "6' 4\"",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=11"
+        },
+        {
+          "number": 11,
+          "name": "Malhar Pawar",
+          "position": "Guard",
+          "height": "5' 10\"",
+          "year": "Sophomore",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=11"
+        },
+        {
+          "number": 14,
+          "name": "Nadav Schlafman",
+          "position": "Guard",
+          "height": "5' 10\"",
+          "year": "Sophomore",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=11"
+        },
+        {
+          "number": 15,
+          "name": "Noah Torgenrud",
+          "position": "Guard",
+          "height": "6' 0\"",
+          "year": "Sophomore",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=11"
+        },
+        {
+          "number": 21,
+          "name": "Noah Citron",
+          "position": "Forward",
+          "height": "6' 4\"",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=11"
+        },
+        {
+          "number": 24,
+          "name": "Ryan Darwazeh",
+          "position": "Forward",
+          "height": "6' 5\"",
+          "year": "Junior",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=11"
+        },
+        {
+          "number": 33,
+          "name": "Jacoby Dickens",
+          "position": "Guard",
+          "height": "6' 0\"",
+          "year": "Sophomore",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=11"
+        },
+        {
+          "number": 34,
+          "name": "Sreehari Thachoth",
+          "position": "Guard",
+          "height": "5' 11\"",
+          "year": "Sophomore",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=11"
+        },
+        {
+          "number": 35,
+          "name": "Liam O'Hare",
+          "position": "Forward",
+          "height": "6' 5\"",
+          "year": "Sophomore",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=11"
+        }
+      ],
+      "games": [
+        {
+          "date": "12/2/2025",
+          "opponent": "North Creek",
+          "points": 68,
+          "against": 55,
+          "venue": "North Creek HS Gym",
+          "time": "5:45 PM",
+          "type": "Conference",
+          "home": false
+        },
+        {
+          "date": "12/4/2025",
+          "opponent": "Issaquah",
+          "points": 68,
+          "against": 50,
+          "venue": "Lake Washington HS",
+          "time": "7:15 PM",
+          "type": "Conference",
+          "home": true
+        },
+        {
+          "date": "12/6/2025",
+          "opponent": "Bainbridge",
+          "points": 77,
+          "against": 48,
+          "venue": "Bainbridge HS",
+          "time": "1:15 PM",
+          "type": "Non-Conference",
+          "home": false
+        },
+        {
+          "date": "12/13/2025",
+          "opponent": "Bellevue",
+          "points": 56,
+          "against": 44,
+          "venue": "Lake Washington HS",
+          "time": "12:30 PM",
+          "type": "Conference",
+          "home": true
+        },
+        {
+          "date": "12/20/2025",
+          "opponent": "Liberty (Renton)",
+          "points": 54,
+          "against": 40,
+          "venue": "Liberty HS",
+          "time": "3:00 PM",
+          "type": "Conference",
+          "home": false
+        },
+        {
+          "date": "1/6/2026",
           "opponent": "Bothell",
-          "points": 3
+          "points": 55,
+          "against": 26,
+          "venue": "Lake Washington HS",
+          "time": "5:45 PM",
+          "type": "Conference",
+          "home": true
         },
         {
-          "date": "02/28/2026",
-          "opponent": "Puyallup",
-          "points": 0
+          "date": "1/10/2026",
+          "opponent": "Woodinville",
+          "points": 40,
+          "against": 56,
+          "venue": "Lake Washington HS",
+          "time": "10:00 AM",
+          "type": "Conference",
+          "home": true
         },
         {
-          "date": "03/05/2026",
-          "opponent": "Glacier Peak",
-          "points": 0
+          "date": "1/12/2026",
+          "opponent": "Monroe",
+          "points": 56,
+          "against": 40,
+          "venue": "Lake Washington HS",
+          "time": "7:15 PM",
+          "type": "Non-Conference",
+          "home": true
         },
         {
-          "date": "03/06/2026",
-          "opponent": "Richland",
-          "points": 0
+          "date": "1/13/2026",
+          "opponent": "Skyline",
+          "points": 57,
+          "against": 56,
+          "venue": "Skyline HS",
+          "time": "5:30 PM",
+          "type": "Conference",
+          "home": false
         },
         {
-          "date": "03/07/2026",
-          "opponent": "Emerald Ridge",
-          "points": 0
+          "date": "1/16/2026",
+          "opponent": "Coeur d'Alene",
+          "points": 71,
+          "against": 46,
+          "venue": "Lake Washington HS",
+          "time": "6:00 PM",
+          "type": "Non-Conference",
+          "home": true
+        },
+        {
+          "date": "1/17/2026",
+          "opponent": "Monroe",
+          "points": 50,
+          "against": 37,
+          "venue": "Monroe HS",
+          "time": "3:00 PM",
+          "type": "Non-Conference",
+          "home": false
+        },
+        {
+          "date": "1/20/2026",
+          "opponent": "Renton",
+          "points": 76,
+          "against": 51,
+          "venue": "Lake Washington HS",
+          "time": "5:45 PM",
+          "type": "Conference",
+          "home": true
+        },
+        {
+          "date": "1/22/2026",
+          "opponent": "Redmond",
+          "points": 71,
+          "against": 66,
+          "venue": "Redmond HS",
+          "time": "7:30 PM",
+          "type": "Conference",
+          "home": false
+        },
+        {
+          "date": "1/26/2026",
+          "opponent": "Tulalip Heritage",
+          "points": 89,
+          "against": 37,
+          "venue": "Lake Washington HS",
+          "time": "5:30 PM",
+          "type": "Non-Conference",
+          "home": true
+        },
+        {
+          "date": "1/29/2026",
+          "opponent": "Juanita",
+          "points": 66,
+          "against": 40,
+          "venue": "Juanita HS",
+          "time": "5:40 PM",
+          "type": "Conference",
+          "home": false
+        },
+        {
+          "date": "1/31/2026",
+          "opponent": "Mount Si",
+          "points": 52,
+          "against": 77,
+          "venue": "Mount Si HS",
+          "time": "2:30 PM",
+          "type": "Conference",
+          "home": false
+        },
+        {
+          "date": "2/2/2026",
+          "opponent": "Woodinville",
+          "points": 42,
+          "against": 67,
+          "venue": "Redmond HS",
+          "time": "5:50 PM",
+          "type": "Non-Conference",
+          "home": true
+        },
+        {
+          "date": "2/3/2026",
+          "opponent": "Redmond",
+          "points": 51,
+          "against": 47,
+          "venue": "Redmond HS",
+          "time": "7:10 PM",
+          "type": "Non-Conference",
+          "home": false
+        },
+        {
+          "date": "2/5/2026",
+          "opponent": "Bellevue",
+          "points": 46,
+          "against": 52,
+          "venue": "Lake Washington HS",
+          "time": "7:00 PM",
+          "type": "Non-Conference",
+          "home": true
         }
       ],
-      "reportedPPG": 0.6
+      "opponents": {
+        "North Creek": {
+          "real": true,
+          "schoolId": 2616,
+          "players": [
+            {
+              "number": 2,
+              "name": "Shabad Thoohan"
+            },
+            {
+              "number": 4,
+              "name": "Nirav Advanapu"
+            },
+            {
+              "number": 10,
+              "name": "Soumil Pole"
+            },
+            {
+              "number": 12,
+              "name": "Brandon Lin"
+            },
+            {
+              "number": 14,
+              "name": "Kayan Kanji"
+            },
+            {
+              "number": 20,
+              "name": "Alec Hansen"
+            },
+            {
+              "number": 21,
+              "name": "Shayan Kanji"
+            },
+            {
+              "number": 22,
+              "name": "Beckett Hansen"
+            },
+            {
+              "number": 24,
+              "name": "Ajay Joshi"
+            },
+            {
+              "number": 30,
+              "name": "Vivaan Pole"
+            },
+            {
+              "number": 32,
+              "name": "Garrett Coulter"
+            },
+            {
+              "number": 40,
+              "name": "Brandon Newton"
+            },
+            {
+              "number": 42,
+              "name": "Jayden Younes"
+            },
+            {
+              "number": 43,
+              "name": "Ved Dalvi"
+            },
+            {
+              "number": 44,
+              "name": "Eric Shema"
+            }
+          ]
+        },
+        "Issaquah": {
+          "real": true,
+          "schoolId": 65,
+          "players": [
+            {
+              "number": 0,
+              "name": "Dez'Irre Lowe"
+            },
+            {
+              "number": 1,
+              "name": "Edran Buno"
+            },
+            {
+              "number": 2,
+              "name": "Joshua Navarro"
+            },
+            {
+              "number": 3,
+              "name": "Tyler Nicholl"
+            },
+            {
+              "number": 4,
+              "name": "William Wung"
+            },
+            {
+              "number": 5,
+              "name": "Landon Kariel"
+            },
+            {
+              "number": 10,
+              "name": "Miles Ellison"
+            },
+            {
+              "number": 11,
+              "name": "Neil Sharma"
+            },
+            {
+              "number": 20,
+              "name": "Murray Brightbill"
+            },
+            {
+              "number": 21,
+              "name": "Jack Kodosky"
+            },
+            {
+              "number": 23,
+              "name": "Joshua Van Assche"
+            }
+          ]
+        },
+        "Bainbridge": {
+          "real": true,
+          "schoolId": 72,
+          "players": [
+            {
+              "number": 1,
+              "name": "Miles Bauer"
+            },
+            {
+              "number": 5,
+              "name": "Mac Kelly"
+            },
+            {
+              "number": 10,
+              "name": "Diego Montenegro"
+            },
+            {
+              "number": 11,
+              "name": "Isaac Sandri"
+            },
+            {
+              "number": 21,
+              "name": "Brody Weindl"
+            },
+            {
+              "number": 22,
+              "name": "Jacob Kushner"
+            },
+            {
+              "number": 23,
+              "name": "Dylan Von Feldt"
+            },
+            {
+              "number": 30,
+              "name": "Caleb Swalley"
+            },
+            {
+              "number": 32,
+              "name": "Sam Penn"
+            },
+            {
+              "number": 40,
+              "name": "Garza Wooten"
+            },
+            {
+              "number": 44,
+              "name": "Dylan MacCulloch"
+            }
+          ]
+        },
+        "Bellevue": {
+          "real": true,
+          "schoolId": 86,
+          "players": [
+            {
+              "number": 1,
+              "name": "Maddex Hang"
+            },
+            {
+              "number": 2,
+              "name": "Ben Reed"
+            },
+            {
+              "number": 3,
+              "name": "Hugo Kim"
+            },
+            {
+              "number": 4,
+              "name": "Paras Duggal"
+            },
+            {
+              "number": 10,
+              "name": "Jeremiah Harris"
+            },
+            {
+              "number": 11,
+              "name": "Bobby Luciano"
+            },
+            {
+              "number": 12,
+              "name": "Ben Okeke"
+            },
+            {
+              "number": 13,
+              "name": "Braden Tam"
+            },
+            {
+              "number": 21,
+              "name": "Solon Jones"
+            },
+            {
+              "number": 22,
+              "name": "Patricio Palacios Ochoa"
+            },
+            {
+              "number": 23,
+              "name": "Marsalis Poulos"
+            }
+          ]
+        },
+        "Liberty (Renton)": {
+          "real": true,
+          "schoolId": 89,
+          "players": [
+            {
+              "number": 2,
+              "name": "Will Boone"
+            },
+            {
+              "number": 3,
+              "name": "Lucas Park"
+            },
+            {
+              "number": 11,
+              "name": "Andre Fan"
+            },
+            {
+              "number": 12,
+              "name": "Grady Foltz"
+            },
+            {
+              "number": 15,
+              "name": "Timothy Park"
+            },
+            {
+              "number": 20,
+              "name": "Tegveer Parihar"
+            },
+            {
+              "number": 21,
+              "name": "Vasilije Nedovic"
+            },
+            {
+              "number": 22,
+              "name": "Lucas Vovakes"
+            },
+            {
+              "number": 23,
+              "name": "Willie Duggins-Siale"
+            },
+            {
+              "number": 24,
+              "name": "Joseph Hwang"
+            },
+            {
+              "number": 25,
+              "name": "Matthew Bligh"
+            },
+            {
+              "number": 30,
+              "name": "Tate Tuininga"
+            },
+            {
+              "number": 55,
+              "name": "Joeseph Duggins-Siale"
+            }
+          ]
+        },
+        "Bothell": {
+          "real": true,
+          "schoolId": 61,
+          "players": [
+            {
+              "number": 1,
+              "name": "Nim Ganbaatar"
+            },
+            {
+              "number": 2,
+              "name": "Griffin Taylor"
+            },
+            {
+              "number": 3,
+              "name": "Sam Mendy-Briseno"
+            },
+            {
+              "number": 4,
+              "name": "Tyler Johnson"
+            },
+            {
+              "number": 5,
+              "name": "Mateo Fonseca"
+            },
+            {
+              "number": 11,
+              "name": "Brent Hall"
+            },
+            {
+              "number": 13,
+              "name": "Matt Hackenmiller"
+            },
+            {
+              "number": 21,
+              "name": "Nahome Teshome"
+            },
+            {
+              "number": 24,
+              "name": "Ethan Ma"
+            }
+          ]
+        },
+        "Woodinville": {
+          "real": true,
+          "schoolId": 71,
+          "players": [
+            {
+              "number": 11,
+              "name": "Connor McPherson"
+            },
+            {
+              "number": 14,
+              "name": "Max Brittingham"
+            },
+            {
+              "number": 23,
+              "name": "Zach Echevarria"
+            },
+            {
+              "number": 25,
+              "name": "Ryder Kelsey"
+            },
+            {
+              "number": 30,
+              "name": "Mason Hwang"
+            },
+            {
+              "number": 33,
+              "name": "Ben Miller"
+            },
+            {
+              "number": 40,
+              "name": "Hudson Peterson"
+            },
+            {
+              "number": 42,
+              "name": "Carter Elzinga"
+            },
+            {
+              "number": 50,
+              "name": "Michael Baker"
+            }
+          ]
+        },
+        "Monroe": {
+          "real": true,
+          "schoolId": 30,
+          "players": [
+            {
+              "number": 1,
+              "name": "Jaxon Nunez"
+            },
+            {
+              "number": 3,
+              "name": "Mindon Siegel"
+            },
+            {
+              "number": 4,
+              "name": "Parker Toyoji"
+            },
+            {
+              "number": 5,
+              "name": "Hunter Lange"
+            },
+            {
+              "number": 11,
+              "name": "Emmett Krache"
+            },
+            {
+              "number": 15,
+              "name": "Elias Funston"
+            },
+            {
+              "number": 21,
+              "name": "Keyon Carmichael"
+            },
+            {
+              "number": 22,
+              "name": "Andre Tarasov"
+            },
+            {
+              "number": 23,
+              "name": "Seth Wood"
+            },
+            {
+              "number": 24,
+              "name": "Chase Zacharda"
+            },
+            {
+              "number": 25,
+              "name": "Keynan Newsham"
+            },
+            {
+              "number": 33,
+              "name": "Kayden McCoy"
+            }
+          ]
+        },
+        "Skyline": {
+          "real": true,
+          "schoolId": 70,
+          "players": [
+            {
+              "number": 1,
+              "name": "Jonah Kim"
+            },
+            {
+              "number": 2,
+              "name": "Kamran Ghassemieh"
+            },
+            {
+              "number": 3,
+              "name": "Beckett Auckland"
+            },
+            {
+              "number": 4,
+              "name": "Sawyer Hudman"
+            },
+            {
+              "number": 10,
+              "name": "Neel Kapoor"
+            },
+            {
+              "number": 11,
+              "name": "Casen Downing"
+            },
+            {
+              "number": 14,
+              "name": "Brandon Parker"
+            },
+            {
+              "number": 21,
+              "name": "Stephen James Ambaichelvan"
+            },
+            {
+              "number": 22,
+              "name": "David Mata"
+            },
+            {
+              "number": 24,
+              "name": "Mitchell Boitano"
+            },
+            {
+              "number": 32,
+              "name": "Daniel Koresh"
+            }
+          ]
+        },
+        "Coeur d'Alene": {
+          "real": false,
+          "schoolId": null,
+          "players": [
+            {
+              "number": 0,
+              "name": "Gabe Vance"
+            },
+            {
+              "number": 2,
+              "name": "Eli Brooks"
+            },
+            {
+              "number": 4,
+              "name": "Nico Marsh"
+            },
+            {
+              "number": 10,
+              "name": "Xavier Sutton"
+            },
+            {
+              "number": 12,
+              "name": "Darius Ortega"
+            },
+            {
+              "number": 14,
+              "name": "Micah Hayes"
+            },
+            {
+              "number": 20,
+              "name": "Julian Carter"
+            },
+            {
+              "number": 22,
+              "name": "Theo Ortega"
+            },
+            {
+              "number": 24,
+              "name": "Mateo Hayes"
+            },
+            {
+              "number": 30,
+              "name": "Jonah Bennett"
+            },
+            {
+              "number": 33,
+              "name": "Andre Vance"
+            },
+            {
+              "number": 35,
+              "name": "Noah Grant"
+            }
+          ]
+        },
+        "Renton": {
+          "real": true,
+          "schoolId": 157,
+          "players": [
+            {
+              "number": 0,
+              "name": "Nate Hall"
+            },
+            {
+              "number": 1,
+              "name": "Andres Diaz"
+            },
+            {
+              "number": 1,
+              "name": "Nick Jarvis"
+            },
+            {
+              "number": 11,
+              "name": "Kevin Heard Jr."
+            },
+            {
+              "number": 15,
+              "name": "Yoal Thong"
+            },
+            {
+              "number": 20,
+              "name": "Abdullah Sarr"
+            },
+            {
+              "number": 22,
+              "name": "Kingston Set"
+            },
+            {
+              "number": 33,
+              "name": "Nehemiah Benton"
+            },
+            {
+              "number": 35,
+              "name": "Zubair Jibril"
+            }
+          ]
+        },
+        "Redmond": {
+          "real": true,
+          "schoolId": 68,
+          "players": [
+            {
+              "number": 2,
+              "name": "Arjun Krishnan"
+            },
+            {
+              "number": 4,
+              "name": "Rohan Rajeev"
+            },
+            {
+              "number": 5,
+              "name": "Jay Bae"
+            },
+            {
+              "number": 11,
+              "name": "Daniel Kudinov"
+            },
+            {
+              "number": 22,
+              "name": "Jordan Spurgeon"
+            },
+            {
+              "number": 32,
+              "name": "Wylie Davis"
+            },
+            {
+              "number": 33,
+              "name": "Michael Grabarski"
+            },
+            {
+              "number": 40,
+              "name": "Emir Erdinc"
+            },
+            {
+              "number": 42,
+              "name": "Jack Christenson"
+            },
+            {
+              "number": 44,
+              "name": "Coleman Helwig"
+            }
+          ]
+        },
+        "Tulalip Heritage": {
+          "real": false,
+          "schoolId": null,
+          "players": [
+            {
+              "number": 0,
+              "name": "Nico Holloway"
+            },
+            {
+              "number": 2,
+              "name": "Xavier Hayes"
+            },
+            {
+              "number": 4,
+              "name": "Darius Coleman"
+            },
+            {
+              "number": 10,
+              "name": "Micah Carter"
+            },
+            {
+              "number": 12,
+              "name": "Julian Castillo"
+            },
+            {
+              "number": 14,
+              "name": "Theo Duarte"
+            },
+            {
+              "number": 20,
+              "name": "Mateo Sutton"
+            },
+            {
+              "number": 22,
+              "name": "Jonah Pierce"
+            },
+            {
+              "number": 24,
+              "name": "Andre Holloway"
+            },
+            {
+              "number": 30,
+              "name": "Noah Delgado"
+            },
+            {
+              "number": 33,
+              "name": "Marcus Holloway"
+            },
+            {
+              "number": 35,
+              "name": "Caleb Winslow"
+            }
+          ]
+        },
+        "Juanita": {
+          "real": true,
+          "schoolId": 88,
+          "players": [
+            {
+              "number": 1,
+              "name": "Ryland Thomas"
+            },
+            {
+              "number": 3,
+              "name": "Jashawn Hall"
+            },
+            {
+              "number": 4,
+              "name": "Will Hinnebusch"
+            },
+            {
+              "number": 10,
+              "name": "Mason Rockwood"
+            },
+            {
+              "number": 12,
+              "name": "Deklan Johnson"
+            },
+            {
+              "number": 15,
+              "name": "Roman Ashe"
+            },
+            {
+              "number": 23,
+              "name": "Seth St Thomas"
+            },
+            {
+              "number": 24,
+              "name": "Tyson Spruill"
+            },
+            {
+              "number": 33,
+              "name": "Griffin Paulsen"
+            },
+            {
+              "number": 34,
+              "name": "Ian St Clair"
+            }
+          ]
+        },
+        "Mount Si": {
+          "real": true,
+          "schoolId": 91,
+          "players": [
+            {
+              "number": 1,
+              "name": "Grayson Rock"
+            },
+            {
+              "number": 0,
+              "name": "Max Crawford"
+            },
+            {
+              "number": 2,
+              "name": "Hudson Michals"
+            },
+            {
+              "number": 3,
+              "name": "Vibhu Chitrapu"
+            },
+            {
+              "number": 4,
+              "name": "Blake Thompson"
+            },
+            {
+              "number": 5,
+              "name": "Lohena Heide"
+            },
+            {
+              "number": 10,
+              "name": "Eli Wilmot"
+            },
+            {
+              "number": 11,
+              "name": "Parker Stokesbary"
+            },
+            {
+              "number": 13,
+              "name": "Jackson Vann"
+            },
+            {
+              "number": 14,
+              "name": "Nash Williamson"
+            },
+            {
+              "number": 15,
+              "name": "Brady Wilson"
+            },
+            {
+              "number": 24,
+              "name": "Elliot Ankrim"
+            },
+            {
+              "number": 33,
+              "name": "Noah Burch"
+            }
+          ]
+        }
+      }
     },
-    {
-      "number": 2,
-      "name": "Hunter Phipps",
-      "position": "Guard",
-      "height": "6' 1",
-      "year": "Senior",
-      "source": "https://thefinalscore.tv/wa/player/2025-2026/49450/hunter-phipps",
-      "reportedGames": [
+    "c": {
+      "label": "C-Team",
+      "levelId": 10,
+      "difficulty": "rookie",
+      "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=10",
+      "players": [
         {
-          "date": "01/06/2026",
+          "number": 3,
+          "name": "Donald Barham",
+          "position": "Not listed",
+          "height": "Not listed",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=10",
+          "numberAssigned": true
+        },
+        {
+          "number": 5,
+          "name": "Weis Behrens",
+          "position": "Not listed",
+          "height": "Not listed",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=10",
+          "numberAssigned": true
+        },
+        {
+          "number": 10,
+          "name": "Von'trell Carter",
+          "position": "Not listed",
+          "height": "Not listed",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=10",
+          "numberAssigned": true
+        },
+        {
+          "number": 11,
+          "name": "Xavier Gauthier",
+          "position": "Not listed",
+          "height": "Not listed",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=10",
+          "numberAssigned": true
+        },
+        {
+          "number": 12,
+          "name": "Axel Holmberg",
+          "position": "Not listed",
+          "height": "Not listed",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=10",
+          "numberAssigned": true
+        },
+        {
+          "number": 13,
+          "name": "Trey Johnson",
+          "position": "Not listed",
+          "height": "Not listed",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=10",
+          "numberAssigned": true
+        },
+        {
+          "number": 14,
+          "name": "Ivan Knight",
+          "position": "Not listed",
+          "height": "Not listed",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=10",
+          "numberAssigned": true
+        },
+        {
+          "number": 15,
+          "name": "Carter Martin",
+          "position": "Not listed",
+          "height": "Not listed",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=10",
+          "numberAssigned": true
+        },
+        {
+          "number": 20,
+          "name": "William Mylet",
+          "position": "Not listed",
+          "height": "Not listed",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=10",
+          "numberAssigned": true
+        },
+        {
+          "number": 21,
+          "name": "Joah Ostgaard",
+          "position": "Not listed",
+          "height": "Not listed",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=10",
+          "numberAssigned": true
+        },
+        {
+          "number": 22,
+          "name": "Rehmmat Pohar",
+          "position": "Not listed",
+          "height": "Not listed",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=10",
+          "numberAssigned": true
+        },
+        {
+          "number": 23,
+          "name": "Keanu Thomas",
+          "position": "Not listed",
+          "height": "Not listed",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=10",
+          "numberAssigned": true
+        },
+        {
+          "number": 24,
+          "name": "Marcus Wu",
+          "position": "Not listed",
+          "height": "Not listed",
+          "year": "Freshman",
+          "source": "https://www.kingcoathletics.com/team/?schoolid=66&sportid=3&schoolyear=2025-26&levelid=10",
+          "numberAssigned": true
+        }
+      ],
+      "games": [
+        {
+          "date": "12/2/2025",
+          "opponent": "North Creek",
+          "points": 67,
+          "against": 30,
+          "venue": "North Creek HS Gym",
+          "time": "4:00 PM",
+          "type": "Conference",
+          "home": false
+        },
+        {
+          "date": "12/4/2025",
+          "opponent": "Issaquah",
+          "points": 51,
+          "against": 46,
+          "venue": "Lake Washington HS",
+          "time": "5:45 PM",
+          "type": "Conference",
+          "home": true
+        },
+        {
+          "date": "12/6/2025",
+          "opponent": "Bainbridge",
+          "points": 67,
+          "against": 31,
+          "venue": "Bainbridge HS",
+          "time": "1:15 PM",
+          "type": "Non-Conference",
+          "home": false
+        },
+        {
+          "date": "12/9/2025",
+          "opponent": "Bear Creek",
+          "points": 61,
+          "against": 22,
+          "venue": "Lake Washington HS",
+          "time": "5:30 PM",
+          "type": "Non-Conference",
+          "home": true
+        },
+        {
+          "date": "12/13/2025",
+          "opponent": "Bellevue",
+          "points": 35,
+          "against": 55,
+          "venue": "Lake Washington HS",
+          "time": "2:00 PM",
+          "type": "Conference",
+          "home": true
+        },
+        {
+          "date": "12/20/2025",
+          "opponent": "Liberty (Renton)",
+          "points": 58,
+          "against": 34,
+          "venue": "Liberty HS",
+          "time": "1:30 PM",
+          "type": "Conference",
+          "home": false
+        },
+        {
+          "date": "1/6/2026",
           "opponent": "Bothell",
-          "points": 10
+          "points": 35,
+          "against": 55,
+          "venue": "Lake Washington HS",
+          "time": "4:15 PM",
+          "type": "Conference",
+          "home": true
         },
         {
-          "date": "02/28/2026",
-          "opponent": "Puyallup",
-          "points": 19
+          "date": "1/10/2026",
+          "opponent": "Woodinville",
+          "points": 39,
+          "against": 69,
+          "venue": "Lake Washington HS",
+          "time": "11:30 AM",
+          "type": "Conference",
+          "home": true
         },
         {
-          "date": "03/05/2026",
-          "opponent": "Glacier Peak",
-          "points": 6
+          "date": "1/12/2026",
+          "opponent": "Monroe",
+          "points": 50,
+          "against": 52,
+          "venue": "Lake Washington HS",
+          "time": "5:45 PM",
+          "type": "Non-Conference",
+          "home": true
         },
         {
-          "date": "03/06/2026",
-          "opponent": "Richland",
-          "points": 6
+          "date": "1/13/2026",
+          "opponent": "Skyline",
+          "points": 37,
+          "against": 57,
+          "venue": "Skyline HS",
+          "time": "4:00 PM",
+          "type": "Non-Conference",
+          "home": false
         },
         {
-          "date": "03/07/2026",
-          "opponent": "Emerald Ridge",
-          "points": 0
+          "date": "1/16/2026",
+          "opponent": "Coeur d'Alene",
+          "points": 31,
+          "against": 53,
+          "venue": "Lake Washington HS",
+          "time": "4:30 PM",
+          "type": "Non-Conference",
+          "home": true
+        },
+        {
+          "date": "1/17/2026",
+          "opponent": "Monroe",
+          "points": 56,
+          "against": 59,
+          "venue": "Monroe HS",
+          "time": "1:30 PM",
+          "type": "Non-Conference",
+          "home": false
+        },
+        {
+          "date": "1/20/2026",
+          "opponent": "Renton",
+          "points": 47,
+          "against": 44,
+          "venue": "Lake Washington HS",
+          "time": "4:15 PM",
+          "type": "Conference",
+          "home": true
+        },
+        {
+          "date": "1/22/2026",
+          "opponent": "Redmond",
+          "points": 49,
+          "against": 68,
+          "venue": "Redmond HS",
+          "time": "6:00 PM",
+          "type": "Conference",
+          "home": false
+        },
+        {
+          "date": "1/29/2026",
+          "opponent": "Juanita",
+          "points": 60,
+          "against": 40,
+          "venue": "Juanita HS",
+          "time": "4:15 PM",
+          "type": "Conference",
+          "home": false
+        },
+        {
+          "date": "1/31/2026",
+          "opponent": "Mount Si",
+          "points": 53,
+          "against": 59,
+          "venue": "Mount Si HS",
+          "time": "11:30 AM",
+          "type": "Conference",
+          "home": false
+        },
+        {
+          "date": "2/2/2026",
+          "opponent": "Woodinville",
+          "points": 31,
+          "against": 57,
+          "venue": "Redmond HS",
+          "time": "4:30 PM",
+          "type": "Non-Conference",
+          "home": true
+        },
+        {
+          "date": "2/5/2026",
+          "opponent": "Bellevue",
+          "points": 35,
+          "against": 39,
+          "venue": "Lake Washington HS",
+          "time": "5:30 PM",
+          "type": "Non-Conference",
+          "home": true
         }
       ],
-      "reportedPPG": 8.2
-    },
-    {
-      "number": 3,
-      "name": "Jayden Hunt",
-      "position": "Guard",
-      "height": "6' 0",
-      "year": "Junior",
-      "source": "https://thefinalscore.tv/wa/player/2025-2026/49451/jayden-hunt",
-      "reportedGames": [
-        {
-          "date": "01/06/2026",
-          "opponent": "Bothell",
-          "points": 22
+      "opponents": {
+        "North Creek": {
+          "real": true,
+          "schoolId": 2616,
+          "players": [
+            {
+              "number": 1,
+              "name": "Micah Gallup"
+            },
+            {
+              "number": 3,
+              "name": "Arnav Verma"
+            },
+            {
+              "number": 5,
+              "name": "Aarav Verma"
+            },
+            {
+              "number": 11,
+              "name": "Mukil Pasupathi"
+            },
+            {
+              "number": 13,
+              "name": "Atiksh Matharu"
+            },
+            {
+              "number": 15,
+              "name": "Armaninder Sidhu"
+            },
+            {
+              "number": 21,
+              "name": "Luke Lim"
+            },
+            {
+              "number": 23,
+              "name": "Nicolas Li"
+            },
+            {
+              "number": 25,
+              "name": "Adhrit Pahwa"
+            },
+            {
+              "number": 31,
+              "name": "Sushanth Vegineti"
+            },
+            {
+              "number": 33,
+              "name": "Aaryan Krishnan"
+            },
+            {
+              "number": 35,
+              "name": "Aarav Jaswal"
+            },
+            {
+              "number": 43,
+              "name": "Anhadh Buttar"
+            },
+            {
+              "number": 45,
+              "name": "Ritvik Kumar"
+            }
+          ]
         },
-        {
-          "date": "02/28/2026",
-          "opponent": "Puyallup",
-          "points": 24
+        "Issaquah": {
+          "real": true,
+          "schoolId": 65,
+          "players": [
+            {
+              "number": 3,
+              "name": "Ayden Ceballos"
+            },
+            {
+              "number": 5,
+              "name": "Kai Tatupu"
+            },
+            {
+              "number": 6,
+              "name": "Kye Weston-Castillo"
+            },
+            {
+              "number": 0,
+              "name": "Christian Batta"
+            },
+            {
+              "number": 1,
+              "name": "Landen Eng"
+            },
+            {
+              "number": 2,
+              "name": "Ethan Lee"
+            },
+            {
+              "number": 4,
+              "name": "Marcus Lo"
+            },
+            {
+              "number": 10,
+              "name": "Xavier York"
+            },
+            {
+              "number": 11,
+              "name": "Olaf Machnicki"
+            },
+            {
+              "number": 12,
+              "name": "James Jones"
+            },
+            {
+              "number": 13,
+              "name": "Sam Harris"
+            },
+            {
+              "number": 14,
+              "name": "Hudson Brown"
+            },
+            {
+              "number": 20,
+              "name": "Greyson Meissner"
+            },
+            {
+              "number": 21,
+              "name": "Owen Stepan"
+            },
+            {
+              "number": 24,
+              "name": "Kj Koivisto"
+            }
+          ]
         },
-        {
-          "date": "03/05/2026",
-          "opponent": "Glacier Peak",
-          "points": 16
+        "Bainbridge": {
+          "real": true,
+          "schoolId": 72,
+          "players": [
+            {
+              "number": 1,
+              "name": "Owen Ausmeier"
+            },
+            {
+              "number": 3,
+              "name": "Ted Hennessey"
+            },
+            {
+              "number": 10,
+              "name": "James Bauer"
+            },
+            {
+              "number": 11,
+              "name": "Angus Burrows"
+            },
+            {
+              "number": 20,
+              "name": "Wylie Schwager"
+            },
+            {
+              "number": 21,
+              "name": "Noah Kraft"
+            },
+            {
+              "number": 22,
+              "name": "Jaxon McKelvie"
+            },
+            {
+              "number": 23,
+              "name": "Jude Ross"
+            },
+            {
+              "number": 30,
+              "name": "Sebastian Aitchison Tirman"
+            },
+            {
+              "number": 44,
+              "name": "Kai Rich"
+            }
+          ]
         },
-        {
-          "date": "03/06/2026",
-          "opponent": "Richland",
-          "points": 28
+        "Bear Creek": {
+          "real": true,
+          "schoolId": 102,
+          "players": [
+            {
+              "number": 2,
+              "name": "Colin Healey"
+            },
+            {
+              "number": 3,
+              "name": "Colten Steward"
+            },
+            {
+              "number": 4,
+              "name": "Shlok Garg"
+            },
+            {
+              "number": 11,
+              "name": "Caedmon Hostetler"
+            },
+            {
+              "number": 22,
+              "name": "Marvin La"
+            },
+            {
+              "number": 24,
+              "name": "Caleb Meisel"
+            }
+          ]
         },
-        {
-          "date": "03/07/2026",
-          "opponent": "Emerald Ridge",
-          "points": 29
+        "Bellevue": {
+          "real": true,
+          "schoolId": 86,
+          "players": [
+            {
+              "number": 2,
+              "name": "Thomas Castaneda"
+            },
+            {
+              "number": 3,
+              "name": "Mason Wright"
+            },
+            {
+              "number": 4,
+              "name": "Isaac Adams"
+            },
+            {
+              "number": 5,
+              "name": "Tony Xu"
+            },
+            {
+              "number": 10,
+              "name": "Colton Cary"
+            },
+            {
+              "number": 11,
+              "name": "Xyrus Katibeh"
+            },
+            {
+              "number": 12,
+              "name": "Elan Evans"
+            },
+            {
+              "number": 13,
+              "name": "Luc Nacinovich"
+            },
+            {
+              "number": 21,
+              "name": "Nehemiah Harris"
+            },
+            {
+              "number": 22,
+              "name": "Connor Darko"
+            },
+            {
+              "number": 23,
+              "name": "Brogan Core"
+            }
+          ]
+        },
+        "Liberty (Renton)": {
+          "real": true,
+          "schoolId": 89,
+          "players": [
+            {
+              "number": 2,
+              "name": "Will Boone"
+            },
+            {
+              "number": 4,
+              "name": "Jianliang Rong"
+            },
+            {
+              "number": 5,
+              "name": "Caleb Maier"
+            },
+            {
+              "number": 10,
+              "name": "Ashton D'Hondt"
+            },
+            {
+              "number": 11,
+              "name": "Riley Donald"
+            },
+            {
+              "number": 12,
+              "name": "Micah Coston"
+            },
+            {
+              "number": 13,
+              "name": "Navjot Sidhu"
+            },
+            {
+              "number": 21,
+              "name": "Lucas Vovakes"
+            },
+            {
+              "number": 23,
+              "name": "Alexander Sambo"
+            },
+            {
+              "number": 30,
+              "name": "Renzo Espinosa"
+            },
+            {
+              "number": 41,
+              "name": "Shelden Rosario"
+            },
+            {
+              "number": 44,
+              "name": "Logan Eng"
+            },
+            {
+              "number": 51,
+              "name": "Noah Adair"
+            }
+          ]
+        },
+        "Bothell": {
+          "real": true,
+          "schoolId": 61,
+          "players": [
+            {
+              "number": 0,
+              "name": "Toni Oladosu"
+            },
+            {
+              "number": 2,
+              "name": "Ethan Purefoy"
+            },
+            {
+              "number": 3,
+              "name": "Bodey Hoover"
+            },
+            {
+              "number": 3,
+              "name": "Grayson Myrup"
+            },
+            {
+              "number": 5,
+              "name": "Tre Rockey"
+            },
+            {
+              "number": 10,
+              "name": "Ayden Leonard"
+            },
+            {
+              "number": 11,
+              "name": "Matt Regalado"
+            },
+            {
+              "number": 20,
+              "name": "Carter Malachowski"
+            },
+            {
+              "number": 21,
+              "name": "Calvin Schock"
+            },
+            {
+              "number": 23,
+              "name": "Preston Sanders"
+            },
+            {
+              "number": 32,
+              "name": "Pablo Murray"
+            },
+            {
+              "number": 33,
+              "name": "Jake Giordano"
+            }
+          ]
+        },
+        "Woodinville": {
+          "real": true,
+          "schoolId": 71,
+          "players": [
+            {
+              "number": 1,
+              "name": "Jackson Harris"
+            },
+            {
+              "number": 2,
+              "name": "Rowan Lockmiller"
+            },
+            {
+              "number": 3,
+              "name": "Jaxon Penberthy"
+            },
+            {
+              "number": 4,
+              "name": "Loa Tuiasosopo"
+            },
+            {
+              "number": 5,
+              "name": "Cooper Streit"
+            },
+            {
+              "number": 10,
+              "name": "Max Bowen"
+            },
+            {
+              "number": 12,
+              "name": "Michael Hampton"
+            },
+            {
+              "number": 15,
+              "name": "Elliott Green"
+            },
+            {
+              "number": 20,
+              "name": "Cole Conniff"
+            },
+            {
+              "number": 22,
+              "name": "Talon Schellhase"
+            },
+            {
+              "number": 24,
+              "name": "Shugo Letizio"
+            }
+          ]
+        },
+        "Monroe": {
+          "real": true,
+          "schoolId": 30,
+          "players": [
+            {
+              "number": 1,
+              "name": "Aayden Soiseth"
+            },
+            {
+              "number": 3,
+              "name": "Cameron Bembers"
+            },
+            {
+              "number": 4,
+              "name": "Wyatt Calhoun"
+            },
+            {
+              "number": 5,
+              "name": "Tyler Richey"
+            },
+            {
+              "number": 11,
+              "name": "Ashton Ramirez"
+            },
+            {
+              "number": 20,
+              "name": "Ty Petty"
+            },
+            {
+              "number": 23,
+              "name": "Mason Cronk"
+            },
+            {
+              "number": 24,
+              "name": "Kellan Moen"
+            },
+            {
+              "number": 32,
+              "name": "Henry Barnes"
+            },
+            {
+              "number": 33,
+              "name": "Carter Inthavongsy"
+            },
+            {
+              "number": 35,
+              "name": "Jaxon Nunez"
+            }
+          ]
+        },
+        "Skyline": {
+          "real": true,
+          "schoolId": 70,
+          "players": [
+            {
+              "number": 0,
+              "name": "Ivan Skarin Floden"
+            },
+            {
+              "number": 1,
+              "name": "Clark Hohman"
+            },
+            {
+              "number": 2,
+              "name": "Aaron Matsuda"
+            },
+            {
+              "number": 3,
+              "name": "Henry Chung"
+            },
+            {
+              "number": 10,
+              "name": "Aidan Kim"
+            },
+            {
+              "number": 11,
+              "name": "Jameson Born"
+            },
+            {
+              "number": 12,
+              "name": "Aidric Zhang"
+            },
+            {
+              "number": 13,
+              "name": "Cade Downing"
+            },
+            {
+              "number": 15,
+              "name": "Kevin Yesiltas"
+            },
+            {
+              "number": 21,
+              "name": "Jp O'Hare"
+            },
+            {
+              "number": 22,
+              "name": "Langston Winkler"
+            },
+            {
+              "number": 23,
+              "name": "Wyatt Reid"
+            }
+          ]
+        },
+        "Coeur d'Alene": {
+          "real": false,
+          "schoolId": null,
+          "players": [
+            {
+              "number": 0,
+              "name": "Gabe Vance"
+            },
+            {
+              "number": 2,
+              "name": "Eli Brooks"
+            },
+            {
+              "number": 4,
+              "name": "Nico Marsh"
+            },
+            {
+              "number": 10,
+              "name": "Xavier Sutton"
+            },
+            {
+              "number": 12,
+              "name": "Darius Ortega"
+            },
+            {
+              "number": 14,
+              "name": "Micah Hayes"
+            },
+            {
+              "number": 20,
+              "name": "Julian Carter"
+            },
+            {
+              "number": 22,
+              "name": "Theo Ortega"
+            },
+            {
+              "number": 24,
+              "name": "Mateo Hayes"
+            },
+            {
+              "number": 30,
+              "name": "Jonah Bennett"
+            },
+            {
+              "number": 33,
+              "name": "Andre Vance"
+            },
+            {
+              "number": 35,
+              "name": "Noah Grant"
+            }
+          ]
+        },
+        "Renton": {
+          "real": true,
+          "schoolId": 157,
+          "players": [
+            {
+              "number": 0,
+              "name": "Orion Francis"
+            },
+            {
+              "number": 1,
+              "name": "Terelle Connor Jr"
+            },
+            {
+              "number": 2,
+              "name": "Saibo Kaloga"
+            },
+            {
+              "number": 3,
+              "name": "Trystan Hobbs"
+            },
+            {
+              "number": 4,
+              "name": "Twaun Pines"
+            },
+            {
+              "number": 5,
+              "name": "Jon Carlyle Spencer"
+            },
+            {
+              "number": 24,
+              "name": "Jerome Armah"
+            },
+            {
+              "number": 33,
+              "name": "Amani Bray"
+            },
+            {
+              "number": 35,
+              "name": "Mohammed Thioune"
+            }
+          ]
+        },
+        "Redmond": {
+          "real": true,
+          "schoolId": 68,
+          "players": [
+            {
+              "number": 1,
+              "name": "Sohrab Majeed"
+            },
+            {
+              "number": 2,
+              "name": "Bennett Laves"
+            },
+            {
+              "number": 3,
+              "name": "Jackson Fox"
+            },
+            {
+              "number": 4,
+              "name": "Gautham Alagumalai"
+            },
+            {
+              "number": 5,
+              "name": "Anand Adgaonkar"
+            },
+            {
+              "number": 10,
+              "name": "Blake Losey"
+            },
+            {
+              "number": 11,
+              "name": "Namit Jose"
+            },
+            {
+              "number": 13,
+              "name": "Kaloyan Aleksiev"
+            },
+            {
+              "number": 14,
+              "name": "Reyansh Gupta"
+            },
+            {
+              "number": 15,
+              "name": "Roi Ronen"
+            },
+            {
+              "number": 21,
+              "name": "Nyle Wasif"
+            },
+            {
+              "number": 41,
+              "name": "Elijah Diwakar"
+            }
+          ]
+        },
+        "Juanita": {
+          "real": true,
+          "schoolId": 88,
+          "players": [
+            {
+              "number": 1,
+              "name": "Parker Larson"
+            },
+            {
+              "number": 2,
+              "name": "Gavin Caparas"
+            },
+            {
+              "number": 3,
+              "name": "Lucas Burns"
+            },
+            {
+              "number": 20,
+              "name": "Henry Killian"
+            },
+            {
+              "number": 22,
+              "name": "Axel Long"
+            },
+            {
+              "number": 23,
+              "name": "Amardios Powell"
+            },
+            {
+              "number": 24,
+              "name": "Connor Woodhead"
+            },
+            {
+              "number": 30,
+              "name": "Julian Pawluskiewicz"
+            },
+            {
+              "number": 32,
+              "name": "Elliott Secan"
+            },
+            {
+              "number": 35,
+              "name": "Khuslen Khasherdene"
+            },
+            {
+              "number": 42,
+              "name": "Jeridan Harrison"
+            },
+            {
+              "number": 45,
+              "name": "Luca Abreu"
+            }
+          ]
+        },
+        "Mount Si": {
+          "real": true,
+          "schoolId": 91,
+          "players": [
+            {
+              "number": 0,
+              "name": "Jacoby Abrahamson"
+            },
+            {
+              "number": 2,
+              "name": "Adam Wyckoff"
+            },
+            {
+              "number": 3,
+              "name": "Brayden Aguedan"
+            },
+            {
+              "number": 4,
+              "name": "Dominic Scappini Simon"
+            },
+            {
+              "number": 5,
+              "name": "Jake DeSpain"
+            },
+            {
+              "number": 10,
+              "name": "Micah Griffith"
+            },
+            {
+              "number": 11,
+              "name": "Brody DeSpain"
+            },
+            {
+              "number": 14,
+              "name": "Landon Luther"
+            },
+            {
+              "number": 15,
+              "name": "Hawkins Waller"
+            },
+            {
+              "number": 24,
+              "name": "Kaden Elgammal"
+            },
+            {
+              "number": 32,
+              "name": "Braden Fowler"
+            },
+            {
+              "number": 33,
+              "name": "Prayaan Chahar"
+            },
+            {
+              "number": 40,
+              "name": "Cooper Price"
+            },
+            {
+              "number": 41,
+              "name": "Henry Englehart"
+            }
+          ]
         }
-      ],
-      "reportedPPG": 23.8
-    },
-    {
-      "number": 4,
-      "name": "Mason Mazandarany",
-      "position": "Guard",
-      "height": "6' 0",
-      "year": "Junior",
-      "source": "https://thefinalscore.tv/wa/player/2025-2026/49452/mason-mazandarany",
-      "reportedGames": [
-        {
-          "date": "02/28/2026",
-          "opponent": "Puyallup",
-          "points": 0
-        }
-      ],
-      "reportedPPG": 0.0
-    },
-    {
-      "number": 5,
-      "name": "Matei Olteanu",
-      "position": "Guard",
-      "height": "6' 3",
-      "year": "Senior",
-      "source": "https://thefinalscore.tv/wa/player/2025-2026/49453/matei-olteanu",
-      "reportedGames": [
-        {
-          "date": "02/28/2026",
-          "opponent": "Puyallup",
-          "points": 0
-        }
-      ],
-      "reportedPPG": 0.0
-    },
-    {
-      "number": 10,
-      "name": "Logan O'Hare",
-      "position": "Guard",
-      "height": "6' 3",
-      "year": "Senior",
-      "source": "https://thefinalscore.tv/wa/player/2025-2026/49454/logan-ohare",
-      "reportedGames": [
-        {
-          "date": "02/28/2026",
-          "opponent": "Puyallup",
-          "points": 0
-        },
-        {
-          "date": "03/07/2026",
-          "opponent": "Emerald Ridge",
-          "points": 0
-        }
-      ],
-      "reportedPPG": 0.0
-    },
-    {
-      "number": 11,
-      "name": "Mateo Cummings",
-      "position": "Forward",
-      "height": "6' 7",
-      "year": "Senior",
-      "source": "https://thefinalscore.tv/wa/player/2025-2026/49455/mateo-cummings",
-      "reportedGames": [
-        {
-          "date": "01/06/2026",
-          "opponent": "Bothell",
-          "points": 16
-        },
-        {
-          "date": "02/28/2026",
-          "opponent": "Puyallup",
-          "points": 20
-        },
-        {
-          "date": "03/05/2026",
-          "opponent": "Glacier Peak",
-          "points": 10
-        },
-        {
-          "date": "03/06/2026",
-          "opponent": "Richland",
-          "points": 6
-        },
-        {
-          "date": "03/07/2026",
-          "opponent": "Emerald Ridge",
-          "points": 19
-        }
-      ],
-      "reportedPPG": 14.2
-    },
-    {
-      "number": 12,
-      "name": "Drew Roberts",
-      "position": "Forward",
-      "height": "6' 4",
-      "year": "Junior",
-      "source": "https://thefinalscore.tv/wa/player/2025-2026/49456/drew-roberts",
-      "reportedGames": [
-        {
-          "date": "02/28/2026",
-          "opponent": "Puyallup",
-          "points": 0
-        },
-        {
-          "date": "03/07/2026",
-          "opponent": "Emerald Ridge",
-          "points": 0
-        }
-      ],
-      "reportedPPG": 0.0
-    },
-    {
-      "number": 13,
-      "name": "Omer Ziklik",
-      "position": "Guard",
-      "height": "6' 0",
-      "year": "Junior",
-      "source": "https://thefinalscore.tv/wa/player/2025-2026/49457/omer-ziklik",
-      "reportedGames": [
-        {
-          "date": "02/28/2026",
-          "opponent": "Puyallup",
-          "points": 0
-        },
-        {
-          "date": "03/05/2026",
-          "opponent": "Glacier Peak",
-          "points": 13
-        },
-        {
-          "date": "03/06/2026",
-          "opponent": "Richland",
-          "points": 20
-        },
-        {
-          "date": "03/07/2026",
-          "opponent": "Emerald Ridge",
-          "points": 20
-        }
-      ],
-      "reportedPPG": 13.3
-    },
-    {
-      "number": 20,
-      "name": "Jacob Fox",
-      "position": "Forward",
-      "height": "6' 3",
-      "year": "Sophomore",
-      "source": "https://thefinalscore.tv/wa/player/2025-2026/49458/jacob-fox",
-      "reportedGames": [
-        {
-          "date": "01/06/2026",
-          "opponent": "Bothell",
-          "points": 6
-        },
-        {
-          "date": "02/28/2026",
-          "opponent": "Puyallup",
-          "points": 0
-        },
-        {
-          "date": "03/07/2026",
-          "opponent": "Emerald Ridge",
-          "points": 0
-        }
-      ],
-      "reportedPPG": 2.0
-    },
-    {
-      "number": 21,
-      "name": "Connor Fagan",
-      "position": "Forward",
-      "height": "6' 7",
-      "year": "Senior",
-      "source": "https://thefinalscore.tv/wa/player/2025-2026/49459/connor-fagan",
-      "reportedGames": [
-        {
-          "date": "02/28/2026",
-          "opponent": "Puyallup",
-          "points": 0
-        },
-        {
-          "date": "03/07/2026",
-          "opponent": "Emerald Ridge",
-          "points": 0
-        }
-      ],
-      "reportedPPG": 0.0
-    },
-    {
-      "number": 30,
-      "name": "Julien Deblieck",
-      "position": "Forward",
-      "height": "6' 7",
-      "year": "Senior",
-      "source": "https://thefinalscore.tv/wa/player/2025-2026/49460/julien-deblieck",
-      "reportedGames": [
-        {
-          "date": "01/06/2026",
-          "opponent": "Bothell",
-          "points": 10
-        },
-        {
-          "date": "02/28/2026",
-          "opponent": "Puyallup",
-          "points": 5
-        },
-        {
-          "date": "03/05/2026",
-          "opponent": "Glacier Peak",
-          "points": 2
-        },
-        {
-          "date": "03/06/2026",
-          "opponent": "Richland",
-          "points": 2
-        },
-        {
-          "date": "03/07/2026",
-          "opponent": "Emerald Ridge",
-          "points": 1
-        }
-      ],
-      "reportedPPG": 4.0
-    },
-    {
-      "number": 35,
-      "name": "Liam O'Hare",
-      "position": "Forward",
-      "height": "6' 4",
-      "year": "Sophomore",
-      "source": "https://thefinalscore.tv/wa/player/2025-2026/49461/liam-ohare",
-      "reportedGames": [
-        {
-          "date": "02/28/2026",
-          "opponent": "Puyallup",
-          "points": 0
-        }
-      ],
-      "reportedPPG": 0.0
+      }
     }
-  ],
-  "games": [
-    {
-      "date": "12/2/2025",
-      "opponent": "North Creek",
-      "points": 51,
-      "against": 49,
-      "venue": "North Creek HS Aux Gym",
-      "time": "7:00 PM"
-    },
-    {
-      "date": "12/5/2025",
-      "opponent": "Issaquah",
-      "points": 66,
-      "against": 57,
-      "venue": "Lake Washington HS",
-      "time": "7:15 PM"
-    },
-    {
-      "date": "12/6/2025",
-      "opponent": "Bainbridge",
-      "points": 93,
-      "against": 60,
-      "venue": "Bainbridge HS",
-      "time": "3:00 PM"
-    },
-    {
-      "date": "12/9/2025",
-      "opponent": "Bear Creek School",
-      "points": 81,
-      "against": 49,
-      "venue": "Lake Washington HS",
-      "time": "7:00 PM"
-    },
-    {
-      "date": "12/12/2025",
-      "opponent": "Bellevue",
-      "points": 63,
-      "against": 42,
-      "venue": "Lake Washington HS",
-      "time": "7:15 PM"
-    },
-    {
-      "date": "12/20/2025",
-      "opponent": "Liberty-Issaquah",
-      "points": 56,
-      "against": 64,
-      "venue": "Liberty HS",
-      "time": "6:00 PM"
-    },
-    {
-      "date": "12/26/2025",
-      "opponent": "La Joya Community HS (CA)",
-      "points": 79,
-      "against": 35,
-      "venue": "Palm Springs HS (CA)",
-      "time": "9:30 PM"
-    },
-    {
-      "date": "12/27/2025",
-      "opponent": "Westchester HS (CA)",
-      "points": 71,
-      "against": 41,
-      "venue": "Rancho Mirage HS (CA)",
-      "time": "4:00 PM"
-    },
-    {
-      "date": "12/29/2025",
-      "opponent": "Great Oak HS (CA)",
-      "points": 60,
-      "against": 47,
-      "venue": "Cathedral City HS (CA)",
-      "time": "5:30 PM"
-    },
-    {
-      "date": "12/30/2025",
-      "opponent": "Corona Del Mar HS (CA)",
-      "points": 87,
-      "against": 82,
-      "venue": "Rancho Mirage HS (CA)",
-      "time": "3:50 PM"
-    },
-    {
-      "date": "1/6/2026",
-      "opponent": "Bothell",
-      "points": 78,
-      "against": 66,
-      "venue": "Lake Washington HS",
-      "time": "7:15 PM"
-    },
-    {
-      "date": "1/9/2026",
-      "opponent": "Woodinville",
-      "points": 61,
-      "against": 44,
-      "venue": "Lake Washington HS",
-      "time": "7:30 PM"
-    },
-    {
-      "date": "1/13/2026",
-      "opponent": "Skyline",
-      "points": 45,
-      "against": 31,
-      "venue": "Skyline HS",
-      "time": "7:15 PM"
-    },
-    {
-      "date": "1/16/2026",
-      "opponent": "Coeur D' Alene (ID)",
-      "points": 69,
-      "against": 49,
-      "venue": "Lake Washington High School",
-      "time": "7:30 PM"
-    },
-    {
-      "date": "1/19/2026",
-      "opponent": "Kentwood",
-      "points": 62,
-      "against": 35,
-      "venue": "ShoWare Center",
-      "time": "7:30 PM"
-    },
-    {
-      "date": "1/20/2026",
-      "opponent": "Renton",
-      "points": 61,
-      "against": 53,
-      "venue": "Lake Washington HS",
-      "time": "7:15 PM"
-    },
-    {
-      "date": "1/23/2026",
-      "opponent": "Redmond",
-      "points": 59,
-      "against": 42,
-      "venue": "Redmond High School",
-      "time": "7:15 PM"
-    },
-    {
-      "date": "1/26/2026",
-      "opponent": "Tulalip Heritage",
-      "points": 84,
-      "against": 52,
-      "venue": "Lake Washington HS",
-      "time": "7:00 PM"
-    },
-    {
-      "date": "1/29/2026",
-      "opponent": "Juanita",
-      "points": 80,
-      "against": 30,
-      "venue": "Juanita HS",
-      "time": "7:15 PM"
-    },
-    {
-      "date": "1/31/2026",
-      "opponent": "Mount Si",
-      "points": 63,
-      "against": 67,
-      "venue": "Mount Si HS",
-      "time": "5:45 PM"
-    },
-    {
-      "date": "2/7/2026",
-      "opponent": "Lincoln-Seattle",
-      "points": 76,
-      "against": 45,
-      "venue": "Lake Washington HS",
-      "time": "7:30 PM"
-    },
-    {
-      "date": "2/11/2026",
-      "opponent": "Redmond",
-      "points": 56,
-      "against": 52,
-      "venue": "Newport High School",
-      "time": "3:30 PM"
-    },
-    {
-      "date": "2/13/2026",
-      "opponent": "Mount Si",
-      "points": 58,
-      "against": 67,
-      "venue": "Newport High School",
-      "time": "5:15 PM"
-    },
-    {
-      "date": "2/17/2026",
-      "opponent": "Issaquah",
-      "points": 85,
-      "against": 73,
-      "venue": "Lake Washington HS",
-      "time": "7:00 PM"
-    },
-    {
-      "date": "2/19/2026",
-      "opponent": "Glacier Peak",
-      "points": 60,
-      "against": 59,
-      "venue": "Glacier Peak HS",
-      "time": "7:00 PM"
-    },
-    {
-      "date": "2/21/2026",
-      "opponent": "Mount Si",
-      "points": 63,
-      "against": 70,
-      "venue": "Bellevue HS",
-      "time": "6:00 PM"
-    },
-    {
-      "date": "2/28/2026",
-      "opponent": "Puyallup",
-      "points": 72,
-      "against": 56,
-      "venue": "Bellevue College",
-      "time": "4:00 PM"
-    },
-    {
-      "date": "3/5/2026",
-      "opponent": "Glacier Peak",
-      "points": 49,
-      "against": 46,
-      "venue": "Tacoma Dome",
-      "time": "7:15 PM"
-    },
-    {
-      "date": "3/6/2026",
-      "opponent": "Richland",
-      "points": 70,
-      "against": 83,
-      "venue": "Tacoma Dome",
-      "time": "9:00 PM"
-    },
-    {
-      "date": "3/7/2026",
-      "opponent": "Emerald Ridge",
-      "points": 74,
-      "against": 67,
-      "venue": "Tacoma Dome",
-      "time": "1:00 PM"
-    }
-  ],
-  "notes": "Published historical snapshot, refreshed daily. Player PPG covers only games with reported points on the source, not a complete season average. Simulation attributes are fictional."
+  },
+  "notes": "Dated public snapshot of the Lake Washington boys basketball Varsity, Junior Varsity and C-Team rosters and completed games from KingCo Athletics (WPA Network). Only games with final scores are included. C-Team jersey numbers, heights and positions are not published; the game assigns jersey numbers and marks them numberAssigned. Opponent rosters come from each school's KingCo/WPA team page at the same level; opponents without a published roster get fictional names (real: false). Skills, energy, morale, GPA and all simulated statistics are fictional."
 }

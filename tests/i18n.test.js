@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
 import en from '../src/i18n/locales/en.js';
-import {LANGUAGES,t,tu,tb,list,has,translateError,setLanguage,getLanguage,detectLanguage,formatDate,supported} from '../src/i18n/index.js';
-import {plans,staff} from '../src/engine.js';import {SHOTS} from '../src/basketball.js';import {SOUND_KEYS} from '../src/audio.js';import {ACTIONS} from '../src/keys.js';
+import {LANGUAGES,t,tu,list,has,translateError,setLanguage,getLanguage,detectLanguage,formatDate,supported} from '../src/i18n/index.js';
+import {plans,staff,DIFFICULTIES} from '../src/engine.js';import {VALUES} from '../src/narrative.js';import {SHOTS} from '../src/basketball.js';import {SOUND_KEYS} from '../src/audio.js';import {ACTIONS} from '../src/keys.js';
 const read=f=>fs.readFileSync(new URL(f,import.meta.url),'utf8');
 // Every string leaf, keyed by its path. Arrays are indexed.
 function flatten(value,prefix='',out={}){
@@ -57,6 +57,13 @@ test('every key built at run time resolves to a string for each value it can tak
  for(const v of ['injured','ineligible','exhausted','ready'])need.push(`status.${v}`);
  for(const v of ['wholeTeam','train','recruit','release','hire','dismiss','talkListen','talkFundraise','talkAcademics','scout','tipoff','injury','win','loss','result','reason','reasonWithScouting','runEnds','champions','seasonComplete'])need.push(`log.${v}`);
  for(const v of ['calm','belief'])need.push(`timeout.feed.${v}`);need.push('timeout.feedPrefix');
+ for(const [k,d] of Object.entries(DIFFICULTIES))need.push(`difficulty.${k}`,`level.${k}`,`team.${d.level}`);
+ for(const v of ['runState','runTitle','stretchDistrict','stretchLeague'])need.push(`season.${v}`);
+ for(const v of ['ppg','apg','rpg','bpg','spg'])need.push(`leaders.${v}`);
+ for(const v of ['gp','ppg','rpg','apg','spg','bpg'])need.push(`stat.${v}`,`stat.${v}Title`);
+ for(const v of ['min','pts','fg','tp','reb','ast','stl','blk','to','starters','bench','team'])need.push(`box.${v}`);
+ for(const v of ['info','success','warn','error'])need.push(`toast.${v}`);
+ for(const v of ['train','recruit','talk','scout','release','dismiss','saved'])need.push(`toast.titles.${v}`);
  for(const k of need)assert.equal(typeof flat[k],'string',k);
 });
 test('every message thrown by the engine has a translation entry',()=>{
@@ -89,9 +96,8 @@ test('t() interpolates, falls back to English and then to the key',async()=>{
  await setLanguage('en',{persist:false});
  assert.equal(t('home.welcome',{name:'Sam'}),'Welcome back, Coach Sam.');
  assert.equal(t('no.such.key'),'no.such.key');
- assert.equal(tb('landing.ticketBody'),'14 real players · 30 published matchups<br>Your decisions. Your results.');
  assert.equal(tu('side.difficulty',{level:'rookie'}),'ROOKIE DIFFICULTY');
- assert.equal(list('rules.steps').length,7);assert.ok(has('nav.home'));assert.ok(!has('nav.nope'));
+ assert.equal(list('rules.steps').length,6,'the fourth rule step is built from the team schedule');assert.ok(has('nav.home'));assert.ok(!has('nav.nope'));
  assert.equal(t('home.welcome'),'Welcome back, Coach {{name}}.');
 });
 test('switching language changes output; unknown codes fall back to English',async()=>{
@@ -124,4 +130,13 @@ test('language detection honours a saved choice, then the browser, then English'
 test('schedule dates are formatted for the active language',async()=>{
  await setLanguage('en',{persist:false});assert.match(formatDate('12/2/2025'),/Dec/);assert.equal(formatDate('TBD'),'TBD');
  await setLanguage('ja',{persist:false});assert.match(formatDate('12/2/2025'),/12月/);await setLanguage('en',{persist:false});
+});
+test('every position, grade and game type in the published data has a translation',()=>{
+ const data=JSON.parse(read('../public/data/kangs.json')),words=new Set();
+ for(const lv of Object.values(data.levels)){
+  for(const p of lv.players){words.add(p.position);words.add(p.year);}
+  for(const g of lv.games)words.add(g.type);
+ }
+ for(const w of words){assert.ok(VALUES[w],`no translation entry for "${w}"`);assert.equal(typeof flat[VALUES[w]],'string',VALUES[w]);}
+ for(const k of Object.keys(data.levels))assert.equal(typeof flat[`team.${k}`],'string',`team.${k}`);
 });

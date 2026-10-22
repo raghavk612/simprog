@@ -15,7 +15,7 @@ This system is adapted from the settings, synthesized-sound and language-switchi
 | Reduced motion | Static action poses in the arena, no interface animation | Joins the existing Motion button. Also honours the OS "reduce motion" preference on first visit |
 | Screen shake toggle | Short camera shake on dunks and blocks (`Arena.shake`) | This game had no shake, so a small impact effect was added to give the setting something to control |
 | Reduce screen flashes | Turns off blinking/pulsing animation and hover brightness changes | |
-| Text size 70–180 % | Same range, scales every font size | All 149 font sizes in `style.css` are multiplied by `--ts` |
+| Text size 70–180 % | Same range, scales every font size | Every font size in `style.css` is multiplied by `--ts` |
 | Font presets (retro / modern / dyslexic) | Default / Modern / Readable | Uses system fonts so the offline build needs no extra files. Readable adds wider letter and word spacing |
 | Game speed (50 / 75 / 100 %) | **Playback speed**, same three values | A slower replay of each play. It never changes results |
 | Jump timing assist | **Timing assist** | Kangs has no jump timing. The equivalent is time to read: a 2.5 s pause between plays in Watch live, and messages stay on screen 12 s instead of 4 s |

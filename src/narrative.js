@@ -2,6 +2,9 @@
 // The engine stores English text plus a small structured record; anything without a record, such as older saves, is shown as stored.
 import {t,up,has,section} from './i18n/index.js';
 import {renderCommentary} from './basketball.js';
+// Words from the roster and schedule data (positions, grades, game types, prospects) and the translation each one has.
+export const VALUES={Guard:'pos.guard',Forward:'pos.forward','Not listed':'pos.unlisted',Senior:'year.senior',Junior:'year.junior',Sophomore:'year.sophomore',Freshman:'year.freshman','Fictional prospect':'year.prospect',Tryout:'year.tryout',Conference:'gtype.conference','Non-Conference':'gtype.nonConference',Postseason:'gtype.postseason'};
+export const tv=v=>VALUES[v]?t(VALUES[v]):v;
 export function commentaryText(play){
  if(play.cm){const text=renderCommentary(play,play.cm,section('cm'));if(text)return text;}
  return play.commentary;

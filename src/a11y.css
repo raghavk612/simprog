@@ -2,7 +2,7 @@
    Text size: every font size in style.css is multiplied by --ts (the text-size setting, written onto <html>) and --ls (a per-language factor, below). */
 
 /* ---- Fonts and languages ---- */
-:root{--ts:1;--cjk:sans-serif;--body:'DM Sans',Arial,var(--cjk);--display:'Barlow Condensed','Arial Narrow',Impact,var(--cjk);font-family:var(--body)}
+:root{--ts:1;--cjk:sans-serif;--body:'Barlow',Arial,var(--cjk);--display:'Barlow Condensed','Arial Narrow',Impact,var(--cjk);font-family:var(--body)}
 :root:lang(ja){--cjk:'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic','Meiryo','Noto Sans JP',sans-serif}
 :root:lang(zh){--cjk:'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif}
 :root:lang(hi){--cjk:'Noto Sans Devanagari','Kohinoor Devanagari','Nirmala UI',Mangal,sans-serif}
@@ -24,6 +24,8 @@ body{overflow-wrap:break-word}
 .topbar{flex-wrap:wrap;row-gap:2px}
 .topbar>div{display:flex;flex-wrap:wrap;justify-content:flex-end}
 .quick{overflow-wrap:anywhere}
+/* Translated menu names can be longer than the English ones: wrap instead of clipping. */
+.nav-label{white-space:normal;overflow-wrap:anywhere;line-height:1.15}
 
 /* ---- Skip link, screen-reader text, focus ---- */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -49,7 +51,13 @@ kbd{display:inline-block;min-width:1.8em;padding:2px 7px;margin-right:6px;text-a
 .a11y-high-contrast .nav-item.active{background:#fff!important;color:#000!important}
 .a11y-high-contrast .pill,.a11y-high-contrast .pill.good,.a11y-high-contrast .pill.warn{background:#000!important;color:#fff!important;border:2px solid #fff}
 .a11y-high-contrast input:not([type=checkbox]):not([type=color]),.a11y-high-contrast select{background:#000!important;color:#fff!important;border:2px solid #fff!important}
-.a11y-high-contrast #toast{background:#000;border:3px solid #fff}
+.a11y-high-contrast .toast-card{background:#000!important;border:3px solid #fff!important;box-shadow:none!important}
+.a11y-high-contrast .toast-card *{color:#fff!important}
+.a11y-high-contrast .toast-chips span{background:#000!important;border:2px solid #fff}
+.a11y-high-contrast .game-tracker{background:#000!important;border:2px solid #fff!important;box-shadow:none!important}
+.a11y-high-contrast .game-tracker *{color:#fff!important}
+.a11y-high-contrast .gt-ticks i{outline:1px solid #fff}
+.a11y-high-contrast .box-score,.a11y-high-contrast .team-compare,.a11y-high-contrast .leaders-card{background:#000!important}
 .a11y-high-contrast *:focus-visible{outline:4px solid #ffe28a!important;outline-offset:3px!important}
 .a11y-high-contrast .switch{background:#000!important;border-color:#fff!important}
 .a11y-high-contrast .switch[aria-checked=true]{background:#fff!important}
@@ -65,7 +73,6 @@ kbd{display:inline-block;min-width:1.8em;padding:2px 7px;margin-right:6px;text-a
 /* ---- Fewer flashes: no animation or hover brightness changes ---- */
 .a11y-no-flash *{animation:none!important}
 .a11y-no-flash button:hover:not(:disabled){filter:none!important}
-.a11y-no-flash #toast{transition:none}
 
 /* ---- Simplified interface: only the essentials ---- */
 .a11y-simple .eyebrow,.a11y-simple .season-badge,.a11y-simple .season-ticket,.a11y-simple .arena-top,.a11y-simple .workspace>footer,.a11y-simple .landing>footer,.a11y-simple .page-heading>p,.a11y-simple .tutorial-arrow,.a11y-simple .right-rail .card:last-child:not(:only-child) p,.a11y-simple .notice,.a11y-simple .quick i,.a11y-simple .crest{display:none!important}
