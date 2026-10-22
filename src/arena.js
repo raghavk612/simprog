@@ -97,41 +97,61 @@ export class Arena{
   // Previous saves still replay; old events have no detailed action record.
   this.clips=event.plays?.length===2?event.plays:[{team:'home',kind:event.three?'catch':'pullup',player:event.player,id:event.id,jersey:event.jersey||11,lane:1,contest:'contested',outcome:event.points?'made':'miss',points:event.points,commentary:event.explanation},{team:'away',kind:'pullup',player:'Visitors',jersey:12,lane:-1,contest:'contested',outcome:event.away?'made':'miss',points:event.away||0,commentary:'Visitors complete their possession.'}];
  }
- clear(){this.event=null;this.clips=null;this.playTime=0;this.paused=false;this.focusRing&&(this.focusRing.visible=false);}
+ clear(){this.event=null;this.clips=null;this.playTime=0;this.paused=false;this.clipIndex=-1;this.ballFrom=null;this.focusRing&&(this.focusRing.visible=false);if(this.people.length===10)this.cast(this.state?.players.filter(p=>p.starter)||[]);}
  isPlaying(){return !!this.event&&this.playTime<CLIP_SECONDS*2;}
  presentation(){if(!this.event)return null;const index=Math.min(1,Math.floor(this.playTime/CLIP_SECONDS)),clip=this.clips[index],time=Math.min(CLIP_SECONDS,this.playTime-index*CLIP_SECONDS),pose=sampleClip(clip,time),e=this.event;return {index,clip,phase:pose.phase,done:!this.isPlaying(),home:e.home-e.points+(index>0||pose.resolved?e.points:0),away:e.visitor-e.away+(index===1&&pose.resolved?e.away:0),resolved:pose.resolved};}
- posePlayer(player,pose,t){
+ // Put the home bodies in pose order without moving them: a body that already wears a player's jersey keeps it.
+ cast(list,identify){const pool=this.people.slice(0,5),id=m=>m.userData.identity?.split('|')[0],own=list.slice(0,5).map(person=>{const j=person?.id==null?-1:pool.findIndex(m=>id(m)===String(person.id));return j<0?null:pool.splice(j,1)[0];});
+  for(let i=0;i<5;i++){this.people[i]=own[i]||pool.shift();if(identify)this.setIdentity(this.people[i],list[i]||{number:i+1,name:'Kangs'},true);}}
+ // Remember where everything is drawn right now; the next poses ease out of it instead of jumping.
+ snapshot(t0){if(!this.posed)return;this.people.forEach(p=>p.userData.from={x:p.position.x,y:p.position.y,z:p.position.z,yaw:p.rotation.y,t0});const b=this.ball.position;this.ballFrom={x:b.x,y:b.y,z:b.z,t0};}
+ blend(from,pose,t){if(!from||!this.motion)return pose;const dx=pose.x-from.x,dz=pose.z-from.z,d=Math.hypot(dx,dz,pose.y-from.y);from.dur??=Math.min(1.35,Math.max(.3,d/8));const w=Math.max(0,(t-from.t0)/from.dur);if(w>=1||d<1e-4)return pose;
+  const s=w*w*(3-2*w),turn=(a,b,k)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*k,trip=Math.min(1,d/2)*Math.sin(w*Math.PI);return {...pose,x:from.x+dx*s,y:from.y+(pose.y-from.y)*s,z:from.z+dz*s,yaw:turn(turn(from.yaw,pose.yaw,s),Math.atan2(dx,dz),trip*.9),run:Math.max(pose.run,trip)};}
+ // A ball that has to change hands is passed along an arc.
+ blendBall(target,t){const f=this.ballFrom;if(!f||!this.motion)return target;const d=Math.hypot(target.x-f.x,target.y-f.y,target.z-f.z);f.dur??=Math.min(1.2,Math.max(.25,d/11));const w=Math.max(0,(t-f.t0)/f.dur);if(w>=1)return target;const s=w*w*(3-2*w);return {x:f.x+(target.x-f.x)*s,y:f.y+(target.y-f.y)*s+Math.sin(w*Math.PI)*Math.min(2.4,d*.16),z:f.z+(target.z-f.z)*s};}
+ posePlayer(player,pose,t,ease=1){
+  const u=player.userData,run=u.run=ease>=1||u.run===undefined?pose.run:u.run+(pose.run-u.run)*ease;
   player.position.set(pose.x,pose.y,pose.z);player.rotation.set(0,pose.yaw,0);
-  player.userData.legs.forEach((leg,j)=>{leg.rotation.set(Math.sin(t*11+j*Math.PI)*.65*pose.run,0,0);leg.userData.knee.rotation.x=Math.max(0,-Math.sin(t*11+j*Math.PI))*.8*pose.run;});
-  player.userData.arms.forEach((arm,j)=>{const side=j?1:-1;let x=Math.sin(t*11+j*Math.PI)*.55*pose.run,z=side*.12,elbow=-.25;
+  u.legs.forEach((leg,j)=>{leg.rotation.set(Math.sin(t*11+j*Math.PI)*.65*run,0,0);leg.userData.knee.rotation.x=Math.max(0,-Math.sin(t*11+j*Math.PI))*.8*run;});
+  u.arms.forEach((arm,j)=>{const side=j?1:-1;let x=Math.sin(t*11+j*Math.PI)*.55*run,z=side*.12,elbow=-.25;
    if(['shoot','block','rebound'].includes(pose.arms)){x=-2.7;z=side*.12;elbow=-.25;}
    if(pose.arms==='hook'){x=j?-2.9:-.3;z=side*.25;elbow=-.4;}
    if(pose.arms==='defend'){x=-.5;z=side*1.1;elbow=-.2;}
    if(pose.arms==='screen'){x=-.1;z=side*.55;elbow=-.8;}
    if(pose.arms==='pass'){x=-1.6;elbow=-.1;}
    if(pose.arms==='dribble'){x=j?-.25+Math.sin(t*18)*.25:-.6;elbow=j?-.15:-.8;}
-   arm.rotation.set(x,0,z);arm.userData.elbow.rotation.x=elbow;
+   const r=arm.rotation,e=arm.userData.elbow.rotation;r.set(r.x+(x-r.x)*ease,0,r.z+(z-r.z)*ease);e.x+=(elbow-e.x)*ease;
   });
  }
  frame(){if(this.failed)return;const dt=Math.min(this.clock.getDelta(),.05),w=this.host.clientWidth,h=this.host.clientHeight;
   if(w<1||h<1||this.host.hidden)return;if(this.w!==w||this.h!==h){this.w=w;this.h=h;this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.fov=w/h<.8?65:43;this.camera.updateProjectionMatrix();}
   if(this.motion)this.time+=dt;
+  // One continuous stride/dribble clock, so legs and arms never jump when a clip restarts.
+  this.gait=(this.gait||0)+(this.motion&&!(this.event&&this.paused)?dt*(this.event?this.speed:1):0);
   if(this.event){
    if(!this.paused)this.playTime=Math.min(CLIP_SECONDS*2,this.playTime+dt*this.speed);
-   const presentation=this.presentation(),clip=presentation.clip,index=presentation.index;
-   if(index!==this.clipIndex){this.clipIndex=index;const lineup=this.event.lineup||this.state?.players.filter(p=>p.starter)||[];let home=[...lineup];if(index===1&&clip.defenderId!==undefined)home.sort((a,b)=>(a.id===clip.defenderId?-1:b.id===clip.defenderId?1:0));for(let i=0;i<5;i++){this.setIdentity(this.people[i],home[i]||{number:i+1,name:'Kangs'},true);this.setIdentity(this.people[i+5],{id:-i-1,number:i===0?(this.clips[1].jersey||12):[12,8,22,30,24][i],name:'Visitors'},false);}this.trail.forEach(d=>d.visible=false);}
-   const clipTime=Math.min(CLIP_SECONDS,this.playTime-index*CLIP_SECONDS),pose=sampleClip(clip,this.motion?clipTime:(presentation.resolved?CLIP_SECONDS:0));
-   pose.actors.forEach((p,i)=>this.posePlayer(this.people[i],p,clipTime));this.ball.position.set(pose.ball.x,pose.ball.y,pose.ball.z);this.ball.rotation.set(this.playTime*6,0,this.playTime*2);
-   this.focusRing.visible=true;this.focusRing.position.x=pose.actors[clip.team==='home'?0:5].x;this.focusRing.position.z=pose.actors[clip.team==='home'?0:5].z;
+   const presentation=this.presentation(),clip=presentation.clip,index=presentation.index,clipTime=Math.min(CLIP_SECONDS,this.playTime-index*CLIP_SECONDS);
+   // New clip: re-order bodies (never re-dress them) so the clip's defender is people[0], then ease everyone from where they stand.
+   if(index!==this.clipIndex){this.clipIndex=index;const lineup=this.event.lineup||this.state?.players.filter(p=>p.starter)||[];let home=[...lineup];if(index===1&&clip.defenderId!==undefined)home.sort((a,b)=>(a.id===clip.defenderId?-1:b.id===clip.defenderId?1:0));this.cast(home,true);for(let i=0;i<5;i++)this.setIdentity(this.people[i+5],{id:-i-1,number:i===0?(this.clips[1].jersey||12):[12,8,22,30,24][i],name:'Visitors'},false);this.trail.forEach(d=>d.visible=false);this.snapshot(clipTime);}else if(this.motion!==this.blendMotion)this.snapshot(clipTime);this.blendMotion=this.motion;
+   const pose=sampleClip(clip,this.motion?clipTime:(presentation.resolved?CLIP_SECONDS:0)),u=clipTime/CLIP_SECONDS,o=clip.team==='home'?0:5,ease=!this.motion?1:this.paused?0:1-Math.exp(-dt*this.speed*22);
+   pose.actors.forEach((p,i)=>this.posePlayer(this.people[i],this.blend(this.people[i].userData.from,p,clipTime),this.gait,ease));
+   // While a player is still easing into place the ball stays in his hands (the handler, or the defender after a steal).
+   const sm=x=>(x=Math.max(0,Math.min(1,x)),x*x*(3-2*x)),off=j=>[this.people[j].position.x-pose.actors[j].x,this.people[j].position.z-pose.actors[j].z],a=off(o),b=off(5-o),st=clip.outcome==='steal'?sm((u-.27)/.09):0,hold=1-sm((u-.55)/.06);
+   const ball=this.blendBall({x:pose.ball.x+(a[0]+(b[0]-a[0])*st)*hold,y:pose.ball.y,z:pose.ball.z+(a[1]+(b[1]-a[1])*st)*hold},clipTime);this.ball.position.set(ball.x,ball.y,ball.z);this.ball.rotation.set(this.gait*6,0,this.gait*2);
+   this.focusRing.visible=true;this.focusRing.position.x=this.people[o].position.x;this.focusRing.position.z=this.people[o].position.z;
    this.nets.forEach(n=>n.mesh.rotation.y=n.side===(clip.team==='home'?1:-1)?pose.net:0);
    this.trail.forEach((d,i)=>{d.visible=this.motion&&clipTime>CLIP_SECONDS*.61&&clipTime<CLIP_SECONDS*.9&&clip.outcome!=='steal';if(d.visible){const previous=sampleClip(clip,Math.max(0,clipTime-i*.025)).ball;d.position.set(previous.x,previous.y,previous.z);}});
    this.score(presentation.home,presentation.away);
    const key=`${index}|${pose.phase}|${presentation.resolved}|${presentation.done}`;if(key!==this.presentKey){this.presentKey=key;this.onPresentation?.(presentation);}
   }else{
    // Idle gym: dribbling and movement only. No invisible automatic shot loop.
-   this.people.forEach((p,i)=>{const k=i%5;this.posePlayer(p,{x:[-6,-2,4,8,1][k]+(i>=5?1:0),y:0,z:[-4,4,-3,3,0][k],yaw:i<5?Math.PI/2:-Math.PI/2,run:0,arms:i===2?'dribble':'relax'},this.time);});
-   const p=this.people[2].position;this.ball.position.set(p.x+.4,.3+Math.abs(Math.sin(this.time*6))*.9,p.z+.25);this.trail.forEach(d=>d.visible=false);
+   // Players jog back to their spots and the ball is passed to the dribbler; nothing snaps unless motion is off.
+   const live=this.motion&&this.posed,ease=live?1-Math.exp(-dt*22):1,turn=(a,b,k)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*k;this.idleClock=(this.idleClock||0)+dt;if(!this.ballFrom||this.blendMotion!==this.motion){this.blendMotion=this.motion;this.snapshot(this.idleClock);}
+   this.people.forEach((p,i)=>{const k=i%5,tx=[-6,-2,4,8,1][k]+(i>=5?1:0),tz=[-4,4,-3,3,0][k],rest=i<5?Math.PI/2:-Math.PI/2,dx=tx-p.position.x,dz=tz-p.position.z,d=Math.hypot(dx,dz),v=Math.min(5,d*2.2),step=!live||d<.02?d:Math.min(d,v*dt);
+    this.posePlayer(p,{x:p.position.x+(d?dx/d*step:0),y:live?p.position.y*Math.exp(-dt*12):0,z:p.position.z+(d?dz/d*step:0),yaw:live?turn(p.rotation.y,d>.6?Math.atan2(dx,dz):rest,1-Math.exp(-dt*7)):rest,run:live&&d>.02?Math.min(1,v/5):0,arms:i===2?'dribble':'relax'},this.gait,ease);});
+   const p=this.people[2].position,b=this.blendBall({x:p.x+.4,y:.3+Math.abs(Math.sin(this.gait*6))*.9,z:p.z+.25},this.idleClock);this.ball.position.set(b.x,b.y,b.z);this.trail.forEach(d=>d.visible=false);
   }
+  this.posed=true;
   if(this.mode==='follow'&&this.event){const side=this.clipIndex===1?-1:1;const focus=this.people[side===1?0:5].position;const x=THREE.MathUtils.clamp(focus.x,-10,10);this.camera.position.lerp(new THREE.Vector3(x,8.5,14),.045);this.controls.target.lerp(new THREE.Vector3(x,1.2,0),.08);}if(this.mode==='player'){this.firstPerson();}else this.controls.update();const fov=this.mode==='player'?74:(this.w/this.h<.8?65:43);if(this.camera.fov!==fov){this.camera.fov=fov;this.camera.updateProjectionMatrix();}this.renderer.render(this.scene,this.camera);
  }
 }
