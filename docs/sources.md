@@ -13,8 +13,8 @@ Research checked October 20–22, 2026. Exact data check time is in `public/data
 | [NFHS basketball rules](https://www.nfhs.org/sports/basketball/rules) | Introductory rulebook context | Linked; no rulebook reproduced |
 | [Three.js](https://threejs.org/) and [GLTFLoader docs](https://threejs.org/docs/#GLTFLoader) | Renderer, loaders, controls | MIT; copy in `public/licenses/Three-MIT.txt` |
 | [Vite](https://vite.dev/) | Development / production build | MIT; copy in `public/licenses/Vite-MIT.txt` |
-| [Barlow Condensed](https://fonts.google.com/specimen/Barlow+Condensed) by Jeremy Tribby | Display typography | SIL OFL, locally bundled; `public/fonts/OFL-Barlow.txt` |
-| [DM Sans](https://fonts.google.com/specimen/DM+Sans) by Colophon Foundry | UI typography | SIL OFL, locally bundled; `public/fonts/OFL-DMSans.txt` |
+| [Barlow Condensed](https://fonts.google.com/specimen/Barlow+Condensed) by Jeremy Tribby | Display typography, labels and numbers | SIL OFL, locally bundled; `public/fonts/OFL-Barlow.txt` |
+| [Barlow](https://fonts.google.com/specimen/Barlow) by Jeremy Tribby | UI and body typography | SIL OFL (same family license), locally bundled; `public/fonts/OFL-Barlow.txt` |
 
 Original code generates the basketball, court, gym shell, hoop/net geometry, player characters, crowd, jersey graphics, and short opt-in sounds. The three named creators are credited in-game. OpenAI Codex coding assistance is disclosed in credits.
 
