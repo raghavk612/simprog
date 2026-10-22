@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {CLIP_SECONDS, SHOTS, sampleClip} from './basketball.js';
+import {drawScoreboard, scoreboardData, scoreboardKey} from './scoreboard.js';
 const purple=0x6832ab;
 export class Arena{
  constructor(host){
@@ -31,7 +32,7 @@ export class Arena{
   for(let i=0;i<12;i++){const a=i/12*Math.PI*2;const points=[new THREE.Vector3(ring.position.x+Math.cos(a)*.48,3.25,Math.sin(a)*.48),new THREE.Vector3(ring.position.x+Math.cos(a+.25)*.28,2.65,Math.sin(a+.25)*.28)];const net=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:0xffffff}));this.scene.add(net);this.nets.push({mesh:net,side});}
  }
  for(let i=0;i<4;i++){const b=this.sign(i===3?'YOUR SEASON':`KANGS ${2023+i}`,2.2,3,-14+i*3,4.5,-13.65);}
- this.scoreboard=this.sign('KANGS  0 : 0  GUEST',9,3,0,8,-11);this.box(9.4,3.4,.35,0x0e0d16,0,8,-11.25);
+ /* LED video board modelled on the real Lake Washington gym board (see src/scoreboard.js); unlit material so it glows. */this.boardCanvas=document.createElement('canvas');this.boardCanvas.width=2048;this.boardCanvas.height=768;this.boardTex=new THREE.CanvasTexture(this.boardCanvas);this.boardTex.colorSpace=THREE.SRGBColorSpace;this.boardTex.anisotropy=this.renderer.capabilities.getMaxAnisotropy();this.scoreboard=new THREE.Mesh(new THREE.PlaneGeometry(12,4.5),new THREE.MeshBasicMaterial({map:this.boardTex,toneMapped:false}));this.scoreboard.position.set(0,8.2,-11);this.scene.add(this.scoreboard);this.box(12.7,5.2,.45,0x0b0c16,0,8.2,-11.3);const boardRim=new THREE.Mesh(new THREE.PlaneGeometry(12.24,4.74),new THREE.MeshBasicMaterial({color:0x2d57c8,toneMapped:false}));boardRim.position.set(0,8.2,-11.03);this.scene.add(boardRim);for(const x of [-5,5])this.box(.07,2.6,.07,0x2a2a33,x,12,-11.3);this.score(0,0);document.fonts?.load('900 100px "Barlow Condensed"').then(()=>document.fonts.load('800 100px "Barlow Condensed"')).then(()=>{this.boardKey='';this.score(this.boardHome??0,this.boardAway??0);}).catch(()=>{});
  for(let i=0;i<10;i++){const player=this.player(i,i<5?purple:0xf1e9df);this.people.push(player);this.scene.add(player);}
  this.ball=new THREE.Group();const sphere=new THREE.Mesh(new THREE.SphereGeometry(.28,24,16),this.mat(0xe9832a,{roughness:.85}));this.ball.add(sphere);for(let i=0;i<3;i++){const seam=new THREE.Mesh(new THREE.TorusGeometry(.282,.009,4,48),this.mat(0x392318));if(i===1)seam.rotation.x=Math.PI/2;if(i===2)seam.rotation.y=Math.PI/2;this.ball.add(seam);}this.scene.add(this.ball);
  // Program spaces share the gym: imported furniture, jersey wall, and coach desk.
@@ -88,7 +89,7 @@ export class Arena{
   const n=p.userData.number.material;n.map.dispose();n.map=this.textTexture(String(person?.number??11),bg,fg,128);
   const back=p.userData.nameplate.material;back.map.dispose();back.map=this.textTexture((person?.name||'VISITORS').split(' ').at(-1).toUpperCase(),bg,fg,256);
  }
- score(home,away){const key=`${home}:${away}`;if(this.scoreKey===key)return;this.scoreKey=key;this.scoreboard.material.map.dispose();this.scoreboard.material.map=this.textTexture(`KANGS  ${home} : ${away}  GUEST`,'#10111e','#d4f6ae');}
+ score(home,away){this.boardHome=home;this.boardAway=away;if(!this.boardCanvas)return;const data=scoreboardData(this.state,home,away,this.event),key=scoreboardKey(data);if(this.boardKey===key)return;this.boardKey=key;drawScoreboard(this.boardCanvas.getContext('2d'),this.boardCanvas.width,this.boardCanvas.height,data);this.boardTex.needsUpdate=true;}
  update(s){if(this.failed)return;this.state=s;if(!this.event){const starters=s?.players.filter(p=>p.starter)||[];for(let i=0;i<5;i++)this.setIdentity(this.people[i],starters[i]||{id:i,number:[0,2,3,11,20][i],name:'Kangs'});}
   if(!this.event){const m=s?.match,r=s?.results.at(-1);this.score(m?.home??r?.home??0,m?.away??r?.away??0);}
  }
