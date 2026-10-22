@@ -17,8 +17,8 @@ Open the URL Vite prints. Production files are in `dist/`; serve them over HTTP,
 
 ## Implemented
 
-- Named coach, three difficulties, one-time introductory tour, local saves and validated JSON import/export.
-- 14 sourced public roster entries, all 30 published 2025–26 matchups, actual reference results and reported-game individual scoring averages.
+- Named coach, three difficulties named after team levels (C Team, Junior Varsity, Varsity), one-time introductory tour, local saves and validated JSON import/export.
+- 13 sourced public roster entries plus creator Malhar Pawar (#7, a labeled creator addition in the roster spot of Mason Mazandarany), all 30 published 2025–26 matchups, actual reference results and reported-game individual scoring averages.
 - 15-player limit, fictional paid tryouts, release/rename, five starters, editable 160-minute rotation, eligibility checks.
 - Training, recovery, study hall, bonding, weekly conversations, community fundraising, one assistant with differentiated bonuses.
 - Individual energy, morale, skill, simulated GPA and health; team chemistry, fans, currency and preparation limits.
@@ -32,7 +32,9 @@ Open the URL Vite prints. Production files are in `dist/`; serve them over HTTP,
 
 `public/data/kangs.json` is a **dated historical snapshot**, not a live official score feed. `scripts/refresh-data.py` retrieves the public FinalScoreTV roster, schedule and available player point records. Missing individual records remain missing. Individual PPG means the average over **reported games only**, never an invented season average. Team PPG uses all 30 published results.
 
-The Pages workflow checks the source daily and on deployments. A failed refresh retains the repository snapshot and its original timestamp. The browser checks the published snapshot every five minutes and has a manual refresh button. Existing campaigns preserve their original data so a source refresh cannot rewrite a user's season.
+The Pages workflow checks the source daily and on deployments. It tries the newest season first (2026–27 from August 2026) and switches only once that season has at least 30 final games; until then it keeps 2025–26. FinalScoreTV currently shows the 2025–26 page at the 2026–27 address, so game dates are checked to confirm which season a page really is. A failed refresh retains the repository snapshot and its original timestamp.
+
+Creator additions are defined in `CUSTOM_PLAYERS` in `scripts/refresh-data.py` and reapplied after every refresh, so the daily update never removes them. They have no source link, are marked `custom` in the data, and are labeled in-game. The browser checks the published snapshot every five minutes and has a manual refresh button. Existing campaigns preserve their original data so a source refresh cannot rewrite a user's season.
 
 Skills, injuries, GPA, morale, tryout prospects, assistant roles, scouting profiles, results and standings are fictional game data. No private student records, official logos or real athlete likenesses are used. This is an independent project, not school-endorsed.
 

@@ -148,20 +148,17 @@
       "reportedPPG": 23.8
     },
     {
-      "number": 4,
-      "name": "Mason Mazandarany",
+      "number": 7,
+      "name": "Malhar Pawar",
       "position": "Guard",
-      "height": "6' 0",
-      "year": "Junior",
-      "source": "https://thefinalscore.tv/wa/player/2025-2026/49452/mason-mazandarany",
-      "reportedGames": [
-        {
-          "date": "02/28/2026",
-          "opponent": "Puyallup",
-          "points": 0
-        }
-      ],
-      "reportedPPG": 0.0
+      "height": "Not listed",
+      "year": "Game creator",
+      "source": null,
+      "custom": true,
+      "note": "Added by the game creators; not part of the published FinalScoreTV roster.",
+      "reportedGames": [],
+      "reportedPPG": null,
+      "replaced": "Mason Mazandarany"
     },
     {
       "number": 5,
@@ -630,5 +627,5 @@
       "time": "1:00 PM"
     }
   ],
-  "notes": "Published historical snapshot, refreshed daily. Player PPG covers only games with reported points on the source, not a complete season average. Simulation attributes are fictional."
+  "notes": "Published historical snapshot, refreshed daily. Player PPG covers only games with reported points on the source, not a complete season average. Simulation attributes are fictional. Entries marked custom were added by the game creators."
 }

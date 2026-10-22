@@ -6,6 +6,7 @@ Research checked October 20–21, 2026. Exact data check time is in `public/data
 | --- | --- | --- |
 | [FinalScoreTV Kangs 2025–26](https://thefinalscore.tv/wa/team/2025-2026/11097/kangaroos) | Public factual roster, jersey numbers, positions, heights, class years, schedule and game results | Factual data only, attributed with direct source links; no site photos or branding copied |
 | Player pages linked from that roster and individually in the data JSON | Reported individual points by game | Partial coverage explicitly labeled; no missing data imputation |
+| Game creators | Malhar Pawar (#7) added to the playable roster in place of Mason Mazandarany | Not a FinalScoreTV entry: no source link, no reported games, marked `custom` in the data and labeled in-game |
 | [Lake Washington Boys Basketball](https://www.kangsbasketball.com/hs) | Program context | Reference only |
 | [School program information](https://www.kangsbasketball.com/page/show/4151549-lake-washington-high-school) | Lake Washington / Kangs identity | Original K monogram; no official logo copied |
 | [FBLA event](https://www.fbla.org/competitive-events/computer-game-simulation-programming/) | Event context | Reference only |

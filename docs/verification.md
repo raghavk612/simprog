@@ -1,7 +1,7 @@
 # Verification — rebuild
 
-- `npm test`: 14 passing tests, including 50 complete seeded campaigns. Covers published-data integrity, correct average calculation, resource and roster limits, eligible rotations, training/recovery, timeout cap, deterministic save/resume, box score totals, standings balance and one-season termination.
-- Championship is reachable: 45/50 Rookie campaigns won with the tested preparation policy. This is a reachability test, not an estimate of human difficulty.
+- `npm test`: 15 passing tests, including 50 complete seeded campaigns. Covers published-data integrity, correct average calculation, resource and roster limits, eligible rotations, training/recovery, timeout cap, deterministic save/resume, box score totals, standings balance and one-season termination.
+- Championship is reachable: 45/50 C Team (easiest difficulty, internal key `rookie`) campaigns won with the tested preparation policy. This is a reachability test, not an estimate of human difficulty.
 - Production build succeeds. Vite reports a non-blocking large-bundle warning for the Three.js renderer; compressed application JS is approximately 175 KB.
 - Browser: coach creation, difficulty selection, four-step first-use tour, training, assistant hire, conversation, scouting, timeout, 64-possession complete game, postgame breakdown, rename, recruit, kit change, sources and credit dialogs verified.
 - All five external model types loaded. No browser runtime errors in tested flows.
