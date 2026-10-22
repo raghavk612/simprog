@@ -7,8 +7,8 @@ function region(kind){
  el.setAttribute('role',kind==='polite'?'status':'alert');el.setAttribute('aria-live',kind);el.setAttribute('aria-atomic','true');
  el.className='sr-only';el.style.cssText=HIDDEN;document.body.append(el);return regions[kind]=el;
 }
-// Clearing first makes screen readers read a repeated message again.
-function say(kind,message){if(typeof document==='undefined')return;const el=region(kind);el.textContent='';requestAnimationFrame(()=>{el.textContent=message;});}
+// Clearing first makes screen readers read a repeated message again. A timer (not requestAnimationFrame) so it still fires when the tab is in the background.
+function say(kind,message){if(typeof document==='undefined')return;const el=region(kind);el.textContent='';setTimeout(()=>{el.textContent=message;},40);}
 export const announce=message=>say('polite',message);
 export const interrupt=message=>say('assertive',message);
 

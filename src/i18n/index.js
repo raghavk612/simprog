@@ -29,6 +29,8 @@ export const up=text=>String(text).toLocaleUpperCase(localeTag());
 // Arrays of strings, such as the rulebook steps.
 export function list(key){const v=lookup(packs[current],key)??lookup(en,key);return Array.isArray(v)?v:[];}
 export const has=key=>typeof lookup(en,key)==='string';
+// A whole object from the active language (falling back to English), such as the commentary templates.
+export const section=key=>lookup(packs[current],key)??lookup(en,key);
 export const formatNumber=n=>Number(n).toLocaleString(localeTag());
 // Schedule dates are stored as m/d/yyyy.
 export function formatDate(text){const m=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(text);return m?new Date(+m[3],+m[1]-1,+m[2]).toLocaleDateString(localeTag(),{year:'numeric',month:'short',day:'numeric'}):text;}

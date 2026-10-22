@@ -10,7 +10,7 @@ The topic asks for a high-school team championship simulation involving recruiti
 | Rules / outcomes / challenge | In-game handbook, validated rotations, three difficulty levels, qualification and championship/end states |
 | Innovation | Real published season reimagined through a transparent decision model; recorded shot scenes explain coaching effects |
 | Technical implementation | Three.js assets, seeded simulation, source-refresh pipeline, validated saves, offline cache and automated tests |
-| Graphics / consistency / visual-audio design | Purple-white identity, 3D gym, imported models, numbered jerseys, responsive screens and optional audio |
+| Graphics / consistency / visual-audio design | Purple-white identity, 3D gym, imported models, numbered jerseys, responsive screens, adjustable synthesized sound and an accessibility settings panel (colour-vision correction, contrast, motion, text size, seven languages) |
 | Title / UX rationale / navigation / controls | Coach entry, persistent navigation, first-run arrows, keyboard controls, explicit costs and unavailable states |
 | Presentation | Team demonstrates the decisions and explains the engine; software does not substitute for delivery or Q&A |
 

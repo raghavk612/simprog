@@ -1,5 +1,6 @@
 // English: the source of truth. Other languages must define exactly the same keys and {{placeholders}} (checked by tests/i18n.test.js).
 // Strings are stored in normal case; labels drawn in capitals are upper-cased by the code (tu), and \n becomes a line break (tb).
+import {COMMENTARY} from '../../basketball.js';
 export default {
  meta:{title:'KANGS • Road to the Championship',description:'One team. One season. Your decisions. Coach the Lake Washington Kangs in a 3D basketball management simulation.'},
  lang:{en:'English',es:'Spanish',zh:'Chinese',fr:'French',ja:'Japanese',it:'Italian',hi:'Hindi'},
@@ -121,7 +122,7 @@ export default {
   step3:{title:'Your decisions follow you.',body:'Hire one assistant and talk with your team. Morale and chemistry change performance.'},
   step4:{title:'Make the game yours.',body:'Scout the opponent, tip off and change tactics live. Win the state bracket in this one season.'}
  },
- timeout:{kicker:'Timeout huddle',title:'Bring it in.',body:'Three timeouts per game. Both approaches boost the next eight possessions.',calm:'Calm the team · +4 energy',belief:'Show belief · +3 morale'},
+ timeout:{kicker:'Timeout huddle',title:'Bring it in.',body:'Three timeouts per game. Both approaches boost the next eight possessions.',calm:'Calm the team · +4 energy',belief:'Show belief · +3 morale',feedPrefix:'Timeout',feed:{calm:'Breathe. Settle. Execute. Energy +4.',belief:'Trust each other. Morale +3.'}},
  credits:{
   kicker:'Built for the love of the game',creators:'Creators',assets:'Assets, software & research',
   kenney:'{{link}} — CC0. Imported GLB bench, chair, table, cabinet and plant. The pack also includes Unity-compatible FBX files. Models loaded in this scene: {{loaded}}/5.',
@@ -181,6 +182,10 @@ export default {
   finishFirst:'Finish the game first.',minutes:'Enter whole minutes between 0 and 32.',exported:'Season exported.',tooLarge:'Save file too large',badSave:'This is not a compatible Kangs season file.',saved:'Saved.'
  },
  confirm:{replace:'Replace this browser’s saved season? Export it first if you want to keep it.',import:'Replace the current local season with this save?',release:'Release this player from your simulation roster?'},
+ // Play-by-play commentary templates live with the engine so the English text has a single source.
+ cm:COMMENTARY,
+ // Decision-trail and result lines written by the simulation.
+ log:{wholeTeam:'whole team',train:'{{plan}}: {{who}} · skill {{skill}}, energy {{energy}}, GPA {{gpa}}',recruit:'{{name}} joined through tryouts for {{cost}} tokens.',release:'{{name}} released from the active roster.',hire:'Hired {{staff}}.',dismiss:'Assistant dismissed. No refund.',talkListen:'You listened to the bench: morale +7, chemistry +5.',talkFundraise:'Community clinic: +180 tokens, +40 fans, −5 energy.',talkAcademics:'Academic check-in: every simulated GPA +0.18.',scout:'Film study revealed the opponent’s preferred style. Tactical reads improved.',tipoff:'Tip-off vs {{opp}}.',injury:'{{name}}: simulated ankle strain. Recovery or rest required.',win:'win',loss:'loss',result:'{{outcome}} {{home}}–{{away}} vs {{opp}}. {{reason}}',reason:'Team chemistry {{chem}}; average energy {{energy}}.',reasonWithScouting:'Scouting prepared your defensive reads. Team chemistry {{chem}}; average energy {{energy}}.',runEnds:'The championship run ends this season. Review your decisions and try again.',champions:'STATE CHAMPIONS. One season. Your program.',seasonComplete:'Season complete.'},
  error:{title:'The program could not load.',body:'Please reload after your connection returns.',reload:'Reload'},
  // Messages thrown by the simulation engine. The English text is the lookup key.
  errors:{
@@ -253,6 +258,6 @@ export default {
    resetAll:'Reset accessibility settings',resetToast:'Accessibility settings restored to the defaults.',
    statement:'Accessibility: Kangs is designed to work with a keyboard and a screen reader. Every play is also written out in text, because the 3D scene is visual. Options include color-vision correction, high contrast, reduced motion, adjustable text and fonts, slower playback and a simplified interface. We follow WCAG 2.1 practices where we can, but the game has not had a formal accessibility audit.'
   },
-  language:{title:'Language',desc:'Change the language of the interface. Text written by the simulation, such as play-by-play commentary, stays in English.'}
+  language:{title:'Language',desc:'Change the language of the interface. Player and team names stay as published.'}
  }
 };

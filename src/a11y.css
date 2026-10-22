@@ -1,11 +1,15 @@
 /* Accessibility, language and settings-dialog styles. Loaded after style.css.
-   Text size: every font size in style.css is multiplied by --ts, which the text-size setting writes onto <html>. */
+   Text size: every font size in style.css is multiplied by --ts (the text-size setting, written onto <html>) and --ls (a per-language factor, below). */
 
 /* ---- Fonts and languages ---- */
 :root{--ts:1;--cjk:sans-serif;--body:'DM Sans',Arial,var(--cjk);--display:'Barlow Condensed','Arial Narrow',Impact,var(--cjk);font-family:var(--body)}
 :root:lang(ja){--cjk:'Hiragino Sans','Hiragino Kaku Gothic ProN','Yu Gothic','Meiryo','Noto Sans JP',sans-serif}
 :root:lang(zh){--cjk:'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif}
 :root:lang(hi){--cjk:'Noto Sans Devanagari','Kohinoor Devanagari','Nirmala UI',Mangal,sans-serif}
+/* The interface was sized for Latin capitals; these scripts need a little more room to stay legible. --ls multiplies the user's text size. */
+:root{--ls:1}
+:root:lang(hi){--ls:1.14}
+:root:lang(ja),:root:lang(zh){--ls:1.1}
 /* Letter-spacing breaks conjunct characters in Devanagari. */
 :lang(hi) *{letter-spacing:normal!important}
 .a11y-font-modern{--body:system-ui,-apple-system,'Segoe UI',Roboto,Arial,var(--cjk);--display:system-ui,-apple-system,'Segoe UI',Roboto,Arial,var(--cjk)}
@@ -15,12 +19,20 @@
 .a11y-font-readable h1,.a11y-font-readable h2,.a11y-font-readable h3{letter-spacing:0;line-height:1.2}
 .a11y-font-readable p,.a11y-font-readable li,.a11y-font-readable small{line-height:1.9}
 
+/* ---- Large text and long translations: let things wrap and grow instead of clipping or overflowing ---- */
+body{overflow-wrap:break-word}
+.topbar{flex-wrap:wrap;row-gap:2px}
+.topbar>div{display:flex;flex-wrap:wrap;justify-content:flex-end}
+.quick{overflow-wrap:anywhere}
+
 /* ---- Skip link, screen-reader text, focus ---- */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* Visually hidden text is absolutely positioned; a scrolling table must be its containing block or the hidden header cell widens the whole page. */
+.table-wrap{position:relative}
 .skip-link{position:fixed;left:50%;top:-100px;transform:translateX(-50%);z-index:9999;padding:12px 24px;background:#8550e4;color:#fff;font-weight:700;text-decoration:none;border:3px solid #fff;border-radius:6px;transition:top .15s}
 .skip-link:focus{top:10px;outline:3px solid #f0c15e;outline-offset:2px}
 main:focus,h1:focus,[tabindex="-1"]:focus{outline:none}
-kbd{display:inline-block;min-width:1.8em;padding:2px 7px;margin-right:6px;text-align:center;font:600 calc(12px*var(--ts,1)) var(--body);color:#fff;background:#ffffff14;border:1px solid #ffffff55;border-bottom-width:2px;border-radius:4px}
+kbd{display:inline-block;min-width:1.8em;padding:2px 7px;margin-right:6px;text-align:center;font:600 calc(12px*var(--ts,1)*var(--ls,1)) var(--body);color:#fff;background:#ffffff14;border:1px solid #ffffff55;border-bottom-width:2px;border-radius:4px}
 .shortcuts{list-style:none;padding:0!important;columns:2;column-gap:24px}
 .shortcuts li{break-inside:avoid;margin-bottom:8px}
 
@@ -31,6 +43,7 @@ kbd{display:inline-block;min-width:1.8em;padding:2px 7px;margin-right:6px;text-a
 .a11y-high-contrast p,.a11y-high-contrast small,.a11y-high-contrast li,.a11y-high-contrast td,.a11y-high-contrast label,.a11y-high-contrast .choice span,.a11y-high-contrast .modal-content p,.a11y-high-contrast .modal-content li{color:#fff!important}
 .a11y-high-contrast a,.a11y-high-contrast .text-button{color:#9fd4ff!important;text-decoration:underline}
 .a11y-high-contrast .eyebrow{color:#ffe28a!important}
+.a11y-high-contrast .sidebar-bottom button,.a11y-high-contrast .topbar>span,.a11y-high-contrast .topbar b,.a11y-high-contrast .brand,.a11y-high-contrast summary,.a11y-high-contrast .nav-item span,.a11y-high-contrast small{color:#fff!important}
 .a11y-high-contrast .primary{background:#fff!important;color:#000!important;border:2px solid #fff;box-shadow:none}
 .a11y-high-contrast .secondary,.a11y-high-contrast .small,.a11y-high-contrast .topbar button,.a11y-high-contrast .nav-item{color:#fff!important;border:2px solid #fff;background:#000!important}
 .a11y-high-contrast .nav-item.active{background:#fff!important;color:#000!important}
@@ -65,30 +78,30 @@ dialog:has(.settings) .modal-content{padding:0;display:flex;flex-direction:colum
 .settings{display:flex;flex-direction:column;flex:1;min-height:0;padding:28px 32px 20px}
 .settings h1{margin:8px 0 16px}
 .tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:2px solid #ffffff1f}
-.tabs button{padding:11px 16px;font-size:calc(12px*var(--ts,1));font-weight:700;letter-spacing:.4px;color:#b9abcc;border-bottom:3px solid transparent;margin-bottom:-2px;min-height:44px;display:inline-flex;align-items:center;gap:8px}
+.tabs button{padding:11px 16px;font-size:calc(12px*var(--ts,1)*var(--ls,1));font-weight:700;letter-spacing:.4px;color:#b9abcc;border-bottom:3px solid transparent;margin-bottom:-2px;min-height:44px;display:inline-flex;align-items:center;gap:8px}
 .tabs button[aria-selected=true]{color:#fff;border-bottom-color:#b28aff}
 .tabs button:hover{color:#fff}
-.badge{display:inline-block;min-width:20px;padding:2px 6px;border-radius:10px;background:#b28aff;color:#160b25;font-size:calc(10px*var(--ts,1));line-height:1.4;text-align:center}
+.badge{display:inline-block;min-width:20px;padding:2px 6px;border-radius:10px;background:#b28aff;color:#160b25;font-size:calc(10px*var(--ts,1)*var(--ls,1));line-height:1.4;text-align:center}
 .spanel{margin-top:6px;flex:1 1 auto;min-height:120px;overflow-y:auto;padding:4px 8px 4px 0}
-.ssection h3{margin:22px 0 4px;font-size:calc(21px*var(--ts,1));color:#d8c6f6}
-.hint{margin:6px 0 6px;font-size:calc(12px*var(--ts,1))!important;line-height:1.6}
+.ssection h3{margin:22px 0 4px;font-size:calc(21px*var(--ts,1)*var(--ls,1));color:#d8c6f6}
+.hint{margin:6px 0 6px;font-size:calc(12px*var(--ts,1)*var(--ls,1))!important;line-height:1.6}
 .srow{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:14px 0;border-bottom:1px solid #ffffff14}
 .srow.block{flex-wrap:wrap;align-items:flex-start}
 .srow.block>.stext{flex:1 1 60%}
 .srow.dim{opacity:.5}
 .stext{flex:1;min-width:0}
-.stext label,.slabel{display:block;margin:0;font-size:calc(14px*var(--ts,1));font-weight:700;color:#f3eef9;line-height:1.4}
-.stext small{display:block;margin-top:3px;font-size:calc(12px*var(--ts,1));line-height:1.5;color:#b5a7c8}
+.stext label,.slabel{display:block;margin:0;font-size:calc(14px*var(--ts,1)*var(--ls,1));font-weight:700;color:#f3eef9;line-height:1.4}
+.stext small{display:block;margin-top:3px;font-size:calc(12px*var(--ts,1)*var(--ls,1));line-height:1.5;color:#b5a7c8}
 .srow select{width:auto;min-width:min(240px,100%);margin:0;flex:none}
-.readout{align-self:flex-start;padding:5px 10px;border:1px solid #ffffff44;border-radius:4px;font-size:calc(13px*var(--ts,1));font-weight:700;color:#e9dcff;min-width:62px;text-align:center}
+.readout{align-self:flex-start;padding:5px 10px;border:1px solid #ffffff44;border-radius:4px;font-size:calc(13px*var(--ts,1)*var(--ls,1));font-weight:700;color:#e9dcff;min-width:62px;text-align:center}
 .srow input[type=range]{width:100%;margin:6px 0 0;accent-color:#b28aff;min-height:32px;padding:0;background:none;border:0}
-.range-ends{display:flex;justify-content:space-between;width:100%;font-size:calc(11px*var(--ts,1));color:#a79cb8}
+.range-ends{display:flex;justify-content:space-between;width:100%;font-size:calc(11px*var(--ts,1)*var(--ls,1));color:#a79cb8}
 .switch{position:relative;flex:none;width:50px;height:28px;padding:0;border-radius:14px;background:#ffffff1c;border:2px solid #ffffff99}
 .switch span{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .15s;display:flex;align-items:center;justify-content:center;color:#5b2fb0;font-size:12px;font-weight:900}
 .switch[aria-checked=true]{background:#8550e4;border-color:#d1b8ff}
 .switch[aria-checked=true] span{transform:translateX(22px)}
 .switch[aria-checked=true] span::after{content:'✓'}
-.keycap{min-width:92px;min-height:44px;padding:8px 14px;border:2px solid #ffffff55;border-radius:6px;background:#ffffff0a;color:#fff;font-size:calc(14px*var(--ts,1));font-weight:700}
+.keycap{min-width:92px;min-height:44px;padding:8px 14px;border:2px solid #ffffff55;border-radius:6px;background:#ffffff0a;color:#fff;font-size:calc(14px*var(--ts,1)*var(--ls,1));font-weight:700}
 .keycap:hover{border-color:#fff}
 .keycap.listening{border-color:#b28aff;background:#b28aff2e;animation:listen 1s ease-in-out infinite}
 @keyframes listen{50%{background:#b28aff55}}
@@ -98,11 +111,11 @@ dialog:has(.settings) .modal-content{padding:0;display:flex;flex-direction:colum
 .choice-card:hover{border-color:#ffffff88}
 .choice-card.selected{border-color:#b28aff;background:#b28aff26}
 .choice-card.selected .choice-name::before{content:'✓ '}
-.choice-name{display:block;font-size:calc(13px*var(--ts,1));font-weight:700}
-.choice-sample{display:block;margin-top:4px;font-size:calc(15px*var(--ts,1));color:#cdbbe6}
+.choice-name{display:block;font-size:calc(13px*var(--ts,1)*var(--ls,1));font-weight:700}
+.choice-sample{display:block;margin-top:4px;font-size:calc(15px*var(--ts,1)*var(--ls,1));color:#cdbbe6}
 .sfooter,.sdone{display:flex;gap:10px;margin-top:20px}
 .sdone{justify-content:flex-end;padding-top:14px;border-top:1px solid #ffffff1f;margin-top:10px;flex:none}
-.statement{margin-top:18px;padding:14px;border:1px solid #ffffff1f;border-radius:6px;font-size:calc(12px*var(--ts,1))!important;line-height:1.7!important}
+.statement{margin-top:18px;padding:14px;border:1px solid #ffffff1f;border-radius:6px;font-size:calc(12px*var(--ts,1)*var(--ls,1))!important;line-height:1.7!important}
 .spanel:focus-visible{outline-offset:-2px}
 @media(max-width:620px){.settings{padding:24px 16px 16px}.srow{flex-wrap:wrap}.srow select{width:100%}.shortcuts{columns:1}.tabs button{padding:10px 11px}}
 

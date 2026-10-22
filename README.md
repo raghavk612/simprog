@@ -26,7 +26,19 @@ Open the URL Vite prints. Production files are in `dist/`; serve them over HTTP,
 - Decision trail, postgame recorded shot visualizations and transparent shot-probability contributions.
 - A complete 30-game campaign, qualification gate, elimination state run, ending recap, and simulated background standings.
 - Three jersey kits, custom number colors, player-specific numbers and nameplates on stylized 3D players.
-- Accessible rulebook and credits, keyboard coaching controls, motion toggle, opt-in generated audio, responsive layouts.
+- Accessible rulebook and credits, rebindable keyboard shortcuts, responsive layouts.
+- A Settings dialog with sound, accessibility and language options (see below), adapted from the EcoQuest project.
+
+## Accessibility, sound and language
+
+Open **Settings** from the top bar or press **O**. Choices apply immediately and are remembered in the browser.
+
+- **Sound:** 14 synthesized basketball effects (no audio files) with a master volume, mute and an individual switch for each sound. Sound starts off.
+- **Accessibility:** colour-vision correction (deuteranopia, protanopia, tritanopia), high contrast, reduced motion, screen shake and flash reduction, text size from 70 % to 180 %, three font styles, slower playback (50 % / 75 %), timing assist and a simplified interface. Your operating system's reduced-motion and contrast preferences are used on the first visit.
+- **Screen readers and keyboards:** skip link, labelled controls, tabs and switches, focus moved to each new page, and every play and score announced as text. Nine rebindable shortcuts (Watch live/pause **P**, Next play **N**, Timeout **T**, cameras **1–3**, speed **S**, sound **M**, settings **O**).
+- **Language:** English, Spanish, Chinese, French, Japanese, Italian and Hindi, including the play-by-play and decision trail. The browser's language is used first, and your choice is remembered.
+
+How it works, what changed from EcoQuest and how to extend it: [docs/accessibility.md](docs/accessibility.md). The translations have not yet been reviewed by native speakers, and the interface has not had a formal accessibility audit.
 
 ## Real data versus simulation
 
@@ -50,4 +62,4 @@ See [sources and licenses](docs/sources.md), [FBLA alignment](docs/fbla-alignmen
 
 ### Watching a game
 
-Use **Watch live**, **Next play**, or **Pause game** on the court HUD. Choose **1× / 2× / 4×** viewing speed without changing outcomes. **Follow** tracks the action; **Wide** and **Courtside** provide alternate views. Expand **Play-by-play** or **Box score** for details. Recorded possessions in the season journal support replay and pause; postgame probability contributions are in the optional decision analysis.
+Use **Watch live**, **Next play**, or **Pause game** on the court HUD (or **P** / **N**). Choose **1× / 2× / 4×** viewing speed without changing outcomes; Settings adds a slower 50 % or 75 % playback. **Follow** tracks the action; **Wide** and **Courtside** provide alternate views. Expand **Play-by-play** or **Box score** for details. Recorded possessions in the season journal support replay and pause; postgame probability contributions are in the optional decision analysis.

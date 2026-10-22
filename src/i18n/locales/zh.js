@@ -120,7 +120,7 @@ export default {
   step3:{title:'你的决定会一路相随。',body:'聘请一名助理教练，并和球队谈话。士气与默契会影响发挥。'},
   step4:{title:'让比赛由你主导。',body:'侦察对手、开始比赛，并在场上实时调整战术。在这一个赛季里拿下州淘汰赛。'}
  },
- timeout:{kicker:'暂停',title:'都过来。',body:'每场比赛有三次暂停。两种方式都会提升接下来的八个回合。',calm:'让球队冷静 · +4 体能',belief:'展现信任 · +3 士气'},
+ timeout:{kicker:'暂停',title:'都过来。',body:'每场比赛有三次暂停。两种方式都会提升接下来的八个回合。',calm:'让球队冷静 · +4 体能',belief:'展现信任 · +3 士气',feedPrefix:'暂停',feed:{calm:'深呼吸，稳住，执行。体能 +4。',belief:'彼此信任。士气 +3。'}},
  credits:{
   kicker:'为热爱篮球而作',creators:'创作者',assets:'素材、软件与资料',
   kenney:'{{link}} — CC0。已导入 GLB 格式的长椅、椅子、桌子、柜子和植物。该素材包还包含兼容 Unity 的 FBX 文件。本场景已加载的模型：{{loaded}}/5。',
@@ -180,6 +180,10 @@ export default {
   finishFirst:'请先结束比赛。',minutes:'请输入 0 到 32 之间的整数分钟。',exported:'赛季已导出。',tooLarge:'存档文件太大',badSave:'这不是兼容的 Kangs 赛季文件。',saved:'已保存。'
  },
  confirm:{replace:'要替换此浏览器中已保存的赛季吗？如果想保留它，请先导出。',import:'要用这个存档替换当前的本地赛季吗？',release:'要把这名球员从你的模拟名单中解约吗？'},
+ // Play-by-play commentary templates: one sentence per template, filled from the play.
+ cm:{join:'',side:{right:'右',left:'左'},lead:{catch:['{{helper}}把球传给{{side}}侧翼的{{name}}。','{{name}}无球跑位；{{helper}}找到了空档。'],pullup:['{{name}}在罚球线肘区急停。','{{name}}用一个迟疑运球，从中距离起跳。'],stepback:['{{name}}变向运球后，向后撤步退到三分线外。','{{name}}假装突破，用后撤步创造出空间。'],drive:['{{name}}换手，摆脱了{{def}}。','{{name}}用变向运球攻击空档。'],floater:['{{name}}钻进禁区，轻巧地抛出一记抛投。','{{name}}用一记高弧度抛投避开了协防球员。'],hook:['{{name}}背身在低位要位，越过肩膀转身。','{{name}}在低位把防守者卡死。'],dunk:['{{name}}冲在回防的防线前面。','{{helper}}在转换进攻中把球传给{{name}}。'],roll:['{{helper}}做挡拆；{{name}}绕过掩护。','{{name}}借着{{helper}}的掩护，强力切向篮筐。']},steal:['{{def}}抓准时机，从{{name}}手中断下了球。失误。','{{def}}把球从{{name}}手里打掉，抢到了球权。'],block:['{{def}}在出手瞬间封盖——盖帽！','{{def}}补位过来，把球拍飞。'],loose:'{{rebounder}}拿到了这个无人控制的球。',finish:{three:['三分——空心入网。','三分球命中。','远距离命中。'],dunk:['双手举过篮筐——扣篮！','用一记扣篮完成进攻。'],two:['手感柔和，拿下两分。','球应声入网。','球终于进了。'],miss:['打在篮筐上。','这球就是不进。','球在篮筐上滚了出来。']},assist:'助攻：{{helper}}。',rebound:'{{rebounder}}拿下篮板。'},
+ // Decision-trail and result lines written by the simulation.
+ log:{wholeTeam:'全队',train:'{{plan}}：{{who}} · 技能 {{skill}}，体能 {{energy}}，绩点 {{gpa}}',recruit:'{{name}} 通过试训加入，花费 {{cost}} 代币。',release:'{{name}} 已从现役名单中解约。',hire:'已聘用{{staff}}。',dismiss:'助理教练已被解雇。不予退款。',talkListen:'你倾听了替补席：士气 +7，默契 +5。',talkFundraise:'社区训练营：+180 代币，+40 球迷，−5 体能。',talkAcademics:'学业谈话：所有人的模拟绩点 +0.18。',scout:'录像研究揭示了对手偏好的风格。战术判断得到提升。',tipoff:'与 {{opp}} 的比赛开始跳球。',injury:'{{name}}：模拟脚踝扭伤。需要恢复或休息。',win:'胜',loss:'负',result:'{{outcome}} {{home}}–{{away}} 对阵 {{opp}}。{{reason}}',reason:'球队默契 {{chem}}；平均体能 {{energy}}。',reasonWithScouting:'侦察为你的防守判断做好了准备。球队默契 {{chem}}；平均体能 {{energy}}。',runEnds:'本赛季的冠军之路到此结束。回顾你的决策，再试一次。',champions:'州冠军。一个赛季，你的球队。',seasonComplete:'赛季结束。'},
  error:{title:'无法加载球队项目。',body:'网络恢复后请重新加载。',reload:'重新加载'},
  errors:{
   'This season is complete. Start a new season to play again.':'本赛季已结束。开始新赛季即可再次游玩。',
@@ -251,6 +255,6 @@ export default {
    resetAll:'重置无障碍设置',resetToast:'已恢复默认无障碍设置。',
    statement:'无障碍说明：Kangs 的设计目标是可通过键盘和屏幕阅读器使用。由于 3D 场景是视觉内容，每个回合也都会以文字写出。可用选项包括色觉校正、高对比度、减少动态效果、可调节的文字和字体、更慢的播放速度以及简化界面。我们尽可能遵循 WCAG 2.1 的做法，但本游戏尚未经过正式的无障碍审核。'
   },
-  language:{title:'语言',desc:'更改界面语言。由模拟生成的文字（例如逐回合解说）仍保持英文。'}
+  language:{title:'语言',desc:'更改界面语言。球员和球队的名称保持原样。'}
  }
 };

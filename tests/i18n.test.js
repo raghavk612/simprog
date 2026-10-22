@@ -20,7 +20,7 @@ test('every language is listed, supported and has a locale file',()=>{
 });
 test('every static translation key used by the code exists in English',()=>{
  const missing=[];
- for(const file of ['../src/main.js','../src/settingsDialog.js','../src/i18n/index.js']){
+ for(const file of ['../src/main.js','../src/settingsDialog.js','../src/narrative.js','../src/i18n/index.js']){
   for(const m of read(file).matchAll(/\b(?:t|tu|tb|list|has)\('([a-zA-Z0-9_.]+)'/g)){
    const key=m[1];if(!Object.keys(flat).some(k=>k===key||k.startsWith(`${key}.`)))missing.push(`${file}: ${key}`);
   }
@@ -55,6 +55,8 @@ test('every key built at run time resolves to a string for each value it can tak
  for(const v of ['guard','forward'])need.push(`pos.${v}`);
  for(const v of ['senior','junior','sophomore','prospect','tryout'])need.push(`year.${v}`);
  for(const v of ['injured','ineligible','exhausted','ready'])need.push(`status.${v}`);
+ for(const v of ['wholeTeam','train','recruit','release','hire','dismiss','talkListen','talkFundraise','talkAcademics','scout','tipoff','injury','win','loss','result','reason','reasonWithScouting','runEnds','champions','seasonComplete'])need.push(`log.${v}`);
+ for(const v of ['calm','belief'])need.push(`timeout.feed.${v}`);need.push('timeout.feedPrefix');
  for(const k of need)assert.equal(typeof flat[k],'string',k);
 });
 test('every message thrown by the engine has a translation entry',()=>{
@@ -68,7 +70,8 @@ test('all languages define exactly the English keys with matching placeholders',
   const missing=Object.keys(flat).filter(k=>!(k in pack)),extra=Object.keys(pack).filter(k=>!(k in flat));
   assert.deepEqual(missing,[],`${code} is missing keys`);assert.deepEqual(extra,[],`${code} has extra keys`);
   for(const [k,v] of Object.entries(pack)){
-   assert.ok(v.trim().length>0,`${code}.${k} is empty`);
+   // The commentary joiner is deliberately a space, or empty for Chinese and Japanese.
+   if(k!=='cm.join')assert.ok(v.trim().length>0,`${code}.${k} is empty`);
    assert.equal(placeholders(v),placeholders(flat[k]),`${code}.${k} placeholders`);
    assert.ok(!/[<>]/.test(v),`${code}.${k} contains markup`);
   }

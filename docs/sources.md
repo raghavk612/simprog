@@ -14,10 +14,11 @@ Research checked October 20–21, 2026. Exact data check time is in `public/data
 | [NFHS basketball rules](https://www.nfhs.org/sports/basketball/rules) | Introductory rulebook context | Linked; no rulebook reproduced |
 | [Three.js](https://threejs.org/) and [GLTFLoader docs](https://threejs.org/docs/#GLTFLoader) | Renderer, loaders, controls | MIT; copy in `public/licenses/Three-MIT.txt` |
 | [Vite](https://vite.dev/) | Development / production build | MIT; copy in `public/licenses/Vite-MIT.txt` |
+| [EcoQuest](https://github.com/Rishboy39/EcoQuest) | Design reference for the settings dialog, synthesized sounds, accessibility options and language switching | Ideas and structure re-implemented in vanilla JavaScript; no EcoQuest source file is included. Credited in-game. Confirm the project's license/permission before public release |
 | [Barlow Condensed](https://fonts.google.com/specimen/Barlow+Condensed) by Jeremy Tribby | Display typography | SIL OFL, locally bundled; `public/fonts/OFL-Barlow.txt` |
 | [DM Sans](https://fonts.google.com/specimen/DM+Sans) by Colophon Foundry | UI typography | SIL OFL, locally bundled; `public/fonts/OFL-DMSans.txt` |
 
-Original code generates the basketball, court, gym shell, hoop/net geometry, player characters, crowd, jersey graphics, and short opt-in sounds. The three named creators are credited in-game. OpenAI Codex coding assistance is disclosed in credits.
+Original code generates the basketball, court, gym shell, hoop/net geometry, player characters, crowd, jersey graphics, and short opt-in sounds. Interface translations (Spanish, Chinese, French, Japanese, Italian, Hindi) were written for this project and are not yet native-reviewed. The three named creators are credited in-game. OpenAI Codex coding assistance is disclosed in credits.
 
 ## Import pipeline
 

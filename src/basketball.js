@@ -18,13 +18,48 @@ export function choosePlay(rng,tactic,pace,last){
  const bag=tactic==='perimeter'?['catch','catch','stepback','pullup','drive','roll']:pace==='fast'?['dunk','drive','roll','catch','floater','pullup']:['catch','pullup','stepback','drive','floater','hook','roll'];
  let kind=bag[Math.floor(rng()*bag.length)];if(kind===last)kind=bag[(bag.indexOf(kind)+1+Math.floor(rng()*(bag.length-1)))%bag.length];return kind;
 }
+// English commentary templates. Other languages provide the same structure under "cm" in their locale file; {{name}}-style slots are filled from the play.
+export const COMMENTARY={
+ join:' ',
+ side:{right:'right',left:'left'},
+ lead:{
+  catch:['{{helper}} swings it to {{name}} on the {{side}} wing.','{{name}} relocates off the ball; {{helper}} finds the open window.'],
+  pullup:['{{name}} stops on a dime at the elbow.','{{name}} uses a hesitation dribble and rises from midrange.'],
+  stepback:['{{name}} crosses over, then steps back beyond the arc.','{{name}} sells the drive and creates space with a step-back.'],
+  drive:['{{name}} changes hands and slips past {{def}}.','{{name}} attacks the gap with a crossover.'],
+  floater:['{{name}} snakes into the lane and lofts a floater.','{{name}} avoids the help defender with a high runner.'],
+  hook:['{{name}} backs into the post and turns over the shoulder.','{{name}} seals the defender on the low block.'],
+  dunk:['{{name}} sprints ahead of the retreating defense.','{{helper}} pushes the outlet to {{name}} in transition.'],
+  roll:['{{helper}} sets the screen; {{name}} turns the corner.','{{name}} uses {{helper}}’s screen and cuts hard to the rim.']
+ },
+ steal:['{{def}} times the reach and strips {{name}}. Turnover.','{{def}} pokes the ball loose from {{name}} and takes possession.'],
+ block:['{{def}} meets the shot at its release—blocked!','{{def}} rotates across and swats it away.'],
+ loose:'{{rebounder}} collects the loose ball.',
+ finish:{three:['Three-pointer—nothing but net.','The three drops.','Buries it from deep.'],dunk:['Two hands above the rim—slam!','Finishes with a dunk.'],two:['Soft touch, two points.','Drops through the net.','Gets it to fall.'],miss:['Off the rim.','The shot will not fall.','The shot rolls out.']},
+ assist:'Assist: {{helper}}.',
+ rebound:'{{rebounder}} secures the rebound.'
+};
+const fill=(text,p)=>text.replace(/\{\{(\w+)\}\}/g,(m,k)=>p[k]??m);
+// Builds the commentary for a play from template choices (cm). Returns null if a choice does not exist in the template set, so callers can fall back to the stored English text.
+export function renderCommentary(c,cm,T=COMMENTARY){
+ if(!Array.isArray(cm)||!T?.lead)return null;
+ const p={name:c.player,def:c.defender,helper:c.helper,rebounder:c.rebounder,side:c.lane>0?T.side?.right:T.side?.left},f=t=>typeof t==='string'?fill(t,p):null,join=T.join??' ';
+ let parts;
+ if(c.outcome==='steal')parts=[f(T.steal?.[cm[0]])];
+ else if(c.outcome==='block')parts=[f(T.lead[c.kind]?.[cm[0]]),f(T.block?.[cm[1]]),f(T.loose)];
+ else{
+  const group=c.points?(c.three?'three':c.kind==='dunk'?'dunk':'two'):'miss';
+  parts=[f(T.lead[c.kind]?.[cm[1]]),f(T.finish?.[group]?.[cm[0]]),c.points?(c.assisted?f(T.assist):''):f(T.rebound)];
+ }
+ return parts.some(x=>x===null)?null:parts.filter(Boolean).join(join);
+}
+// Picks the template variants with the same random draws, in the same order, as the original single-language version, so seeded games are unchanged.
 export function describePlay(c,rng){
- const pick=arr=>arr[Math.floor(rng()*arr.length)],name=c.player,def=c.defender,helper=c.helper;
- const lead={catch:[`${helper} swings it to ${name} on the ${c.lane>0?'right':'left'} wing.`,`${name} relocates off the ball; ${helper} finds the open window.`],pullup:[`${name} stops on a dime at the elbow.`,`${name} uses a hesitation dribble and rises from midrange.`],stepback:[`${name} crosses over, then steps back beyond the arc.`,`${name} sells the drive and creates space with a step-back.`],drive:[`${name} changes hands and slips past ${def}.`,`${name} attacks the gap with a crossover.`],floater:[`${name} snakes into the lane and lofts a floater.`,`${name} avoids the help defender with a high runner.`],hook:[`${name} backs into the post and turns over the shoulder.`,`${name} seals the defender on the low block.`],dunk:[`${name} sprints ahead of the retreating defense.`,`${helper} pushes the outlet to ${name} in transition.`],roll:[`${helper} sets the screen; ${name} turns the corner.`,`${name} uses ${helper}’s screen and cuts hard to the rim.`]}[c.kind];
- if(c.outcome==='steal')return pick([`${def} times the reach and strips ${name}. Turnover.`,`${def} pokes the ball loose from ${name} and takes possession.`]);
- if(c.outcome==='block')return `${pick(lead)} ${pick([`${def} meets the shot at its release—blocked!`,`${def} rotates across and swats it away.`])} ${c.rebounder} collects the loose ball.`;
- const finish=c.points?pick(c.three?['Three-pointer—nothing but net.','The three drops.','Buries it from deep.']:c.kind==='dunk'?['Two hands above the rim—slam!','Finishes with a dunk.']:['Soft touch, two points.','Drops through the net.','Gets it to fall.']):pick(['Off the rim.','The shot will not fall.','The shot rolls out.']);
- return `${pick(lead)} ${finish}${c.points?(c.assisted?` Assist: ${helper}.`:''):` ${c.rebounder} secures the rebound.`}`;
+ const idx=n=>Math.floor(rng()*n);let cm;
+ if(c.outcome==='steal')cm=[idx(COMMENTARY.steal.length)];
+ else if(c.outcome==='block'){const lead=idx(COMMENTARY.lead[c.kind].length),block=idx(COMMENTARY.block.length);cm=[lead,block];}
+ else{const finish=idx(COMMENTARY.finish[c.points?(c.three?'three':c.kind==='dunk'?'dunk':'two'):'miss'].length),lead=idx(COMMENTARY.lead[c.kind].length);cm=[finish,lead];}
+ return {text:renderCommentary(c,cm),cm};
 }
 // Sample any point in a recorded clip. Same clip + time always gives the same pose.
 // Coordinates are mirrored for the visitors, so both baskets are used.
