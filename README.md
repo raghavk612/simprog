@@ -17,34 +17,38 @@ Open the URL Vite prints. Production files are in `dist/`; serve them over HTTP,
 
 ## Implemented
 
-- Named coach, three difficulties named after team levels (C Team, Junior Varsity, Varsity), one-time introductory tour, local saves and validated JSON import/export.
-- 13 sourced public roster entries plus creator Malhar Pawar (#7, a labeled creator addition in the roster spot of Mason Mazandarany), all 30 published 2025–26 matchups, actual reference results and reported-game individual scoring averages.
+- Named coach and three difficulties that pick which real team you coach: **C Team** (the real C-Team), **Junior Varsity** (the real JV) or **Varsity**. One-time introductory tour, local saves and validated JSON import/export.
+- Real 2025–26 rosters and completed schedules for all three levels from KingCo Athletics: Varsity 12 players / 30 games, JV 12 / 19, C-Team 13 / 18. Creator Malhar Pawar plays as #11 on the real JV roster.
+- Real opponent rosters at the matching level for every opponent that publishes one, so the play-by-play names actual players; opponents without a published roster get clearly flagged fictional names.
 - 15-player limit, fictional paid tryouts, release/rename, five starters, editable 160-minute rotation, eligibility checks.
 - Training, recovery, study hall, bonding, weekly conversations, community fundraising, one assistant with differentiated bonuses.
 - Individual energy, morale, skill, simulated GPA and health; team chemistry, fans, currency and preparation limits.
-- Pregame scouting, possession-by-possession scoring, tactical changes, three timeout huddles, overtime, live simulated box scores.
+- Pregame scouting, possession-by-possession scoring, tactical changes, three timeout huddles, overtime, and ESPN-style box scores (MIN, PTS, FG, 3PT, REB, AST, STL, BLK, TO) with starters, bench and team totals.
+- ESPN-style season leaders (Points, Assists, Rebounds, Blocks and Steals Per Game) and per-game columns on the roster and player profiles. Players who have not played show “—”, never 0.
 - Decision trail, postgame recorded shot visualizations and transparent shot-probability contributions.
-- A complete 30-game campaign, qualification gate, elimination state run, ending recap, and simulated background standings.
-- Three jersey kits, custom number colors, player-specific numbers and nameplates on stylized 3D players.
+- A complete campaign over your team's real schedule, qualification gate, four-game elimination run (state run for Varsity, title run for JV and C-Team), ending recap, and simulated background standings.
+- Three jersey kits, custom number colors, player-specific numbers and nameplates on stylized 3D players; the Kangs kangaroo logo at center court.
 - Accessible rulebook and credits, keyboard coaching controls, motion toggle, opt-in generated audio, responsive layouts.
 
 ## Real data versus simulation
 
-`public/data/kangs.json` is a **dated historical snapshot**, not a live official score feed. `scripts/refresh-data.py` retrieves the public FinalScoreTV roster, schedule and available player point records. Missing individual records remain missing. Individual PPG means the average over **reported games only**, never an invented season average. Team PPG uses all 30 published results.
+`public/data/kangs.json` is a **dated snapshot**, not a live score feed. `scripts/refresh-data.py` reads the [KingCo Athletics Lake Washington boys basketball page](https://www.kingcoathletics.com/team/?schoolid=66&sportid=3), which embeds WPA Network team widgets, for the Varsity, JV and C-Team rosters and schedules. It also follows each opponent's school link to fetch that opponent's roster at the same level. Only games with a final score become playable matchups (the postponed Dec 17 game is excluded). KingCo publishes no individual statistics, so every player statistic in the game is simulated.
 
-The Pages workflow checks the source daily and on deployments. It tries the newest season first (2026–27 from August 2026) and switches only once that season has at least 30 final games; until then it keeps 2025–26. FinalScoreTV currently shows the 2025–26 page at the 2026–27 address, so game dates are checked to confirm which season a page really is. A failed refresh retains the repository snapshot and its original timestamp.
+C-Team jersey numbers, heights and positions are not published; the game assigns jersey numbers and marks them with an asterisk on the Real Kangs Data page. Opponents with no published roster (out-of-state holiday tournament teams, Coeur d'Alene, Tulalip Heritage, Puyallup and Richland) get fictional names flagged `real: false`.
 
-Creator additions are defined in `CUSTOM_PLAYERS` in `scripts/refresh-data.py` and reapplied after every refresh, so the daily update never removes them. They have no source link, are marked `custom` in the data, and are labeled in-game. The browser checks the published snapshot every five minutes and has a manual refresh button. Existing campaigns preserve their original data so a source refresh cannot rewrite a user's season.
+The Pages workflow refreshes daily and on deployments. It tries the newest season first and switches only when every level has a roster and nearly all posted games are final; until then it keeps 2025–26 (the 2026–27 schedules are posted but unplayed, and rosters are not out yet). A failed refresh keeps the repository snapshot and its timestamp. The browser checks the published snapshot every five minutes and has a manual refresh button. Existing campaigns keep their original data, so a refresh never rewrites a season in progress.
 
-Skills, injuries, GPA, morale, tryout prospects, assistant roles, scouting profiles, results and standings are fictional game data. No private student records, official logos or real athlete likenesses are used. This is an independent project, not school-endorsed.
+To rebuild from a saved extraction instead of the network: `python3 scripts/refresh-data.py --from-raw raw-2025-26.json` (an optional `opp-2025-26.txt` next to it supplies opponent rosters).
+
+Skills, injuries, GPA, morale, tryout prospects, assistant roles, scouting profiles, simulated results, statistics and standings are fictional game data. No private student records or real athlete likenesses are used. This is an independent project, not school-endorsed.
 
 ## Season model
 
-The first 20 published opponents are regular-season fixtures; the next six form the district stretch. Twelve wins after game 26 qualify for a four-game elimination state run. The final published matchup is an **alternate championship final** in the simulation, not a claim about the real WIAA tournament. There is no multi-year progression. Other opponents receive fictional background fixtures for the campaign standings.
+Each level plays its real completed schedule in published order. The last four games form an elimination run (state run for Varsity, title run for JV and C-Team); to qualify you need at least 46% wins before it (12 of 26 for Varsity, 7 of 15 for JV, 7 of 14 for C-Team). The run is a simulated bracket built from the published opponent order, not the real WIAA or KingCo tournament. There is no multi-year progression. Other opponents receive fictional background fixtures for the campaign standings.
 
 ## 3D assets / Unity
 
-Kenney's CC0 Furniture Kit includes FBX, OBJ, DAE and GLB assets. Five model types are imported using Three.js GLTFLoader: bench, chair, table, cabinet and plant. The same pack can be imported into Unity using FBX. This project uses its browser-ready GLB files; it does **not** execute Unity scenes or prefabs.
+The center-court logo is the Lake Washington Kangs kangaroo mark (`public/images/kangs-logo.png`, white background removed so the court shows through), supplied by the creators. Kenney's CC0 Furniture Kit includes FBX, OBJ, DAE and GLB assets. Five model types are imported using Three.js GLTFLoader: bench, chair, table, cabinet and plant. The same pack can be imported into Unity using FBX. This project uses its browser-ready GLB files; it does **not** execute Unity scenes or prefabs.
 
 The court, baskets/net lines, ball, spectators, stylized articulated players and jersey textures are original code-built geometry. The renderer uses shadow mapping, lighting, orbit controls and camera presets. HTML overlays provide accessible text, forms and keyboard interaction.
 

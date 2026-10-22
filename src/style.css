@@ -24,3 +24,37 @@ body.live-match .sidebar{width:160px;padding:20px 12px}body.live-match .brand{fo
 .landing-visual{align-self:stretch;height:calc(100% + 160px)}.landing-copy{padding:40px 0}.landing h1{font-size:clamp(55px,6.2vw,92px)}.landing-copy>p{margin:18px 0}.landing form input,.landing form select{margin-bottom:10px}.landing-copy .eyebrow{margin-bottom:18px}@media(max-width:620px){.landing h1{font-size:clamp(40px,10.8vw,65px)}.landing-visual{height:calc(100% + 100px)}.landing-copy{padding:35px 0}.landing form{max-width:none}}
 @media(max-width:760px){.live-match .game-arena{height:calc(100svh - 100px)!important}.live-match .commentary-drawer[open]{max-height:45vh;overflow:auto}}
 .live-match .replay-layout>.secondary{background:#21162f;color:#f2e9ff;border-color:#9474b9}.live-match .replay-layout>.playback-controls{background:#160e22e8;padding:8px;border-radius:4px}.landing-copy>.secondary{max-width:330px}.live-match .commentary-drawer[open]{max-height:45vh;overflow:auto}
+/* Season leaders (ESPN-style) */
+.leaders{list-style:none;margin:6px 0 10px;padding:0;display:grid;gap:9px}
+.leaders li{font-size:13px;line-height:1.45;padding-left:16px;position:relative}
+.leaders li::before{content:'';position:absolute;left:2px;top:.6em;width:6px;height:6px;border-radius:50%;background:var(--purple)}
+.leaders b{font-weight:800}
+.leader-link{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--purple);text-decoration:underline dotted;text-underline-offset:3px;cursor:pointer;min-height:0}
+.muted{color:var(--muted)}
+.footnote{font-size:11px;color:var(--muted);margin:6px 0 14px}
+/* ESPN-style box score */
+.box-score table{font-variant-numeric:tabular-nums}
+.box-score caption{caption-side:top;text-align:left;font-family:var(--display);font-weight:800;font-size:15px;letter-spacing:.5px;padding:10px 0 6px}
+.box-score th[scope=row]{text-align:left;white-space:nowrap;font-weight:600}
+.box-score td{text-align:right;white-space:nowrap}
+.box-group th{font-size:10px;letter-spacing:1px;color:var(--muted);text-align:right;font-weight:700}
+.box-group th:first-child{text-align:left;color:var(--purple)}
+.box-pos{color:var(--muted);font-size:11px;font-weight:500;margin-left:4px}
+.box-total th,.box-total td{border-top:2px solid var(--border);font-weight:800}
+.good-text{color:#2f7d4f}.warn-text{color:#b0453b}
+.schedule-drawer{margin:4px 0 6px}.schedule-drawer summary{cursor:pointer;font-weight:700;font-size:12px;padding:8px 0}
+/* Keep overlay labels legible over the 3D scene */
+.arena-top .pill,.arena-top>span{background:#140d20e6;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:6px 10px;border-radius:4px}
+.game-arena .arena-bottom{display:none}
+/* Team comparison + compact live box score */
+.team-compare table,.box-score table{width:100%;border-collapse:collapse}
+.team-compare th,.team-compare td{padding:7px 8px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.team-compare th:first-child,.team-compare td:first-child{text-align:left}
+.box-score td{padding:7px 8px}
+.box-score .box-player{text-align:left;font-weight:600;white-space:nowrap;text-transform:none;letter-spacing:0}
+.box-score .box-group td{font-size:10px;letter-spacing:1px;color:var(--muted);font-weight:700}
+.box-score .box-group td:first-child{color:var(--purple);text-align:left}
+.box-score.compact td{padding:6px 5px;font-size:12px}
+.box-score.compact .box-pos{display:none}
+.opp-roster{font-size:12px;line-height:1.6;margin:0 0 12px}
+@media (min-width:900px){.live-match .box-drawer{width:340px}.live-match .box-drawer[open]{max-height:60vh;overflow:auto;z-index:4}}

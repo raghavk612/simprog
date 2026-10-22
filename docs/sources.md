@@ -1,14 +1,12 @@
 # Sources and asset ledger
 
-Research checked October 20–21, 2026. Exact data check time is in `public/data/kangs.json`.
+Research checked October 20–22, 2026. Exact data check time is in `public/data/kangs.json`.
 
 | Source | Use | License / treatment |
 | --- | --- | --- |
-| [FinalScoreTV Kangs 2025–26](https://thefinalscore.tv/wa/team/2025-2026/11097/kangaroos) | Public factual roster, jersey numbers, positions, heights, class years, schedule and game results | Factual data only, attributed with direct source links; no site photos or branding copied |
-| Player pages linked from that roster and individually in the data JSON | Reported individual points by game | Partial coverage explicitly labeled; no missing data imputation |
-| Game creators | Malhar Pawar (#7) added to the playable roster in place of Mason Mazandarany | Not a FinalScoreTV entry: no source link, no reported games, marked `custom` in the data and labeled in-game |
+| [KingCo Athletics · Lake Washington boys basketball](https://www.kingcoathletics.com/team/?schoolid=66&sportid=3) (WPA Network team widgets) | Public Varsity, JV and C-Team rosters (numbers, names, heights, positions, grades), schedules, game types and final scores for 2025–26; opponent rosters at the same level via each opponent's team page | Factual public data; only completed games used; C-Team numbers and missing opponent rosters filled by the game and flagged |
 | [Lake Washington Boys Basketball](https://www.kangsbasketball.com/hs) | Program context | Reference only |
-| [School program information](https://www.kangsbasketball.com/page/show/4151549-lake-washington-high-school) | Lake Washington / Kangs identity | Original K monogram; no official logo copied |
+| [School program information](https://www.kangsbasketball.com/page/show/4151549-lake-washington-high-school) | Lake Washington / Kangs identity | Kangaroo logo supplied by the creators for center court; the sidebar keeps an original K monogram |
 | [FBLA event](https://www.fbla.org/competitive-events/computer-game-simulation-programming/) | Event context | Reference only |
 | [2026–27 guidelines](https://greektrack-fbla-public.s3.us-east-1.amazonaws.com/files/1/High%20School%20Competitive%20Events%20Resources/Individual%20Guidelines/Presentation%20Events/Computer-Game-Simulation-Programming.pdf) | Topic and rubric cross-check | Linked, not republished |
 | [Kenney Furniture Kit](https://kenney.nl/assets/furniture-kit) | Five imported GLB model types | CC0; bundled license in `public/models/LICENSE-Kenney.txt` |
