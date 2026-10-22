@@ -332,3 +332,8 @@ button kbd.key{flex:none;width:auto!important;display:inline-grid}
 .rule-tabs{gap:5px}
 .rule-tabs button{padding:7px 11px;font-size:12px;letter-spacing:1.1px}
 dialog:has(.rule-tabs){width:min(820px,calc(100vw - 30px))}
+
+/* ---- bigger stadium on HQ / pre-game ---- */
+body[data-view=home] #arena{height:clamp(540px,68vh,780px)}
+body:not(.live-match) .game-arena{height:clamp(520px,66vh,760px)!important}
+@media(max-width:620px){body[data-view=home] #arena{height:420px}body:not(.live-match) .game-arena{height:420px!important}}
