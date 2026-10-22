@@ -2,7 +2,7 @@
 
 A fresh Three.js basketball coaching game for one Lake Washington season. Purple-and-white 3D gym, imported cross-engine assets, published roster and schedule, and a deterministic management simulation.
 
-**Creators:** Ajisth Sareen, Raghav Krishnan, Malhar Pawar.
+**Creators:** Raghav Krishnan, Ajisth Sareen, Malhar Pawar.
 
 ## Play / develop
 
