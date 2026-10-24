@@ -345,6 +345,48 @@ body[data-view=home] #arena{height:clamp(540px,68vh,780px)}
 body:not(.live-match) .game-arena{height:clamp(520px,66vh,760px)!important}
 @media(max-width:620px){body[data-view=home] #arena{height:420px}body:not(.live-match) .game-arena{height:420px!important}}
 
+/* ---- styled confirm dialog (replaces confirm()) ---- */
+dialog.confirm-dlg{width:min(420px,calc(100vw - 30px));overflow:visible}
+.confirm-dlg .modal-content{padding:26px 26px 22px}
+.confirm-dlg .modal-content p{margin:0 0 20px;font-size:calc(17px*var(--ts,1)*var(--ls,1));line-height:1.5;color:#e6dcf3}
+.confirm-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:10px}
+.confirm-actions button{min-height:44px;padding:0 18px;font-size:calc(15px*var(--ts,1)*var(--ls,1))}
+.confirm-actions .danger{background:#c43a58;box-shadow:0 4px 22px #c43a5844}
+.confirm-actions button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+@media(max-width:620px){.confirm-actions button{flex:1 1 100%}.confirm-actions .secondary{order:2}}
+
+/* ---- phone (B8-B10): sticky bottom tab bar, compact season tracker, aligned HQ metrics, title visual flush with the screen. The live match keeps its own icon strip. ---- */
+@media(max-width:620px){
+ :root{--tabh:calc(56px + 26px*var(--ts,1)*var(--ls,1))}
+ .landing-visual{inset:-80px -4vw -20px -4vw}
+ body:not(.live-match) .shell{padding-bottom:calc(var(--tabh) + env(safe-area-inset-bottom,0px))}
+ body:not(.live-match) .sidebar{padding:8px 15px}
+ body:not(.live-match) .sidebar .brand{font-size:calc(21px*var(--ts,1)*var(--ls,1))}
+ body:not(.live-match) .sidebar nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;gap:2px;margin:0;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:none;background:#100c19;border-top:1px solid #b48aff33;box-shadow:0 -10px 24px #0008}
+ body:not(.live-match) .sidebar nav::-webkit-scrollbar{display:none}
+ body:not(.live-match) .nav-item{flex:1 0 calc(74px*var(--ts,1));min-width:calc(74px*var(--ts,1));width:auto;padding:6px 4px;gap:3px;font-size:calc(11px*var(--ts,1)*var(--ls,1));line-height:1.15;background:none;scroll-snap-align:center}
+ body:not(.live-match) .nav-item>.nav-icon{width:26px;height:26px}
+ body:not(.live-match) .nav-item.active{background:#8550e433;color:#fff}
+ body:not(.live-match) #toast,body:not(.live-match) .tutorial,body:not(.live-match) .tutorial.aimed{bottom:calc(var(--tabh) + 12px)!important}
+ body:not(.live-match) .demo-guide{bottom:calc(var(--tabh) + 12px)}
+ .topbar{min-height:0;padding:2px 0 2px 10px;justify-content:flex-start}
+ body .topbar>div{flex-wrap:nowrap;justify-content:flex-start;max-width:100%;overflow-x:auto;scrollbar-width:none;padding-right:26px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 26px),transparent)}
+ .topbar>div::-webkit-scrollbar{display:none}
+ .topbar button{white-space:nowrap;flex:none}
+ .content{padding:14px 15px 24px}
+ .page-heading{margin-bottom:14px}
+ .page-heading h1{font-size:calc(30px*var(--ts,1)*var(--ls,1));margin-bottom:4px}
+ .game-tracker{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:12px;padding:9px 14px 10px;border-radius:10px}
+ .gt-top{grid-column:1/-1;margin-bottom:2px}
+ .game-tracker strong{font-size:calc(30px*var(--ts,1)*var(--ls,1));margin:0}
+ .game-tracker strong small{font-size:calc(15px*var(--ts,1)*var(--ls,1));margin-left:4px}
+ .gt-foot{grid-column:1/-1;margin-top:5px;font-size:calc(11px*var(--ts,1)*var(--ls,1))}
+ .metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 0;padding:6px 0 10px}
+ .metrics>div,.metrics>div:first-child{padding:0 0 0 14px;border:0}
+ .metrics>div:nth-child(odd){padding:0 14px 0 0;border-right:1px solid var(--border)}
+ .metrics strong{font-size:calc(32px*var(--ts,1)*var(--ls,1))}
+}
+
 /* softer glow on selected nav + game tracker */
 .nav-item.active{box-shadow:0 6px 16px -10px #9d5cf2b3}
 .game-tracker{box-shadow:inset 0 1px 0 #ffffff10,0 12px 26px -22px #9d5cf2b3;border-color:#b48aff24}
@@ -414,6 +456,8 @@ dialog:has(.drill-shell){width:min(960px,calc(100vw - 24px))}
 td .opp-badge,.opp-roster .opp-badge{position:relative;top:-1px}
 @media(max-width:760px){.bug2k .bug-team img.bug-logo{display:none}.matchup img.opp-logo{height:60px}}
 .opp-badge.ph{height:0}
+/* Dark logos (Redmond, Skyline: dark green) vanish on the purple UI: a thin white outline plus a soft light glow behind every opponent logo. */
+img.opp-logo,.bug2k .bug-team img.bug-logo,img.opp-badge:not(.ph){filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 0 5px #ffffffb0) drop-shadow(0 3px 6px #0008)}
 /* ---- handbook: body text under the headers is white ---- */
 .modal-content:has(.rule-tabs) .rule-panel p,.modal-content:has(.rule-tabs) .rule-panel .rule-lead,.modal-content:has(.rule-tabs) .ctl-row>span,.modal-content:has(.rule-tabs) .rule-list li,.modal-content:has(.rule-tabs) .rule-panel .muted{color:#fff}
 .modal-content:has(.rule-tabs) .rule-list li b{color:#d6bcff}

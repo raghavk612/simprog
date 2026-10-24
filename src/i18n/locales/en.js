@@ -279,7 +279,7 @@ export default {
   former:'Former roster player',
   pts:'{{n}} PTS',pog:'Player of the game: {{name}} — {{pts}} PTS · {{reb}} REB · {{ast}} AST',},
  notify:{storage:'Browser storage is unavailable. Export your season to keep progress.',checked:'KingCo snapshot from {{date}} is loaded.',snapshotFailed:'Keeping the last verified data.',finishFirst:'Finish the game first.',minutes:'Enter whole minutes between 0 and 32.',exported:'Saved as kangs-season.json in your downloads.',tooLarge:'Save file too large',badSave:'This is not a compatible Kangs season file.',saved:'Saved.'},
- confirm:{replace:'Replace this browser’s saved season? Export it first if you want to keep it.',import:'Replace the current local season with this save?',release:'Release this player from your simulation roster?'},
+ confirm:{replace:'Replace this browser’s saved season? Export it first if you want to keep it.',import:'Replace the current local season with this save?',release:'Release this player from your simulation roster?',yes:'Yes',no:'Cancel',replaceYes:'Replace season',importYes:'Import season',releaseYes:'Release player',},
  // Play-by-play commentary templates: one sentence per template, filled from the play.
  cm:COMMENTARY,
  // Decision-trail and result lines written by the simulation.

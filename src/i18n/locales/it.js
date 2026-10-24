@@ -321,7 +321,7 @@ export default {
   badSave:'Questo non è un file di stagione dei Kangs compatibile.',
   saved:'Salvato.'
  },
- confirm:{replace:'Sostituire la stagione salvata in questo browser? Esportala prima se vuoi conservarla.',import:'Sostituire la stagione locale attuale con questo salvataggio?',release:'Svincolare questo giocatore dalla tua rosa di simulazione?'},
+ confirm:{replace:'Sostituire la stagione salvata in questo browser? Esportala prima se vuoi conservarla.',import:'Sostituire la stagione locale attuale con questo salvataggio?',release:'Svincolare questo giocatore dalla tua rosa di simulazione?',yes:'Sì',no:'Annulla',replaceYes:'Sostituisci stagione',importYes:'Importa stagione',releaseYes:'Libera giocatore',},
  // Play-by-play commentary templates: one sentence per template, filled from the play.
  cm:{
   join:' ',

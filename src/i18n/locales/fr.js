@@ -321,7 +321,7 @@ export default {
   badSave:'Ce n’est pas un fichier de saison Kangs compatible.',
   saved:'Enregistré.'
  },
- confirm:{replace:'Remplacer la saison sauvegardée dans ce navigateur ? Exportez-la d’abord si vous voulez la conserver.',import:'Remplacer la saison locale actuelle par cette sauvegarde ?',release:'Libérer ce joueur de votre effectif de simulation ?'},
+ confirm:{replace:'Remplacer la saison sauvegardée dans ce navigateur ? Exportez-la d’abord si vous voulez la conserver.',import:'Remplacer la saison locale actuelle par cette sauvegarde ?',release:'Libérer ce joueur de votre effectif de simulation ?',yes:'Oui',no:'Annuler',replaceYes:'Remplacer la saison',importYes:'Importer la saison',releaseYes:'Libérer le joueur',},
  // Play-by-play commentary templates: one sentence per template, filled from the play.
  cm:{
   join:' ',
