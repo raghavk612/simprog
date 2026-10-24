@@ -67,29 +67,38 @@ export function sampleClip(c,time){
  const t=clamp(time/CLIP_SECONDS),side=c.team==='home'?1:-1,lane=c.lane||1,spec=SHOTS[c.kind]||SHOTS.pullup;
  const end=[spec.finish[0],spec.finish[1]*lane],start=[c.kind==='dunk'?-8:2.2,4.7*lane];
  const route=c.kind==='stepback'?[start,[6,2.5*lane],[7,2*lane],end]:c.kind==='hook'?[[8,3*lane],[9.8,2.8*lane],[10.5,1.5*lane],end]:c.kind==='catch'?[[4,6.5*lane],[2,6*lane],end]:c.kind==='dunk'?[start,[-2,2.5*lane],[6,1.4*lane],end]:[start,[5,4.6*lane],[6.6,1.5*lane],[8.2,3*lane],end];
- const movement=smooth(t/.5),at=path(route,movement),gather=clamp((t-.43)/.14),jump=(t>=.48&&t<=.78)?Math.sin((t-.48)/.30*Math.PI)*(c.kind==='dunk'?1.2:c.kind==='drive'||c.kind==='roll'?.65:.8):0;
+ const hop=u=>(u>=.48&&u<=.78)?Math.sin((u-.48)/.30*Math.PI)*(c.kind==='dunk'?1.2:c.kind==='drive'||c.kind==='roll'?.65:.8):0;
+ const movement=smooth(t/.5),at=path(route,movement),gather=clamp((t-.43)/.14),jump=hop(t);
  const offense=c.team==='home'?0:5,defense=c.team==='home'?5:0;
  const actors=Array.from({length:10},(_,i)=>{const k=i%5;const off=i>=offense&&i<offense+5;const base=[[2,4.7],[3,-5.5],[8,5.7],[9,-4.4],[6,0]][k];return {x:(base[0]+(off?Math.sin(t*3+k)*.7:.9))*side,y:0,z:base[1]+(off?0:.8),yaw:side*Math.PI/2,run:off?.35:.25,arms:off?'run':'defend',jump:0};});
- const shooter=actors[offense],marker=actors[defense];Object.assign(shooter,{x:at[0]*side,y:jump,z:at[1],run:t<.48?1:0,arms:t<.43?'dribble':t<.8?(c.kind==='hook'?'hook':'shoot'):'relax',yaw:Math.atan2((12.15-at[0])*side,-at[1])});
+ // Every value below is continuous in t: actors and ball ease between beats instead of snapping.
+ const shooter=actors[offense],marker=actors[defense];Object.assign(shooter,{x:at[0]*side,y:jump,z:at[1],run:1-smooth((t-.42)/.08),arms:t<.43?'dribble':t<.8?(c.kind==='hook'?'hook':'shoot'):'relax',yaw:Math.atan2((12.15-at[0])*side,-at[1])});
  const separation=c.contest==='open'?1.9:c.contest==='tight'?.45:1;
- marker.x=(at[0]+separation)*side;marker.z=at[1]+.5*lane;marker.yaw=-side*Math.PI/2;marker.run=t<.5?.85:.1;
+ marker.x=(at[0]+separation)*side;marker.z=at[1]+.5*lane;marker.yaw=-side*Math.PI/2;marker.run=.85-.75*smooth((t-.45)/.08);
  const defenseJump=t>=.5&&t<=.81?Math.sin((t-.5)/.31*Math.PI)*(c.outcome==='block'?1.05:c.contest==='open'?.22:.7):0;marker.y=defenseJump;marker.arms=t>.48&&t<.82?'block':'defend';
  if(c.kind==='drive'||c.kind==='floater'||c.kind==='roll'){marker.z+=Math.sin(t*12)*.7;marker.x-=Math.sin(t*Math.PI)*side*.6;}
  // A second defender slides from the weak side to help at the basket.
  const help=actors[defense+2];help.x=lerp(9,11,t)*side;help.z=lerp(-4*lane,-.9*lane,smooth(t/.6));help.arms=t>.48&&t<.8?'block':'defend';help.y=defenseJump*.6;
  const screen=actors[offense+1];if(c.kind==='roll'){screen.x=5.8*side;screen.z=3*lane;screen.run=0;screen.arms='screen';}
+ // The dunk outlet comes from deep in the backcourt; the passer then trails the play up the floor.
+ if(c.kind==='dunk'){const q=smooth((t-.12)/.45);screen.x=lerp(-10*side,screen.x,q);screen.z=lerp(3*lane,screen.z,q);screen.run=.35+.65*Math.sin(q*Math.PI);if(t<.2)screen.arms='pass';}
  // Off-ball cuts and closeouts: players do not just oscillate in place.
  actors[offense+2].x=lerp(4,10,smooth(t))*side;actors[offense+2].z=lerp(-5,3,smooth(t))*lane;
  actors[defense+3].x=lerp(9,5,t)*side;actors[defense+3].z=-5*lane;
+ const mix=(a,b,w)=>({x:lerp(a.x,b.x,w),y:lerp(a.y,b.y,w),z:lerp(a.z,b.z,w)});
  let ball={x:shooter.x+.38*side,y:.3+Math.abs(Math.sin(t*45))*.95,z:shooter.z+.15};
- if(c.kind==='catch'&&t<.3){const q=smooth(t/.3);ball={x:lerp(3,at[0],q)*side,y:1.4+Math.sin(q*Math.PI)*.35,z:lerp(-5.5,at[1],q)};screen.arms='pass';}
- if(c.kind==='dunk'&&t<.2){screen.x=-10*side;screen.z=3*lane;screen.arms='pass';const q=smooth(t/.2);ball={x:lerp(-10,at[0],q)*side,y:1.6+Math.sin(q*Math.PI)*.7,z:lerp(3*lane,at[1],q)};}
- if(t>=.43&&t<.61){ball={x:shooter.x+.28*side,y:lerp(1.2,2.3,gather)+jump,z:shooter.z};}
- const release={x:end[0]*side,y:2.3+Math.sin((.61-.48)/.3*Math.PI)*(c.kind==='dunk'?1.2:.8),z:end[1]};
- if(t>=.61){const q=clamp((t-.61)/.25);ball={x:lerp(release.x,12.15*side,q),y:lerp(release.y,3.28,q)+Math.sin(q*Math.PI)*spec.arc,z:lerp(release.z,0,q)};}
- if(t>.86){const q=clamp((t-.86)/.14);ball=c.points?{x:12.15*side,y:lerp(3.28,.3,q),z:0}:{x:lerp(12.15,9,q)*side,y:3.28-Math.sin(q*Math.PI/2)*1.8,z:lerp(0,-2*lane,q)};}
- if(c.outcome==='block'&&t>.65){const q=clamp((t-.65)/.35);ball={x:lerp(end[0]+.4,7,q)*side,y:lerp(3.3,.3,q)+Math.sin(q*Math.PI)*.5,z:lerp(end[1],-3*lane,q)};marker.x=(end[0]+.4)*side;marker.z=end[1];}
- if(c.outcome==='steal'&&t>.32){const q=clamp((t-.32)/.68);marker.x=lerp(at[0]+.4,-3,q)*side;marker.z=lerp(at[1],-2*lane,q);marker.y=0;marker.run=1;marker.arms='dribble';shooter.y=0;shooter.arms='defend';ball={x:marker.x-.35*side,y:.3+Math.abs(Math.sin(t*45))*.9,z:marker.z};}
- const rebounder=actors[defense+(c.team==='home'?4:0)];if(!c.points&&c.outcome!=='steal'&&t>.84){rebounder.x=ball.x;rebounder.z=ball.z;rebounder.arms='rebound';if(t>.96)ball.y=1.6;}
+ if(c.kind==='catch'){const q=smooth(t/.3);ball=mix({x:lerp(3,at[0],q)*side,y:1.4+Math.sin(q*Math.PI)*.35,z:lerp(-5.5,at[1],q)},ball,smooth((t-.25)/.1));if(t<.3)screen.arms='pass';}
+ if(c.kind==='dunk'){const q=smooth(t/.2);ball=mix({x:lerp(-10,at[0],q)*side,y:1.6+Math.sin(q*Math.PI)*.7,z:lerp(3*lane,at[1],q)},ball,smooth((t-.17)/.08));}
+ const pickup=.3+Math.abs(Math.sin(.43*45))*.95;
+ if(t>=.43&&t<.61){ball={x:shooter.x+lerp(.38,.28,gather)*side,y:lerp(pickup,2.3,gather)+jump,z:shooter.z+lerp(.15,0,gather)};}
+ const release={x:(end[0]+.28)*side,y:2.3+hop(.61),z:end[1]},flight=u=>{const q=clamp((u-.61)/.25);return {x:lerp(release.x,12.15*side,q),y:lerp(release.y,3.28,q)+Math.sin(q*Math.PI)*spec.arc,z:lerp(release.z,0,q)};};
+ if(t>=.61)ball=flight(t);
+ // A make drops through the net, hits the floor and bounces out; a miss caroms off the rim.
+ if(t>.86){const q=clamp((t-.86)/.14);if(c.points){const f=clamp(q/.5),u=clamp((q-.5)/.5);ball={x:(12.15-1.1*smooth(u))*side,y:q<.5?3.28-2.98*f*f:.3+Math.sin(u*Math.PI)*.7,z:.35*lane*smooth(u)};}else ball={x:lerp(12.15,9,q)*side,y:3.28-Math.sin(q*Math.PI/2)*1.8,z:lerp(0,-2*lane,q)};}
+ const land=c.outcome==='block'?{x:7*side,y:1.3,z:-3*lane}:{x:9*side,y:3.28-1.8,z:-2*lane};
+ if(c.outcome==='block'){const w=smooth((t-.52)/.13);marker.x=lerp(marker.x,(end[0]+.4)*side,w);marker.z=lerp(marker.z,end[1],w);if(t>.65){const from=flight(.65),q=clamp((t-.65)/.35);ball={x:lerp(from.x,land.x,q),y:lerp(from.y,land.y,q)+Math.sin(q*Math.PI)*.8,z:lerp(from.z,land.z,q)};}}
+ if(c.outcome==='steal'){const q=clamp((t-.32)/.68),w=smooth((t-.27)/.09);marker.x=lerp(marker.x,lerp(at[0]+.4,-3,q)*side,w);marker.z=lerp(marker.z,lerp(at[1],-2*lane,q),w);marker.y=lerp(marker.y,0,w);marker.run=lerp(marker.run,1,w);if(t>.3){marker.arms='dribble';shooter.y=0;shooter.arms='defend';}ball=mix(ball,{x:marker.x-.35*side,y:.3+Math.abs(Math.sin(t*45))*.9,z:marker.z},w);}
+ // The rebounder reads the shot and arrives where the ball comes down rather than appearing there.
+ const rebounder=actors[defense+(c.team==='home'?4:0)];if(!c.points&&c.outcome!=='steal'){const w=smooth((t-.64)/.22);rebounder.x=lerp(rebounder.x,land.x,w);rebounder.z=lerp(rebounder.z,land.z,w);rebounder.run=Math.max(rebounder.run,Math.sin(w*Math.PI)*.9);if(t>.84)rebounder.arms='rebound';}
  return {actors,ball,phase:t<.43?(c.kind==='catch'?'Pass & relocate':'Attack & dribble'):t<.61?'Gather & contest':t<.86?(c.outcome==='block'?'Shot blocked':c.outcome==='steal'?'Turnover':'Shot in flight'):c.points?'Basket':'Rebound',resolved:t>=.86,net:c.points&&t>.86?Math.sin((t-.86)*Math.PI/.14)*.12:0};
 }

@@ -1,7 +1,7 @@
 # Verification — rebuild
 
-- `npm test`: 17 passing tests, including 150 complete seeded campaigns (50 per level). Covers KingCo data integrity for all three levels, opponent rosters and real-name play-by-play, ESPN-style stat lines that add up to the score, per-game leaders that never show zero, resource and roster limits, eligible rotations, training/recovery, timeout cap, deterministic save/resume, box score totals, standings balance and one-season termination.
-- Championship is reachable on every level. Over 300 seeded seasons per level with the tested preparation policy: C Team 92% titles, Junior Varsity 41%, Varsity 31%. This is a reachability and ordering check, not an estimate of human difficulty.
+- `npm test`: 19 passing tests, including 150 complete seeded campaigns (50 per level). Covers KingCo 2026–27 schedule integrity for all three levels (18/17/12 games, null scores for upcoming games, saves that validate with them, estimates that fall back to the 2025–26 scoring average), a real roster for every scheduled opponent, opponent rosters and real-name play-by-play, ESPN-style stat lines that add up to the score, per-game leaders that never show zero, resource and roster limits, eligible rotations, training/recovery, timeout cap, deterministic save/resume, box score totals, standings balance and one-season termination.
+- Championship is reachable on every level. Over 300 seeded seasons per level with the tested preparation policy: C Team · Rookie 92% titles, Junior Varsity · All-Star 41%, Varsity · Hall of Fame 31%. This is a reachability and ordering check, not an estimate of human difficulty.
 - Production build succeeds. Vite reports a non-blocking large-bundle warning for the Three.js renderer; compressed application JS is approximately 175 KB.
 - Browser: coach creation, difficulty selection, four-step first-use tour, training, assistant hire, conversation, scouting, timeout, 64-possession complete game, postgame breakdown, rename, recruit, kit change, sources and credit dialogs verified.
 - All five external model types loaded. No browser runtime errors in tested flows.
@@ -10,7 +10,7 @@
 - Production preview verified separately from Vite development mode.
 - Service-worker cache is implemented, but server-off reload was not supported in the tested embedded browser. Use the included locally served build as the reliable offline presentation fallback. Do not claim offline cache support for every browser.
 
-The 3D action is a stylized visualization of the possession model, not a full basketball physics or officiating simulation. Real source data is a dated 2025–26 snapshot with daily refresh attempts, not an official real-time feed. Real player averages cover only reported games. State progression and background standings are explicitly simulated.
+The 3D action is a stylized visualization of the possession model, not a full basketball physics or officiating simulation. Real source data is a dated snapshot of the 2026–27 schedules (no scores yet) and the latest published 2025–26 rosters, with daily refresh attempts, not an official real-time feed. Real player averages cover only reported games. State progression and background standings are explicitly simulated.
 
 ## Arena presentation and action update
 

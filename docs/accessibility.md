@@ -22,7 +22,7 @@ This system is adapted from the settings, synthesized-sound and language-switchi
 | Simplified HUD | **Simplified interface** | Hides decorative labels, badges, tickets and extra notes |
 | Screen-reader announcements (`use-screen-reader.ts`) | `announce()` / `interrupt()` in `src/a11y.js` | EcoQuest defined these but never called them. Here every resolved play and score, page changes, camera and speed changes and sound/motion changes are announced |
 | Skip link, ARIA tabs, switches, focus styles | Same, plus focus moved to the page heading on navigation | |
-| Rebindable keys with conflict detection | Nine coaching shortcuts in `src/keys.js` | The jump/sprint keys do not exist here; shortcuts are Watch live/pause, Next play, Timeout, three cameras, speed, sound and settings |
+| Rebindable keys with conflict detection | Twelve coaching shortcuts in `src/keys.js` | The jump/sprint keys do not exist here; shortcuts are Watch live/pause, Next play, Timeout, five cameras (wide, courtside, follow, player view, auto), speed, sound, settings and the handbook; Space also plays the next possession |
 | Seven languages via i18next | Same seven (English, Spanish, Chinese, French, Japanese, Italian, Hindi) via `src/i18n/` | No library; see "Language" below |
 | Motor-helper warning that blocks leaderboard scores | Not used | Kangs has no leaderboard, so there is nothing to protect and no warning to show |
 

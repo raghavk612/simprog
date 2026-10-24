@@ -7,7 +7,7 @@ The topic asks for a high-school team championship simulation involving recruiti
 | Rubric area | Demonstrable implementation |
 | --- | --- |
 | Topic alignment | Recruiting, practice tradeoffs, eligibility, fatigue, injuries, conversations, budget and state elimination |
-| Rules / outcomes / challenge | In-game handbook, validated rotations, three difficulty levels (C Team, Junior Varsity, Varsity), qualification and championship/end states |
+| Rules / outcomes / challenge | In-game handbook, validated rotations, three difficulty levels (C Team · Rookie, Junior Varsity · All-Star, Varsity · Hall of Fame), qualification and championship/end states |
 | Innovation | Real published season reimagined through a transparent decision model; recorded shot scenes explain coaching effects |
 | Technical implementation | Three.js assets, seeded simulation, source-refresh pipeline, validated saves, offline cache and automated tests |
 | Graphics / consistency / visual-audio design | Purple-white identity, 3D gym, imported models, numbered jerseys, responsive screens, adjustable synthesized sound and an accessibility settings panel (colour-vision correction, contrast, motion, text size, seven languages) |

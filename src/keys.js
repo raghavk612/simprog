@@ -1,6 +1,6 @@
 // Rebindable keyboard shortcuts for the coaching controls. Bindings are stored as KeyboardEvent.code values.
-export const ACTIONS=['playPause','nextPlay','timeout','camWide','camCourt','camFollow','speed','sound','settings'];
-export const DEFAULT_KEYS={playPause:'KeyP',nextPlay:'KeyN',timeout:'KeyT',camWide:'Digit1',camCourt:'Digit2',camFollow:'Digit3',speed:'KeyS',sound:'KeyM',settings:'KeyO'};
+export const ACTIONS=['playPause','nextPlay','timeout','camWide','camCourt','camFollow','camPlayer','camAuto','speed','sound','settings','rules'];
+export const DEFAULT_KEYS={playPause:'KeyW',nextPlay:'KeyN',timeout:'KeyT',camWide:'Digit1',camCourt:'Digit2',camFollow:'Digit3',camPlayer:'Digit4',camAuto:'Digit5',speed:'KeyS',sound:'KeyM',settings:'KeyO',rules:'KeyH'};
 // Keys that keep their normal meaning (navigation, activation, dismissal and modifiers).
 export const RESERVED=['Tab','Enter','NumpadEnter','Space','Escape','Backspace','CapsLock','ShiftLeft','ShiftRight','ControlLeft','ControlRight','AltLeft','AltRight','MetaLeft','MetaRight','ContextMenu'];
 const STORAGE='kangs_keybindings';

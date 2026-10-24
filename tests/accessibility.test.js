@@ -53,8 +53,8 @@ test('sounds respect mute, per-sound toggles and a missing audio device',()=>{
 test('keyboard shortcuts: defaults are unique and conflicts are detected',()=>{
  assert.equal(new Set(Object.values(DEFAULT_KEYS)).size,ACTIONS.length);
  for(const a of ACTIONS){assert.ok(DEFAULT_KEYS[a]);assert.ok(!RESERVED.includes(DEFAULT_KEYS[a]));}
- assert.equal(findConflict(DEFAULT_KEYS,'nextPlay','KeyP'),'playPause');
- assert.equal(findConflict(DEFAULT_KEYS,'playPause','KeyP'),null,'a key does not conflict with itself');
+ assert.equal(findConflict(DEFAULT_KEYS,'nextPlay','KeyW'),'playPause');
+ assert.equal(findConflict(DEFAULT_KEYS,'playPause','KeyW'),null,'a key does not conflict with itself');
  assert.equal(findConflict(DEFAULT_KEYS,'nextPlay','KeyZ'),null);
  for(const code of ['Escape','Tab','Enter','Space','ShiftLeft'])assert.equal(findConflict(DEFAULT_KEYS,'nextPlay',code),'reserved',code);
  assert.deepEqual(loadKeys(),DEFAULT_KEYS);
