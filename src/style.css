@@ -402,11 +402,7 @@ dialog:has(.drill-shell){width:min(960px,calc(100vw - 24px))}
 
 /* ---- handbook: body text under the headers is white ---- */
 .modal-content:has(.rule-tabs) .rule-panel p,.modal-content:has(.rule-tabs) .rule-panel .rule-lead,.modal-content:has(.rule-tabs) .ctl-row>span,.modal-content:has(.rule-tabs) .rule-list li,.modal-content:has(.rule-tabs) .rule-panel .muted{color:#fff}
-.modal-content:has(.rule-tabs) .rule-panel p{font-weight:500}
-.modal-content:has(.rule-tabs) .rule-panel .rule-lead{font-weight:700}
-.modal-content:has(.rule-tabs) .rule-list li{font-weight:500}
 .modal-content:has(.rule-tabs) .rule-list li b{color:#d6bcff}
-.modal-content:has(.rule-tabs) .rule-chips span{color:#fff}
 /* ---- first-person HUD label ---- */
 .fp-hud{position:absolute;z-index:6;left:20px;top:158px;display:flex;align-items:center;gap:10px;max-width:calc(100% - 40px);padding:7px 14px 7px 12px;border-radius:6px;border:1px solid #ffffff24;border-left:4px solid #e9b858;background:linear-gradient(180deg,#1d1330ee,#0d0915ee);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 12px 28px -10px #000c;pointer-events:none;font-family:var(--display)}
 .fp-hud[hidden]{display:none}
