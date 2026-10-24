@@ -463,3 +463,21 @@ td .opp-badge,.opp-roster .opp-badge{position:relative;top:-1px}
 .report .secondary{margin-top:6px}
 .pog{margin:6px 0}
 @media(max-width:620px){.report-grid{grid-template-columns:minmax(0,1fr)}.report-awards li{grid-template-columns:minmax(0,1fr)}}
+
+/* ---- the final run as a bracket ---- */
+.bracket-card{margin:0 0 20px}
+.bracket-gate{margin:6px 0 14px;font-weight:700}
+.bracket-gate.failed{color:#fca5a5}.bracket-gate.qualified{color:#86efac}
+.bracket{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;position:relative}
+.bracket .round{position:relative;display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:12px;border:1.5px solid #ffffff26;background:#ffffff08}
+.bracket .round:not(:last-child)::after{content:'';position:absolute;top:50%;left:100%;width:14px;border-top:2px solid #ffffff3a}
+.bracket .round-name{font:700 calc(12px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:1.6px;text-transform:uppercase;color:#e9b858}
+.bracket .round b{display:flex;align-items:center;gap:8px;font-size:calc(17px*var(--ts,1)*var(--ls,1))}
+.bracket .round b .opp-badge{width:26px;height:26px;flex:none}
+.bracket .round small{color:#c9bdd8}
+.bracket .round em{font-style:normal;font-weight:800}
+.bracket .round.won{border-color:#4ade80;background:#4ade8014}.bracket .round.won em{color:#86efac}
+.bracket .round.lost{border-color:#f87171;background:#f8717114}.bracket .round.lost em{color:#fca5a5}
+.bracket .round.next{border-color:#e9b858;box-shadow:0 0 0 3px #e9b85840}
+.bracket .round.out,.bracket .round.missed{opacity:.7;border-style:dashed}
+@media(max-width:850px){.bracket{grid-template-columns:minmax(0,1fr)}.bracket .round:not(:last-child)::after{display:none}}

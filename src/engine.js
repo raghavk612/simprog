@@ -123,6 +123,18 @@ function updateStandings(s,opponent,won){
  const shift=s.week%others.length;const order=[...others.slice(shift),...others.slice(0,shift)];
  for(let i=0;i+1<order.length;i+=2){const [a,b]=[order[i],order[i+1]];let hash=(s.week+1)*7919;for(const c of a+b)hash=(Math.imul(hash,31)+c.charCodeAt(0))>>>0;const awin=hash%101>48;s.standings[a][awin?'w':'l']++;s.standings[b][awin?'l':'w']++;}
 }
+/* The elimination run as a bracket: the last four games, each one win-or-go-home. 'gate' says whether the qualifying games before it have been won ('qualified', possibly clinched early), are still open, or were failed. Each round is 'won', 'lost', 'next', 'upcoming', 'out' (an earlier round was lost) or 'missed' (never reached). */
+export function runBracket(s){
+ const P=seasonPlan(s),early=s.results.slice(0,P.cut).filter(r=>r.won).length,done=Math.min(s.results.length,P.cut);
+ const gate=early>=P.need?'qualified':done>=P.cut?'failed':'open';let alive=true;
+ const rounds=s.schedule.slice(P.cut).map((g,i)=>{const idx=P.cut+i,r=s.results[idx];let status;
+  if(r){status=r.won?'won':'lost';if(!r.won)alive=false;}
+  else if(gate==='failed')status='missed';
+  else if(!alive)status='out';
+  else status=idx===s.week&&!s.finished&&s.week>=P.cut?'next':'upcoming';
+  return {round:i,opponent:g.opponent,date:g.date,time:g.time||'',status,home:r?.home,away:r?.away};});
+ return {rounds,gate,wins:early,need:P.need,cut:P.cut,played:done};
+}
 /* ---- end-of-season report: player of the game, awards and a coach grade that shows its working ---- */
 const gameScore=l=>l.pts+1.2*l.reb+1.5*l.ast+2*(l.stl+l.blk)-l.tov-.3*(l.fga-l.fgm);
 /* The Kangs player with the best all-round line in a game: points, rebounds, assists, steals and blocks, minus turnovers and missed shots. */

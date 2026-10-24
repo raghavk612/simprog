@@ -87,3 +87,19 @@ test('the season report: awards, a coach grade that adds up, and highlights',()=
  const old=structuredClone(s);old.players.forEach(p=>delete p.skill0);assert.equal(E.seasonReport(old).grade.parts.development,0);assert.ok(!E.seasonReport(old).awards.some(a=>a.key==='improved'));
  const empty=E.createGame(data,'New','standard',1);const e=E.seasonReport(empty);assert.deepEqual(e.awards,[]);assert.equal(e.bestWin,null);assert.equal(e.grade.parts.wins,0);
 });
+test('the final run is a bracket that fills in as games are won',()=>{
+ const s=game(),P=E.seasonPlan(s);let b=E.runBracket(s);
+ assert.equal(b.rounds.length,4);assert.deepEqual(b.rounds.map(r=>r.status),['upcoming','upcoming','upcoming','upcoming']);assert.equal(b.gate,'open');assert.equal(b.need,P.need);assert.equal(b.rounds[0].opponent,s.schedule[P.cut].opponent);
+ const win=()=>{s.players.forEach(p=>{p.energy=100;p.skill=98;p.gpa=4;p.injury=0;});s.chemistry=100;E.autoLineup(s);E.startMatch(s);let k=0;while(s.match&&k++<500)E.possession(s);};
+ // qualify by playing the early games (stronger players make that very likely), then check the run
+ let guard=0;while(!s.finished&&s.week<P.cut&&guard++<40)win();
+ b=E.runBracket(s);
+ if(s.week>=P.cut&&!s.finished){assert.equal(b.gate,'qualified');assert.equal(b.rounds[0].status,'next');assert.equal(b.rounds[1].status,'upcoming');
+  let rounds=0;while(!s.finished&&rounds++<6){const before=s.results.length;win();const x=E.runBracket(s),last=s.results[before];const idx=before-P.cut;assert.equal(x.rounds[idx].status,last.won?'won':'lost');if(!last.won){assert.ok(x.rounds.slice(idx+1).every(r=>r.status==='out'));assert.ok(s.finished);}}}
+ else assert.equal(b.gate,'failed');
+});
+test('missing the cut shows the run as never reached',()=>{
+ const s=game(),P=E.seasonPlan(s);s.week=P.cut;s.finished=true;s.results=Array.from({length:P.cut},(_,i)=>({won:false,home:40,away:60,week:i,opponent:s.schedule[i].opponent,date:s.schedule[i].date,line:{},box:{},events:[],ripples:[]}));
+ const b=E.runBracket(s);assert.equal(b.gate,'failed');assert.ok(b.rounds.every(r=>r.status==='missed'));
+ const c=game();c.results=Array.from({length:P.need},(_,i)=>({won:true,week:i}));assert.equal(E.runBracket(c).gate,'qualified','clinching early counts');
+});

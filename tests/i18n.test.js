@@ -73,6 +73,11 @@ test('every key built at run time resolves to a string for each value it can tak
  for(const v of ['starter','rotation','bench'])need.push(`status.${v}`);
  for(const v of ['auto','player'])need.push(`stage.${v}`);
  for(const v of ['ins','mid','tpt','perd','insd'])need.push(`rv.${v}`,`rv.${v}T`);
+ for(const v of [0,1,2,3])need.push(`bracket.round.${v}`);
+ for(const v of ['won','lost','next','upcoming','out','missed'])need.push(`bracket.status.${v}`);
+ for(const v of ['mvp','defense','improved','pog'])need.push(`report.award.${v}`,`report.value.${v}`);
+ for(const v of ['wins','postseason','development','academics','chemistry'])need.push(`report.parts.${v}`);
+ for(const v of ['open','qualified','failed'])need.push(`bracket.${v}`);
  for(const v of ['ppg','rpg','apg','spg','bpg','fgp'])need.push(`stat.${v}`);
  for(const v of ['slashing','post','midrange','sharp','stretch','lockdown','rim','glass'])need.push(`arch.${v}`);
  for(const v of ['inside','mid','three','perim','interior'])need.push(`attr.${v}`);
