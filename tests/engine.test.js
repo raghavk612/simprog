@@ -41,3 +41,10 @@ test('lineup issues name who cannot play and why',()=>{
  const idle=s.players.find(p=>!p.starter);idle.injury=1;assert.equal(E.lineupIssues(s).length,3,'an injured player with no minutes is not an issue');
  E.autoLineup(s);assert.deepEqual(E.lineupIssues(s),[]);
 });
+test('the judge demo is a repeatable mid-season save that can still be won',()=>{
+ const a=E.demoSeason(data),b=E.demoSeason(data);assert.deepEqual(a,b);assert.ok(E.validSave(a));
+ const P=E.seasonPlan(a);assert.equal(a.week,E.DEMO.week);assert.ok(a.week>0&&a.week<P.cut);assert.equal(a.match,null);assert.equal(a.coach,'Judge');
+ const t=E.playTo(structuredClone(a),P.cut);assert.equal(t.week,P.cut);assert.ok(t.wins>=P.need,'the demo qualifies for the final run');assert.equal(t.match,null);assert.ok(E.validSave(t));
+ const u=E.playTo(structuredClone(t),t.schedule.length);assert.ok(u.finished);
+ const v=E.playTo(structuredClone(a),0);assert.equal(v.week,a.week,'playing to an earlier week changes nothing');
+});

@@ -33,6 +33,7 @@ Open the URL Vite prints. Production files are in `dist/`; serve them over HTTP,
 - Three jersey kits, custom number colors, player-specific numbers and nameplates on stylized 3D players; the Kangs kangaroo logo at center court.
 - Accessible rulebook and credits, rebindable keyboard shortcuts, responsive layouts.
 - A Settings dialog with sound, accessibility and language options (see below), adapted from the EcoQuest project.
+- A **Judge demo** on the title screen: a repeatable Junior Varsity season at mid-season (4–3) with an eight-step guide timed for about three minutes (data, rotation, practice drills, live game, decision trail, accessibility and languages, sources, win-or-go-home) and a “Jump to the final run” button (key **J**). It is stored under its own key, so your own saved season is never touched.
 
 ## Accessibility, sound and language
 

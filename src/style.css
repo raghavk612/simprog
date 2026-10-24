@@ -424,3 +424,14 @@ td .opp-badge,.opp-roster .opp-badge{position:relative;top:-1px}
 .fp-hud span{font:800 italic calc(20px*var(--ts,1)*var(--ls,1))/1 var(--display);letter-spacing:.6px;color:#fff;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .fp-hud em{flex:none;font:700 calc(12px*var(--ts,1)*var(--ls,1)) var(--display);font-style:normal;letter-spacing:1.4px;color:#c9a8ff;padding-left:10px;border-left:1px solid #ffffff2e}
 @media(max-width:760px){.fp-hud{left:8px;top:87px;gap:8px;padding:4px 10px 4px 9px;max-width:calc(100% - 16px)}.fp-hud span{font-size:calc(16px*var(--ts,1)*var(--ls,1))}.fp-hud b{font-size:calc(11px*var(--ts,1)*var(--ls,1));letter-spacing:1.6px}}
+
+/* ---- judge demo guide: the first-time tour card, plus step navigation ---- */
+.demo-guide{width:360px;max-width:calc(100vw - 30px)}
+.demo-guide.collapsed{width:auto;padding:8px;background:transparent;border:0;box-shadow:none}
+.demo-guide h3{margin:6px 0}
+.demo-nav,.demo-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.demo-foot{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center}
+.demo-foot .text-button{padding:2px 0;font-size:calc(13px*var(--ts,1)*var(--ls,1))}
+.live-match .demo-guide{left:auto;right:16px;bottom:112px}
+.live-match .demo-guide.collapsed{bottom:112px}
+@media(max-width:760px){.demo-guide,.live-match .demo-guide{left:15px;right:15px;bottom:15px;width:auto;max-width:none}}

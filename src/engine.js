@@ -48,6 +48,15 @@ export function autoLineup(s){open(s);const list=s.players.filter(eligible).sort
 export function setStarter(s,id,on){open(s);const p=s.players.find(x=>x.id===+id);if(!p)throw Error('Choose a player');on=!!on;if(p.starter===on)return p;p.starter=on;if(!on)p.minutes=0;else if(p.minutes===0)p.minutes=Math.max(0,Math.min(32,160-s.players.reduce((a,x)=>a+x.minutes,0)));return p;}
 /* Who in the rotation cannot play, and why: the reason is 'injured', 'gpa' or 'tired' (the first that applies). */
 export function lineupIssues(s){return s.players.filter(p=>(p.starter||p.minutes>0)&&!eligible(p)).map(p=>({id:p.id,name:p.name,reason:p.injury>0?'injured':p.gpa<2?'gpa':'tired'}));}
+/* Plays games with sensible preparation (recover when tired, study when grades slip, otherwise bond or shoot) until the season reaches the given week. Used by the judge demo and its "jump ahead" button. */
+export function playTo(s,week){let guard=0;const stop=Math.min(week,s.schedule.length);while(!s.finished&&s.week<stop&&guard++<s.schedule.length+1){if(s.match)while(s.match)possession(s);if(s.week>=stop)break;if(mean(s.players,'energy')<70&&s.actions>0)train(s,'recovery');if(mean(s.players,'gpa')<2.7&&s.actions>0)train(s,'study');while(s.actions>0)train(s,s.chemistry<85?'bond':'shooting');autoLineup(s);startMatch(s);let k=0;while(s.match&&k++<500)possession(s);}return s;}
+/* The season shown in the judge demo: a Junior Varsity campaign played to the middle of the schedule. It uses the first seed whose story suits a demonstration (4–5 wins by mid-season, then qualifying for the final run and winning it with the same sensible preparation), so it stays repeatable even after the schedule data is refreshed. */
+export const DEMO={difficulty:'standard',week:7,seeds:400};
+export function demoSeason(data){
+ const start=seed=>playTo(createGame(data,'Judge',DEMO.difficulty,seed),DEMO.week);
+ for(let seed=1;seed<=DEMO.seeds;seed++){const s=start(seed),P=seasonPlan(s);if(s.wins<4||s.wins>5)continue;const t=playTo(structuredClone(s),P.cut);if(t.wins<P.need)continue;if(playTo(t,t.schedule.length).champion)return s;}
+ return start(1);
+}
 export function validateLineup(s){const active=s.players.filter(p=>p.minutes>0);if(s.players.filter(p=>p.starter).length!==5)throw Error('Select exactly five starters.');if(s.players.some(p=>p.starter&&p.minutes===0))throw Error('Each starter needs playing time.');if(active.some(p=>!eligible(p)))throw Error('An assigned player is injured, exhausted, or below the game’s 2.0 GPA threshold.');if(s.players.some(p=>!Number.isInteger(p.minutes)||p.minutes<0||p.minutes>32))throw Error('Minutes must be whole numbers from 0 to 32.');if(active.reduce((a,p)=>a+p.minutes,0)!==160)throw Error('Allocate exactly 160 player-minutes (five players × 32 minutes).');return true;}
 /* The opponent's real roster for this level (or flagged fictional names when none is published). */
 export function oppRoster(s,name){const r=s.opponents?.[name]?.players;return r?.length?r:[4,11,12,22,30,8,24].map(n=>({number:n,name:`${name} #${n}`}));}
