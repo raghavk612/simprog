@@ -8,7 +8,7 @@ This file collects **everything that is still to do**: the designed-but-not-buil
 
 ## 0a. Done on the `accessablity` / `remaining-work` branches
 
-- Settings dialog with sound (14 synthesized effects, per-sound switches), accessibility (colour-vision correction, high contrast, reduced motion, text size 70–180 %, fonts, slower playback, timing assist, simplified interface) and language (English, Spanish, Chinese, French, Japanese, Italian, Hindi), plus rebindable shortcuts. See `docs/accessibility.md`.
+- Settings dialog with sound (17 synthesized effects, per-sound switches), accessibility (colour-vision correction, high contrast, reduced motion, text size 70–180 %, fonts, slower playback, timing assist, simplified interface) and language (English, Spanish, Chinese, French, Japanese, Italian, Hindi), plus rebindable shortcuts. See `docs/accessibility.md`.
 - Quick wins 9, 10 and 11 below (score announcements, text-size control, skip link).
 - The bugs marked ✅ in section 2.
 
@@ -132,7 +132,7 @@ Effort: **S** < 1 day, **M** 1–3 days, **L** a week+. Ideas already covered by
 | 1 | ✅ **Done:** **Judge / demo mode** | Title-screen "Demo" loads a mid-season save, with a hotkey to jump to the next elimination game and a 3-minute guided overlay for the FBLA presentation. | S |
 | 2 | ✅ **Done (Player of the Game too; the highlight replays are not):** **Season awards + report card** | MVP, Most Improved, Defensive Player, coach grade, "decisions that mattered", downloadable PNG. | S–M |
 | 3 | ✅ **Done:** **Playoff bracket view** | The final run shown as a bracket that fills in as you win. | S–M |
-| 4 | **Balance pass** | Real opponent strength, diminishing returns, token sinks (Section 3). | S |
+| 4 | ✅ **Done (D1–D3; D4 partly):** **Balance pass** | Real opponent strength, diminishing returns, token sinks (Section 3). | S |
 | 5 | ✅ **Done:** ✱ Coach's inbox / random events | Covered by the mid-season events spec. | M |
 | 6 | **Rivalry weeks** | Flag real rivals on the schedule: extra fans/tokens and bigger morale swings, with headlines. | S–M |
 | 7 | ✅ **Done (accessibility branch):** **Sound design** | Crowd, whistle, swish/rim, buzzer and a volume slider (WebAudio, no assets). | S–M |
@@ -146,10 +146,10 @@ Effort: **S** < 1 day, **M** 1–3 days, **L** a week+. Ideas already covered by
 | 14 | ✅ **Done (7 achievements; Comeback Win and Beat the Rival not built):** **Achievements** | Perfect Drill, Undefeated Regular Season, Beat the Rival, Zero-Injury Season, Varsity Champion. | S |
 | 15 | ✅ **Done:** **"Why that shot?" live panel** | Show shot-probability factor bars (skill, energy, chemistry, tactics) during live play. Great for Q&A. | S |
 | 16 | ✅ **Done:** **Broadcast highlights + Player of the Game** | Auto-replay the top 3 plays with lower-third graphics and a POG card. (In the result dialog: three replay buttons with lower-third labels, ranked by `highlights`, plus a Player of the Game card. They replay on request rather than automatically, and only the last 12 plays of a game are stored.) | M |
-| 17 | **Challenge codes / hot-seat duel** | Share a seed ("same season, who does better?") or alternate tactic picks with two coaches. | M / L |
+| 17 | ◐ **Partly done (season codes; no hot-seat duel):** **Challenge codes / hot-seat duel** | Share a seed ("same season, who does better?") or alternate tactic picks with two coaches. | M / L |
 | 18 | ✅ **Done:** **Budget & boosters** | Ticket revenue, sponsors, equipment/travel costs so tokens matter. | M |
-| 19 | **Academic calendar** | Finals week / report-card events that hit GPA unless study hall was scheduled. | S |
-| 20 | **Printable season report** | One-page PDF/PNG with record, leaders, standings and decision trail. | S |
+| 19 | ◐ **Partly done (the Finals week and Grades slump inbox events):** **Academic calendar** | Finals week / report-card events that hit GPA unless study hall was scheduled. | S |
+| 20 | ✅ **Done (as the season report card with an image export):** **Printable season report** | One-page PDF/PNG with record, leaders, standings and decision trail. | S |
 | 21 | ✅ **Done:** ✱ Team captain | Covered by the spec. | S–M |
 | 22 | ✅ **Done:** ✱ 3D locker-room jerseys | Covered by the spec. | M |
 | 23 | ✅ **Done:** ✱ Post-game press conference | Covered by the spec. | M |
