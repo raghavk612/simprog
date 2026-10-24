@@ -18,7 +18,7 @@ Research checked October 20–22, 2026. Exact data check time is in `public/data
 | [Barlow Condensed](https://fonts.google.com/specimen/Barlow+Condensed) by Jeremy Tribby | Display typography, labels and numbers | SIL OFL, locally bundled; `public/fonts/OFL-Barlow.txt` |
 | [Barlow](https://fonts.google.com/specimen/Barlow) by Jeremy Tribby | UI and body typography | SIL OFL (same family license), locally bundled; `public/fonts/OFL-Barlow.txt` |
 
-Original code generates the basketball, court, gym shell, hoop/net geometry, player characters, crowd, jersey graphics, and short opt-in sounds. Interface translations (Spanish, Chinese, French, Japanese, Italian, Hindi) were written for this project and are not yet native-reviewed. The three named creators are credited in-game. OpenAI Codex coding assistance is disclosed in credits.
+Original code generates the basketball, court, gym shell, hoop/net geometry, player characters, crowd, jersey graphics, and short opt-in sounds. Spoken commentary uses the voices already installed in the player's browser or operating system (the Web Speech API); no speech files or services are bundled. Interface translations (Spanish, Chinese, French, Japanese, Italian, Hindi) were written for this project and are not yet native-reviewed. The three named creators are credited in-game. OpenAI Codex coding assistance is disclosed in credits.
 
 ## Import pipeline
 

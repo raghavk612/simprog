@@ -8,8 +8,8 @@ This system is adapted from the settings, synthesized-sound and language-switchi
 
 | EcoQuest | Here | Notes |
 | --- | --- | --- |
-| 14 synthesized Web Audio effects, no audio files | 14 basketball effects in `src/audio.js` (made basket, three, miss, block, steal, whistle, timeout, confirm, select, error, signing, victory, defeat, interface click) | Same engine design: oscillators and filtered noise, context created on first use. **Sound starts off**, as this game always did |
-| Master volume, mute, per-sound toggles, test button, reset | Same, in the Sound tab | Test plays even while muted so volume can be set first. Every sound has its own toggle (EcoQuest exposed nine of fourteen) |
+| 14 synthesized Web Audio effects, no audio files | 17 effects in `src/audio.js` (made basket, three, miss, block, steal, whistle, timeout, confirm, select, error, signing, victory, defeat, interface click, crowd cheer, crowd groan, crowd murmur) | Same engine design: oscillators and filtered noise, context created on first use. **Sound starts off**, as this game always did |
+| Master volume, mute, per-sound toggles, test button, reset | Same, in the Sound tab | Test plays even while muted so volume can be set first. Every sound has its own toggle (EcoQuest exposed nine of fourteen; here all seventeen) |
 | Color-blind mode (deuteranopia / protanopia / tritanopia) | Same three modes, `src/a11y.js` | See "Colour-vision correction" below: these are *correction* filters, not simulation |
 | High contrast | Black background, white borders and text, heavy focus rings | Also honours the OS "increase contrast" preference on first visit |
 | Reduced motion | Static action poses in the arena, no interface animation | Joins the existing Motion button. Also honours the OS "reduce motion" preference on first visit |
@@ -22,15 +22,17 @@ This system is adapted from the settings, synthesized-sound and language-switchi
 | Simplified HUD | **Simplified interface** | Hides decorative labels, badges, tickets and extra notes |
 | Screen-reader announcements (`use-screen-reader.ts`) | `announce()` / `interrupt()` in `src/a11y.js` | EcoQuest defined these but never called them. Here every resolved play and score, page changes, camera and speed changes and sound/motion changes are announced |
 | Skip link, ARIA tabs, switches, focus styles | Same, plus focus moved to the page heading on navigation | |
-| Rebindable keys with conflict detection | Twelve coaching shortcuts in `src/keys.js` | The jump/sprint keys do not exist here; shortcuts are Watch live/pause, Next play, Timeout, five cameras (wide, courtside, follow, player view, auto), speed, sound, settings and the handbook; Space also plays the next possession |
+| Rebindable keys with conflict detection | Twelve coaching shortcuts in `src/keys.js` | The jump/sprint keys do not exist here; shortcuts are Watch live/pause, Next play, Timeout, five cameras (wide, courtside, follow, player view, auto), speed, sound, settings and the handbook (also `?`); Space also plays the next possession. In the judge demo **J** jumps to the final run |
 | Seven languages via i18next | Same seven (English, Spanish, Chinese, French, Japanese, Italian, Hindi) via `src/i18n/` | No library; see "Language" below |
 | Motor-helper warning that blocks leaderboard scores | Not used | Kangs has no leaderboard, so there is nothing to protect and no warning to show |
 
 ## How it works
 
-**Settings** (`src/settings.js`) validates every saved value on load, so a hand-edited or corrupt entry falls back to its default. Changes are written to `localStorage` and applied to `<html>` as classes (`a11y-high-contrast`, `a11y-reduced-motion`, `a11y-no-flash`, `a11y-simple`, `a11y-font-*`) and the `--ts` custom property. `src/a11y.css` does the visual work. A `kangs-settings-changed` event tells other modules (the arena, the top bar) to update without rebuilding the page, so dragging a slider never interrupts itself.
+**Settings** (`src/settings.js`) validates every saved value on load, so a hand-edited or corrupt entry falls back to its default. Changes are written to `localStorage` and applied to `<html>` as classes (`a11y-high-contrast`, `a11y-reduced-motion`, `a11y-no-flash`, `a11y-simple`, `theme-light`, `a11y-font-*`) and the `--ts` custom property. `src/a11y.css` does the visual work. A `kangs-settings-changed` event tells other modules (the arena, the top bar) to update without rebuilding the page, so dragging a slider never interrupts itself.
 
-**Sound** (`src/audio.js`). `play(key)` returns immediately when sound is muted or that sound is switched off. The Web Audio context is only created the first time a sound is actually played, which keeps within browser autoplay rules.
+**Spoken commentary** (`src/speech.js`) reads each play aloud in the interface language through the browser's speech voices. It is on by default but only speaks while sound is on, volume 0 is silent, and it can be switched off in Settings (screen-reader users should, because every play is also announced as text). **Light theme** inverts the page from the root and inverts pictures and the 3D court back (`src/a11y.css`); high contrast keeps its own palette.
+
+**Sound** (`src/audio.js`). The crowd ambience is a looping filtered noise that runs only during a live game and follows the mute and its own switch. `play(key)` returns immediately when sound is muted or that sound is switched off. The Web Audio context is only created the first time a sound is actually played, which keeps within browser autoplay rules.
 
 **Colour-vision correction.** EcoQuest's matrices are the Machado et al. (2009) *simulation* matrices, which show how a colour-blind person sees an image. Applied to a player's own screen they make colours *harder* to tell apart. Here the same published simulation data is used to build a *daltonization* correction instead: the colour information a viewer cannot see is shifted into channels they can (`correctionMatrix()` in `src/a11y.js`). Neutral greys are left exactly unchanged. A test checks this and that confusable colour pairs end up further apart.
 
