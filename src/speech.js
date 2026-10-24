@@ -12,10 +12,10 @@ export function pickVoice(list,tag){
 export function stopSpeech(){try{synth()?.cancel();}catch{}}
 /* Speaks a line. A new line replaces one that is still being read, so the voice never falls behind the play. */
 export function speak(text,{tag='en-US',muted=false,rate=1}={}){
- if(!on||muted||!text||!speechAvailable())return false;
+ if(!on||muted||volume<=0||!text||!speechAvailable())return false;
  try{
   const s=synth();if(!voices.length)voices=s.getVoices();s.cancel();
-  const u=new globalThis.SpeechSynthesisUtterance(text);u.lang=tag;u.volume=Math.max(.2,Math.min(1,volume*2));u.rate=Math.max(.7,Math.min(1.6,rate));
+  const u=new globalThis.SpeechSynthesisUtterance(text);u.lang=tag;u.volume=Math.min(1,volume*2);u.rate=Math.max(.7,Math.min(1.6,rate));
   const v=pickVoice(voices,tag);if(v)u.voice=v;s.speak(u);return true;
  }catch{return false;}
 }

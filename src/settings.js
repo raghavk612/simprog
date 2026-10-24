@@ -48,7 +48,8 @@ export const isTouchOnly=()=>typeof matchMedia==='function'&&matchMedia('(hover:
 // Mirrors the settings onto <html> as classes and custom properties; the stylesheet does the rest.
 export function applyA11y(s=getA11y()){
  const root=document.documentElement,cls=root.classList;
- root.style.filter=s.colorBlindMode==='none'?'':`url(#${FILTER_ID(s.colorBlindMode)})`;
+ // The light theme inverts the whole page (pictures are inverted back in a11y.css); the colour-vision correction is applied after it. High contrast keeps its own palette.
+ root.style.filter=[s.lightTheme&&!s.highContrast?'invert(1) hue-rotate(180deg)':'',s.colorBlindMode==='none'?'':`url(#${FILTER_ID(s.colorBlindMode)})`].filter(Boolean).join(' ');
  cls.toggle('theme-light',s.lightTheme);cls.toggle('a11y-high-contrast',s.highContrast);cls.toggle('a11y-reduced-motion',s.reducedMotion);cls.toggle('a11y-no-flash',s.flashReduction);cls.toggle('a11y-simple',s.simplifiedUI);
  for(const f of FONT_FAMILIES)cls.toggle(`a11y-font-${f}`,s.fontFamily===f);
  root.style.setProperty('--ts',String(s.textScale));

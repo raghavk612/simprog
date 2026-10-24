@@ -74,16 +74,17 @@ export function play(key){if(!bypass&&(muted||!enabled[key]))return;try{SOUNDS[k
 // Plays a sound even when muted so volume can be checked before sound effects are switched on.
 export function preview(key='swish'){bypass=true;try{SOUNDS[key]?.();}catch{}finally{bypass=false;}}
 // Ambient crowd for a live game: looping low noise that swells a little now and then. It follows the master mute and the 'crowd' switch.
-let bed=null;
+let bed=null,bedBuffer=null;
 function brownNoise(c,seconds=4){const buffer=c.createBuffer(1,Math.ceil(c.sampleRate*seconds),c.sampleRate),d=buffer.getChannelData(0);let last=0;for(let i=0;i<d.length;i++){last=(last+.02*(Math.random()*2-1))/1.02;d[i]=last*3.5;}return buffer;}
 export function startCrowd(){
  if(bed||muted||!enabled.crowd)return;const c=context();if(!c)return;
  try{
   const src=c.createBufferSource(),low=c.createBiquadFilter(),g=c.createGain(),lfo=c.createOscillator(),depth=c.createGain();
-  src.buffer=brownNoise(c);src.loop=true;low.type='lowpass';low.frequency.value=650;g.gain.value=Math.max(.09*volume,.0005);
-  lfo.frequency.value=.12;depth.gain.value=g.gain.value*.45;lfo.connect(depth).connect(g.gain);
-  src.connect(low).connect(g).connect(c.destination);src.start();lfo.start();bed={src,lfo,g};
+  bedBuffer??=brownNoise(c);src.buffer=bedBuffer;src.loop=true;low.type='lowpass';low.frequency.value=650;g.gain.value=Math.max(.09*volume,.0005);
+  // The slow swell is its own stage in series, so fading the master really fades everything.
+  const swell=c.createGain();swell.gain.value=1;lfo.frequency.value=.12;depth.gain.value=.3;lfo.connect(depth).connect(swell.gain);
+  src.connect(low).connect(swell).connect(g).connect(c.destination);src.start();lfo.start();bed={src,lfo,g,swell};
  }catch{bed=null;}
 }
-export function stopCrowd(){if(!bed)return;try{bed.g.gain.setTargetAtTime(.0001,bed.g.context.currentTime,.15);const b=bed;setTimeout(()=>{try{b.src.stop();b.lfo.stop();}catch{}},600);}catch{}bed=null;}
+export function stopCrowd(){if(!bed)return;const b=bed;bed=null;try{b.g.gain.cancelScheduledValues(0);b.g.gain.setTargetAtTime(.0001,b.g.context.currentTime,.12);setTimeout(()=>{try{b.src.stop();b.lfo.stop();b.g.disconnect();}catch{}},900);}catch{}}
 export const crowdRunning=()=>!!bed;

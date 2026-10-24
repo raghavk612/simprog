@@ -57,7 +57,7 @@ export function createJerseyShowcase({onPick}={}){
   const ring=new THREE.Mesh(new THREE.CircleGeometry(1.45,40),new THREE.MeshBasicMaterial({map:goldGlow,transparent:true,depthWrite:false,opacity:0}));ring.rotation.x=-Math.PI/2;ring.position.y=-1.49;group.add(ring);
   scene.add(group);return {kitKey,group,front,back,ring,hover:0,sel:0,phase:i*1.7};
  });
- let number=11,font='"Barlow Condensed",Arial,sans-serif',selected='home',motion=true,hoverIdx=-1,raf=0,last=performance.now(),size={w:0,h:0},focusIdx=-1;
+ let resizer=null,number=11,font='"Barlow Condensed",Arial,sans-serif',selected='home',motion=true,hoverIdx=-1,raf=0,last=performance.now(),size={w:0,h:0},focusIdx=-1;
  const paint=()=>{for(const p of pieces){const kit=KITS[p.kitKey];for(const [m,side] of [[p.front,'front'],[p.back,'back']]){m.material.map?.dispose();m.material.map=faceTexture(kit,side,number,font);m.material.needsUpdate=true;}}};
  const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
  const pick=e=>{const r=canvas.getBoundingClientRect();ndc.set(((e.clientX-r.left)/r.width)*2-1,-(((e.clientY-r.top)/r.height)*2-1));ray.setFromCamera(ndc,camera);const hits=ray.intersectObjects(pieces.flatMap(p=>[p.front,p.back]));const h=hits[0]?.object;return pieces.findIndex(p=>p.front===h||p.back===h);};
@@ -70,7 +70,7 @@ export function createJerseyShowcase({onPick}={}){
  function frame(now){
   raf=0;if(!canvas.isConnected)return;const dt=Math.min(.05,(now-last)/1000);last=now;resize();let moving=false;
   pieces.forEach((p,i)=>{
-   const isSel=p.kitKey===selected;p.sel+=((isSel?1:0)-p.sel)*Math.min(1,dt*8);p.hover+=((i===hoverIdx||i===focusIdx?1:0)-p.hover)*Math.min(1,dt*10);
+   p.group.rotation.y=((p.group.rotation.y%(2*Math.PI))+2*Math.PI)%(2*Math.PI);if(!motion&&p.group.rotation.y>Math.PI)p.group.rotation.y-=2*Math.PI;const isSel=p.kitKey===selected;p.sel+=((isSel?1:0)-p.sel)*Math.min(1,dt*8);p.hover+=((i===hoverIdx||i===focusIdx?1:0)-p.hover)*Math.min(1,dt*10);
    if(motion)p.group.rotation.y+=dt*(.55+.2*Math.sin(p.phase));else p.group.rotation.y+=((.38-(i-1)*.12)-p.group.rotation.y)*Math.min(1,dt*6);
    const s=1+.14*p.sel+.05*p.hover;p.group.scale.setScalar(s);p.group.position.y=.15*p.hover+(motion?.04*Math.sin(now/700+p.phase):0);p.ring.material.opacity=p.sel;
    if(Math.abs(p.sel-(isSel?1:0))>.01||Math.abs(p.hover-(i===hoverIdx||i===focusIdx?1:0))>.01)moving=true;
@@ -83,7 +83,7 @@ export function createJerseyShowcase({onPick}={}){
  paint();
  return {
   canvas,
-  mount(container){if(canvas.parentElement!==container)container.appendChild(canvas);size={w:0,h:0};wake();},
+  mount(container){if(canvas.parentElement!==container)container.appendChild(canvas);size={w:0,h:0};focusIdx=-1;resizer?.disconnect();if(globalThis.ResizeObserver){resizer=new ResizeObserver(()=>wake());resizer.observe(container);}wake();},
   setKit(k){if(ORDER.includes(k)){selected=k;wake();}},
   setNumber(n){if(n!==number){number=n;paint();wake();}},
   setMotion(on){motion=!!on;wake();},

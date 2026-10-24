@@ -13,7 +13,7 @@ import {t,tu,up,list,has,translateError,formatNumber,formatDate,formatDateTime,i
 import {commentaryText as commentary,explanationText,logText,reasonText,feedLines,tv} from './narrative.js';
 import {initSettings,getSound,setSound,getA11y,setA11y,onSettingsChange} from './settings.js';
 import {play,startCrowd,stopCrowd} from './audio.js';
-import {speak} from './speech.js';
+import {speak,stopSpeech} from './speech.js';
 import {announce} from './a11y.js';
 import {ACTIONS,loadKeys,keyLabel,ariaKey} from './keys.js';
 import {createSettingsDialog} from './settingsDialog.js';
@@ -78,7 +78,7 @@ function actionToast(a,was){if(!state)return;const msg=state.log[0]?logText(stat
  if(a==='hire'){const c=E.staff.find(x=>x.key===state.assistant);return notify(c?t('toast.hired',{name:t(`staff.${c.key}.name`),detail:cap1(t(`staff.${c.key}.detail`))}):msg,{type:'success',icon:'staff',title:t('toast.hiredTitle'),chips});}
  const map={train:['train','success','ball'],recruit:['recruit','success','staff'],talk:['talk','success','staff'],scout:['scout','success','film'],release:['release','warn','staff'],dismiss:['dismiss','warn','staff']};const [key,type,icon]=map[a]||['saved','success'];notify(msg,{title:t(`toast.titles.${key}`),type,icon,chips});}
 function save(){try{localStorage.setItem(saveKey,JSON.stringify(state));}catch{notify(t('notify.storage'),{type:'warn',title:t('toast.storageTitle')});}}
-function show(html){arena.paused=true;modal.innerHTML=`${btn('×','close','close',`aria-label="${esc(t('a11y.closeDialog'))}"`)}<div class="modal-content">${html}</div>`;const h=modal.querySelector('h1');if(h){h.id='modal-title';modal.setAttribute('aria-labelledby','modal-title');}if(!modal.open)modal.showModal();}
+function show(html){arena.paused=true;stopCrowd();stopSpeech();modal.innerHTML=`${btn('×','close','close',`aria-label="${esc(t('a11y.closeDialog'))}"`)}<div class="modal-content">${html}</div>`;const h=modal.querySelector('h1');if(h){h.id='modal-title';modal.setAttribute('aria-labelledby','modal-title');}if(!modal.open)modal.showModal();}
 const settings=createSettingsDialog({modal,show,notify,onKeysChange:k=>{keys=k;render();}});
 function openSettings(tab){settings.open(tab);}
 function toggleSound(){const muted=!getSound().muted;setSound({muted});if(!muted)play('select');announce(muted?t('a11y.soundOff'):t('a11y.soundOn'));}
@@ -302,7 +302,7 @@ function cueFor(c){return c.outcome==='made'?(c.three?'three':'swish'):c.outcome
 // Read out each resolved play once, for screen-reader users who cannot follow the 3D scene.
 // The crowd reacts to big plays: it roars for the Kangs' threes, dunks and blocks, and groans for the visitors'.
 function crowdReaction(c){const big=c.outcome==='made'&&(c.three||isDunk(c.kind));if(c.team==='home'&&(big||(c.outcome==='steal')))play('cheer');else if(c.team==='away'&&big)play('groan');else if(c.outcome==='block')play(c.team==='away'?'cheer':'groan');}
-function reportPlay(p){const id=`${arena.run}|${p.index}`;if(cued===id)return;cued=id;play(cueFor(p.clip));crowdReaction(p.clip);const line=commentary(p.clip);announce(`${line} ${t('a11y.score',{home:p.home,away:p.away})}`);speak(line,{tag:localeTag(),muted:getSound().muted,rate:Math.min(1.5,.95+.15*Math.log2(Math.max(.5,arena.speed||1))+.1)});}
+function reportPlay(p){const id=`${arena.run}|${p.index}`;if(cued===id)return;cued=id;play(cueFor(p.clip));crowdReaction(p.clip);const line=commentary(p.clip);const spoke=speak(line,{tag:localeTag(),muted:getSound().muted,rate:Math.min(1.5,.95+.15*Math.log2(Math.max(.5,arena.speed||1))+.1)});announce(spoke?t('a11y.score',{home:p.home,away:p.away}):`${line} ${t('a11y.score',{home:p.home,away:p.away})}`);}
 // The ambient crowd runs only during a live game.
 function syncCrowd(){if(view==='game'&&state?.match&&!replayEvent&&!modal.open)startCrowd();else stopCrowd();}
 function syncPresentation(p){
@@ -329,13 +329,13 @@ function step(){
 }
 function finishTour(){tutorial=0;try{localStorage.setItem(TUTORIAL,'seen');}catch{}render();}
 const pageName=v=>v==='landing'?t('meta.title'):t(`nav.${v}`);
-function go(v){lastWhy='';if(v==='landing'&&demo){leaveDemo();notify(t('demo.closed'),{type:'info',title:t('demo.jumpedTitle')});}view=v;auto=false;arena.clear();closingMatch=null;pendingResult=null;replayEvent=null;$('#toast')?.querySelectorAll('.toast-card.error').forEach(c=>c.remove());render();window.scrollTo(0,0);if(v==='locker')arena.setView('court');else if(v==='staff')arena.setView('office');
+function go(v){stopSpeech();lastWhy='';if(v==='landing'&&demo){leaveDemo();notify(t('demo.closed'),{type:'info',title:t('demo.jumpedTitle')});}view=v;auto=false;arena.clear();closingMatch=null;pendingResult=null;replayEvent=null;$('#toast')?.querySelectorAll('.toast-card.error').forEach(c=>c.remove());render();window.scrollTo(0,0);if(v==='locker')arena.setView('court');else if(v==='staff')arena.setView('office');
 else arena.setView(v==='game'?(['player','follow','court'].includes(arena.mode)&&state?.match?arena.mode:'auto'):'broadcast');
  // Keyboard and screen-reader users land at the top of the new page instead of at the start of the document.
  $('main h1')?.focus({preventScroll:true});announce(t('a11y.pageOpened',{page:pageName(v)}));
 }
 app.addEventListener('submit',e=>{e.preventDefault();if(e.target.id==='start-form'){const f=new FormData(e.target);if(state&&!confirm(t('confirm.replace')))return;state=E.createGame(data,f.get('coach'),f.get('difficulty'));E.autoLineup(state);save();play('whistle');view='home';try{if(!localStorage.getItem(TUTORIAL)){tutorial=1;localStorage.setItem(TUTORIAL,'seen');}}catch{tutorial=1;}render();$('main h1')?.focus({preventScroll:true});}});
-modal.addEventListener('close',()=>{arena.paused=false;if(flowPending){flowPending=false;setTimeout(postGame,0);}if(practiceRun){practiceRun.cleanup?.();const run=practiceRun;practiceRun=null;practicePlan=practicePlan.filter(k=>!run.done.some(d=>d.key===k&&d.passed));render();}});
+modal.addEventListener('close',()=>{arena.paused=false;syncCrowd();if(flowPending){flowPending=false;setTimeout(postGame,0);}if(practiceRun){practiceRun.cleanup?.();const run=practiceRun;practiceRun=null;practicePlan=practicePlan.filter(k=>!run.done.some(d=>d.key===k&&d.passed));render();}});
 /* Live-game drawers share one corner of the court: opening one closes the other so they never overlap. */
 document.addEventListener('toggle',e=>{const d=e.target;if(!d.open||!document.body.classList.contains('live-match')||!d.matches('.commentary-drawer,.box-drawer,.why-drawer'))return;document.querySelectorAll('.commentary-drawer[open],.box-drawer[open],.why-drawer[open]').forEach(o=>{if(o!==d)o.open=false;});},true);
 modal.addEventListener('keydown',e=>{if(!/^[1-3]$/.test(e.key)||e.ctrlKey||e.metaKey||e.altKey)return;const b=modal.querySelectorAll('[data-pick]')[+e.key-1];if(b&&!b.disabled){e.preventDefault();b.click();}});
