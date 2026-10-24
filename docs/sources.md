@@ -4,7 +4,7 @@ Research checked October 20–22, 2026. Exact data check time is in `public/data
 
 | Source | Use | License / treatment |
 | --- | --- | --- |
-| [KingCo Athletics · Lake Washington boys basketball](https://www.kingcoathletics.com/team/?schoolid=66&sportid=3) (WPA Network team widgets) | Public Varsity, JV and C-Team rosters (numbers, names, heights, positions, grades), schedules, game types and final scores for 2025–26; opponent rosters at the same level via each opponent's team page | Factual public data; only completed games used; C-Team numbers and missing opponent rosters filled by the game and flagged |
+| [KingCo Athletics · Lake Washington boys basketball](https://www.kingcoathletics.com/team/?schoolid=66&sportid=3) (WPA Network team widgets) | Public Varsity, JV and C-Team rosters (numbers, names, heights, positions, grades), 2026–27 schedules (dates, times, venues, game types; final scores when published) and the latest published rosters (2025–26 until 2026–27 rosters are posted); opponent rosters at the same level via each opponent's team page | Factual public data; upcoming games carry no scores; C-Team numbers and missing opponent rosters filled by the game and flagged |
 | [Lake Washington Boys Basketball](https://www.kangsbasketball.com/hs) | Program context | Reference only |
 | [School program information](https://www.kangsbasketball.com/page/show/4151549-lake-washington-high-school) | Lake Washington / Kangs identity | Kangaroo logo supplied by the creators for center court; the sidebar keeps an original K monogram |
 | [FBLA event](https://www.fbla.org/competitive-events/computer-game-simulation-programming/) | Event context | Reference only |
