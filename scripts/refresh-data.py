@@ -6,15 +6,18 @@ Varsity, Junior Varsity and C-Team rosters and schedules.
 
 * The game plays the TARGET_SEASON (2026-27) schedule. Upcoming games are kept with
   points/against = null; final scores are filled in as KingCo publishes them.
-* If a level has no roster published for the target season yet, the existing roster in
-  public/data/kangs.json is kept (players are never wiped). The same goes for opponents:
-  a published target-season roster wins, otherwise the existing roster is kept.
+* Kangs rosters are PINNED by policy: by default the existing Kangs rosters in
+  public/data/kangs.json (rosterSeason 2025-26) are kept even once KingCo publishes a
+  2026-27 roster. Pass --update-rosters to replace them with a published roster (8-15
+  players); a level with no valid published roster still keeps its existing roster.
+  Opponent rosters always refresh: a published roster wins, otherwise the existing one is kept.
 * `refPointsPerGame` (the previous season's team scoring, used for estimated player
   stats before any game is played) is carried forward from the existing snapshot.
 * On any network or validation failure the existing snapshot is kept.
 
 Usage:
-  python3 scripts/refresh-data.py                  # fetch live data
+  python3 scripts/refresh-data.py                  # fetch live data; Kangs rosters stay pinned
+  python3 scripts/refresh-data.py --update-rosters # also replace Kangs rosters with newly published ones
   python3 scripts/refresh-data.py --from-raw FILE  # rebuild from a saved raw extraction
     FILE is either the compact schedule format (raw-2026-27.json: levels.<lvl>.games rows of
     [date, time, opponent, type, Home|Away, location] plus optional newOpponentRosters2025_26)
@@ -22,7 +25,7 @@ Usage:
 """
 from pathlib import Path
 from html.parser import HTMLParser
-import re, json, subprocess, datetime, sys, copy
+import re, json, subprocess, datetime, sys, copy, argparse
 
 SCHOOL_ID, SPORT_ID = 66, 3
 WIDGET = 'https://www.wpanetwork.com/widgets/widget-team-{kind}.php?school_year={year}&school_id=66&sport_id=3&level_id={level}&output_mode=plain'
@@ -175,7 +178,7 @@ def ref_ppg(prev_level):
     return None, None
 
 
-def build_level(key, raw, year_slug, prev=None):
+def build_level(key, raw, year_slug, prev=None, update_rosters=False):
     meta = LEVELS[key]
     games = [game_row(g, year_slug) for g in raw['schedule'] if g.get('date')]
     taken = {int(p['number']) for p in raw['roster'] if p['number'].isdigit()}
@@ -188,7 +191,13 @@ def build_level(key, raw, year_slug, prev=None):
                             year=GRADES.get(p['year'].strip(), p['year'].strip() or 'Not listed'),
                             source=TEAM_PAGE.format(year=year_slug, level=meta['level_id']), **({'numberAssigned': True} if assigned else {})))
     roster_season = f"{year_slug[:4]}–{year_slug[-2:]}"
-    if not MIN_PLAYERS <= len(players) <= MAX_PLAYERS:
+    valid = MIN_PLAYERS <= len(players) <= MAX_PLAYERS
+    if not update_rosters and prev and prev.get('players'):
+        if valid:
+            print(f"warning: {key}: ignoring the published {roster_season} roster ({len(players)} players); Kangs rosters are pinned to "
+                  f"{prev.get('rosterSeason', '2025–26')} by policy (pass --update-rosters to adopt it)", file=sys.stderr)
+        players, roster_season = copy.deepcopy(prev['players']), prev.get('rosterSeason', '2025–26')
+    elif not valid:
         if not prev or not prev.get('players'):
             raise ValueError(f'{key}: {len(players)} players failed validation and no earlier roster is available')
         print(f'warning: {key}: published {roster_season} roster has {len(players)} players (need {MIN_PLAYERS}-{MAX_PLAYERS}); '
@@ -204,12 +213,12 @@ def build_level(key, raw, year_slug, prev=None):
     return level
 
 
-def build(raw, year_slug, prev=None):
+def build(raw, year_slug, prev=None, update_rosters=False):
     a, b = year_slug.split('-')
     season = f'{a}–{b[-2:]}'
-    levels = {k: build_level(k, raw[k], year_slug, ((prev or {}).get('levels') or {}).get(k)) for k in LEVELS}
+    levels = {k: build_level(k, raw[k], year_slug, ((prev or {}).get('levels') or {}).get(k), update_rosters) for k in LEVELS}
     kept = sorted({v['rosterSeason'] for v in levels.values()} - {season})
-    roster_note = (f"Rosters are the latest published KingCo rosters ({' / '.join(kept)}); no {season} roster is out yet for those levels. ") if kept else ''
+    roster_note = (f"Kangs rosters are the {' / '.join(kept)} KingCo rosters, kept for the {season} schedule by policy. ") if kept else ''
     return dict(season=season, checkedAt=datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 source=f'https://www.kingcoathletics.com/team/?schoolid={SCHOOL_ID}&sportid={SPORT_ID}', levels=levels,
                 notes=f"Dated public snapshot of the Lake Washington boys basketball Varsity, Junior Varsity and C-Team {season} schedules from KingCo Athletics (WPA Network). Games without a final score are upcoming and keep points/against as null; final scores are filled in when KingCo publishes them. {roster_note}refPointsPerGame is the previous season's team scoring average, used only to estimate player stats before any score exists. C-Team jersey numbers, heights and positions are not published; the game assigns jersey numbers and marks them numberAssigned. Opponent rosters come from each school's KingCo/WPA team page at the same level (latest published); opponents without one get fictional names (real: false). Skills, energy, morale, GPA and all simulated statistics are fictional.")
@@ -232,12 +241,12 @@ def fetch_raw(year_slug):
     return raw
 
 
-def refresh(prev=None):
+def refresh(prev=None, update_rosters=False):
     raw = fetch_raw(TARGET_SEASON)
     for key, lv in raw.items():
         if len(lv['schedule']) < MIN_GAMES:
             raise ValueError(f'{TARGET_SEASON}: {key} schedule not posted yet; previous snapshot kept')
-    return build(raw, TARGET_SEASON, prev)
+    return build(raw, TARGET_SEASON, prev, update_rosters)
 
 
 def compact_to_raw(compact, prev):
@@ -257,8 +266,13 @@ def compact_to_raw(compact, prev):
 if __name__ == '__main__':
     path = Path(__file__).resolve().parents[1] / 'public/data/kangs.json'
     prev = json.loads(path.read_text()) if path.exists() else None
-    if len(sys.argv) == 3 and sys.argv[1] == '--from-raw':
-        raw_file = Path(sys.argv[2]); raw = json.loads(raw_file.read_text()); slug = raw_file.stem.split('raw-')[-1]
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument('--from-raw', metavar='FILE', help='rebuild from a saved raw extraction instead of the network')
+    ap.add_argument('--update-rosters', action='store_true',
+                    help='replace the pinned 2025-26 Kangs rosters with a newly published roster (8-15 players); default keeps them')
+    args = ap.parse_args()
+    if args.from_raw:
+        raw_file = Path(args.from_raw); raw = json.loads(raw_file.read_text()); slug = raw_file.stem.split('raw-')[-1]
         if 'gameFields' in raw:  # compact schedule format
             raw, prev = compact_to_raw(raw, prev)
         else:
@@ -269,9 +283,9 @@ if __name__ == '__main__':
                     level, team, sid, rows = (line.split('#', 3) + [''])[:4]
                     roster = [dict(number=r.split('|', 1)[0], name=r.split('|', 1)[1]) for r in rows.split(';') if '|' in r]
                     raw[level].setdefault('opponents', {})[team] = dict(school_id=sid or None, roster=roster)
-        data = build(raw, slug, prev)
+        data = build(raw, slug, prev, args.update_rosters)
     else:
-        data = refresh(prev)
+        data = refresh(prev, args.update_rosters)
     path.write_text(json.dumps(data, indent=2) + '\n')
     counts = ', '.join(f"{v['label']} {len(v['players'])} players ({v['rosterSeason']})/{len(v['games'])} games" for v in data['levels'].values())
     print(f"Saved {data['season']}: {counts} -> {path}")
