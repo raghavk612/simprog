@@ -78,6 +78,42 @@ export function opponentRating(s,g=s.schedule[s.week],week=s.week){const real=Nu
 export function opponent(s){const g=s.schedule[s.week];return {...g,roster:oppRoster(s,g.opponent),realRoster:!!s.opponents?.[g.opponent]?.real,rating:opponentRating(s,g),style:['perimeter','paint','transition'][s.week%3]};}
 export function startMatch(s){open(s);if(s.pendingEvent)throw Error('Answer the coach’s inbox first.');validateLineup(s);const nm=s.nextMods;if(s.press)s.press.done=true;if(nm){s.chemistry=cap(s.chemistry+(nm.chem||0));for(const p of s.players){p.morale=cap(p.morale+(nm.morale||0));p.energy=cap(p.energy+(nm.energy||0));}s.fans=Math.max(40,s.fans+(nm.fans||0));}s.nextMods=null;s.match={mods:nm?{offense:nm.offense||0,defense:nm.defense||0,oppRating:nm.oppRating||0}:undefined,possession:0,home:0,away:0,tactic:'balanced',pace:'steady',timeouts:3,boost:0,feed:[],box:Object.fromEntries(s.players.map(p=>[p.id,0])),line:Object.fromEntries(s.players.map(p=>[p.id,{...blankLine(),min:p.minutes,start:p.starter?1:0}])),events:[],seedStart:s.seed,feedMeta:[]};log(s,`Tip-off vs ${opponent(s).opponent}.`,'tipoff',{opp:opponent(s).opponent});}
 export function timeout(s,message){const m=s.match;if(!m||m.timeouts<=0)throw Error('No timeouts remaining.');m.timeouts--;m.boost=8;if(message==='calm')s.players.forEach(p=>p.energy=cap(p.energy+4));else s.players.forEach(p=>p.morale=cap(p.morale+3));m.feed.unshift(`TIMEOUT · ${message==='calm'?'Breathe. Settle. Execute. Energy +4.':'Trust each other. Morale +3.'}`);m.feedMeta?.unshift({t:'t',m:message==='calm'?'calm':'belief'});}
+/* ---- quarter breaks: a pause in the interface after possessions 16, 32 and 48. Nothing here touches the simulation; applying a suggestion only sets the same tactic or pace the sideline menu sets. ---- */
+export const BREAKS=[16,32,48];
+const COUNTER={perimeter:'zone',paint:'pressure',transition:'balanced'};
+const sideStats=(m,i)=>{const r={fgm:0,fga:0,tpm:0,tpa:0};for(const e of m.events||[]){const c=e.plays?.[i];if(!c||c.outcome==='steal')continue;r.fga++;if(c.three)r.tpa++;if(c.points){r.fgm++;if(c.three)r.tpm++;}}return r;};
+/* Both teams' numbers so far (shots from the stored plays, the rest from match.stats) and up to three suggested adjustments, each {id,p,tactic?,pace?}. Returns null outside a game. */
+export function quarterReport(s){
+ const m=s?.match;if(!m)return null;
+ const st=m.stats||{},row=(k,i)=>({...sideStats(m,i),reb:st[k]?.rebounds||0,ast:st[k]?.assists||0,stl:st[k]?.steals||0,blk:st[k]?.blocks||0});
+ const home=row('home',0),away=row('away',1),active=s.players.filter(p=>p.minutes>0),energy=Math.round(mean(active.length?active:s.players,'energy')),lead=m.home-m.away;
+ const out=[],add=(id,p,fx)=>{if(out.length<3)out.push({id,p,...fx});};
+ const style=s.scouted?opponent(s).style:null,counter=COUNTER[style];
+ if(counter&&m.tactic!==counter)add('counter',{style,tactic:counter},{tactic:counter});
+ if(away.tpa>=5&&away.tpm/away.tpa>=.45&&m.tactic!=='zone')add('threes',{made:away.tpm,att:away.tpa},{tactic:'zone'});
+ if(energy<60&&m.pace==='fast')add('tired',{energy},{pace:'steady'});
+ if(away.reb-home.reb>=3&&m.tactic!=='pressure')add('boards',{us:home.reb,them:away.reb},{tactic:'pressure'});
+ if(lead<=-6&&m.tactic!=='pressure')add('trailing',{n:-lead},{tactic:'pressure'});
+ if(energy>=75&&m.pace==='steady'&&lead<6)add('push',{energy},{pace:'fast'});
+ if(out.length<2&&m.tactic!=='balanced')add('balanced',{},{tactic:'balanced'});
+ return {quarter:Math.max(1,Math.min(4,Math.ceil(m.possession/16))),possession:m.possession,home:m.home,away:m.away,tactic:m.tactic,pace:m.pace,energy,teams:{home,away},suggestions:out};
+}
+/* Applies one suggestion from the current report (so a stale or forged id does nothing) and writes the decision-trail line. */
+export function applyAdjustment(s,id){
+ const r=quarterReport(s),sg=r?.suggestions.find(x=>x.id===id);if(!sg)throw Error('That adjustment is no longer available.');
+ const m=s.match;if(sg.tactic)m.tactic=sg.tactic;if(sg.pace)m.pace=sg.pace;
+ return sg.tactic?log(s,`Quarter ${r.quarter} adjustment: switched to ${sg.tactic}.`,'adjustTactic',{q:r.quarter,tactic:sg.tactic}):log(s,`Quarter ${r.quarter} adjustment: pace set to ${sg.pace}.`,'adjustPace',{q:r.quarter,pace:sg.pace});
+}
+/* The best plays in a list of stored events: made baskets score their points (+2 dunk, +1 three) and the Kangs' blocks and steals score 3 and 2.5. Ties go to the later play; one play per possession. Returns up to n of {i,score,kind,player,shot,home,away,points}. */
+export function highlights(events,n=3){
+ const found=[];
+ (events||[]).forEach((e,i)=>{
+  const o=e.plays?.[0],d=e.plays?.[1],score={home:e.home,away:e.visitor};
+  if(o?.outcome==='made'&&o.points){const kind=o.three?'three':isDunk(o.kind)?'dunk':'two';found.push({i,score:o.points+(kind==='dunk'?2:kind==='three'?1:0),kind,player:o.player,shot:o,points:o.points,...score});}
+  if(d&&(d.outcome==='block'||d.outcome==='steal'))found.push({i,score:d.outcome==='block'?3:2.5,kind:d.outcome,player:d.defender,shot:d,points:0,...score});
+ });
+ const seen=new Set();return found.sort((a,b)=>b.score-a.score||b.i-a.i).filter(h=>!seen.has(h.i)&&seen.add(h.i)).slice(0,n);
+}
 /* Shot tuning: every shot is a little harder (miss), threes harder still (threeMiss), and blocks are more common. Measured with scripts/balance.mjs and the shooting-line check in the tests. */
 export const TUNING={miss:-.04,threeMiss:-.07,block3:.035,blockTight:.15,block:.06};
 function makePlay(s,team,shooter,helper,defender,opp,m){

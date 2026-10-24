@@ -136,13 +136,13 @@ Effort: **S** < 1 day, **M** 1–3 days, **L** a week+. Ideas already covered by
 | 7 | ✅ **Done (accessibility branch):** **Sound design** | Crowd, whistle, swish/rim, buzzer and a volume slider (WebAudio, no assets). | S–M |
 | 8 | ✅ **Done (accessibility branch):** **Accessibility pack** | Text size, high-contrast and color-blind palettes, "reduce 3D", dyslexia-friendly font, screen-reader scores. | M |
 | 9 | **Graphics quality / low-spec mode** | Auto-detect low fps and drop shadows, crowd and pixel ratio; manual Low/Med/High. | S |
-| 10 | **Halftime / quarter adjustments** | Pause each quarter with a stat comparison and 2–3 suggested adjustments. | M |
+| 10 | ✅ **Done:** **Halftime / quarter adjustments** | Pause each quarter with a stat comparison and 2–3 suggested adjustments. (Quarter break after possessions 16, 32 and 48; `quarterReport` and `applyAdjustment` in `src/engine.js`; see docs/verification.md.) | M |
 | 11 | **Recruiting mini-game** | Watch a short scouting scrimmage to reveal hidden traits before signing. | M |
 | 12 | **Player development arcs** | Skill sparklines, ceilings, breakout/slump tags. | M |
 | 13 | **Multi-season dynasty** | Seniors graduate, freshmen arrive, tokens/fans carry over. Changes the save schema. | L |
 | 14 | **Achievements** | Perfect Drill, Undefeated Regular Season, Beat the Rival, Zero-Injury Season, Varsity Champion. | S |
 | 15 | ✅ **Done:** **"Why that shot?" live panel** | Show shot-probability factor bars (skill, energy, chemistry, tactics) during live play. Great for Q&A. | S |
-| 16 | **Broadcast highlights + Player of the Game** | Auto-replay the top 3 plays with lower-third graphics and a POG card. | M |
+| 16 | ✅ **Done:** **Broadcast highlights + Player of the Game** | Auto-replay the top 3 plays with lower-third graphics and a POG card. (In the result dialog: three replay buttons with lower-third labels, ranked by `highlights`, plus a Player of the Game card. They replay on request rather than automatically, and only the last 12 plays of a game are stored.) | M |
 | 17 | **Challenge codes / hot-seat duel** | Share a seed ("same season, who does better?") or alternate tactic picks with two coaches. | M / L |
 | 18 | **Budget & boosters** | Ticket revenue, sponsors, equipment/travel costs so tokens matter. | M |
 | 19 | **Academic calendar** | Finals week / report-card events that hit GPA unless study hall was scheduled. | S |

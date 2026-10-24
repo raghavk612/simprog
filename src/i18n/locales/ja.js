@@ -225,7 +225,7 @@ export default {
   kicker:'コーチのハンドブック',
   },
  profile:{kicker:'選手プロフィール · #{{n}}',risk:'怪我のリスク',injured:'模擬の負傷：回復まであと {{n}} ステップ。',healthy:'表示されている健康状態は架空のものです。アスリートの個人情報は一切使用していません。',rename:'選手の表示名',save:'名前を保存',release:'ロスターから外す',sourceName:'出典での元の名前：{{name}}。',custom:'制作者が追加した選手で、公表されたロスターにはいません。',renameNote:'名前を変更しても、あなたのシミュレーションが変わるだけです。',est:'推定',riskHigh:'高め',riskLow:'低い',},
- result:{kicker:'フィルムルーム · {{outcome}}',win:'勝利',loss:'敗北',before:'ティップオフ前にしたこと',noPrep:'この試合では準備セッションが記録されていません。',defining:'決定的なポゼッション',shotQuality:'シュートの質：{{n}}%。',why:'なぜそうなったか · 決断の分析',whyBody:'直近のポゼッション：基本のシュート確率に対する変化（パーセントポイント）。これらはモデル上の寄与であり、現実に何が起きたかを示すものではありません。',former:'元ロスターの選手',pts:'{{n}} 点',pog:'最優秀選手：{{name}} — {{pts}}点 · {{reb}}リバウンド · {{ast}}アシスト',},
+ result:{kicker:'フィルムルーム · {{outcome}}',win:'勝利',loss:'敗北',before:'ティップオフ前にしたこと',noPrep:'この試合では準備セッションが記録されていません。',defining:'決定的なポゼッション',shotQuality:'シュートの質：{{n}}%。',why:'なぜそうなったか · 決断の分析',whyBody:'直近のポゼッション：基本のシュート確率に対する変化（パーセントポイント）。これらはモデル上の寄与であり、現実に何が起きたかを示すものではありません。',former:'元ロスターの選手',pts:'{{n}} 点',pog:'最優秀選手：{{name}} — {{pts}}点 · {{reb}}リバウンド · {{ast}}アシスト',pogTitle:'この試合の最優秀選手',},
  notify:{storage:'ブラウザのストレージを利用できません。進行状況を残すにはシーズンをエクスポートしてください。',checked:'{{date}} の KingCo スナップショットを読み込みました。',snapshotFailed:'最後に確認済みのデータを使い続けます。',finishFirst:'先に試合を終えてください。',minutes:'0〜32の整数の分数を入力してください。',exported:'ダウンロードフォルダに kangs-season.json として保存しました。',tooLarge:'セーブファイルが大きすぎます',badSave:'互換性のある Kangs のシーズンファイルではありません。',saved:'保存しました。'},
  confirm:{replace:'このブラウザに保存されているシーズンを置き換えますか？残したい場合は先にエクスポートしてください。',import:'現在のローカルのシーズンをこのセーブで置き換えますか？',release:'この選手をシミュレーションのロスターから外しますか？'},
  // Play-by-play commentary templates: one sentence per template, filled from the play.
@@ -261,7 +261,7 @@ export default {
   reasonWithScouting:'分析のおかげで守備の読みが整っていました。チームワーク {{chem}}、平均体力 {{energy}}。',
   runEnds:'今シーズンの優勝への挑戦は終わりました。決断を振り返って、もう一度挑みましょう。',
   champions:'州チャンピオン。ひとつのシーズン。あなたのプログラム。',
-  seasonComplete:'シーズン終了。',perfectBonus:'パーフェクトドリルボーナス',captain:'{{name}}がチームキャプテンになりました。',event:'受信箱：{{title}} → {{choice}}',press:'記者会見：{{n}}件の回答が次の試合に影響します。',pressSkip:'記者会見を省略しました。ファン −10。',},
+  seasonComplete:'シーズン終了。',perfectBonus:'パーフェクトドリルボーナス',captain:'{{name}}がチームキャプテンになりました。',event:'受信箱：{{title}} → {{choice}}',press:'記者会見：{{n}}件の回答が次の試合に影響します。',pressSkip:'記者会見を省略しました。ファン −10。',adjustTactic:'第{{q}}クォーター終了：{{tactic}}に切り替え。',adjustPace:'第{{q}}クォーター終了：テンポを{{pace}}に設定。',},
  error:{title:'プログラムを読み込めませんでした。',body:'接続が回復したら再読み込みしてください。',reload:'再読み込み'},
  // Messages thrown by the simulation engine. The English text is the lookup key.
  errors:{
@@ -285,7 +285,7 @@ export default {
   'Minutes must be whole numbers from 0 to 32.':'分数は0〜32の整数にしてください。',
   'Allocate exactly 160 player-minutes (five players × 32 minutes).':'ちょうど160選手分（5人 × 32分）を配分してください。',
   'No timeouts remaining.':'タイムアウトが残っていません。',
-  'No game in progress':'進行中の試合はありません','Your plan holds 3 sessions. Remove one first.':'プランには3つまで入ります。先にどれか1つを外してください。','No preparation slots left this week.':'今週の準備枠は残っていません。','Answer the coach’s inbox first.':'先にコーチの受信箱に対応してください。','Nothing is waiting in the inbox.':'受信箱に待っているものはありません。','That choice is not available.':'その選択肢は選べません。',},
+  'No game in progress':'進行中の試合はありません','Your plan holds 3 sessions. Remove one first.':'プランには3つまで入ります。先にどれか1つを外してください。','No preparation slots left this week.':'今週の準備枠は残っていません。','Answer the coach’s inbox first.':'先にコーチの受信箱に対応してください。','Nothing is waiting in the inbox.':'受信箱に待っているものはありません。','That choice is not available.':'その選択肢は選べません。','That adjustment is no longer available.':'その調整はもう選べません。',},
  settings:{
   title:'設定',
   eyebrow:'環境設定',
@@ -338,4 +338,6 @@ export default {
  press:{winwhy:{q:'勝ちましたね。決め手は何でしたか？',a:{team:'チーム全員を称える',effort:'守備の頑張りを挙げる',deflect:'コメントなし'}},losswhy:{q:'今夜は敗戦でした。何がいけませんでしたか？',a:{own:'責任を負う',execution:'実行面のせいにする',deflect:'コメントなし'}},complacent:{q:'{{margin}}点差の大勝です。慢心の心配はありませんか？',a:{hungry:'ハングリーさを保つ',bench:'ベンチを称える',confident:'我々が最強だ'}},wire:{q:'最後までもつれました。チームはどうでしたか？',a:{composure:'落ち着きを称える',details:'細部を指摘する',deflect:'コメントなし'}},scorer:{q:'{{name}}が{{pts}}点を挙げました。彼がカギですか？',a:{praise:'彼を称える',team:'チームの力だ',deflect:'コメントなし'}},next:{q:'次は{{opp}}です。どう見ていますか？',a:{confident:'勝てる',respect:'手強いチームだ',step:'一試合ずつ'}},streakw:{q:'{{n}}連勝です。どう続けますか？',a:{routine:'ルーティンを守る',confident:'波に乗っている',fans:'ファンに感謝する'}},streakl:{q:'{{n}}連敗です。ロッカールームは大丈夫ですか？',a:{rally:'チームを鼓舞する',honest:'問題を正直に認める',deflect:'コメントなし'}},finalrun:{q:'ここからは負ければ終わりです。どう準備しますか？',a:{focus:'守備に集中する',loose:'リラックスさせる',confident:'準備はできている'}},threes:{q:'チームは3Pを{{n}}本決めました。それが狙いですか？',a:{shooters:'3Pに懸ける',balance:'バランスが欲しい',deflect:'コメントなし'}},stops:{q:'相手を{{oppPts}}点に抑えました。カギは何でしたか？',a:{defense:'守備が試合に勝つ',team:'全員が役割を果たした',deflect:'コメントなし'}},tired:{q:'終盤は疲れて見えました。ローテーションの不安は？',a:{rest:'もっと休ませる',tough:'十分にタフだ',depth:'選手層を信じる'}},crowd:{q:'今夜は大声援でした。影響はありますか？',a:{fans:'力になる',earn:'自分たちで勝ち取る',deflect:'コメントなし'}},kicker:'記者会見室',title:'試合後の記者会見',progress:'質問 {{n}} / {{total}}',reporter:'記者',skip:'記者会見を省略（ファン −10）',done:'記者会見が終わりました。次の試合に影響します。',effects:'次の試合での変化',none:'変化はありません。',again:'記者会見室を開く',waiting:'記者会見が待っています',},
  chip:{morale:'士気',energy:'エネルギー',skill:'スキル',gpa:'GPA',injury:'ケガの試合数',tokens:'トークン',fans:'ファン',chemistry:'ケミストリー',chem:'ケミストリー',offense:'攻撃',defense:'守備',oppRating:'相手の強さ',roster:'新しい選手',next:'次の試合',team:'チーム',},
  inbox:{kicker:'コーチの受信箱',pending:'決断が待っています',open:'開く',empty:'待っているものはありません。',blocked:'次の試合の準備の前に、これに答えてください。',unavailable:'今は選べません',hint:'1〜3キーで選べます。',chose:'選んだのは：{{choice}}',continue:'続ける',last:'直近の決断',},
- captain:{name:'キャプテンに指名',is:'キャプテン ✓',badge:'キャプテン',c:'C',note:'キャプテンは健康で調子が良い間、試合ごとにケミストリーを2上げ、悪い知らせの影響を和らげます。後から変更すると、前キャプテンの士気が4、チームのケミストリーが2下がります。',set:'{{name}}がキャプテンです。',},};
+ captain:{name:'キャプテンに指名',is:'キャプテン ✓',badge:'キャプテン',c:'C',note:'キャプテンは健康で調子が良い間、試合ごとにケミストリーを2上げ、悪い知らせの影響を和らげます。後から変更すると、前キャプテンの士気が4、チームのケミストリーが2下がります。',set:'{{name}}がキャプテンです。',},
+ break:{kicker:'クォーター間',title:'第{{n}}クォーター終了',suggested:'提案される調整',none:'変更は不要です。ゲームプランは機能しています。',keep:'試合を続ける',applied:'調整しました',toTactic:'戦術を{{tactic}}に切り替えます。',toPace:'テンポを{{pace}}にします。',s:{counter:'映像分析が効きました。{{tactic}}が相手のスタイルへの最良の対策です。',threes:'相手は3ポイントを{{att}}本中{{made}}本決めています。ゾーンに切り替えて、シューターに素早く寄せましょう。',tired:'選手が疲れています（体力{{energy}}）。テンポを落として足を温存しましょう。',boards:'リバウンドで{{them}}対{{us}}と負けています。プレッシャーでターンオーバーを狙いましょう。',trailing:'{{n}}点ビハインドです。ボール保持者にプレッシャーをかけ、スティールで攻撃回数を増やしましょう。',push:'足は元気です（体力{{energy}}）。テンポを上げて走りましょう。',balanced:'問題はありません。バランス型に戻しましょう。'},},
+ hl:{title:'ハイライト',note:'試合終盤のベストプレー。選ぶともう一度見られます。',kind:{dunk:'ダンク',three:'3ポイント',two:'シュート',block:'ブロック',steal:'スティール'},def:{block:'シュートを叩き落とす',steal:'ボールを奪う'},watch:'リプレイ：{{player}}、{{kind}}、スコア{{home}}対{{away}}',},};
