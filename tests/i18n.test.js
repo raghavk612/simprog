@@ -83,7 +83,11 @@ for(const l of GRAPHICS_LEVELS)need.push(`settings.accessibility.graphicsOptions
  for(const v of ['ppg','rpg','apg','spg','bpg','fgp'])need.push(`stat.${v}`);
  for(const v of ['slashing','post','midrange','sharp','stretch','lockdown','rim','glass'])need.push(`arch.${v}`);
  for(const v of ['inside','mid','three','perim','interior'])need.push(`attr.${v}`);
- for(const k of need)assert.equal(typeof flat[k],'string',k);
+ for(const v of ['firstWin','perfectDrill','streak10','undefeated','zeroInjury','fullStrength','champion'])need.push(`ach.items.${v}.name`,`ach.items.${v}.desc`);
+for(const v of ['high','some','low'])need.push(`arc.level.${v}`);
+for(const v of ['breakout','slump'])need.push(`arc.${v}`,`arc.${v}Note`);
+for(const v of ['rose','fell','flat'])need.push(`arc.${v}`);need.push('log.scoutP');
+for(const k of need)assert.equal(typeof flat[k],'string',k);
  assert.ok(Array.isArray(en.drill.quiz)&&en.drill.quiz.length>=6&&en.drill.quiz.every(q=>q.length===4));
  assert.equal(en.hb.cr.list.length,5);
 });

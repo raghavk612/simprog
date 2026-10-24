@@ -23,21 +23,28 @@ export function createGame(data,name,difficulty='standard',seed=Date.now()>>>0){
 }
 // Entries keep their English text and may also carry a key (k) and parameters (p), which the interface uses to show the line in the player's language.
 export function log(s,text,k,p){const entry={week:s.week+1,text};if(k){entry.k=k;if(p)entry.p=p;}s.log.unshift(entry);s.log=s.log.slice(0,120);return entry;}
+/* Lifetime counters for achievements. Optional on the save (created on first use) because the 120-entry decision trail is too short to count from: injuries are regular-season only, full = games started with all five starters at 80+ energy. */
+const tally=(s,k,n=1)=>{s.tally??={injuries:0,perfects:0,full:0};s.tally[k]=(s.tally[k]||0)+n;};
 function open(s){if(s.finished)throw Error('This season is complete. Start a new season to play again.');if(s.match)throw Error('Finish the current game first.');}
 function spend(s,cost,action=true){open(s);if(s.pendingEvent)throw Error('Answer the coach’s inbox first.');if(s.tokens<cost)throw Error('Not enough program tokens.');if(action&&s.actions<1)throw Error('Your three preparation slots are used. Play the next game.');s.tokens-=cost;if(action)s.actions--;}
 /* Skill growth has diminishing returns: a session's gain is scaled by the room left below the ceiling (full gain at or below 'ceil − room', 10% at the top), and one-on-one sessions with a single player are worth more than the same session shared by the whole team. */
 export const GROWTH={ceil:98,room:40,min:.1,focus:1.8};
-export const growthRoom=skill=>cap((GROWTH.ceil-skill)/GROWTH.room,GROWTH.min,1);
+export const growthRoom=(skill,ceil=GROWTH.ceil)=>cap((ceil-skill)/GROWTH.room,GROWTH.min,1);
+/* Hidden traits of a tryout prospect, fixed by the save seed and the prospect id: a skill ceiling (78 to 98) and a work ethic (1 to 5 stars). Scouting only reveals them; they apply to anyone signed from tryouts. Work ethic scales growth from x0.9 to x1.1. */
+export const SCOUT_COST=60;
+export const prospectTraits=(seed,id)=>({ceil:78+hashStr(`${seed}|${id}|ceil`)%21,work:1+hashStr(`${seed}|${id}|work`)%5});
+export const workMult=p=>Number.isInteger(p.work)&&p.work>=1&&p.work<=5?.9+(p.work-1)*.05:1;
 export function train(s,type,id='all',opts={}){
  const a=plans[type];if(!a)throw Error('Unknown practice');const selected=id==='all'?s.players:s.players.filter(p=>p.id===+id);if(!selected.length)throw Error('Choose a player');spend(s,0);const perfect=!!opts.perfect;
  const focus=selected.length===1&&s.players.length>1?GROWTH.focus:1;let gained=0;
- for(const p of selected){const gain=a.skill?(a.skill+(s.assistant==='development'?1:0)+(perfect?1:0))*focus*growthRoom(p.skill):0,before=p.skill;p.skill=Math.round(cap(p.skill+gain,35,GROWTH.ceil)*10)/10;gained+=p.skill-before;p.energy=cap(p.energy+(a.energy>0?a.energy*focus:a.energy)+(s.assistant==='recovery'&&type==='recovery'?8:0));p.morale=cap(p.morale+(a.morale>0?a.morale*focus:a.morale)+(s.assistant==='culture'&&type==='bond'?3:0)+(perfect?2:0));p.gpa=cap(p.gpa+(a.gpa>0?a.gpa*focus:a.gpa),0,4);if(type==='recovery')p.injury=Math.max(0,p.injury-1);}
+ for(const p of selected){const gain=a.skill?(a.skill+(s.assistant==='development'?1:0)+(perfect?1:0))*focus*growthRoom(p.skill,p.ceil)*workMult(p):0,before=p.skill;p.skill=Math.round(cap(p.skill+gain,35,Math.max(p.ceil??GROWTH.ceil,p.skill))*10)/10;gained+=p.skill-before;p.energy=cap(p.energy+(a.energy>0?a.energy*focus:a.energy)+(s.assistant==='recovery'&&type==='recovery'?8:0));p.morale=cap(p.morale+(a.morale>0?a.morale*focus:a.morale)+(s.assistant==='culture'&&type==='bond'?3:0)+(perfect?2:0));p.gpa=cap(p.gpa+(a.gpa>0?a.gpa*focus:a.gpa),0,4);if(type==='recovery')p.injury=Math.max(0,p.injury-1);}
  s.chemistry=cap(s.chemistry+a.chem+(s.assistant==='culture'&&type==='bond'?3:0));
  const whole=selected.length===s.players.length,sign=n=>`${n>=0?'+':''}${n}`,avg=Math.round(gained/selected.length*10)/10,p={plan:type,who:whole?'':selected[0].name,whole,skill:sign(avg),energy:sign(a.energy),gpa:sign(a.gpa.toFixed(2)),perfect};
  const text=`${a.name}: ${whole?'whole team':selected[0].name} · skill ${p.skill}, energy ${p.energy}, GPA ${p.gpa}${perfect?' · perfect drill bonus':''}`;
- log(s,text,'train',p);s.ripples.unshift({label:a.name,detail:text,week:s.week,k:'train',p});s.ripples=s.ripples.slice(0,12);
+ if(perfect)tally(s,'perfects');log(s,text,'train',p);s.ripples.unshift({label:a.name,detail:text,week:s.week,k:'train',p});s.ripples=s.ripples.slice(0,12);
 }
-export function recruit(s,id){const p=s.pool.find(p=>p.id===+id);if(!p)throw Error('Prospect unavailable');if(s.players.length>=15)throw Error('Roster full: release a player before signing.');spend(s,p.cost,false);s.players.push({...p});s.pool=s.pool.filter(x=>x.id!==p.id);log(s,`${p.name} joined through tryouts for ${p.cost} tokens.`,'recruit',{name:p.name,cost:p.cost});}
+export function recruit(s,id){const p=s.pool.find(p=>p.id===+id);if(!p)throw Error('Prospect unavailable');if(s.players.length>=15)throw Error('Roster full: release a player before signing.');spend(s,p.cost,false);s.players.push({...p,...prospectTraits(s.seed,p.id)});s.pool=s.pool.filter(x=>x.id!==p.id);log(s,`${p.name} joined through tryouts for ${p.cost} tokens.`,'recruit',{name:p.name,cost:p.cost});}
+export function scoutProspect(s,id){const p=s.pool.find(p=>p.id===+id);if(!p)throw Error('Prospect unavailable');if(s.scoutedProspects?.[p.id])throw Error('Prospect already scouted.');spend(s,SCOUT_COST,false);(s.scoutedProspects??={})[p.id]=true;log(s,`Scouted ${p.name}: potential and work ethic revealed for ${SCOUT_COST} tokens.`,'scoutP',{name:p.name,cost:SCOUT_COST});}
 export function release(s,id){open(s);if(s.players.length<=5)throw Error('Keep at least five players.');const p=s.players.find(p=>p.id===+id);if(!p)throw Error('Player unavailable');s.players=s.players.filter(x=>x.id!==p.id);if(s.captain===p.id)s.captain=null;log(s,`${p.name} released from the active roster.`,'release',{name:p.name});}
 export function hire(s,key){if(s.assistant)throw Error('One assistant allowed. Dismiss your assistant first.');const a=staff.find(a=>a.key===key);if(!a)throw Error('Coach unavailable');spend(s,a.cost,false);s.assistant=key;log(s,`Hired ${a.name}.`,'hire',{staff:key});}
 export function talk(s,choice){if(s.conversation)throw Error('This week’s team conversation is complete.');spend(s,0);s.conversation=true;
@@ -121,7 +128,8 @@ export function possession(s){
  return event;
 }
 function finish(s){const m=s.match,opp=opponent(s),won=m.home>m.away;const result={...opp,home:m.home,away:m.away,won,box:{...m.box},line:structuredClone(m.line??{}),stats:m.stats,events:m.events.slice(-12),ripples:s.ripples.filter(r=>r.week===s.week),reason:`${s.scouted?'Scouting prepared your defensive reads. ':''}Team chemistry ${Math.round(s.chemistry)}; average energy ${Math.round(mean(s.players,'energy'))}.`,why:{chem:Math.round(s.chemistry),energy:Math.round(mean(s.players,'energy')),scouted:!!s.scouted},week:s.week};const pog=playerOfGame(m.line);if(pog)result.pog=pog;s.results.push(result);won?s.wins++:s.losses++;updateStandings(s,opp.opponent,won);s.tokens+=won?230:160;s.fans=Math.max(40,s.fans+(won?80:-15));
- for(const p of s.players){if(p.minutes>0){p.points+=m.box[p.id];const ln=m.line?.[p.id];if(ln)for(const k of STAT_KEYS)p[k]=(p[k]||0)+ln[k];p.games++;p.energy=cap(p.energy-8);p.gpa=cap(p.gpa-.07,0,4);if(random(s)<(p.energy<45?.14:.025)*(s.assistant==='recovery'?.5:1)){p.injury=2;log(s,`${p.name}: simulated ankle strain. Recovery or rest required.`,'injury',{name:p.name});}}else{p.energy=cap(p.energy+12);p.morale=cap(p.morale-2);}p.morale=cap(p.morale+(won?4:-3));p.injury=Math.max(0,p.injury-1);}
+ {const st=s.players.filter(p=>p.starter);if(st.length===5&&st.every(p=>p.energy>=80))tally(s,'full');}
+ for(const p of s.players){if(p.minutes>0){p.points+=m.box[p.id];const ln=m.line?.[p.id];if(ln)for(const k of STAT_KEYS)p[k]=(p[k]||0)+ln[k];p.games++;p.energy=cap(p.energy-8);p.gpa=cap(p.gpa-.07,0,4);if(random(s)<(p.energy<45?.14:.025)*(s.assistant==='recovery'?.5:1)){p.injury=2;if(s.week<seasonPlan(s).cut)tally(s,'injuries');log(s,`${p.name}: simulated ankle strain. Recovery or rest required.`,'injury',{name:p.name});}}else{p.energy=cap(p.energy+12);p.morale=cap(p.morale-2);}p.morale=cap(p.morale+(won?4:-3));p.injury=Math.max(0,p.injury-1);p.hist=[...(p.hist||[]),Math.round(p.skill*10)/10].slice(-40);p.form=[...(p.form||[]),Math.round((p.energy+p.morale)/2)].slice(-40);}
 
  const cap0=s.captain==null?null:s.players.find(p=>p.id===s.captain);if(cap0){if(eligible(cap0)&&cap0.morale>=60)s.chemistry=cap(s.chemistry+2);if(!won&&m.away-m.home>=15)cap0.morale=cap(cap0.morale-3);}
  log(s,`${won?'WIN':'LOSS'} ${m.home}–${m.away} vs ${opp.opponent}. ${result.reason}`,'result',{won,home:m.home,away:m.away,opp:opp.opponent,...result.why});
@@ -182,7 +190,16 @@ export function seasonReport(s){
  const sessions=done.flatMap(r=>r.ripples||[]).filter(x=>x.k==='train');
  return {record:[s.wins,s.losses],champion:s.champion,eliminated:s.finished&&!s.champion&&done.length<s.schedule.length,games:done.length,ppg:r1(done.reduce((a,r)=>a+r.home,0)/g),oppg:r1(done.reduce((a,r)=>a+r.away,0)/g),grade:coachGrade(s),awards:awards(s),bestWin:wins[0]?line(wins[0]):null,toughestLoss:losses[0]?line(losses[0]):null,sessions:sessions.length,perfect:sessions.filter(x=>x.p?.perfect).length};
 }
+/* Optional progression fields: tally, seenAch, scoutedProspects, and per-player hist, form, ceil, work. Never throws. */
+function progressOk(s){
+ const int=(n,a,b)=>Number.isInteger(n)&&n>=a&&n<=b,obj=o=>!!o&&typeof o==='object'&&!Array.isArray(o),series=(a,lo,hi)=>a===undefined||(Array.isArray(a)&&a.length<=40&&a.every(n=>Number.isFinite(n)&&n>=lo&&n<=hi));
+ if(s.tally!==undefined&&!(obj(s.tally)&&Object.keys(s.tally).every(k=>['injuries','perfects','full'].includes(k)&&int(s.tally[k],0,1000))))return false;
+ if(s.seenAch!==undefined&&!(Array.isArray(s.seenAch)&&s.seenAch.length<=30&&s.seenAch.every(v=>typeof v==='string'&&/^[a-zA-Z0-9]{1,24}$/.test(v))))return false;
+ if(s.scoutedProspects!==undefined&&!(obj(s.scoutedProspects)&&Object.keys(s.scoutedProspects).length<=30&&Object.entries(s.scoutedProspects).every(([k,v])=>/^\d{1,4}$/.test(k)&&v===true)))return false;
+ return [...(Array.isArray(s.players)?s.players:[]),...(Array.isArray(s.pool)?s.pool:[])].every(p=>!obj(p)||(series(p.hist,0,100)&&series(p.form,0,100)&&(p.ceil===undefined||(Number.isFinite(p.ceil)&&p.ceil>=35&&p.ceil<=100))&&(p.work===undefined||int(p.work,1,5))));
+}
 export function validSave(s){
+ if(s&&typeof s==='object'&&!progressOk(s))return false;
  const extras=x=>{
   const id=v=>typeof v==='string'&&/^[a-z0-9]{1,24}$/.test(v),obj=o=>!!o&&typeof o==='object'&&!Array.isArray(o),only=(o,keys)=>obj(o)&&Object.keys(o).every(k=>keys.includes(k));
   // Parameters are short plain values: no markup characters, so nothing in a save can become HTML.

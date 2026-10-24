@@ -261,7 +261,7 @@ export default {
   reasonWithScouting:'侦察为你的防守判断做好了准备。球队默契 {{chem}}；平均体能 {{energy}}。',
   runEnds:'本赛季的冠军之路到此结束。回顾你的决策，再试一次。',
   champions:'州冠军。一个赛季，你的球队。',
-  seasonComplete:'赛季结束。',perfectBonus:'满分训练奖励',captain:'{{name}} 现在是球队队长。',event:'信箱：{{title}} → {{choice}}',press:'新闻发布会：{{n}} 个回答将影响下一场比赛。',pressSkip:'跳过了新闻发布会。球迷 −10。',},
+  seasonComplete:'赛季结束。',perfectBonus:'满分训练奖励',captain:'{{name}} 现在是球队队长。',event:'信箱：{{title}} → {{choice}}',press:'新闻发布会：{{n}} 个回答将影响下一场比赛。',pressSkip:'跳过了新闻发布会。球迷 −10。',scoutP:'侦察了 {{name}}：花费 {{cost}} 代币，揭示了潜力与职业道德。',},
  error:{title:'无法加载球队项目。',body:'网络恢复后请重新加载。',reload:'重新加载'},
  // Messages thrown by the simulation engine. The English text is the lookup key.
  errors:{
@@ -285,7 +285,7 @@ export default {
   'Minutes must be whole numbers from 0 to 32.':'分钟数必须是 0 到 32 的整数。',
   'Allocate exactly 160 player-minutes (five players × 32 minutes).':'请恰好分配 160 个球员分钟（五名球员 × 32 分钟）。',
   'No timeouts remaining.':'已没有剩余暂停。',
-  'No game in progress':'当前没有进行中的比赛','Your plan holds 3 sessions. Remove one first.':'你的计划最多容纳 3 个训练。请先移除一个。','No preparation slots left this week.':'本周已没有剩余的准备名额。','Answer the coach’s inbox first.':'请先处理教练信箱里的事项。','Nothing is waiting in the inbox.':'信箱里没有待处理的事项。','That choice is not available.':'这个选项目前不可用。',},
+  'No game in progress':'当前没有进行中的比赛','Your plan holds 3 sessions. Remove one first.':'你的计划最多容纳 3 个训练。请先移除一个。','No preparation slots left this week.':'本周已没有剩余的准备名额。','Answer the coach’s inbox first.':'请先处理教练信箱里的事项。','Nothing is waiting in the inbox.':'信箱里没有待处理的事项。','That choice is not available.':'这个选项目前不可用。','Prospect already scouted.':'该候选人已经侦察过了。',},
  settings:{
   title:'设置',
   eyebrow:'偏好',
@@ -320,4 +320,7 @@ export default {
  press:{winwhy:{q:'你们赢了。关键差别是什么？',a:{team:'把功劳归于全队',effort:'强调防守上的努力',deflect:'无可奉告'}},losswhy:{q:'今晚输了。哪里出了问题？',a:{own:'自己承担责任',execution:'归咎于执行',deflect:'无可奉告'}},complacent:{q:'大胜 {{margin}} 分。会担心自满吗？',a:{hungry:'我们依然渴望胜利',bench:'表扬替补',confident:'我们是这里最强的球队'}},wire:{q:'比赛直到最后一刻才分胜负。球队表现如何？',a:{composure:'表扬他们的冷静',details:'指出细节问题',deflect:'无可奉告'}},scorer:{q:'{{name}} 拿下 {{pts}} 分。他是你们的关键吗？',a:{praise:'夸奖他',team:'这是团队的努力',deflect:'无可奉告'}},next:{q:'下一场对阵 {{opp}}。你有什么预期？',a:{confident:'我们会赢他们',respect:'他们是支强队',step:'一场一场来'}},streakw:{q:'已经 {{n}} 连胜。如何保持下去？',a:{routine:'坚持日常节奏',confident:'我们势头正旺',fans:'感谢球迷'}},streakl:{q:'已经 {{n}} 连败。更衣室还好吗？',a:{rally:'鼓舞大家',honest:'坦诚面对问题',deflect:'无可奉告'}},finalrun:{q:'现在是不胜即淘汰。你们如何准备？',a:{focus:'专注防守',loose:'让大家放松',confident:'我们准备好了'}},threes:{q:'球队命中了 {{n}} 个三分。这是计划吗？',a:{shooters:'靠三分吃饭',balance:'我们追求均衡',deflect:'无可奉告'}},stops:{q:'你们把对手限制在 {{oppPts}} 分。关键是什么？',a:{defense:'防守赢得比赛',team:'每个人都做好了本职',deflect:'无可奉告'}},tired:{q:'球员们后段看起来很累。对轮换有顾虑吗？',a:{rest:'让他们多休息',tough:'他们足够坚强',depth:'相信球队的深度'}},crowd:{q:'今晚球迷声势很大。这很重要吗？',a:{fans:'它给我们能量',earn:'靠我们自己争取',deflect:'无可奉告'}},kicker:'新闻发布室',title:'赛后新闻发布会',progress:'第 {{n}} / {{total}} 个问题',reporter:'记者',skip:'跳过发布会（球迷 −10）',done:'发布会结束。下一场比赛会感受到它的影响。',effects:'下一场比赛的变化',none:'没有任何变化。',again:'打开新闻发布室',waiting:'发布会待举行',},
  chip:{morale:'士气',energy:'体能',skill:'技能',gpa:'绩点',injury:'伤病场次',tokens:'代币',fans:'球迷',chemistry:'默契',chem:'默契',offense:'进攻',defense:'防守',oppRating:'对手实力',roster:'新球员',next:'下一场',team:'全队',},
  inbox:{kicker:'教练信箱',pending:'有一个决定待处理',open:'打开',empty:'没有待处理的事项。',blocked:'准备下一场比赛前，请先处理这件事。',unavailable:'暂时不可用',hint:'按 1–3 选择。',chose:'你选择了：{{choice}}',continue:'继续',last:'最近的决定',},
- captain:{name:'任命队长',is:'队长 ✓',badge:'队长',c:'C',note:'队长在健康且状态良好时，每场比赛后为球队增加 2 点默契，并缓和坏消息的冲击。之后更换队长，原队长士气 −4，全队默契 −2。',set:'{{name}} 是队长。',},};
+ captain:{name:'任命队长',is:'队长 ✓',badge:'队长',c:'C',note:'队长在健康且状态良好时，每场比赛后为球队增加 2 点默契，并缓和坏消息的冲击。之后更换队长，原队长士气 −4，全队默契 −2。',set:'{{name}} 是队长。',},
+ ach:{kicker:'成就',title:'赛季成就',count:'已获得 {{n}} / {{of}}',progress:'{{n}} / {{of}}',earned:'已获得',locked:'未解锁',unlocked:'成就解锁：{{name}}',items:{firstWin:{name:'首场胜利',desc:'赢下你的第一场比赛。'},perfectDrill:{name:'完美训练',desc:'以完美表现完成一次训练。'},streak10:{name:'十连胜',desc:'连续赢下十场比赛。'},undefeated:{name:'常规赛全胜',desc:'赢下常规赛的每一场比赛。'},zeroInjury:{name:'零伤病赛季',desc:'常规赛全程无人受伤。'},fullStrength:{name:'全员满状态',desc:'五名首发体力均不低于 80 开始比赛。'},champion:{name:'校队冠军',desc:'在 Varsity 级别夺冠。'}},},
+ arc:{title:'成长轨迹',rose:'技术从 {{from}} 升至 {{to}}（{{n}} 场比赛）',fell:'技术从 {{from}} 降至 {{to}}（{{n}} 场比赛）',flat:'技术在 {{n}} 场比赛中保持 {{to}}',none:'打几场比赛后即可查看技术走势。',breakout:'爆发',slump:'低迷',breakoutNote:'最近 3 场技术提升 3 点或以上。',slumpNote:'最近 3 场体力与士气持续下滑。',potential:'潜力 {{n}}',room:'成长空间：{{level}}',level:{high:'大',some:'中',low:'接近上限'},},
+ scoutP:{btn:'侦察 · {{cost}}',aria:'花费 {{cost}} 代币侦察 {{name}}，揭示潜力与职业道德',hidden:'潜力和职业道德在侦察前保持隐藏。',potential:'潜力',work:'职业道德',workAria:'职业道德：{{k}} / 5 星',toastTitle:'侦察完成',},};
