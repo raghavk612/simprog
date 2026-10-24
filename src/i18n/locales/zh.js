@@ -146,7 +146,7 @@ export default {
  tactic:{balanced:'均衡',zone:'联防 / 补防',pressure:'压迫防守',perimeter:'拉开空间 / 投三分'},
  pace:{steady:'稳健',fast:'快攻'},
  style:{perimeter:'外线',paint:'内线',transition:'转换'},
- shot:{catch:'接球三分',pullup:'运球急停跳投',stepback:'后撤步三分',drive:'变向上篮',floater:'行进间抛投',hook:'低位勾手',dunk:'快攻扣篮',roll:'挡拆后终结'},
+ shot:{catch:'接球三分',pullup:'运球急停跳投',stepback:'后撤步三分',drive:'变向上篮',floater:'行进间抛投',hook:'低位勾手',dunk:'快攻扣篮',roll:'挡拆后终结',euro:'欧洲步上篮',fadeaway:'后仰跳投',alley:'空中接力扣篮',corner:'底角三分',spin:'转身终结',},
  phase:{pass:'传球与跑位',attack:'进攻与运球',gather:'起跳准备与封盖',blocked:'投篮被盖帽',turnover:'失误',flight:'球在空中',basket:'得分',rebound:'篮板'},
  contest:{open:'空位出手',tight:'贴身防守下出手',contested:'有人防守下出手'},
  outcome:{made:'命中',miss:'未中',block:'盖帽',steal:'抢断'},
@@ -232,7 +232,7 @@ export default {
  cm:{
   join:'',
   side:{right:'右',left:'左'},
-  lead:{catch:['{{helper}}把球传给{{side}}侧翼的{{name}}。','{{name}}无球跑位；{{helper}}找到了空档。'],pullup:['{{name}}在罚球线肘区急停。','{{name}}用一个迟疑运球，从中距离起跳。'],stepback:['{{name}}变向运球后，向后撤步退到三分线外。','{{name}}假装突破，用后撤步创造出空间。'],drive:['{{name}}换手，摆脱了{{def}}。','{{name}}用变向运球攻击空档。'],floater:['{{name}}钻进禁区，轻巧地抛出一记抛投。','{{name}}用一记高弧度抛投避开了协防球员。'],hook:['{{name}}背身在低位要位，越过肩膀转身。','{{name}}在低位把防守者卡死。'],dunk:['{{name}}冲在回防的防线前面。','{{helper}}在转换进攻中把球传给{{name}}。'],roll:['{{helper}}做挡拆；{{name}}绕过掩护。','{{name}}借着{{helper}}的掩护，强力切向篮筐。']},
+  lead:{catch:['{{helper}}把球传给{{side}}侧翼的{{name}}。','{{name}}无球跑位；{{helper}}找到了空档。'],pullup:['{{name}}在罚球线肘区急停。','{{name}}用一个迟疑运球，从中距离起跳。'],stepback:['{{name}}变向运球后，向后撤步退到三分线外。','{{name}}假装突破，用后撤步创造出空间。'],drive:['{{name}}换手，摆脱了{{def}}。','{{name}}用变向运球攻击空档。'],floater:['{{name}}钻进禁区，轻巧地抛出一记抛投。','{{name}}用一记高弧度抛投避开了协防球员。'],hook:['{{name}}背身在低位要位，越过肩膀转身。','{{name}}在低位把防守者卡死。'],dunk:['{{name}}冲在回防的防线前面。','{{helper}}在转换进攻中把球传给{{name}}。'],roll:['{{helper}}做挡拆；{{name}}绕过掩护。','{{name}}借着{{helper}}的掩护，强力切向篮筐。'],euro:['{{name}} 用欧洲步绕过 {{def}} 杀向篮下。','{{name}} 迈出两大步，躲开协防。'],fadeaway:['{{name}} 在底线边对 {{def}} 后仰出手。','{{name}} 转身后仰，准备投篮。'],alley:['{{helper}} 把球高高吊向篮筐，找 {{name}}。','{{name}} 背切，空中接力传球已经出手！'],corner:['{{helper}} 把球传给底角的 {{name}}。','{{name}} 拉到底角，等待传球。'],spin:['{{name}} 在低位转身摆脱 {{def}}。','{{name}} 假动作、转身、起跳。'],},
   steal:['{{def}}抓准时机，从{{name}}手中断下了球。失误。','{{def}}把球从{{name}}手里打掉，抢到了球权。'],
   block:['{{def}}在出手瞬间封盖——盖帽！','{{def}}补位过来，把球拍飞。'],
   loose:'{{rebounder}}拿到了这个无人控制的球。',

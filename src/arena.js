@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {CLIP_SECONDS, SHOTS, sampleClip} from './basketball.js';
+import {CLIP_SECONDS, SHOTS, sampleClip, isDunk} from './basketball.js';
 import {drawScoreboard, scoreboardData, scoreboardKey, setScoreboardLogo, setScoreboardOpponentLogo} from './scoreboard.js';
 import {loadOpponentLogo} from './logos.js';
 const purple=0x6832ab;
@@ -180,7 +180,7 @@ export class Arena{
    this.nets.forEach(n=>n.mesh.rotation.y=n.side===(clip.team==='home'?1:-1)?pose.net:0);
    this.trail.forEach((d,i)=>{d.visible=this.motion&&clipTime>CLIP_SECONDS*.61&&clipTime<CLIP_SECONDS*.9&&clip.outcome!=='steal';if(d.visible){const previous=sampleClip(clip,Math.max(0,clipTime-i*.025)).ball;d.position.set(previous.x,previous.y,previous.z);}});
    this.score(presentation.home,presentation.away);
-   const impact=`${this.run}|${index}`;if(presentation.resolved&&this.impactKey!==impact){this.impactKey=impact;if(clip.kind==='dunk'&&clip.points)this.shake=.24;else if(clip.outcome==='block')this.shake=.18;}
+   const impact=`${this.run}|${index}`;if(presentation.resolved&&this.impactKey!==impact){this.impactKey=impact;if(isDunk(clip.kind)&&clip.points)this.shake=.24;else if(clip.outcome==='block')this.shake=.18;}
    const key=`${index}|${pose.phase}|${presentation.resolved}|${presentation.done}`;if(key!==this.presentKey){this.presentKey=key;this.onPresentation?.(presentation);}
   }else{
    // Idle gym: dribbling and movement only. No invisible automatic shot loop.

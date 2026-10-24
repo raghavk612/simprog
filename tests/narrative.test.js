@@ -60,7 +60,7 @@ test('every language can present every play, log line and result without leftove
   const T=section('cm');
   for(const kind of Object.keys(SHOTS))for(const outcome of ['made','miss','block','steal'])for(const lane of [1,-1]){
    const base={kind,lane,outcome,player:'Ana Gómez',defender:'North Creek #22',helper:'Lee Chen',rebounder:'North Creek #24',points:outcome==='made'?(SHOTS[kind].three?3:2):0,three:SHOTS[kind].three,assisted:outcome==='made'};
-   const finishes=T.finish[base.points?(base.three?'three':kind==='dunk'?'dunk':'two'):'miss'].length;
+   const finishes=T.finish[base.points?(base.three?'three':(SHOTS[kind].like||kind)==='dunk'?'dunk':'two'):'miss'].length;
    const options=outcome==='steal'?T.steal.length:outcome==='block'?T.block.length:finishes;
    for(let a=0;a<options;a++)for(let b=0;b<T.lead[kind].length;b++){
     const cm=outcome==='steal'?[a]:[outcome==='block'?b:a,outcome==='block'?a:b];

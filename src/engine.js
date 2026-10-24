@@ -1,4 +1,4 @@
-import {SHOTS,choosePlay,describePlay} from './basketball.js';
+import {SHOTS,choosePlay,describePlay,family,isDunk} from './basketball.js';
 export const VERSION=3;
 export const cap=(x,min=0,max=100)=>Math.max(min,Math.min(max,x));
 export const mean=(list,key)=>list.reduce((s,p)=>s+p[key],0)/Math.max(1,list.length);
@@ -88,9 +88,9 @@ function makePlay(s,team,shooter,helper,defender,opp,m){
  const impacts={skill:(skill-(home?orating:74))*.55,energy:(energy-65)*.15,morale:home?(shooter.morale-65)*.1:0,chemistry:(chemistry-60)*.1,shotType:spec.base*100,space:(separation-.5)*17,tactics:tactical*100};
  const chance=cap(.43+Object.values(impacts).reduce((a,b)=>a+b,0)/100+(home&&m.boost>0?.04:0)+(home?(s.difficulty==='rookie'?.075:s.difficulty==='elite'?-.04:0):0),.16,.86);
  const stealChance=home?.035+(contest==='tight'?.04:0)+(100-energy)*.0004:(m.tactic==='pressure'?.10:.035);
- const blockChance=spec.three?.018:(contest==='tight'?.13:.045)+(kind==='dunk'?.015:0);
+ const blockChance=spec.three?.018:(contest==='tight'?.13:.045)+(isDunk(kind)?.02:0);
  let outcome=rng()<stealChance?'steal':rng()<blockChance?'block':rng()<chance?'made':'miss';
- const points=outcome==='made'?(spec.three?3:2):0,assisted=points>0&&['catch','dunk'].includes(kind);
+ const points=outcome==='made'?(spec.three?3:2):0,assisted=points>0&&['catch','dunk'].includes(family(kind));
  const play={team,kind,label:spec.label,player:shooter.name,id:shooter.id,jersey:shooter.number,helper:helper.name,helperId:helper.id,defender:defender.name,defenderId:defender.id,rebounder:home?opp.roster[Math.floor(rng()*opp.roster.length)].name:defender.name,lane:rng()>.5?1:-1,contest,points,outcome,three:!!spec.three,assisted,shotChance:Math.round(chance*100),impacts};
  const said=describePlay(play,rng);play.commentary=said.text;play.cm=said.cm;return play;
 }

@@ -167,7 +167,7 @@ export default {
  tactic:{balanced:'Balanced',zone:'Zone / closeouts',pressure:'Pressure defense',perimeter:'Spread / shoot threes'},
  pace:{steady:'Steady',fast:'Fast break'},
  style:{perimeter:'Perimeter',paint:'Paint',transition:'Transition'},
- shot:{catch:'Catch-and-shoot three',pullup:'Pull-up jumper',stepback:'Step-back three',drive:'Crossover layup',floater:'Running floater',hook:'Post hook',dunk:'Fast-break dunk',roll:'Pick-and-roll finish'},
+ shot:{catch:'Catch-and-shoot three',pullup:'Pull-up jumper',stepback:'Step-back three',drive:'Crossover layup',floater:'Running floater',hook:'Post hook',dunk:'Fast-break dunk',roll:'Pick-and-roll finish',euro:'Euro-step layup',fadeaway:'Fadeaway jumper',alley:'Alley-oop dunk',corner:'Corner three',spin:'Spin-move finish',},
  phase:{pass:'Pass & relocate',attack:'Attack & dribble',gather:'Gather & contest',blocked:'Shot blocked',turnover:'Turnover',flight:'Shot in flight',basket:'Basket',rebound:'Rebound'},
  contest:{open:'open look',tight:'tight look',contested:'contested look'},
  outcome:{made:'made',miss:'miss',block:'block',steal:'steal'},
