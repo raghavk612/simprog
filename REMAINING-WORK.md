@@ -96,7 +96,7 @@ Measured with `node scripts/balance.mjs 200` (200 seeded seasons per cell; title
 
 - ✅ **D1 (done) Skill snowballs to the 98 cap in about 5 weeks.** Now each session's gain is scaled by the room below the ceiling (`E.growthRoom`: full gain at 58 or below, 10 % at the top), so a good practice plan ends the season around 92–98 instead of hitting 98 by game 8. Original note: Fix: scale gains by remaining headroom `(98−skill)/30`, or use per-player ceilings.
 - ✅ **D2 (done) Opponent strength ignores the real opponent.** `E.opponentRating`: each school keeps its own standing (about ±4.5 around 72), and once Lake Washington's real result against it is published that result sets it. Original note: It's `68 + (week%5)·2`. Fix: seed it from real records/results, which also makes the real data matter.
-- **D3 (not done, needs a design decision) Tokens are never scarce** (about 1,480 after 3 games with no spending). Fix: add sinks (travel, equipment, staff upkeep, boosters) or tie income to fans.
+- ✅ **Done:** **D3 Tokens are never scarce** (income is now 120 + fans/10 capped at 60 + 70 per win; assistant upkeep 30 and away travel 40 per game; four Program upgrades of 250–450 tokens in the Coach's office; numbers in docs/verification.md). Original note: (about 1,480 after 3 games with no spending). Fix: add sinks (travel, equipment, staff upkeep, boosters) or tie income to fans.
 - ◐ **D4 (partly done) "Training group: one player"** was never worth it versus Whole team. One-on-one sessions now give 1.8× the skill, morale, grade and energy gains and only tire that player, but whole-team practice is still the efficient default (a one-player plan wins about half as often in simulation). Making it competitive would need either a much larger multiplier or heavier whole-team costs.
 - **D5 Eligibility decay** (energy/GPA) is a good mechanic, but it needs UI (see B5).
 - **D6** Scores average about 64–68, which is plausible against the real 60 ppg.
@@ -113,12 +113,13 @@ Measured with `node scripts/balance.mjs 200` (200 seeded seasons per cell; title
 6. A tip-off preview card: opponent style (after scouting), average energy/chemistry, timeouts.
 7. ✅ **Done:**  Styled confirm dialog instead of `confirm()` (B11).
 8. ✅ **Done:** (the controls overlap is B7). Phone: sticky bottom nav and a compact tracker; fix the controls overlap and the metrics grid (B7–B9).
+
 9. `aria-live` score announcements during live play, and `aria-pressed` on the speed/tactic buttons.
 10. Raise the font floor (many 10–12px labels) and add an A+/A− text-size control.
 11. A "Skip to content" link.
-12. A "What should I do now?" nudge on Program HQ.
-13. A "Copy season code" (seed + difficulty) for presenters.
-14. A "How the model works" panel (shot probability factors) reachable from Game day.
+12. ✅ **Done:** A "What should I do now?" nudge on Program HQ.
+13. ✅ **Done:** A "Copy season code" (seed + difficulty) for presenters.
+14. ✅ **Done:** A "How the model works" panel (shot probability factors) reachable from Game day.
 
 ---
 
@@ -146,7 +147,7 @@ Effort: **S** < 1 day, **M** 1–3 days, **L** a week+. Ideas already covered by
 | 15 | ✅ **Done:** **"Why that shot?" live panel** | Show shot-probability factor bars (skill, energy, chemistry, tactics) during live play. Great for Q&A. | S |
 | 16 | ✅ **Done:** **Broadcast highlights + Player of the Game** | Auto-replay the top 3 plays with lower-third graphics and a POG card. (In the result dialog: three replay buttons with lower-third labels, ranked by `highlights`, plus a Player of the Game card. They replay on request rather than automatically, and only the last 12 plays of a game are stored.) | M |
 | 17 | **Challenge codes / hot-seat duel** | Share a seed ("same season, who does better?") or alternate tactic picks with two coaches. | M / L |
-| 18 | **Budget & boosters** | Ticket revenue, sponsors, equipment/travel costs so tokens matter. | M |
+| 18 | ✅ **Done:** **Budget & boosters** | Ticket revenue, sponsors, equipment/travel costs so tokens matter. | M |
 | 19 | **Academic calendar** | Finals week / report-card events that hit GPA unless study hall was scheduled. | S |
 | 20 | **Printable season report** | One-page PDF/PNG with record, leaders, standings and decision trail. | S |
 | 21 | ✅ **Done:** ✱ Team captain | Covered by the spec. | S–M |

@@ -204,3 +204,5 @@ html.theme-light:not(.a11y-high-contrast) :is(canvas,img,video,svg.avatar,.mouse
 .a11y-high-contrast .arc{background:#000!important;border:2px solid #fff!important}
 .a11y-high-contrast .arc .spark polyline{stroke:#fff!important;stroke-width:3}
 .a11y-high-contrast .arc .spark circle{fill:#fff!important}
+.a11y-high-contrast .code-box,.a11y-high-contrast .model-list li,.a11y-high-contrast .nudge-card{border-color:#fff;background:#000;color:#fff}
+.a11y-high-contrast .nudge-card{border-left-width:6px}
