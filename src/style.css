@@ -399,3 +399,11 @@ dialog:has(.drill-shell){width:min(960px,calc(100vw - 24px))}
 .live-match .game-arena .camera-controls button{font:700 13px var(--display);letter-spacing:1px;text-transform:uppercase;padding:7px 10px;border-radius:7px;color:#d6c9e6}
 .live-match .game-arena .camera-controls button.active{background:#8b4fe0;color:#fff}
 @media(max-width:760px){.live-match .game-arena .arena-bottom{bottom:72px;left:8px;right:8px}.live-match .game-arena .camera-controls{flex-wrap:wrap}.live-match .game-arena .camera-controls button{padding:6px 7px;font-size:12px}}
+
+/* opponent mascot logos (transparent PNGs; the initials crest remains the fallback) */
+.matchup img.opp-logo{width:auto;height:72px;max-width:110px;object-fit:contain;filter:drop-shadow(0 0 2px #fffa) drop-shadow(0 6px 12px #0009)}
+.bug2k .bug-team img.bug-logo{width:auto;height:44px;max-width:60px;object-fit:contain;flex:none;filter:drop-shadow(0 0 2px #fff9) drop-shadow(0 3px 5px #0009)}
+.opp-badge{display:inline-block;width:22px;height:22px;margin-right:8px;vertical-align:middle;object-fit:contain;flex:none}
+td .opp-badge,.opp-roster .opp-badge{position:relative;top:-1px}
+@media(max-width:760px){.bug2k .bug-team img.bug-logo{display:none}.matchup img.opp-logo{height:60px}}
+.opp-badge.ph{height:0}

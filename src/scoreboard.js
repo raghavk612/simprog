@@ -80,7 +80,7 @@ export function scoreboardData(s, home = 0, away = 0, event = null) {
   const reb = st ? [String(st.home?.rebounds ?? 0), String(st.away?.rebounds ?? 0)] : ['–', '–'];
 
   return {
-    home: 'KANGS', away: boardName(opponent), opponent: String(opponent), crest: initials(opponent),
+    home: 'KANGS', away: boardName(opponent), opponent: String(opponent), crest: initials(opponent), awayLogo: OPP_LOGOS.has(String(opponent)),
     homeScore: String(home ?? 0), awayScore: String(away ?? 0),
     period, clock, final, live: live || !!event,
     tolHome: live ? String(Math.max(0, Math.min(3, m.timeouts ?? 0))) : final ? '–' : '3', tolAway: '–',
@@ -132,6 +132,15 @@ function logo(ctx, cx, cy, maxW, maxH) {
   const r = Math.min(maxW / LOGO_IMG.naturalWidth, maxH / LOGO_IMG.naturalHeight), w = LOGO_IMG.naturalWidth * r, h = LOGO_IMG.naturalHeight * r;
   ctx.save(); ctx.shadowColor = 'rgba(255,255,255,.95)'; ctx.shadowBlur = 16; ctx.drawImage(LOGO_IMG, cx - w / 2, cy - h / 2, w, h); ctx.shadowColor = 'rgba(180,138,255,.9)'; ctx.shadowBlur = 30;
   ctx.drawImage(LOGO_IMG, cx - w / 2, cy - h / 2, w, h); ctx.restore(); return true;
+}
+/* Opponent mascot logos, supplied by the arena as they finish loading (keyed by opponent name); the initials crest is the fallback. */
+const OPP_LOGOS = new Map();
+export function setScoreboardOpponentLogo(name, img) { if (img && img.naturalWidth) OPP_LOGOS.set(String(name), img); }
+function oppLogo(ctx, name, cx, cy, maxW, maxH) {
+  const img = OPP_LOGOS.get(name);
+  if (!img) return false;
+  const r = Math.min(maxW / img.naturalWidth, maxH / img.naturalHeight), w = img.naturalWidth * r, h = img.naturalHeight * r;
+  ctx.save(); ctx.shadowColor = 'rgba(13,26,79,.35)'; ctx.shadowBlur = 8; ctx.drawImage(img, cx - w / 2, cy - h / 2, w, h); ctx.restore(); return true;
 }
 /* School monogram: block "LW" in purple with white and gold keylines, drawn (no image). */
 function monogram(ctx, cx, cy, size) {
@@ -207,11 +216,13 @@ export function drawScoreboard(ctx, w, h, data) {
   framed(ctx, lw, 574, 744, { fill0: '#2149b8', fill1: '#0c1f66', lw: 3 });
   if (!logo(ctx, 330, 650, 520, 212)) monogram(ctx, 330, 650, 238);
 
-  // Lower right: visitor crest on a white panel (we have no opponent logos, so a crest with initials).
+  // Lower right: visitor crest on a white panel (opponent mascot logo when we have one, otherwise a crest with initials).
   const vp = mirror(slab(30, 574, 640, 170, 0, 60), W);
   poly(ctx, vp); ctx.fillStyle = grad(ctx, 574, 744, '#ffffff', '#dfe4f2'); ctx.fill(); ctx.strokeStyle = C.stroke; ctx.lineWidth = 3; ctx.stroke();
-  shield(ctx, 1560, 588, 128, 144); ctx.fillStyle = grad(ctx, 588, 732, '#1b2f7a', '#0b1640'); ctx.fill(); ctx.strokeStyle = '#9aa6c8'; ctx.lineWidth = 6; ctx.stroke();
-  text(ctx, d.crest, 1560, 650, d.crest.length > 1 ? 66 : 84, 100, { glow: false });
+  if (!d.awayLogo || !oppLogo(ctx, d.opponent, 1560, 654, 190, 146)) {
+    shield(ctx, 1560, 588, 128, 144); ctx.fillStyle = grad(ctx, 588, 732, '#1b2f7a', '#0b1640'); ctx.fill(); ctx.strokeStyle = '#9aa6c8'; ctx.lineWidth = 6; ctx.stroke();
+    text(ctx, d.crest, 1560, 650, d.crest.length > 1 ? 66 : 84, 100, { glow: false });
+  }
   text(ctx, d.away, 1800, 642, 92, 340, { color: '#0d1a4f', glow: false });
   text(ctx, 'VISITOR', 1800, 712, 38, 300, { weight: 800, color: '#5866a0', glow: false });
 
