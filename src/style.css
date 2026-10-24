@@ -407,3 +407,13 @@ dialog:has(.drill-shell){width:min(960px,calc(100vw - 24px))}
 td .opp-badge,.opp-roster .opp-badge{position:relative;top:-1px}
 @media(max-width:760px){.bug2k .bug-team img.bug-logo{display:none}.matchup img.opp-logo{height:60px}}
 .opp-badge.ph{height:0}
+/* ---- handbook: body text under the headers is white ---- */
+.modal-content:has(.rule-tabs) .rule-panel p,.modal-content:has(.rule-tabs) .rule-panel .rule-lead,.modal-content:has(.rule-tabs) .ctl-row>span,.modal-content:has(.rule-tabs) .rule-list li,.modal-content:has(.rule-tabs) .rule-panel .muted{color:#fff}
+.modal-content:has(.rule-tabs) .rule-list li b{color:#d6bcff}
+/* ---- first-person HUD label ---- */
+.fp-hud{position:absolute;z-index:6;left:20px;top:158px;display:flex;align-items:center;gap:10px;max-width:calc(100% - 40px);padding:7px 14px 7px 12px;border-radius:6px;border:1px solid #ffffff24;border-left:4px solid #e9b858;background:linear-gradient(180deg,#1d1330ee,#0d0915ee);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 12px 28px -10px #000c;pointer-events:none;font-family:var(--display)}
+.fp-hud[hidden]{display:none}
+.fp-hud b{flex:none;font:800 12px var(--display);letter-spacing:2.2px;color:#e9b858}
+.fp-hud span{font:800 italic 20px/1 var(--display);letter-spacing:.6px;color:#fff;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fp-hud em{flex:none;font:700 12px var(--display);font-style:normal;letter-spacing:1.4px;color:#c9a8ff;padding-left:10px;border-left:1px solid #ffffff2e}
+@media(max-width:760px){.fp-hud{left:8px;top:87px;gap:8px;padding:4px 10px 4px 9px;max-width:calc(100% - 16px)}.fp-hud span{font-size:16px}.fp-hud b{font-size:11px;letter-spacing:1.6px}}
