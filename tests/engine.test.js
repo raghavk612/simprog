@@ -48,3 +48,23 @@ test('the judge demo is a repeatable mid-season save that can still be won',()=>
  const u=E.playTo(structuredClone(t),t.schedule.length);assert.ok(u.finished);
  const v=E.playTo(structuredClone(a),0);assert.equal(v.week,a.week,'playing to an earlier week changes nothing');
 });
+test('skill growth slows near the top, and one-on-one sessions are worth more than team sessions',()=>{
+ assert.equal(E.growthRoom(40),1);assert.equal(E.growthRoom(98),E.GROWTH.min);assert.ok(E.growthRoom(70)>E.growthRoom(80)&&E.growthRoom(80)>E.growthRoom(90));
+ const gainOf=(skill,id)=>{const s=game();s.players.forEach(p=>{p.skill=skill;});const before=s.players[0].skill;E.train(s,'shooting',id);return s.players[0].skill-before;};
+ assert.ok(gainOf(70,'all')>gainOf(90,'all')*2,'a player at 70 improves more than one at 90');
+ const s=game();s.players.forEach(p=>{p.skill=97.9;});for(let i=0;i<3;i++)E.train(s,'shooting','all',{perfect:true});assert.ok(s.players.every(p=>p.skill<=98),'skill never passes the ceiling');
+ const team=gainOf(70,'all'),solo=gainOf(70,0);assert.ok(Math.abs(solo/team-E.GROWTH.focus)<.12,'one-on-one gain is about 1.8× the team gain');
+ const t=game();t.players[0].energy=50;t.players[1].energy=50;E.train(t,'recovery',0);assert.ok(t.players[0].energy>t.players[1].energy+25,'a one-on-one recovery restores about 1.8× the energy and only to that player');
+ const q=game();q.assistant='development';const p0=q.players[0];p0.skill=70;E.train(q,'shooting',0);const withHelp=p0.skill-70;const r=game();const p1=r.players[0];p1.skill=70;E.train(r,'shooting',0);assert.ok(withHelp>p1.skill-70,'the development coach adds to the gain');
+ const log=game();E.train(log,'shooting');assert.match(log.log[0].text,/skill \+\d+(\.\d)?,/,'the decision trail reports the gain that actually happened');
+});
+test('opponent strength follows the school, not the week, and real results set it once published',()=>{
+ const s=game(),rating=n=>E.opponentRating(s,{opponent:n});
+ assert.equal(rating('Bothell'),rating('Bothell'));assert.ok(new Set(s.schedule.map(g=>rating(g.opponent))).size>=4,'opponents differ from one another');
+ for(const g of s.schedule){const r=E.opponentRating(s,g,0);assert.ok(r>=67&&r<=77.5,`${g.opponent} ${r}`);}
+ const a={opponent:'Bothell'},played={opponent:'Bothell',points:50,against:62};
+ assert.ok(E.opponentRating(s,played)>E.opponentRating(s,{opponent:'Bothell',points:62,against:50}),'a real loss to a school makes it stronger than a real win over it');
+ assert.equal(E.opponentRating(s,played,0),E.opponentRating(s,played,0));
+ const cut=E.seasonPlan(s).cut;assert.equal(+(E.opponentRating(s,a,cut)-E.opponentRating(s,a,0)).toFixed(1),7,'the final run is 7 points tougher');
+ s.week=0;assert.equal(E.opponent(s).rating,E.opponentRating(s,s.schedule[0]));
+});

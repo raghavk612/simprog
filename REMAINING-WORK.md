@@ -84,17 +84,19 @@ Severity: **H** = fix before judging, **M** = visible to a judge/user, **L** = p
 
 ## 3. Balance findings (engine)
 
-From 200 simulated seasons per cell:
+Measured with `node scripts/balance.mjs 200` (200 seeded seasons per cell; title rate in %). "Before" is the original model, "after" is the current one.
 
-| Strategy | C Team | JV | Varsity |
+| Strategy | C Team (before → after) | JV (before → after) | Varsity (before → after) |
 |---|---|---|---|
-| No practice: title % | 19 | **0** | **0** |
-| Perfect practice: title % | 95 | 64 | 32 |
+| No practice | 11 → 6 | 0 → 0 | 0 → 0 |
+| Sensible practice (recover when tired, study when grades slip, else dinner or shooting) | 79 → 58 | 60 → 35 | 42 → 23 |
+| Same, with a perfect drill each time | 79 → 60 | 51 → 44 | 36 → 25 |
+| One-on-one shooting with the weakest starters | – → 29 | – → 18 | – → 7 |
 
-- **D1 Skill snowballs to the 98 cap in about 5 weeks.** Fix: scale gains by remaining headroom `(98−skill)/30`, or use per-player ceilings.
-- **D2 Opponent strength ignores the real opponent.** It's `68 + (week%5)·2`. Fix: seed it from real records/results, which also makes the real data matter.
-- **D3 Tokens are never scarce** (about 1,480 after 3 games with no spending). Fix: add sinks (travel, equipment, staff upkeep, boosters) or tie income to fans.
-- **D4 "Training group: one player"** is never worth it versus Whole team. Make single-player sessions stronger.
+- ✅ **D1 (done) Skill snowballs to the 98 cap in about 5 weeks.** Now each session's gain is scaled by the room below the ceiling (`E.growthRoom`: full gain at 58 or below, 10 % at the top), so a good practice plan ends the season around 92–98 instead of hitting 98 by game 8. Original note: Fix: scale gains by remaining headroom `(98−skill)/30`, or use per-player ceilings.
+- ✅ **D2 (done) Opponent strength ignores the real opponent.** `E.opponentRating`: each school keeps its own standing (about ±4.5 around 72), and once Lake Washington's real result against it is published that result sets it. Original note: It's `68 + (week%5)·2`. Fix: seed it from real records/results, which also makes the real data matter.
+- **D3 (not done, needs a design decision) Tokens are never scarce** (about 1,480 after 3 games with no spending). Fix: add sinks (travel, equipment, staff upkeep, boosters) or tie income to fans.
+- ◐ **D4 (partly done) "Training group: one player"** was never worth it versus Whole team. One-on-one sessions now give 1.8× the skill, morale, grade and energy gains and only tire that player, but whole-team practice is still the efficient default (a one-player plan wins about half as often in simulation). Making it competitive would need either a much larger multiplier or heavier whole-team costs.
 - **D5 Eligibility decay** (energy/GPA) is a good mechanic, but it needs UI (see B5).
 - **D6** Scores average about 64–68, which is plausible against the real 60 ppg.
 

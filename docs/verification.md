@@ -49,3 +49,9 @@ The 3D action is a stylized visualization of the possession model, not a full ba
 
 - `npm test`: 50 passing tests. A new engine test checks that `E.demoSeason` is repeatable, is a valid save in the middle of the season with no game in progress, still qualifies for the final run and can finish the season (`E.playTo`). The seed is chosen at run time (the first of 400 whose story fits: 4–5 wins at mid-season, then qualifying and winning with sensible preparation), so it survives a refresh of the schedule data; building it takes about 0.1 s.
 - Checked in a browser: the title-screen button loads a 4–3 Junior Varsity season, the guide walks through eight pages, **J** and the button jump to 9–4 at the start of the final run, the player's own save is byte-identical afterwards, and leaving the demo returns to the title screen with "Continue" for the real season. English and Spanish guide text were read; the guide was not run through a full timed presentation.
+
+## Balance pass (D1, D2, D4)
+
+- `npm test`: 52 passing tests. New tests cover the diminishing returns (`E.growthRoom`, the skill ceiling, development coach, the decision trail reporting the real gain), one-on-one sessions being worth 1.8×, and `E.opponentRating` (a school keeps its rating, real results set it, the final run is 7 points tougher).
+- `node scripts/balance.mjs 200` before and after: with sensible practice the title rate falls from 79 / 60 / 42 % to 58 / 35 / 23 % (C Team / JV / Varsity), and average skill after eight games falls from the 98 cap to about 89–90. No practice stays close to hopeless on JV and Varsity. The numbers depend on the simulation, not on real players, and are a design choice, not a prediction.
+- Not done: D3 (token sinks) needs a design decision. D4 is only partly solved: a plan made only of one-on-one sessions still wins about half as often as whole-team practice.
