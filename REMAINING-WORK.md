@@ -75,9 +75,9 @@ Severity: **H** = fix before judging, **M** = visible to a judge/user, **L** = p
 | B13 | L | ✅ **Fixed:** drill timeouts are tracked and cleared with the drill. ~~Drill `setTimeout`s aren't cleared when the modal closes (console noise).~~ | Track the timeout ids in the cleanup. |
 | B14 | L | Season export is about 1.4 MB, close to the 2 MB import limit. | Export without indentation and compact old events. |
 | B15 | L | ✅ **Fixed:** the tracker says "Eliminated" and "Season ended after game N". ~~After an early elimination the tracker shows "30/30 · 2 left" and doesn't say why the season ended.~~ | Show "ELIMINATED – game N" and the losing result. |
-| — | L | 3D LED board shows the previous game's final while Game day names the next opponent. | Blank it or label it FINAL before tip-off. |
-| — | L | Visiting players' 3D nameplates read "VISITORS". The HUD shows real names. | Pass opponent identities into `setIdentity`. |
-| — | L | Pre-game Player view can sit the camera inside a nearby player's head. | Nudge the eye forward / hide the subject's head mesh in first person. |
+| — | L | ✅ **Fixed:** before tip-off the board names the next opponent at 0-0 with TIP-OFF under the clock. ~~3D LED board shows the previous game's final while Game day names the next opponent.~~ | Blank it or label it FINAL before tip-off. |
+| — | L | ✅ **Fixed:** visitors wear the opponent roster's names and numbers (the school name when the roster is fictional), and the Kangs captain has a small gold C on the plate. ~~Visiting players' 3D nameplates read "VISITORS".~~ The HUD shows real names. | Pass opponent identities into `setIdentity`. |
+| — | L | ✅ **Fixed:** the eye sits further forward, keeps 0.6 from every other body, and the subject's own head is hidden in first person. ~~Pre-game Player view can sit the camera inside a nearby player's head.~~ | Nudge the eye forward / hide the subject's head mesh in first person. |
 | — | L | Redmond and Skyline (dark green) logos are low-contrast on dark purple. | Add a light outline / glow behind logos. |
 
 ---
@@ -135,7 +135,7 @@ Effort: **S** < 1 day, **M** 1–3 days, **L** a week+. Ideas already covered by
 | 6 | **Rivalry weeks** | Flag real rivals on the schedule: extra fans/tokens and bigger morale swings, with headlines. | S–M |
 | 7 | ✅ **Done (accessibility branch):** **Sound design** | Crowd, whistle, swish/rim, buzzer and a volume slider (WebAudio, no assets). | S–M |
 | 8 | ✅ **Done (accessibility branch):** **Accessibility pack** | Text size, high-contrast and color-blind palettes, "reduce 3D", dyslexia-friendly font, screen-reader scores. | M |
-| 9 | **Graphics quality / low-spec mode** | Auto-detect low fps and drop shadows, crowd and pixel ratio; manual Low/Med/High. | S |
+| 9 | ✅ **Done:** **Graphics quality / low-spec mode** | Auto-detect low fps and drop shadows, crowd and pixel ratio; manual Low/Med/High. | S |
 | 10 | **Halftime / quarter adjustments** | Pause each quarter with a stat comparison and 2–3 suggested adjustments. | M |
 | 11 | **Recruiting mini-game** | Watch a short scouting scrimmage to reveal hidden traits before signing. | M |
 | 12 | **Player development arcs** | Skill sparklines, ceilings, breakout/slump tags. | M |

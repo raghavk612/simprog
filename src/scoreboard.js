@@ -31,21 +31,30 @@ export function initials(name) {
 
 const sameEvent = (a, b) => a && b && (a === b || (a.number === b.number && a.home === b.home && a.visitor === b.visitor && a.id === b.id));
 
+/** Which game the board is about: the live match, the result a replayed event belongs to, the last final, or (before tip-off) the next opponent. */
+export function boardGame(s, event = null) {
+  const m = s?.match || null;
+  // Which game is on the board: the live match, the result a replayed event belongs to, or the last final.
+  let game = m, result = null;
+  if (event && !(m?.events || []).some(e => sameEvent(e, event))) result = (s?.results || []).findLast(r => (r.events || []).some(e => sameEvent(e, event))) || null;
+  // Before tip-off (no match, nothing replaying, season still running) the last final belongs to the previous game: show the next opponent at 0-0 instead.
+  const pre = !!s && !m && !event && !s.finished;
+  if (!m && !result && !pre) result = s?.results?.at(-1) || null;
+  if (result) game = result;
+  const opponent = (m ? s?.schedule?.[s.week]?.opponent : result?.opponent) ?? s?.schedule?.[s?.week]?.opponent ?? 'Guest';
+  const live = !!m && game === m;
+  const final = !live && !!result && !event;
+  return { m, game, result, opponent, live, final, pre };
+}
+
 /**
  * Derive the board fields from the game state.
  * `home`/`away` are the scores currently being presented (they lag the sim while a possession animates);
  * `event` is the possession being animated, if any.
  */
 export function scoreboardData(s, home = 0, away = 0, event = null) {
-  const m = s?.match || null;
-  // Which game is on the board: the live match, the result a replayed event belongs to, or the last final.
-  let game = m, result = null;
-  if (event && !(m?.events || []).some(e => sameEvent(e, event))) result = (s?.results || []).findLast(r => (r.events || []).some(e => sameEvent(e, event))) || null;
-  if (!m && !result) result = s?.results?.at(-1) || null;
-  if (result) game = result;
-  const opponent = (m ? s?.schedule?.[s.week]?.opponent : result?.opponent) ?? s?.schedule?.[s?.week]?.opponent ?? 'Guest';
-  const live = !!m && game === m;
-  const final = !live && !!result && !event;
+  const { m, game, opponent, live, final, pre } = boardGame(s, event);
+  if (pre) { home = 0; away = 0; }
 
   let events = game?.events || [];
   // While a possession animates, only count it once its home basket has been shown.
@@ -82,7 +91,7 @@ export function scoreboardData(s, home = 0, away = 0, event = null) {
   return {
     home: 'KANGS', away: boardName(opponent), opponent: String(opponent), crest: initials(opponent), awayLogo: OPP_LOGOS.has(String(opponent)),
     homeScore: String(home ?? 0), awayScore: String(away ?? 0),
-    period, clock, final, live: live || !!event,
+    period, clock, final, pre, live: live || !!event,
     tolHome: live ? String(Math.max(0, Math.min(3, m.timeouts ?? 0))) : final ? '–' : '3', tolAway: '–',
     plyr, statLabel: 'TEAM REB', statHome: reb[0], statAway: reb[1]
   };
@@ -182,7 +191,7 @@ export function drawScoreboard(ctx, w, h, data) {
 
   const clockBox = [[744, 16], [1304, 16], [1336, 112], [1304, 208], [744, 208], [712, 112]];
   poly(ctx, clockBox); ctx.fillStyle = '#02040f'; ctx.fill(); ctx.strokeStyle = C.stroke; ctx.lineWidth = 5; ctx.stroke();
-  if (d.final) { text(ctx, d.clock, 1024, 96, 160, 520); text(ctx, 'FINAL', 1024, 180, 40, 300, { weight: 800, color: C.gold }); }
+  if (d.final || d.pre) { text(ctx, d.clock, 1024, 96, 160, 520); text(ctx, d.final ? 'FINAL' : 'TIP-OFF', 1024, 180, 40, 300, { weight: 800, color: C.gold }); }
   else text(ctx, d.clock, 1024, 114, 200, 540);
 
   // Score panels with angled blue frames.

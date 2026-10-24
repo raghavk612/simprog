@@ -1,5 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
 import en from '../src/i18n/locales/en.js';
+import {GRAPHICS_LEVELS} from '../src/graphics.js';
 import {LANGUAGES,t,tu,list,has,translateError,setLanguage,getLanguage,detectLanguage,formatDate,supported} from '../src/i18n/index.js';
 import {plans,staff,DIFFICULTIES} from '../src/engine.js';import {VALUES} from '../src/narrative.js';import {SHOTS} from '../src/basketball.js';import {SOUND_KEYS} from '../src/audio.js';import {ACTIONS} from '../src/keys.js';
 const read=f=>fs.readFileSync(new URL(f,import.meta.url),'utf8');
@@ -36,6 +37,7 @@ test('every key built at run time resolves to a string for each value it can tak
  for(const k of SOUND_KEYS)need.push(`settings.sound.items.${k}.name`,`settings.sound.items.${k}.desc`);
  for(const a of ACTIONS)need.push(`settings.controls.actions.${a}`);
  for(const l of LANGUAGES)need.push(`lang.${l.code}`);
+for(const l of GRAPHICS_LEVELS)need.push(`settings.accessibility.graphicsOptions.${l}`);
  for(const v of ['listen','fundraise','academics'])need.push(`office.${v}`,`office.${v}Fx`);
  for(const v of ['perimeter','paint','transition'])need.push(`style.${v}`,`game.advice.${v}`);
  for(const v of ['balanced','zone','pressure','perimeter'])need.push(`tactic.${v}`);
