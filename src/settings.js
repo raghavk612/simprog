@@ -1,5 +1,6 @@
 // Persistent sound and accessibility preferences. Values are validated on load, applied to the page, and broadcast so other modules can react.
 import {SOUND_KEYS,configureAudio} from './audio.js';
+import {configureSpeech} from './speech.js';
 import {FILTER_ID,installColorFilters} from './a11y.js';
 const EVENT='kangs-settings-changed',STORE={sound:'kangs_sound',a11y:'kangs_accessibility'};
 const read=k=>{try{return JSON.parse(localStorage.getItem(k));}catch{return null;}};
@@ -12,12 +13,12 @@ export const FONT_FAMILIES=['default','modern','readable'];
 export const PLAYBACK_SPEEDS=[.5,.75,1];
 export const TEXT_SCALE={min:.7,max:1.8,step:.05};
 // Sound effects start off, as before; volume and the individual sounds are remembered.
-export const SOUND_DEFAULTS={volume:.35,muted:true,toggles:Object.fromEntries(SOUND_KEYS.map(k=>[k,true]))};
+export const SOUND_DEFAULTS={volume:.35,muted:true,commentary:true,toggles:Object.fromEntries(SOUND_KEYS.map(k=>[k,true]))};
 export const A11Y_DEFAULTS={colorBlindMode:'none',highContrast:false,reducedMotion:false,screenShake:true,flashReduction:false,textScale:1,fontFamily:'default',playbackSpeed:1,timingAssist:false,simplifiedUI:false};
 const cache={};
 export function normalizeSound(raw){
  const r=raw&&typeof raw==='object'?raw:{},t=r.toggles&&typeof r.toggles==='object'?r.toggles:{};
- return {volume:num(r.volume,0,1,SOUND_DEFAULTS.volume),muted:bool(r.muted,SOUND_DEFAULTS.muted),toggles:Object.fromEntries(SOUND_KEYS.map(k=>[k,bool(t[k],true)]))};
+ return {volume:num(r.volume,0,1,SOUND_DEFAULTS.volume),muted:bool(r.muted,SOUND_DEFAULTS.muted),commentary:bool(r.commentary,SOUND_DEFAULTS.commentary),toggles:Object.fromEntries(SOUND_KEYS.map(k=>[k,bool(t[k],true)]))};
 }
 export function normalizeA11y(raw,base=A11Y_DEFAULTS){
  const r=raw&&typeof raw==='object'?raw:{},d=base;
@@ -35,7 +36,7 @@ function systemDefaults(){
 const emit=type=>{if(typeof window!=='undefined')window.dispatchEvent(new CustomEvent(EVENT,{detail:{type}}));};
 export const getSound=()=>cache.sound??=normalizeSound(read(STORE.sound));
 export const getA11y=()=>cache.a11y??=normalizeA11y(read(STORE.a11y),systemDefaults());
-function commitSound(next){cache.sound=next;write(STORE.sound,next);configureAudio(next);emit('sound');}
+function commitSound(next){cache.sound=next;write(STORE.sound,next);configureAudio(next);configureSpeech({enabled:next.commentary&&!next.muted,volume:next.volume});emit('sound');}
 function commitA11y(next){cache.a11y=next;write(STORE.a11y,next);applyA11y(next);emit('a11y');}
 export const setSound=patch=>commitSound(normalizeSound({...getSound(),...patch,toggles:{...getSound().toggles,...patch.toggles}}));
 export const resetSound=()=>commitSound(normalizeSound(null));
@@ -53,10 +54,10 @@ export function applyA11y(s=getA11y()){
  root.style.setProperty('--ts',String(s.textScale));
 }
 export function initSettings(){
- installColorFilters();configureAudio(getSound());applyA11y(getA11y());
+ installColorFilters();configureAudio(getSound());configureSpeech({enabled:getSound().commentary&&!getSound().muted,volume:getSound().volume});applyA11y(getA11y());
  // Keep several open tabs in step.
  window.addEventListener('storage',e=>{
-  if(e.key===STORE.sound){delete cache.sound;configureAudio(getSound());emit('sound');}
+  if(e.key===STORE.sound){delete cache.sound;configureAudio(getSound());configureSpeech({enabled:getSound().commentary&&!getSound().muted,volume:getSound().volume});emit('sound');}
   if(e.key===STORE.a11y){delete cache.a11y;applyA11y(getA11y());emit('a11y');}
  });
 }

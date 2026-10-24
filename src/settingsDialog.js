@@ -28,6 +28,7 @@ export function createSettingsDialog({modal,show,notify,onKeysChange}){
   return section(t('settings.sound.title'),
     rangeRow('sound.volume',t('settings.sound.masterVolume'),t('settings.sound.masterVolumeDesc'),s.volume,{min:0,max:1,step:.05,low:t('settings.sound.quiet'),high:t('settings.sound.loud'),text:pct})+
     toggleRow('sound.enabled',t('settings.sound.sfxEnabled'),t('settings.sound.sfxEnabledDesc'),!s.muted)+
+    toggleRow('sound.commentary',t('settings.sound.commentary'),t('settings.sound.commentaryDesc'),s.commentary,s.muted)+
     `<div class="srow"><div class="stext"><span class="slabel">${esc(t('settings.sound.testSound'))}</span><small>${esc(t('settings.sound.testSoundDesc'))}</small></div><button type="button" class="small" data-s-act="test-sound" data-fk="act:test-sound">▶ ${esc(t('settings.sound.play'))}</button></div>`)+
    section(t('settings.sound.individual'),`<p class="hint">${esc(t('settings.sound.individualDesc'))}</p>${items}`)+resetButton('reset-sound',t('settings.sound.resetAll'));
  }
@@ -83,6 +84,7 @@ export function createSettingsDialog({modal,show,notify,onKeysChange}){
   if(el.dataset.sToggle){
    const path=el.dataset.sToggle,on=el.getAttribute('aria-checked')!=='true';
    if(path==='sound.enabled')setSound({muted:!on});
+   else if(path==='sound.commentary')setSound({commentary:on});
    else if(path.startsWith('sound.'))setSound({toggles:{[path.slice(6)]:on}});
    else setByPath(path,on);
    render(el.dataset.fk);return;

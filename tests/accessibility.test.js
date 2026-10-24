@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';
+import {pickVoice,speak,configureSpeech,speechAvailable} from '../src/speech.js';import {startCrowd,stopCrowd,crowdRunning} from '../src/audio.js';import test from 'node:test';import assert from 'node:assert/strict';
 import {normalizeSound,normalizeA11y,SOUND_DEFAULTS,A11Y_DEFAULTS,TEXT_SCALE,activeA11yCount} from '../src/settings.js';
 import {SOUND_KEYS,play,preview,configureAudio} from '../src/audio.js';
 import {correctionMatrix} from '../src/a11y.js';
@@ -45,7 +45,7 @@ test('colour correction keeps greys unchanged and makes confusable colours easie
  assert.equal(correctionMatrix('none'),null);
 });
 test('sounds respect mute, per-sound toggles and a missing audio device',()=>{
- assert.equal(SOUND_KEYS.length,14);
+ assert.equal(SOUND_KEYS.length,17);
  configureAudio({volume:.5,muted:false,toggles:{swish:false}});
  for(const k of SOUND_KEYS){play(k);preview(k);}play('doesNotExist');preview('doesNotExist');
  configureAudio({muted:true});play('swish');
@@ -62,4 +62,16 @@ test('keyboard shortcuts: defaults are unique and conflicts are detected',()=>{
 test('key labels are readable',()=>{
  assert.equal(keyLabel('KeyP'),'P');assert.equal(keyLabel('Digit1'),'1');assert.equal(keyLabel('ArrowUp'),'↑');assert.equal(keyLabel('Comma'),',');assert.equal(keyLabel('Numpad5'),'Num 5');assert.equal(keyLabel('F5'),'F5');
  assert.equal(ariaKey('KeyP'),'P');assert.equal(ariaKey('Digit3'),'3');assert.equal(ariaKey('ArrowUp'),'ArrowUp');
+});
+test('spoken commentary: picks a voice for the language, and stays silent without a speech engine or while muted',()=>{
+ const voices=[{lang:'en-GB',localService:false,name:'a'},{lang:'es_MX',localService:true,name:'b'},{lang:'es-ES',localService:false,name:'c'},{lang:'ja-JP',localService:true,name:'d'}];
+ assert.equal(pickVoice(voices,'es-ES').name,'c','an exact match wins');assert.equal(pickVoice(voices,'es').name,'b','otherwise a local voice of that language');assert.equal(pickVoice(voices,'hi-IN'),null);assert.equal(pickVoice([],'en-US'),null);
+ assert.equal(speechAvailable(),false,'no speech engine in Node');assert.equal(speak('Three-pointer'),false);configureSpeech({enabled:false,volume:.5});assert.equal(speak('x',{muted:true}),false);
+ configureSpeech({enabled:true});
+});
+test('crowd ambience never throws without an audio device and follows the mute',()=>{
+ configureAudio({muted:false});startCrowd();assert.equal(crowdRunning(),false,'nothing to run in Node');stopCrowd();configureAudio({muted:true});startCrowd();assert.equal(crowdRunning(),false);
+});
+test('sound settings keep commentary on by default and reject bad values',async()=>{
+ const {normalizeSound}=await import('../src/settings.js');assert.equal(normalizeSound(null).commentary,true);assert.equal(normalizeSound({commentary:false}).commentary,false);assert.equal(normalizeSound({commentary:'yes'}).commentary,true);assert.equal(normalizeSound(null).toggles.cheer,true);
 });

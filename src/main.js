@@ -1,7 +1,7 @@
 import './style.css';
 import './a11y.css';
 import * as E from './engine.js';
-import {CLIP_SECONDS} from './basketball.js';
+import {CLIP_SECONDS,isDunk} from './basketball.js';
 import {Arena} from './arena.js';
 
 import {mountDrill,drillName} from './drills.js';
@@ -9,10 +9,11 @@ import {opponentLogo} from './logos.js';
 import * as V from './events.js';
 import {createJerseyShowcase} from './jerseys.js';
 import * as P from './press.js';
-import {t,tu,up,list,has,translateError,formatNumber,formatDate,formatDateTime,initLanguage} from './i18n/index.js';
+import {t,tu,up,list,has,translateError,formatNumber,formatDate,formatDateTime,initLanguage,localeTag} from './i18n/index.js';
 import {commentaryText as commentary,explanationText,logText,reasonText,feedLines,tv} from './narrative.js';
 import {initSettings,getSound,setSound,getA11y,setA11y,onSettingsChange} from './settings.js';
-import {play} from './audio.js';
+import {play,startCrowd,stopCrowd} from './audio.js';
+import {speak} from './speech.js';
 import {announce} from './a11y.js';
 import {ACTIONS,loadKeys,keyLabel,ariaKey} from './keys.js';
 import {createSettingsDialog} from './settingsDialog.js';
@@ -215,6 +216,7 @@ function focusMemo(){const a=document.activeElement;if(!a||a===document.body||!a
 function render(){const keep=renderedView===view?{focus:focusMemo(),y:window.scrollY}:null;renderedView=view;document.body.dataset.view=view;document.body.classList.toggle('live-match',view==='game'&&!!(state?.match||closingMatch||replayEvent));document.body.append(host);if(view==='landing'){app.innerHTML=landing();}else{const sound=getSound(),motion=!getA11y().reducedMotion;app.innerHTML=`<div class="shell"><aside class="sidebar"><a href="#" class="brand" data-action="home"><img class="brand-logo" src="${LOGO}" alt="" width="58" height="43"><div>KANGS<span>${tu('side.sub')}</span></div></a><div class="season-badge">${esc((data?.season??'2026–27').replace('–','—'))}<span>${tu('side.badge')}</span></div><nav aria-label="${esc(t('side.nav'))}">${routes.map(v=>`<button data-view="${v}" class="nav-item ${view===v?'active':''}" ${view===v?'aria-current="page"':''}><span class="nav-icon" aria-hidden="true">${svg(NAV_ICONS[v])}</span><b class="nav-label">${t(`nav.${v}`)}</b><em class="nav-num" aria-hidden="true">${routeNumber(v)}</em></button>`).join('')}</nav><div class="sidebar-bottom">${btn(t('side.rules'),'rules')}${btn(t('side.credits'),'credits')}<div class="coach-badge"><span aria-hidden="true">${esc(state.coach[0].toUpperCase())}</span><div>${t('side.coach',{name:esc(state.coach)})}<small>${up(`${t(`level.${state.difficulty}`)} · ${t(`tier.${state.difficulty}`)}`)}</small></div></div></div></aside><div class="workspace"><header class="topbar"><span>${tu('top.brand')} <b>/ ${t(`nav.${view}`)}</b></span><div>${btn(sound.muted?t('top.soundOff'):t('top.soundOn'),'sound','',`aria-pressed="${!sound.muted}" ${hint('sound')}`)}${btn(motion?t('top.motionOn'):t('top.motionOff'),'motion','',`aria-pressed="${motion}"`)}${btn(t('top.settings'),'settings','',hint('settings'))}${btn(t('top.export'),'export')}${btn(t('top.help'),'rules')}${btn(t('top.title'),'title')}</div></header><main class="content" id="main" tabindex="-1">${({home,roster,practice,recruit,staff:office,game,locker,season:journal,data:dataView}[view]||home)()}</main><footer>${tu('side.footer')}<span>${t('side.footerNote')}</span></footer></div></div>`;}
  const target=$('#arena');if(target){arena.mount(target);arena.update(state);}else host.hidden=true;host.hidden=!target;
  if(view==='locker')mountJerseys();
+ syncCrowd();
  if(tutorial>0)renderTutorial();if(demo&&view!=='landing')renderDemoGuide();if(arena.event)syncPresentation(arena.presentation());
  if(keep){const f=keep.focus,el=f&&[...app.querySelectorAll(f.sel)][Math.max(0,f.nth)];if(el&&!el.disabled)el.focus({preventScroll:true});window.scrollTo(0,keep.y);}
 }
@@ -297,7 +299,11 @@ async function refresh(){try{const next=await fetch(`${import.meta.env.BASE_URL}
 // Sounds are chosen from the clip itself: made baskets swish, everything else has its own cue.
 function cueFor(c){return c.outcome==='made'?(c.three?'three':'swish'):c.outcome==='miss'?'rim':c.outcome;}
 // Read out each resolved play once, for screen-reader users who cannot follow the 3D scene.
-function reportPlay(p){const id=`${arena.run}|${p.index}`;if(cued===id)return;cued=id;play(cueFor(p.clip));announce(`${commentary(p.clip)} ${t('a11y.score',{home:p.home,away:p.away})}`);}
+// The crowd reacts to big plays: it roars for the Kangs' threes, dunks and blocks, and groans for the visitors'.
+function crowdReaction(c){const big=c.outcome==='made'&&(c.three||isDunk(c.kind));if(c.team==='home'&&(big||(c.outcome==='steal')))play('cheer');else if(c.team==='away'&&big)play('groan');else if(c.outcome==='block')play(c.team==='away'?'cheer':'groan');}
+function reportPlay(p){const id=`${arena.run}|${p.index}`;if(cued===id)return;cued=id;play(cueFor(p.clip));crowdReaction(p.clip);const line=commentary(p.clip);announce(`${line} ${t('a11y.score',{home:p.home,away:p.away})}`);speak(line,{tag:localeTag(),muted:getSound().muted,rate:Math.min(1.5,.95+.15*Math.log2(Math.max(.5,arena.speed||1))+.1)});}
+// The ambient crowd runs only during a live game.
+function syncCrowd(){if(view==='game'&&state?.match&&!replayEvent&&!modal.open)startCrowd();else stopCrowd();}
 function syncPresentation(p){
  if(!p)return;
  if($('#live-home'))$('#live-home').textContent=p.home;if($('#live-away'))$('#live-away').textContent=p.away;
@@ -397,7 +403,7 @@ document.addEventListener('keydown',e=>{
 });
 // Pace of "Watch live". With timing assist on, a short pause between possessions leaves time to read each play.
 setInterval(()=>{if(arena.failed&&arena.event&&!arena.paused){arena.playTime=Math.min(CLIP_SECONDS*2,arena.playTime+.1*arena.speed);syncPresentation(arena.presentation());}if(auto&&view==='game'&&state?.match&&!modal.open&&!arena.isPlaying()&&!(['SELECT','INPUT'].includes(document.activeElement?.tagName)&&Date.now()-lastInteract<4000)){gap+=100;if(!getA11y().timingAssist||gap>=2500)step();}},100);
-onSettingsChange(type=>{applyArena();if(type==='sound'||type==='a11y')refreshTopbar();});
+onSettingsChange(type=>{applyArena();if(type==='sound')syncCrowd();if(type==='sound'||type==='a11y')refreshTopbar();});
 window.addEventListener('kangs-language-changed',()=>{if(data)render();});
 try{data=await fetch(`${import.meta.env.BASE_URL}data/kangs.json`).then(r=>{if(!r.ok)throw Error('Data unavailable');return r.json();});try{const s=JSON.parse(localStorage.getItem(KEY));if(E.validSave(s))state=s;}catch{}view='landing';render();}catch(error){app.innerHTML=`<div class="error-screen"><h1>${t('error.title')}</h1><p>${t('error.body')}</p><button onclick="location.reload()">${t('error.reload')}</button></div>`;}
 // Check the same-origin published snapshot periodically; no third-party browser scraping.

@@ -1,11 +1,12 @@
 // Synthesized sound effects: no audio files. The AudioContext is created on first use so the browser autoplay policy is respected.
-export const SOUND_KEYS=['swish','three','rim','block','steal','whistle','timeout','confirm','select','error','signing','victory','defeat','uiClick'];
+export const SOUND_KEYS=['swish','three','rim','block','steal','whistle','timeout','confirm','select','error','signing','victory','defeat','uiClick','cheer','groan','crowd'];
 let ctx=null,volume=.35,muted=true,bypass=false;
 const enabled=Object.fromEntries(SOUND_KEYS.map(k=>[k,true]));
 export function configureAudio({volume:v,muted:m,toggles}={}){
  if(typeof v==='number')volume=Math.max(0,Math.min(1,v));
  if(typeof m==='boolean')muted=m;
  if(toggles)for(const k of SOUND_KEYS)if(typeof toggles[k]==='boolean')enabled[k]=toggles[k];
+ if(bed&&(muted||!enabled.crowd))stopCrowd();
 }
 function context(){
  const AC=globalThis.AudioContext||globalThis.webkitAudioContext;if(!AC)return null;
@@ -60,9 +61,29 @@ const SOUNDS={
  victory(){chord([523.25,659.25,783.99,1046.5],.15,.55,.34);osc('sine',261.63,254,.7,.28,0,.01);noise(.12,3000,8000,6,.12,.55);},
  // Gentle descending phrase for a loss.
  defeat(){chord([392,349.23,293.66,261.63],.2,.5,.28);},
+ // Crowd roar: a rising wash of noise with a few shouts on top.
+ cheer(){noise(1.1,500,2200,.8,.3);noise(.9,900,2600,1.5,.18,.12);osc('sawtooth',320,420,.5,.05,.1,.05);},
+ // The crowd's groan: noise sliding down, with a falling hum.
+ groan(){noise(.9,900,260,.9,.26);osc('sawtooth',230,130,.8,.07,0,.08);},
+ // A short murmur; the same sound runs continuously as the ambience during a live game.
+ crowd(){noise(1.2,400,700,.5,.16);noise(1.2,900,500,.7,.08,.2);},
  // Deep, short click.
  uiClick(){noise(.035,180,60,1.8,.5);osc('sine',320,420,.075,.65,0,.003);},
 };
 export function play(key){if(!bypass&&(muted||!enabled[key]))return;try{SOUNDS[key]?.();}catch{}}
 // Plays a sound even when muted so volume can be checked before sound effects are switched on.
 export function preview(key='swish'){bypass=true;try{SOUNDS[key]?.();}catch{}finally{bypass=false;}}
+// Ambient crowd for a live game: looping low noise that swells a little now and then. It follows the master mute and the 'crowd' switch.
+let bed=null;
+function brownNoise(c,seconds=4){const buffer=c.createBuffer(1,Math.ceil(c.sampleRate*seconds),c.sampleRate),d=buffer.getChannelData(0);let last=0;for(let i=0;i<d.length;i++){last=(last+.02*(Math.random()*2-1))/1.02;d[i]=last*3.5;}return buffer;}
+export function startCrowd(){
+ if(bed||muted||!enabled.crowd)return;const c=context();if(!c)return;
+ try{
+  const src=c.createBufferSource(),low=c.createBiquadFilter(),g=c.createGain(),lfo=c.createOscillator(),depth=c.createGain();
+  src.buffer=brownNoise(c);src.loop=true;low.type='lowpass';low.frequency.value=650;g.gain.value=Math.max(.09*volume,.0005);
+  lfo.frequency.value=.12;depth.gain.value=g.gain.value*.45;lfo.connect(depth).connect(g.gain);
+  src.connect(low).connect(g).connect(c.destination);src.start();lfo.start();bed={src,lfo,g};
+ }catch{bed=null;}
+}
+export function stopCrowd(){if(!bed)return;try{bed.g.gain.setTargetAtTime(.0001,bed.g.context.currentTime,.15);const b=bed;setTimeout(()=>{try{b.src.stop();b.lfo.stop();}catch{}},600);}catch{}bed=null;}
+export const crowdRunning=()=>!!bed;
