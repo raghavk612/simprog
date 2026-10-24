@@ -137,10 +137,10 @@ Effort: **S** < 1 day, **M** 1–3 days, **L** a week+. Ideas already covered by
 | 8 | ✅ **Done (accessibility branch):** **Accessibility pack** | Text size, high-contrast and color-blind palettes, "reduce 3D", dyslexia-friendly font, screen-reader scores. | M |
 | 9 | **Graphics quality / low-spec mode** | Auto-detect low fps and drop shadows, crowd and pixel ratio; manual Low/Med/High. | S |
 | 10 | **Halftime / quarter adjustments** | Pause each quarter with a stat comparison and 2–3 suggested adjustments. | M |
-| 11 | **Recruiting mini-game** | Watch a short scouting scrimmage to reveal hidden traits before signing. | M |
-| 12 | **Player development arcs** | Skill sparklines, ceilings, breakout/slump tags. | M |
+| 11 | ✅ **Done (as a token-cost Scout button with hidden potential and work ethic, not a scrimmage):** **Recruiting mini-game** | Watch a short scouting scrimmage to reveal hidden traits before signing. | M |
+| 12 | ✅ **Done:** **Player development arcs** | Skill sparklines, ceilings, breakout/slump tags. | M |
 | 13 | **Multi-season dynasty** | Seniors graduate, freshmen arrive, tokens/fans carry over. Changes the save schema. | L |
-| 14 | **Achievements** | Perfect Drill, Undefeated Regular Season, Beat the Rival, Zero-Injury Season, Varsity Champion. | S |
+| 14 | ✅ **Done (7 achievements; Comeback Win and Beat the Rival not built):** **Achievements** | Perfect Drill, Undefeated Regular Season, Beat the Rival, Zero-Injury Season, Varsity Champion. | S |
 | 15 | ✅ **Done:** **"Why that shot?" live panel** | Show shot-probability factor bars (skill, energy, chemistry, tactics) during live play. Great for Q&A. | S |
 | 16 | **Broadcast highlights + Player of the Game** | Auto-replay the top 3 plays with lower-third graphics and a POG card. | M |
 | 17 | **Challenge codes / hot-seat duel** | Share a seed ("same season, who does better?") or alternate tactic picks with two coaches. | M / L |

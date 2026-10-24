@@ -184,3 +184,11 @@ dialog:has(.settings) .modal-content{padding:0;display:flex;flex-direction:colum
 /* Light theme: the page is inverted from the root (see applyA11y in settings.js), then pictures, the 3D court, avatars and colour swatches are inverted again so they keep their own colours. High contrast has its own palette and ignores it. */
 html.theme-light:not(.a11y-high-contrast){background:#f2f0f8}
 html.theme-light:not(.a11y-high-contrast) :is(canvas,img,video,svg.avatar,.mouse-icon svg,.shirt,.prospect-jersey,.opp-crest,.crest){filter:invert(1) hue-rotate(180deg)}
+/* Achievements, development arcs and scouting in high contrast: borders and words carry the meaning, never colour alone. */
+.a11y-high-contrast .ach-list li{background:#000!important;border:2px dashed #fff!important}
+.a11y-high-contrast .ach-list li.earned{border:3px solid #fff!important}
+.a11y-high-contrast .ach-list li *,.a11y-high-contrast .arc,.a11y-high-contrast .arc *{color:#fff!important}
+.a11y-high-contrast .ach-state,.a11y-high-contrast .arc-tag{border:2px solid #fff!important;background:#000!important}
+.a11y-high-contrast .arc{background:#000!important;border:2px solid #fff!important}
+.a11y-high-contrast .arc .spark polyline{stroke:#fff!important;stroke-width:3}
+.a11y-high-contrast .arc .spark circle{fill:#fff!important}
