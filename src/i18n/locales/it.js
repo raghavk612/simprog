@@ -196,8 +196,8 @@ export default {
   home:'Viola casa',
   away:'Bianca trasferta',
   alternate:'Alternativa mezzanotte',
-  trim:'Colore del numero sulla maglia',
-  note:'Divise originali ispirate all’identità viola e bianca della scuola. Non viene usata l’immagine di alcun atleta.'},
+  
+  note:'Divise originali ispirate all’identità viola e bianca della scuola. Non viene usata l’immagine di alcun atleta.',showcase:'Tre divise esposte: viola in casa, bianca in trasferta e mezzanotte. Usa i pulsanti accanto per sceglierne una.',picked:'Divisa {{kit}} selezionata.',},
  journal:{
   kicker:'La storia della tua stagione',
   intro:'Il tuo bilancio simulato, le tue decisioni, la classifica e i momenti decisivi.',

@@ -153,7 +153,7 @@ export default {
  impact:{skill:'技能',energy:'体能',morale:'士气',chemistry:'默契',shotType:'投篮类型',space:'空间',tactics:'战术'},
  stats:{assists:'助攻',blocks:'盖帽',steals:'抢断',rebounds:'篮板',title:'球队统计'},
  replay:{kicker:'录像室',title:'观看这次进攻如何展开。',intro:'已记录的动作与结果。回放不会改变你的赛季。',recorded:'已记录的进攻',again:'再次回放',pause:'暂停回放',resume:'继续回放',back:'返回赛季日志'},
- locker:{kicker:'穿上属于你的身份',intro:'选择球员在 3D 球馆里穿的球衣。可在球员资料中修改球员姓名。',issue:'Kangs 球队队服',title:'让它属于你。',kits:'球衣款式',home:'主场紫',away:'客场白',alternate:'午夜备选',trim:'球衣号码颜色',note:'原创球衣设计，灵感来自学校的紫白配色。未使用任何真实运动员的肖像。'},
+ locker:{kicker:'穿上属于你的身份',intro:'选择球员在 3D 球馆里穿的球衣。可在球员资料中修改球员姓名。',issue:'Kangs 球队队服',title:'让它属于你。',kits:'球衣款式',home:'主场紫',away:'客场白',alternate:'午夜备选',note:'原创球衣设计，灵感来自学校的紫白配色。未使用任何真实运动员的肖像。',showcase:'展示三件球衣：主场紫色、客场白色和午夜黑。请用旁边的按钮选择。',picked:'已选择{{kit}}球衣。',},
  journal:{
   kicker:'你的赛季故事',
   intro:'你的模拟战绩、决策、积分榜和决定性时刻。',

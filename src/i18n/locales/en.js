@@ -174,7 +174,7 @@ export default {
  impact:{skill:'Skill',energy:'Energy',morale:'Morale',chemistry:'Chemistry',shotType:'Shot type',space:'Space',tactics:'Tactics'},
  stats:{assists:'Assists',blocks:'Blocks',steals:'Steals',rebounds:'Rebounds',title:'Team stats'},
  replay:{kicker:'The film room',title:'Watch the play develop.',intro:'Recorded actions and outcomes. Replaying never changes your season.',recorded:'Recorded play',again:'Replay again',pause:'Pause replay',resume:'Resume replay',back:'Back to season journal'},
- locker:{kicker:'Wear your identity',intro:'Choose the kit your players wear in the 3D gym. Rename players through their roster profiles.',issue:'Kangs team issue',title:'Make it yours.',kits:'Jersey kits',home:'Home purple',away:'Away white',alternate:'Midnight alternate',trim:'Jersey number color',note:'Original jersey designs inspired by the school’s purple and white identity. No athlete likeness is used.'},
+ locker:{kicker:'Wear your identity',intro:'Choose the kit your players wear in the 3D gym. Rename players through their roster profiles.',issue:'Kangs team issue',title:'Make it yours.',kits:'Jersey kits',home:'Home purple',away:'Away white',alternate:'Midnight alternate',note:'Original jersey designs inspired by the school’s purple and white identity. No athlete likeness is used.',showcase:'Three jerseys on display: home purple, away white and midnight. Use the buttons beside them to choose one.',picked:'{{kit}} jersey selected.',},
  journal:{
   kicker:'The story of your season',
   intro:'Your simulated record, decisions, standings and defining moments.',

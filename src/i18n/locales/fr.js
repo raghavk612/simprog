@@ -196,8 +196,8 @@ export default {
   home:'Violet domicile',
   away:'Blanc extérieur',
   alternate:'Alternative minuit',
-  trim:'Couleur du numéro du maillot',
-  note:'Maillots originaux inspirés de l’identité violette et blanche de l’école. Aucun portrait d’athlète n’est utilisé.'},
+  
+  note:'Maillots originaux inspirés de l’identité violette et blanche de l’école. Aucun portrait d’athlète n’est utilisé.',showcase:'Trois maillots exposés : violet à domicile, blanc à l’extérieur et minuit. Utilisez les boutons à côté pour en choisir un.',picked:'Maillot {{kit}} sélectionné.',},
  journal:{
   kicker:'L’histoire de votre saison',
   intro:'Votre bilan simulé, vos décisions, le classement et les moments marquants.',

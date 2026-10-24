@@ -196,8 +196,8 @@ export default {
   home:'Morada de local',
   away:'Blanca de visitante',
   alternate:'Alternativa de medianoche',
-  trim:'Color del número de la camiseta',
-  note:'Diseños de camiseta originales inspirados en la identidad morada y blanca de la escuela. No se usa la imagen de ningún deportista.'},
+  
+  note:'Diseños de camiseta originales inspirados en la identidad morada y blanca de la escuela. No se usa la imagen de ningún deportista.',showcase:'Tres camisetas expuestas: morada de local, blanca de visitante y de medianoche. Usa los botones de al lado para elegir una.',picked:'Camiseta {{kit}} seleccionada.',},
  journal:{
   kicker:'La historia de tu temporada',
   intro:'Tu récord simulado, tus decisiones, la clasificación y los momentos decisivos.',
