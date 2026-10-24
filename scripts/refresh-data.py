@@ -191,6 +191,8 @@ def build_level(key, raw, year_slug, prev=None):
     if not MIN_PLAYERS <= len(players) <= MAX_PLAYERS:
         if not prev or not prev.get('players'):
             raise ValueError(f'{key}: {len(players)} players failed validation and no earlier roster is available')
+        print(f'warning: {key}: published {roster_season} roster has {len(players)} players (need {MIN_PLAYERS}-{MAX_PLAYERS}); '
+              f"keeping the existing {prev.get('rosterSeason', '2025–26')} roster", file=sys.stderr)
         players, roster_season = copy.deepcopy(prev['players']), prev.get('rosterSeason', '2025–26')  # none published yet: keep the roster
     if len(games) < MIN_GAMES:
         raise ValueError(f'{key}: only {len(games)} scheduled games')
