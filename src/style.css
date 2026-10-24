@@ -510,3 +510,17 @@ td .opp-badge,.opp-roster .opp-badge{position:relative;top:-1px}
 @media(max-width:1150px){.jersey-stage{min-height:420px}}
 @media(max-width:620px){.jersey-stage{min-height:300px}}
 .kit-options .kit.selected{box-shadow:0 0 0 3px #e9b858}
+
+/* ---- token economy, "what now" nudge, tip-off preview, season code, model panel ---- */
+.nudge-card{border-left:4px solid #e9b858;margin-bottom:20px}
+.nudge-card p{margin:8px 0 14px;font-size:calc(17px*var(--ts,1)*var(--ls,1));font-weight:600}
+.tipoff-card h3{margin:14px 0 8px;font-size:calc(14px*var(--ts,1)*var(--ls,1))}
+.tipoff-card p{font-size:calc(14px*var(--ts,1)*var(--ls,1))}
+.upgrades-card{margin-top:20px}
+.code-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.code-box{display:inline-block;padding:8px 12px;border-radius:5px;background:#ffffff12;border:1px solid var(--border);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:calc(16px*var(--ts,1)*var(--ls,1));letter-spacing:.06em;user-select:all;overflow-wrap:anywhere}
+.season-code{margin-bottom:20px}
+.code-hint{display:block;margin:-4px 0 12px;font-size:calc(12px*var(--ts,1)*var(--ls,1));opacity:.85}
+.model-list{list-style:none;padding:0;margin:14px 0;display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.model-list li{display:grid;grid-template-columns:minmax(0,1fr);gap:3px;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:calc(14px*var(--ts,1)*var(--ls,1))}
+@media(max-width:620px){.nudge-card p{font-size:calc(16px*var(--ts,1)*var(--ls,1))}}

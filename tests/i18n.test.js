@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
 import en from '../src/i18n/locales/en.js';
 import {LANGUAGES,t,tu,list,has,translateError,setLanguage,getLanguage,detectLanguage,formatDate,supported} from '../src/i18n/index.js';
-import {plans,staff,DIFFICULTIES} from '../src/engine.js';import {VALUES} from '../src/narrative.js';import {SHOTS} from '../src/basketball.js';import {SOUND_KEYS} from '../src/audio.js';import {ACTIONS} from '../src/keys.js';
+import {plans,staff,DIFFICULTIES,UPGRADES} from '../src/engine.js';import {VALUES} from '../src/narrative.js';import {SHOTS} from '../src/basketball.js';import {SOUND_KEYS} from '../src/audio.js';import {ACTIONS} from '../src/keys.js';
 const read=f=>fs.readFileSync(new URL(f,import.meta.url),'utf8');
 // Every string leaf, keyed by its path. Arrays are indexed.
 function flatten(value,prefix='',out={}){
@@ -66,6 +66,9 @@ test('every key built at run time resolves to a string for each value it can tak
  for(const v of ['train','recruit','talk','scout','release','dismiss','saved'])need.push(`toast.titles.${v}`);
  for(const v of ['rookie','standard','elite'])need.push(`tier.${v}`);
  for(const v of ['controls','goal','difficulty','rotation','prep','gameday','court','data'])need.push(`hb.tabs.${v}`);
+ for(const u of UPGRADES)need.push(`upg.${u.key}.name`,`upg.${u.key}.fx`);
+ for(const v of ['finished','live','inbox','press','issues','practice','scout','lineup','tipoff'])need.push(`nudge.${v}`,`nudge.btn.${v}`);
+ for(const v of ['upgrade','budget'])need.push(`log.${v}`);need.push('toast.titles.upgrade');
  for(const v of ['shooting','bond','defense','recovery','study'])need.push(`drill.${v}.name`,`drill.${v}.how`);
  for(const v of ['fresh','rested','tired','exhausted'])need.push(`rv.energy.${v}`);
  for(const v of ['fired','content','restless','unhappy'])need.push(`rv.morale.${v}`);
