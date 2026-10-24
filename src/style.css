@@ -314,6 +314,13 @@ button kbd.key.kw{min-width:0}
 
 /* ---- taller live arena: controls sit below the court instead of on top of it ---- */
 .live-match .game-arena{height:calc(100svh - 46px)!important;min-height:700px}
+/* The court takes whatever height is left once the control bar is in view, so the controls never fall below the fold on a laptop screen. */
+@media(min-width:761px){
+ body.live-match .game-layout{display:flex;flex-direction:column;height:calc(100dvh - 46px);min-height:520px}
+ body.live-match .game-layout>.court-panel{flex:1 1 auto;min-height:0}
+ body.live-match .game-layout>.court-panel>.game-arena{height:100%!important;min-height:0}
+ body.live-match .game-layout>.right-rail{flex:none}
+}
 .live-match .game-layout>.right-rail{position:relative;bottom:auto;border-top:1px solid #ffffff21}
 .live-match .play-call,.live-match .replay-layout .play-call{bottom:22px}
 .live-match .commentary-drawer,.live-match .box-drawer{top:132px}

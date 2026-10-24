@@ -24,3 +24,20 @@ test('unplayed games (null scores) validate in saves and estimates fall back to 
  for(const [diff,level] of [['rookie','c'],['standard','jv'],['elite','varsity']]){const s=E.createGame(unplayed,'Null test',diff,3);E.autoLineup(s);assert.ok(s.schedule.every(g=>g.points===null&&g.against===null));assert.equal(s.refPpg,data.levels[level].refPointsPerGame);assert.ok(E.validSave(s));const est=E.estimateLines(s);const sum=Object.values(est).reduce((a,l)=>a+l.ppg,0);assert.ok(Math.abs(sum-s.refPpg)<s.players.length*.06+.5,`${level} estimated PPG sums near ${s.refPpg}, got ${sum}`);const bad=structuredClone(s);bad.schedule[0].points='x';assert.equal(E.validSave(bad),false);const half=structuredClone(s);half.schedule[0].points=60;assert.equal(E.validSave(half),false,'half-scored game rejected');half.schedule[0].against=50;assert.ok(E.validSave(half),'fully scored game accepted');}
  const old=E.createGame(unplayed,'Scored test','elite',5);old.schedule.forEach(g=>{g.points=70;g.against=60;});old.refPpg=null;const sum=Object.values(E.estimateLines(old)).reduce((a,l)=>a+l.ppg,0);assert.ok(Math.abs(sum-70)<1.5,'real scores take precedence over the reference average');const none=E.createGame(unplayed,'Fallback','elite',5);none.refPpg=null;const sum55=Object.values(E.estimateLines(none)).reduce((a,l)=>a+l.ppg,0);assert.ok(Math.abs(sum55-55)<1.5,'55 fallback only without any scoring data');
  const plan=E.seasonPlan(E.createGame(unplayed,'Plan','elite',1));assert.deepEqual([plan.n,plan.cut,plan.need],[data.levels.varsity.games.length,data.levels.varsity.games.length-4,Math.ceil((data.levels.varsity.games.length-4)*.46)]);});
+test('starting and un-starting keeps the rotation consistent',()=>{
+ const s=game(),starter=s.players.find(p=>p.starter),bench=s.players.find(p=>!p.starter);
+ assert.equal(E.setStarter(s,starter.id,false).minutes,0);assert.equal(starter.starter,false);
+ assert.equal(s.players.reduce((a,p)=>a+p.minutes,0),128);
+ E.setStarter(s,bench.id,true);assert.equal(bench.minutes,32);assert.equal(s.players.reduce((a,p)=>a+p.minutes,0),160);assert.ok(E.validateLineup(s));
+ E.setStarter(s,bench.id,true);assert.equal(bench.minutes,32,'starting a starter again changes nothing');
+ const other=s.players.find(p=>!p.starter);other.minutes=10;E.setStarter(s,other.id,true);assert.equal(other.minutes,10,'a player who already has minutes keeps them');
+ assert.throws(()=>E.setStarter(s,99999,true),/Choose a player/);
+ E.autoLineup(s);E.startMatch(s);assert.throws(()=>E.setStarter(s,bench.id,false),/Finish the current game/);
+});
+test('lineup issues name who cannot play and why',()=>{
+ const s=game();assert.deepEqual(E.lineupIssues(s),[]);
+ const [a,b,c]=s.players.filter(p=>p.starter);a.injury=2;b.gpa=1.5;c.energy=5;
+ assert.deepEqual(E.lineupIssues(s).map(x=>[x.id,x.reason]),[[a.id,'injured'],[b.id,'gpa'],[c.id,'tired']]);
+ const idle=s.players.find(p=>!p.starter);idle.injury=1;assert.equal(E.lineupIssues(s).length,3,'an injured player with no minutes is not an issue');
+ E.autoLineup(s);assert.deepEqual(E.lineupIssues(s),[]);
+});

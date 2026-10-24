@@ -165,3 +165,10 @@ dialog:has(.settings) .modal-content{padding:0;display:flex;flex-direction:colum
 
 /* ---- Operating-system high-contrast / forced-colors mode ---- */
 @media(forced-colors:active){.switch[aria-checked=true]{background:Highlight}.choice-card.selected{outline:3px solid Highlight}.keycap.listening{outline:3px solid Highlight}}
+/* First-time tour: the card sits beside the sidebar item it explains, and that item is outlined. */
+.tour-target{box-shadow:0 0 0 3px #e9b858,0 0 22px 4px #e9b85866!important;position:relative;z-index:21}
+.tutorial.aimed .tutorial-arrow{left:-34px;top:12px;font-size:calc(34px*var(--ts,1)*var(--ls,1))}
+@media(max-width:760px){.tutorial.aimed{left:15px!important;right:15px;top:auto!important;bottom:15px!important}}
+/* Handbook controls on a phone: the key caps wrap and sit above their description instead of overlapping it. */
+.ctl-keys{flex-wrap:wrap;row-gap:4px}
+@media(max-width:620px){.ctl-row{grid-template-columns:minmax(0,1fr)!important}}

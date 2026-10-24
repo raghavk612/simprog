@@ -15,6 +15,8 @@ export const DRILLS = {
 };
 export const drillName = key => t(`drill.${key}.name`);
 
+// Pending timeouts are cancelled with the drill, so closing the dialog early leaves nothing running.
+const bag = () => { const ids = new Set(); return { later: (fn, ms) => { const id = setTimeout(() => { ids.delete(id); fn(); }, ms); ids.add(id); }, clear: () => { ids.forEach(clearTimeout); ids.clear(); } }; };
 const shuffle = (a, r = Math.random) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
 export function mountDrill(root, key, onDone) {
@@ -34,6 +36,7 @@ function finish(root, spec, made, total, need, onDone) {
 
 /* ---------- shooting: side-view projectile with angle + power ---------- */
 function shotDrill(root, spec, onDone) {
+  const T = bag();
   const three = spec.kind === 'three', total = three ? 4 : 3, need = 2;
   const G = 32.2, REL_H = 7, RIM_H = 10, RIM_R = 0.75, BALL_R = 0.39;
   let shot = 0, made = 0, angle = three ? 50 : 52, power = 50, flying = false, raf = 0, dist = 0, trail = [], last = null, ended = false;
@@ -109,8 +112,8 @@ function shotDrill(root, spec, onDone) {
       play(res.scored ? (three ? 'three' : 'swish') : 'rim');
       last = { trail }; flying = false;
       root.querySelector('.drill-head').outerHTML = header(spec, made, shot, total, need);
-      if (shot >= total) { ended = true; $('.drill-msg').textContent = res.scored ? t('drill.swish') : miss; setTimeout(() => finish(root, spec, made, total, need, onDone), 700); return; }
-      if (total - shot + made < need) { ended = true; $('.drill-msg').textContent = miss; setTimeout(() => finish(root, spec, made, total, need, onDone), 700); return; }
+      if (shot >= total) { ended = true; $('.drill-msg').textContent = res.scored ? t('drill.swish') : miss; T.later(() => finish(root, spec, made, total, need, onDone), 700); return; }
+      if (total - shot + made < need) { ended = true; $('.drill-msg').textContent = miss; T.later(() => finish(root, spec, made, total, need, onDone), 700); return; }
       spot(); $('.drill-msg').textContent = `${res.scored ? t('drill.swish') : miss} ${t('drill.nextSpot', { d: dist })}`; $('.drill-go').disabled = false; draw();
     };
     raf = requestAnimationFrame(step);
@@ -131,11 +134,12 @@ function shotDrill(root, spec, onDone) {
   };
   window.addEventListener('keydown', key, true);
   draw();
-  return () => { cancelAnimationFrame(raf); window.removeEventListener('keydown', key, true); };
+  return () => { T.clear(); cancelAnimationFrame(raf); window.removeEventListener('keydown', key, true); };
 }
 
 /* ---------- timing: stop the marker in the window ---------- */
 function timingDrill(root, spec, onDone) {
+  const T = bag();
   const close = spec.kind === 'closeout', total = 3, need = 2, assist = getA11y().timingAssist,
     widths = (close ? [.17, .13, .1] : [.24, .2, .16]).map(w => assist ? Math.min(.4, w * 1.6) : w), speeds = (close ? [.9, 1.15, 1.4] : [.55, .7, .85]).map(v => assist ? v * .6 : v);
   let round = 0, made = 0, pos = 0, dir = 1, zone = 0, raf = 0, last = performance.now(), locked = false, ended = false;
@@ -151,18 +155,19 @@ function timingDrill(root, spec, onDone) {
     $('.timing-bar').classList.toggle('hit', hit); $('.timing-bar').classList.toggle('miss', !hit);
     $('.drill-msg').textContent = hit ? t(close ? 'drill.handUp' : 'drill.smooth') : t(pos < zone ? 'drill.early' : 'drill.late');
     play(hit ? 'confirm' : 'error');
-    if (round >= total || total - round + made < need) { ended = true; setTimeout(() => finish(root, spec, made, total, need, onDone), 800); return; }
-    setTimeout(() => { locked = false; newZone(); $('.timing-bar').classList.remove('hit', 'miss'); }, 750);
+    if (round >= total || total - round + made < need) { ended = true; T.later(() => finish(root, spec, made, total, need, onDone), 800); return; }
+    T.later(() => { locked = false; newZone(); $('.timing-bar').classList.remove('hit', 'miss'); }, 750);
   };
   $('.drill-go').addEventListener('click', lock);
   const key = e => { if (!root.isConnected) return; if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); lock(); } else if (e.key.toLowerCase() === 'h') e.stopPropagation(); };
   window.addEventListener('keydown', key, true);
   raf = requestAnimationFrame(tick);
-  return () => { cancelAnimationFrame(raf); window.removeEventListener('keydown', key, true); };
+  return () => { T.clear(); cancelAnimationFrame(raf); window.removeEventListener('keydown', key, true); };
 }
 
 /* ---------- quiz ---------- */
 function quizDrill(root, spec, onDone) {
+  const T = bag();
   const total = 3, need = 2, qs = shuffle(list('drill.quiz')).slice(0, total).map(([q, ...opts]) => { const order = shuffle(opts.map((o, i) => [o, i === 0])); return { q, order }; });
   let i = 0, made = 0, ended = false;
   const render = msg => {
@@ -174,11 +179,11 @@ function quizDrill(root, spec, onDone) {
     if (ended) return; const right = qs[i].order[k][1]; if (right) made++; const correct = qs[i].order.find(o => o[1])[0]; i++;
     const msg = right ? t('drill.quizRight') : t('drill.quizWrong', { a: correct });
     play(right ? 'confirm' : 'error');
-    if (i >= total || total - i + made < need) { ended = true; render(msg); setTimeout(() => finish(root, spec, made, total, need, onDone), 900); return; }
+    if (i >= total || total - i + made < need) { ended = true; render(msg); T.later(() => finish(root, spec, made, total, need, onDone), 900); return; }
     render(msg);
   };
   const key = e => { if (!root.isConnected) return; if (['1', '2', '3'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); answer(+e.key - 1); } else if (e.key.toLowerCase() === 'h' || e.key === ' ') e.stopPropagation(); };
   window.addEventListener('keydown', key, true);
   render();
-  return () => window.removeEventListener('keydown', key, true);
+  return () => { T.clear(); window.removeEventListener('keydown', key, true); };
 }

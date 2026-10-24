@@ -6,6 +6,12 @@ This file collects **everything that is still to do**: the designed-but-not-buil
 
 ---
 
+## 0a. Done on the `accessablity` / `remaining-work` branches
+
+- Settings dialog with sound (14 synthesized effects, per-sound switches), accessibility (colour-vision correction, high contrast, reduced motion, text size 70–180 %, fonts, slower playback, timing assist, simplified interface) and language (English, Spanish, Chinese, French, Japanese, Italian, Hindi), plus rebindable shortcuts. See `docs/accessibility.md`.
+- Quick wins 9, 10 and 11 below (score announcements, text-size control, skip link).
+- The bugs marked ✅ in section 2.
+
 ## 0. What's already live (for context)
 
 - **2026–27 KingCo schedule.** Varsity 18, JV 17, C-Team 12 games. Unplayed games show as "Upcoming", and no scores are ever invented.
@@ -53,22 +59,22 @@ Severity: **H** = fix before judging, **M** = visible to a judge/user, **L** = p
 
 | # | Sev | Bug | Fix idea |
 |---|---|---|---|
-| B0 | H (UX) | **Live-game control bar sits below the fold on laptop screens** (1366×768 / 1440×900). This is a side effect of the intentionally taller arena. | Offer a compact live layout: arena height `calc(100dvh − header − controls)`, with the controls in normal flow. |
-| B1 | H (a11y) | **Keyboard focus jumps to `<body>` after every click**, because the whole app re-renders. | Remember the focused element (by `data-action`/`data-view`/`data-id`) and the scroll position, and restore them after `render()`. |
-| B2 | M | Roster "Starter" checkboxes (hero card vs table) desync. Un-starting keeps minutes > 0. | Re-render on change, and zero minutes when un-starting. |
-| B3 | M | Tutorial arrow always points at the last nav item, has no backdrop, and says "state bracket" on C Team/JV. | Point at the step's nav item and use `plan().runName`. |
-| B4 | M | After releasing a player who was the training target, every drill "fails" with "Choose a player". | Reset `selected='all'` when the roster changes. |
-| B5 | M | Game day gives no warning for an ineligible starter (injured / tired / GPA < 2.0), and the error doesn't name the player. | Per-row eligibility chips, a "Fix lineup" button, and name the player in the error. |
-| B6 | M | "Watch live" stalls while the System/Tempo dropdown keeps focus. | Blur the select on change. |
-| B7 | L | Handbook → Controls on a phone: the 1–5 key row overlaps its text. | Wrap or stack the key chips below 620px. |
+| B0 | H (UX) | ✅ **Fixed:** the court now takes the height left after the control bar, so the controls stay in view (`src/style.css`, live-match block). ~~**Live-game control bar sits below the fold on laptop screens** (1366×768 / 1440×900). This is a side effect of the intentionally taller arena.~~ | Offer a compact live layout: arena height `calc(100dvh − header − controls)`, with the controls in normal flow. |
+| B1 | H (a11y) | ✅ **Fixed:** focus (by its `data-*` attributes, with its position among duplicates) and scroll are restored after every `render()`; a new page still moves focus to its heading. ~~**Keyboard focus jumps to `<body>` after every click**, because the whole app re-renders.~~ | Remember the focused element (by `data-action`/`data-view`/`data-id`) and the scroll position, and restore them after `render()`. |
+| B2 | M | ✅ **Fixed:** `E.setStarter` zeroes minutes when a starter is removed, gives a new starter the unassigned minutes, and the page re-renders so the card and table agree. ~~Roster "Starter" checkboxes (hero card vs table) desync. Un-starting keeps minutes > 0.~~ | Re-render on change, and zero minutes when un-starting. |
+| B3 | M | ✅ **Fixed:** each tour step points at its own sidebar item, which is outlined; the last step no longer mentions a state bracket. ~~Tutorial arrow always points at the last nav item, has no backdrop, and says "state bracket" on C Team/JV.~~ | Point at the step's nav item and use `plan().runName`. |
+| B4 | M | ✅ **Fixed:** the training group falls back to "whole team" when that player is no longer on the roster. ~~After releasing a player who was the training target, every drill "fails" with "Choose a player".~~ | Reset `selected='all'` when the roster changes. |
+| B5 | M | ✅ **Fixed:** `E.lineupIssues` names who cannot play and why; chips on Game day, a notice on both pages, a "Fix lineup" button, and the tip-off message names the players. ~~Game day gives no warning for an ineligible starter (injured / tired / GPA < 2.0), and the error doesn't name the player.~~ | Per-row eligibility chips, a "Fix lineup" button, and name the player in the error. |
+| B6 | M | ✅ **Fixed:** a pointer user's choice blurs the drop-down; for a keyboard user "Watch live" resumes after 4 idle seconds. ~~"Watch live" stalls while the System/Tempo dropdown keeps focus.~~ | Blur the select on change. |
+| B7 | L | ✅ **Fixed:** key caps wrap and the description sits below them under 620 px. ~~Handbook → Controls on a phone: the 1–5 key row overlaps its text.~~ | Wrap or stack the key chips below 620px. |
 | B8 | L | Phone: nav grid, header and tracker use about 560 of 844 px before content starts. | Sticky bottom tab bar and a compact tracker. |
 | B9 | L | Phone Program HQ metrics grid is misaligned. | Fix padding / use a 2-column grid. |
 | B10 | L | Title screen at 390px: the visual is 4px wider than the viewport. | Fix the width. |
 | B11 | L | Native `confirm()` dialogs (replace save, release, import). | Use the styled `<dialog>`. |
-| B12 | L | Error toasts linger into the next screen and overlap the tracker. | Dismiss on view change. |
-| B13 | L | Drill `setTimeout`s aren't cleared when the modal closes (console noise). | Track the timeout ids in the cleanup. |
+| B12 | L | ✅ **Fixed:** error notifications are removed when the page changes. ~~Error toasts linger into the next screen and overlap the tracker.~~ | Dismiss on view change. |
+| B13 | L | ✅ **Fixed:** drill timeouts are tracked and cleared with the drill. ~~Drill `setTimeout`s aren't cleared when the modal closes (console noise).~~ | Track the timeout ids in the cleanup. |
 | B14 | L | Season export is about 1.4 MB, close to the 2 MB import limit. | Export without indentation and compact old events. |
-| B15 | L | After an early elimination the tracker shows "30/30 · 2 left" and doesn't say why the season ended. | Show "ELIMINATED – game N" and the losing result. |
+| B15 | L | ✅ **Fixed:** the tracker says "Eliminated" and "Season ended after game N". ~~After an early elimination the tracker shows "30/30 · 2 left" and doesn't say why the season ended.~~ | Show "ELIMINATED – game N" and the losing result. |
 | — | L | 3D LED board shows the previous game's final while Game day names the next opponent. | Blank it or label it FINAL before tip-off. |
 | — | L | Visiting players' 3D nameplates read "VISITORS". The HUD shows real names. | Pass opponent identities into `setIdentity`. |
 | — | L | Pre-game Player view can sit the camera inside a nearby player's head. | Nudge the eye forward / hide the subject's head mesh in first person. |
@@ -125,8 +131,8 @@ Effort: **S** < 1 day, **M** 1–3 days, **L** a week+. Ideas already covered by
 | 4 | **Balance pass** | Real opponent strength, diminishing returns, token sinks (Section 3). | S |
 | 5 | ✱ Coach's inbox / random events | Covered by the mid-season events spec. | M |
 | 6 | **Rivalry weeks** | Flag real rivals on the schedule: extra fans/tokens and bigger morale swings, with headlines. | S–M |
-| 7 | **Sound design** | Crowd, whistle, swish/rim, buzzer and a volume slider (WebAudio, no assets). | S–M |
-| 8 | **Accessibility pack** | Text size, high-contrast and color-blind palettes, "reduce 3D", dyslexia-friendly font, screen-reader scores. | M |
+| 7 | ✅ **Done (accessibility branch):** **Sound design** | Crowd, whistle, swish/rim, buzzer and a volume slider (WebAudio, no assets). | S–M |
+| 8 | ✅ **Done (accessibility branch):** **Accessibility pack** | Text size, high-contrast and color-blind palettes, "reduce 3D", dyslexia-friendly font, screen-reader scores. | M |
 | 9 | **Graphics quality / low-spec mode** | Auto-detect low fps and drop shadows, crowd and pixel ratio; manual Low/Med/High. | S |
 | 10 | **Halftime / quarter adjustments** | Pause each quarter with a stat comparison and 2–3 suggested adjustments. | M |
 | 11 | **Recruiting mini-game** | Watch a short scouting scrimmage to reveal hidden traits before signing. | M |
