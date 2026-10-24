@@ -66,6 +66,43 @@ kbd{display:inline-block;min-width:1.8em;padding:2px 7px;margin-right:6px;text-a
 .a11y-high-contrast .choice-card.selected{background:#fff!important;color:#000!important}
 .a11y-high-contrast .choice-card.selected *{color:#000!important}
 .a11y-high-contrast #scene canvas{filter:contrast(1.25) saturate(1.2)}
+/* Long translations and large text must wrap rather than push the page sideways. */
+.pill{max-width:100%;white-space:normal}.rv-start{white-space:normal}.rv-side{min-width:0}
+/* Rows that must wrap at large text sizes. */
+.page-heading>div:first-child{min-width:0}.arena-bottom,.camera-controls,.rule-nav{flex-wrap:wrap}.rule-nav button{min-width:0}
+button.small,.staff-row button{white-space:normal}.staff-row{flex-wrap:wrap;gap:10px}
+/* Screens added later (roster viewer, practice planner, drills, score bug, handbook): dimmed states stay readable, and high contrast gets the same black, white and gold treatment. */
+.plan-slot.used{opacity:1;background:#ffffff05}.plan-slot.used b{color:#c9bdd8}.plan-slot.open b{color:#d9cfe6}.rv-table tr.out td{opacity:.8}
+.a11y-high-contrast .practice-plan,.a11y-high-contrast .rv-hero,.a11y-high-contrast .rule-panel,.a11y-high-contrast .rule-chips>div,.a11y-high-contrast .ctl-row,.a11y-high-contrast .drill-score,.a11y-high-contrast .rv-stats>div,.a11y-high-contrast .rv-info>div,.a11y-high-contrast .rule-tabs button{background:#000!important;border:2px solid #fff!important;box-shadow:none!important}
+.a11y-high-contrast .plan-slot{background:#000!important;border:2px solid #fff!important;opacity:1!important}
+.a11y-high-contrast .plan-slot.open{border-style:dashed!important}
+.a11y-high-contrast .plan-slot span,.a11y-high-contrast .plan-slot b,.a11y-high-contrast .plan-slot small,.a11y-high-contrast .plan-go small,.a11y-high-contrast .plan-x{color:#fff!important}
+.a11y-high-contrast .plan-slot.filled{background:#fff!important}.a11y-high-contrast .plan-slot.filled *{color:#000!important}
+.a11y-high-contrast .card.in-plan{border:3px solid #ffe28a!important}
+.a11y-high-contrast .drill-chip{background:#000!important;border:2px solid #ffe28a;color:#ffe28a!important}
+.a11y-high-contrast .rv-num{display:none}
+.a11y-high-contrast .rv-name,.a11y-high-contrast .rv-tag,.a11y-high-contrast .rv-count{background:#000!important;border:2px solid #fff!important;color:#ffe28a!important}
+.a11y-high-contrast .rv-name b,.a11y-high-contrast .rv-info strong,.a11y-high-contrast .rv-stats strong,.a11y-high-contrast .rv-stats span,.a11y-high-contrast .rv-stats small,.a11y-high-contrast .rv-start,.a11y-high-contrast .rv-arch>div,.a11y-high-contrast .rv-team,.a11y-high-contrast .rv-table th,.a11y-high-contrast .rv-table td{color:#fff!important}
+.a11y-high-contrast .rv-arrow{background:#000!important;border:2px solid #fff!important;color:#fff!important}
+.a11y-high-contrast .rv-table tr.selected td{background:#fff!important;color:#000!important}
+.a11y-high-contrast .rv-table tr.selected td *{color:#000!important}
+.a11y-high-contrast .rv-table tr.out td{opacity:1}
+.a11y-high-contrast .rv-table td.est{color:#fff!important}
+.a11y-high-contrast .stars i{color:#555}.a11y-high-contrast .stars i.on{color:#ffe28a}
+.a11y-high-contrast .bug2k .bug-team,.a11y-high-contrast .bug2k .bug-mid{background:#000!important;border:2px solid #fff!important}
+.a11y-high-contrast .bug2k .bug-name b,.a11y-high-contrast .bug2k strong,.a11y-high-contrast .bug2k small,.a11y-high-contrast .bug2k .bug-mid span,.a11y-high-contrast .bug-tag,.a11y-high-contrast .bug-slogan{color:#fff!important}
+.a11y-high-contrast .bug2k .bug-to i{background:#555}.a11y-high-contrast .bug2k .bug-to i.on{background:#ffe28a}
+.a11y-high-contrast .drill-msg,.a11y-high-contrast .drill-head p,.a11y-high-contrast .drill-score span,.a11y-high-contrast .drill-controls label,.a11y-high-contrast .drill-controls label b,.a11y-high-contrast .quiz-q{color:#fff!important}
+.a11y-high-contrast .timing-bar{background:#000!important;border:2px solid #fff!important}
+.a11y-high-contrast .timing-zone{background:#1b8f45!important;border-color:#fff!important}
+.a11y-high-contrast .drill-canvas{border:2px solid #fff;filter:contrast(1.25)}
+.a11y-high-contrast kbd.key,.a11y-high-contrast .mouse-icon{background:#000!important;color:#fff!important;border:2px solid #fff!important}
+.a11y-high-contrast .rule-tabs button{color:#fff!important}.a11y-high-contrast .rule-tabs button.active{background:#fff!important;color:#000!important}
+.a11y-high-contrast .rule-chips span,.a11y-high-contrast .rule-chips strong,.a11y-high-contrast .rule-list b,.a11y-high-contrast .ctl-row>span{color:#fff!important}
+.a11y-high-contrast .rule-dots i{background:#777}.a11y-high-contrast .rule-dots i.on{background:#fff}
+.a11y-high-contrast .camera-controls button{background:#000!important;color:#fff!important;border:2px solid #fff!important}
+.a11y-high-contrast .camera-controls button.active{background:#fff!important;color:#000!important}
+.a11y-high-contrast .opp-roster{color:#fff!important}
 
 /* ---- Reduced motion ---- */
 .a11y-reduced-motion,.a11y-reduced-motion *,.a11y-reduced-motion *::before,.a11y-reduced-motion *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}

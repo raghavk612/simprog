@@ -20,7 +20,7 @@ test('every language is listed, supported and has a locale file',()=>{
 });
 test('every static translation key used by the code exists in English',()=>{
  const missing=[];
- for(const file of ['../src/main.js','../src/settingsDialog.js','../src/narrative.js','../src/i18n/index.js']){
+ for(const file of ['../src/main.js','../src/settingsDialog.js','../src/narrative.js','../src/drills.js','../src/i18n/index.js']){
   for(const m of read(file).matchAll(/\b(?:t|tu|tb|list|has)\('([a-zA-Z0-9_.]+)'/g)){
    const key=m[1];if(!Object.keys(flat).some(k=>k===key||k.startsWith(`${key}.`)))missing.push(`${file}: ${key}`);
   }
@@ -54,7 +54,7 @@ test('every key built at run time resolves to a string for each value it can tak
  for(const v of ['0_5','0_75','1'])need.push(`settings.accessibility.playbackSpeedOptions.${v}`);
  for(const v of ['guard','forward'])need.push(`pos.${v}`);
  for(const v of ['senior','junior','sophomore','prospect','tryout'])need.push(`year.${v}`);
- for(const v of ['injured','ineligible','exhausted','ready'])need.push(`status.${v}`);
+ for(const v of ['injured','ineligible','exhausted'])need.push(`status.${v}`);
  for(const v of ['wholeTeam','train','recruit','release','hire','dismiss','talkListen','talkFundraise','talkAcademics','scout','tipoff','injury','win','loss','result','reason','reasonWithScouting','runEnds','champions','seasonComplete'])need.push(`log.${v}`);
  for(const v of ['calm','belief'])need.push(`timeout.feed.${v}`);need.push('timeout.feedPrefix');
  for(const [k,d] of Object.entries(DIFFICULTIES))need.push(`difficulty.${k}`,`level.${k}`,`team.${d.level}`);
@@ -64,7 +64,25 @@ test('every key built at run time resolves to a string for each value it can tak
  for(const v of ['min','pts','fg','tp','reb','ast','stl','blk','to','starters','bench','team'])need.push(`box.${v}`);
  for(const v of ['info','success','warn','error'])need.push(`toast.${v}`);
  for(const v of ['train','recruit','talk','scout','release','dismiss','saved'])need.push(`toast.titles.${v}`);
+ for(const v of ['rookie','standard','elite'])need.push(`tier.${v}`);
+ for(const v of ['controls','goal','difficulty','rotation','prep','gameday','court','data'])need.push(`hb.tabs.${v}`);
+ for(const v of ['shooting','bond','defense','recovery','study'])need.push(`drill.${v}.name`,`drill.${v}.how`);
+ for(const v of ['fresh','rested','tired','exhausted'])need.push(`rv.energy.${v}`);
+ for(const v of ['fired','content','restless','unhappy'])need.push(`rv.morale.${v}`);
+ for(const v of ['Guard','Forward','Center'])need.push(`rv.short.${v}`);
+ for(const v of ['starter','rotation','bench'])need.push(`status.${v}`);
+ for(const v of ['auto','player'])need.push(`stage.${v}`);
+ for(const v of ['ins','mid','tpt','perd','insd'])need.push(`rv.${v}`,`rv.${v}T`);
+ for(const v of ['ppg','rpg','apg','spg','bpg','fgp'])need.push(`stat.${v}`);
+ for(const v of ['slashing','post','midrange','sharp','stretch','lockdown','rim','glass'])need.push(`arch.${v}`);
+ for(const v of ['inside','mid','three','perim','interior'])need.push(`attr.${v}`);
  for(const k of need)assert.equal(typeof flat[k],'string',k);
+ assert.ok(Array.isArray(en.drill.quiz)&&en.drill.quiz.length>=6&&en.drill.quiz.every(q=>q.length===4));
+ assert.equal(en.hb.cr.list.length,5);
+});
+test('every message thrown by the interface has a translation entry',()=>{
+ const thrown=[...read('../src/main.js').matchAll(/throw Error\('([^']+)'/g)].map(m=>m[1]).filter(m=>/\s/.test(m)&&!m.includes('${')&&m!=='Data unavailable');// that one is never shown: the page shows its own error screen
+ for(const message of thrown)assert.ok(en.errors[message],message);
 });
 test('every message thrown by the engine has a translation entry',()=>{
  const thrown=[...read('../src/engine.js').matchAll(/Error\('([^']+)'\)/g)].map(m=>m[1]);
@@ -96,8 +114,8 @@ test('t() interpolates, falls back to English and then to the key',async()=>{
  await setLanguage('en',{persist:false});
  assert.equal(t('home.welcome',{name:'Sam'}),'Welcome back, Coach Sam.');
  assert.equal(t('no.such.key'),'no.such.key');
- assert.equal(tu('side.difficulty',{level:'rookie'}),'ROOKIE DIFFICULTY');
- assert.equal(list('rules.steps').length,6,'the fourth rule step is built from the team schedule');assert.ok(has('nav.home'));assert.ok(!has('nav.nope'));
+ assert.equal(tu('home.welcome',{name:'Sam'}),'WELCOME BACK, COACH SAM.');
+ assert.equal(list('hb.cr.list').length,5);assert.ok(has('nav.home'));assert.ok(!has('nav.nope'));
  assert.equal(t('home.welcome'),'Welcome back, Coach {{name}}.');
 });
 test('switching language changes output; unknown codes fall back to English',async()=>{

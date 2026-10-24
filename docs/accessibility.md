@@ -62,4 +62,5 @@ Text the simulation writes (play-by-play, decision trail, result summary) is als
 - The translations were written for this project and have **not been reviewed by native speakers**. Please have someone check them before relying on them in front of judges.
 - Names from the published roster and schedule (players, opponents, venues) are not translated.
 - The Readable font uses whichever of Atkinson Hyperlegible, Verdana, Tahoma or DejaVu Sans is installed; it is not a bundled file.
+- The shot drill's arc and power are adjustable with sliders or the arrow keys, but the shot itself is drawn on a canvas that a screen reader cannot follow; its result is written as text under it.
 - Orbiting the 3D gym is mouse/touch only. The camera preset buttons and shortcuts are the keyboard route.
