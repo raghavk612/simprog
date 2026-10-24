@@ -180,3 +180,9 @@ dialog:has(.settings) .modal-content{padding:0;display:flex;flex-direction:colum
 .a11y-high-contrast .chip,.a11y-high-contrast .chip.good,.a11y-high-contrast .chip.bad{background:#000!important;color:#fff!important;border:2px solid #fff!important}.a11y-high-contrast .chip.bad{border-style:dashed!important}
 .a11y-high-contrast .inbox-icon{background:#000!important;border:2px solid #fff!important;color:#fff}.a11y-high-contrast .cap-badge{background:#ffe28a!important;color:#000!important}
 .chip.bad::before{content:'▼ ';font-size:.8em}.chip.good::before{content:'▲ ';font-size:.8em}
+
+/* Light theme: the dark design is inverted (and its hues turned back), then pictures, the 3D court and avatars are inverted again so they keep their own colours. High contrast has its own palette and ignores it. */
+html.theme-light:not(.a11y-high-contrast){background:#f2f0f8}
+html.theme-light:not(.a11y-high-contrast) body,html.theme-light:not(.a11y-high-contrast) dialog{filter:invert(1) hue-rotate(180deg)}
+html.theme-light:not(.a11y-high-contrast) :is(canvas,img,video,svg.avatar,.mouse-icon svg){filter:invert(1) hue-rotate(180deg)}
+html.theme-light:not(.a11y-high-contrast) dialog::backdrop{background:#160b2570}

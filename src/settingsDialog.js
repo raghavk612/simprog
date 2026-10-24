@@ -37,6 +37,7 @@ export function createSettingsDialog({modal,show,notify,onKeysChange}){
   const fonts=FONT_FAMILIES.map(f=>`<button type="button" class="choice-card${a.fontFamily===f?' selected':''}" aria-pressed="${a.fontFamily===f}" data-s-choice="a11y.fontFamily" data-value="${f}" data-fk="font:${f}"><span class="choice-name">${esc(t(`settings.accessibility.fontOptions.${f}`))}</span><span class="choice-sample" style="font-family:${FONT_PREVIEW[f]}" lang="en">${esc(t('settings.accessibility.fontPreview'))}</span></button>`).join('');
   return section(t('settings.accessibility.visual'),
     selectRow('a11y.colorBlindMode',t('settings.accessibility.colorBlindMode'),t('settings.accessibility.colorBlindModeDesc'),a.colorBlindMode,COLOR_MODES.map(m=>[m,t(`settings.accessibility.colorBlindOptions.${m}`)]))+
+    toggleRow('a11y.lightTheme',t('settings.accessibility.lightTheme'),t('settings.accessibility.lightThemeDesc'),a.lightTheme)+
     toggleRow('a11y.highContrast',t('settings.accessibility.highContrast'),t('settings.accessibility.highContrastDesc'),a.highContrast)+
     toggleRow('a11y.reducedMotion',t('settings.accessibility.reducedMotion'),t('settings.accessibility.reducedMotionDesc'),a.reducedMotion)+
     toggleRow('a11y.screenShake',t('settings.accessibility.screenShake'),t('settings.accessibility.screenShakeDesc'),a.screenShake)+

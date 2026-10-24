@@ -14,7 +14,7 @@ export const PLAYBACK_SPEEDS=[.5,.75,1];
 export const TEXT_SCALE={min:.7,max:1.8,step:.05};
 // Sound effects start off, as before; volume and the individual sounds are remembered.
 export const SOUND_DEFAULTS={volume:.35,muted:true,commentary:true,toggles:Object.fromEntries(SOUND_KEYS.map(k=>[k,true]))};
-export const A11Y_DEFAULTS={colorBlindMode:'none',highContrast:false,reducedMotion:false,screenShake:true,flashReduction:false,textScale:1,fontFamily:'default',playbackSpeed:1,timingAssist:false,simplifiedUI:false};
+export const A11Y_DEFAULTS={lightTheme:false,colorBlindMode:'none',highContrast:false,reducedMotion:false,screenShake:true,flashReduction:false,textScale:1,fontFamily:'default',playbackSpeed:1,timingAssist:false,simplifiedUI:false};
 const cache={};
 export function normalizeSound(raw){
  const r=raw&&typeof raw==='object'?raw:{},t=r.toggles&&typeof r.toggles==='object'?r.toggles:{};
@@ -23,7 +23,7 @@ export function normalizeSound(raw){
 export function normalizeA11y(raw,base=A11Y_DEFAULTS){
  const r=raw&&typeof raw==='object'?raw:{},d=base;
  return {
-  colorBlindMode:pick(r.colorBlindMode,COLOR_MODES,d.colorBlindMode),highContrast:bool(r.highContrast,d.highContrast),reducedMotion:bool(r.reducedMotion,d.reducedMotion),
+  lightTheme:bool(r.lightTheme,d.lightTheme),colorBlindMode:pick(r.colorBlindMode,COLOR_MODES,d.colorBlindMode),highContrast:bool(r.highContrast,d.highContrast),reducedMotion:bool(r.reducedMotion,d.reducedMotion),
   screenShake:bool(r.screenShake,d.screenShake),flashReduction:bool(r.flashReduction,d.flashReduction),textScale:Math.round(num(r.textScale,TEXT_SCALE.min,TEXT_SCALE.max,d.textScale)*100)/100,
   fontFamily:pick(r.fontFamily,FONT_FAMILIES,d.fontFamily),playbackSpeed:pick(+r.playbackSpeed,PLAYBACK_SPEEDS,d.playbackSpeed),timingAssist:bool(r.timingAssist,d.timingAssist),simplifiedUI:bool(r.simplifiedUI,d.simplifiedUI)
  };
@@ -49,7 +49,7 @@ export const isTouchOnly=()=>typeof matchMedia==='function'&&matchMedia('(hover:
 export function applyA11y(s=getA11y()){
  const root=document.documentElement,cls=root.classList;
  root.style.filter=s.colorBlindMode==='none'?'':`url(#${FILTER_ID(s.colorBlindMode)})`;
- cls.toggle('a11y-high-contrast',s.highContrast);cls.toggle('a11y-reduced-motion',s.reducedMotion);cls.toggle('a11y-no-flash',s.flashReduction);cls.toggle('a11y-simple',s.simplifiedUI);
+ cls.toggle('theme-light',s.lightTheme);cls.toggle('a11y-high-contrast',s.highContrast);cls.toggle('a11y-reduced-motion',s.reducedMotion);cls.toggle('a11y-no-flash',s.flashReduction);cls.toggle('a11y-simple',s.simplifiedUI);
  for(const f of FONT_FAMILIES)cls.toggle(`a11y-font-${f}`,s.fontFamily===f);
  root.style.setProperty('--ts',String(s.textScale));
 }
