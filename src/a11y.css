@@ -179,6 +179,12 @@ dialog:has(.settings) .modal-content{padding:0;display:flex;flex-direction:colum
 .a11y-high-contrast .inbox-option{background:#000!important;border:2px solid #fff!important;color:#fff!important}.a11y-high-contrast .inbox-option:hover:not(:disabled),.a11y-high-contrast .inbox-option:focus-visible{background:#fff!important;color:#000!important}.a11y-high-contrast .inbox-option:hover *{color:#000!important}
 .a11y-high-contrast .chip,.a11y-high-contrast .chip.good,.a11y-high-contrast .chip.bad{background:#000!important;color:#fff!important;border:2px solid #fff!important}.a11y-high-contrast .chip.bad{border-style:dashed!important}
 .a11y-high-contrast .inbox-icon{background:#000!important;border:2px solid #fff!important;color:#fff}.a11y-high-contrast .cap-badge{background:#ffe28a!important;color:#000!important}
+/* Confirm dialog, phone tab bar and opponent logos in high contrast: black and white, danger shown by a dashed border (not colour alone). */
+.a11y-high-contrast dialog.confirm-dlg::backdrop{background:#000000d9;backdrop-filter:none}
+.a11y-high-contrast .confirm-actions .primary{border-style:solid}.a11y-high-contrast .confirm-actions .danger{border:3px dashed #000!important;outline:2px solid #fff}
+.a11y-high-contrast .confirm-actions button:focus-visible{outline:4px solid #ffe28a;outline-offset:3px}
+@media(max-width:620px){.a11y-high-contrast body:not(.live-match) .sidebar nav{background:#000;border-top:2px solid #fff;box-shadow:none}.a11y-high-contrast .nav-item.active{background:#fff!important;color:#000!important}.a11y-high-contrast .nav-item.active *{color:#000!important}.a11y-high-contrast .topbar>div{-webkit-mask-image:none;mask-image:none}}
+.a11y-high-contrast img.opp-logo,.a11y-high-contrast img.bug-logo,.a11y-high-contrast img.opp-badge{filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 0 3px #fff)}
 .chip.bad::before{content:'▼ ';font-size:.8em}.chip.good::before{content:'▲ ';font-size:.8em}
 
 /* Quarter break, highlights and Player of the Game: high contrast */

@@ -67,18 +67,19 @@ Severity: **H** = fix before judging, **M** = visible to a judge/user, **L** = p
 | B5 | M | ✅ **Fixed:** `E.lineupIssues` names who cannot play and why; chips on Game day, a notice on both pages, a "Fix lineup" button, and the tip-off message names the players. ~~Game day gives no warning for an ineligible starter (injured / tired / GPA < 2.0), and the error doesn't name the player.~~ | Per-row eligibility chips, a "Fix lineup" button, and name the player in the error. |
 | B6 | M | ✅ **Fixed:** a pointer user's choice blurs the drop-down; for a keyboard user "Watch live" resumes after 4 idle seconds. ~~"Watch live" stalls while the System/Tempo dropdown keeps focus.~~ | Blur the select on change. |
 | B7 | L | ✅ **Fixed:** key caps wrap and the description sits below them under 620 px. ~~Handbook → Controls on a phone: the 1–5 key row overlaps its text.~~ | Wrap or stack the key chips below 620px. |
-| B8 | L | Phone: nav grid, header and tracker use about 560 of 844 px before content starts. | Sticky bottom tab bar and a compact tracker. |
-| B9 | L | Phone Program HQ metrics grid is misaligned. | Fix padding / use a 2-column grid. |
-| B10 | L | Title screen at 390px: the visual is 4px wider than the viewport. | Fix the width. |
-| B11 | L | Native `confirm()` dialogs (replace save, release, import). | Use the styled `<dialog>`. |
+| B8 | L | ✅ **Done:** below 620 px the nav is a scrolling bottom tab bar (the live match keeps its icon strip), the topbar is one scrolling row and the tracker is compact: the page heading now starts at about 135 px instead of 408 px at 390x844. Phone: nav grid, header and tracker use about 560 of 844 px before content starts. | Sticky bottom tab bar and a compact tracker. |
+| B9 | L | ✅ **Done:** two aligned columns. Phone Program HQ metrics grid is misaligned. | Fix padding / use a 2-column grid. |
+| B10 | L | ✅ **Done:** the title visual is exactly the viewport width (it ran 4 px past it). Title screen at 390px: the visual is 4px wider than the viewport. | Fix the width. |
+| B11 | L | ✅ **Done:** `confirmDialog()` in `src/main.js`. Native `confirm()` dialogs (replace save, release, import). | Use the styled `<dialog>`. |
 | B12 | L | ✅ **Fixed:** error notifications are removed when the page changes. ~~Error toasts linger into the next screen and overlap the tracker.~~ | Dismiss on view change. |
 | B13 | L | ✅ **Fixed:** drill timeouts are tracked and cleared with the drill. ~~Drill `setTimeout`s aren't cleared when the modal closes (console noise).~~ | Track the timeout ids in the cleanup. |
-| B14 | L | Season export is about 1.4 MB, close to the 2 MB import limit. | Export without indentation and compact old events. |
+| B14 | L | ✅ **Done:** `E.exportJson`: no indentation and the last 5 plays per game; a full season is about 0.2 to 0.4 MB. Season export is about 1.4 MB, close to the 2 MB import limit. | Export without indentation and compact old events. |
 | B15 | L | ✅ **Fixed:** the tracker says "Eliminated" and "Season ended after game N". ~~After an early elimination the tracker shows "30/30 · 2 left" and doesn't say why the season ended.~~ | Show "ELIMINATED – game N" and the losing result. |
 | — | L | ✅ **Fixed:** before tip-off the board names the next opponent at 0-0 with TIP-OFF under the clock. ~~3D LED board shows the previous game's final while Game day names the next opponent.~~ | Blank it or label it FINAL before tip-off. |
 | — | L | ✅ **Fixed:** visitors wear the opponent roster's names and numbers (the school name when the roster is fictional), and the Kangs captain has a small gold C on the plate. ~~Visiting players' 3D nameplates read "VISITORS".~~ The HUD shows real names. | Pass opponent identities into `setIdentity`. |
 | — | L | ✅ **Fixed:** the eye sits further forward, keeps 0.6 from every other body, and the subject's own head is hidden in first person. ~~Pre-game Player view can sit the camera inside a nearby player's head.~~ | Nudge the eye forward / hide the subject's head mesh in first person. |
 | — | L | Redmond and Skyline (dark green) logos are low-contrast on dark purple. | Add a light outline / glow behind logos. |
+
 
 ---
 
@@ -110,8 +111,8 @@ Measured with `node scripts/balance.mjs 200` (200 seeded seasons per cell; title
 4. Tutorial highlights the real nav item and dims the rest (B3).
 5. Reset the training target when the roster changes (B4).
 6. A tip-off preview card: opponent style (after scouting), average energy/chemistry, timeouts.
-7. Styled confirm dialog instead of `confirm()` (B11).
-8. Phone: sticky bottom nav and a compact tracker; fix the controls overlap and the metrics grid (B7–B9).
+7. ✅ **Done:**  Styled confirm dialog instead of `confirm()` (B11).
+8. ✅ **Done:** (the controls overlap is B7). Phone: sticky bottom nav and a compact tracker; fix the controls overlap and the metrics grid (B7–B9).
 9. `aria-live` score announcements during live play, and `aria-pressed` on the speed/tactic buttons.
 10. Raise the font floor (many 10–12px labels) and add an A+/A− text-size control.
 11. A "Skip to content" link.
@@ -182,11 +183,11 @@ Full report: [`docs/superpowers/notes/2026-10-24-3d-basketball-models-research.m
 
 ## 7. Tech debt / deferred review notes
 
-- Data refresh prints a "kept by policy" note even when `--update-rosters` replaced a level.
+- ✅ **Done:** `roster_note_for` names only the kept levels and never says "policy" under `--update-rosters`. Data refresh prints a "kept by policy" note even when `--update-rosters` replaced a level.
 - The data test's "no unused opponents" check fails if KingCo removes a game. The deploy then falls back to the committed data, so this is non-fatal but needs a test tweak.
-- No unit tests for `src/logos.js` name mapping or the first-person HUD key logic.
+- ✅ **Done:** `tests/logos.test.js` covers the name mapping (the first-person HUD key logic is still untested). No unit tests for `src/logos.js` name mapping or the first-person HUD key logic.
 - A failed logo load isn't retried during the session; the initials crest shows instead.
-- `replayOpp` (first-person HUD in replays) is never reset. It's unreachable today but worth cleaning up.
+- ✅ **Done:** it is reset when leaving the replay. `replayOpp` (first-person HUD in replays) is never reset. It's unreachable today but worth cleaning up.
 - `src/main.js` is a large single-line-per-function file. Splitting views into modules would make parallel work and merges easier.
 
 ---

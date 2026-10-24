@@ -227,7 +227,7 @@ export default {
  profile:{kicker:'球员档案 · #{{n}}',risk:'受伤风险',injured:'模拟伤病：还需 {{n}} 个恢复步骤。',healthy:'此处显示的健康状态是虚构的；未使用任何运动员的私人信息。',rename:'球员显示名称',save:'保存名称',release:'从名单中解约',sourceName:'数据源中的原始名称：{{name}}。',custom:'创作者新增，不在已公布的名单上。',renameNote:'重命名只会改变你的模拟。',est:'估',riskHigh:'偏高',riskLow:'低',},
  result:{kicker:'录像室 · {{outcome}}',win:'胜',loss:'负',before:'你在跳球前做了什么',noPrep:'这场比赛没有记录任何备战训练。',defining:'决定性回合',shotQuality:'出手质量：{{n}}%。',why:'为什么会这样 · 决策分析',whyBody:'最近一个回合：对基础投篮概率的改变量，以百分点计。这些是模型的贡献，并不代表现实中本会发生的事。',former:'前名单球员',pts:'{{n}} 分',pog:'单场最佳球员：{{name}} — {{pts}} 分 · {{reb}} 篮板 · {{ast}} 助攻',pogTitle:'本场最佳球员',},
  notify:{storage:'浏览器存储不可用。请导出你的赛季以保留进度。',checked:'已加载 {{date}} 的 KingCo 快照。',snapshotFailed:'继续使用最近一次验证过的数据。',finishFirst:'请先结束比赛。',minutes:'请输入 0 到 32 之间的整数分钟。',exported:'已在你的下载文件夹中保存为 kangs-season.json。',tooLarge:'存档文件太大',badSave:'这不是兼容的 Kangs 赛季文件。',saved:'已保存。'},
- confirm:{replace:'要替换此浏览器中已保存的赛季吗？如果想保留它，请先导出。',import:'要用这个存档替换当前的本地赛季吗？',release:'要把这名球员从你的模拟名单中解约吗？'},
+ confirm:{replace:'要替换此浏览器中已保存的赛季吗？如果想保留它，请先导出。',import:'要用这个存档替换当前的本地赛季吗？',release:'要把这名球员从你的模拟名单中解约吗？',yes:'是',no:'取消',replaceYes:'替换赛季',importYes:'导入赛季',releaseYes:'放出球员',},
  // Play-by-play commentary templates: one sentence per template, filled from the play.
  cm:{
   join:'',

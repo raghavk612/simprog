@@ -213,12 +213,22 @@ def build_level(key, raw, year_slug, prev=None, update_rosters=False):
     return level
 
 
+def roster_note_for(levels, season, update_rosters=False):
+    """Note for kangs.json about rosters that are NOT from the target season. It names only the levels that were kept and gives the real reason:
+    pinned by policy by default; with --update-rosters a kept level just had no valid published roster yet, so it is never called 'policy'."""
+    kept = {k: v for k, v in levels.items() if v['rosterSeason'] != season}
+    if not kept: return ''
+    seasons = ' / '.join(sorted({v['rosterSeason'] for v in kept.values()}))
+    which = ', '.join(v['label'] for v in kept.values())
+    why = f'kept for the {season} schedule by policy' if not update_rosters else f'kept because no valid {season} roster is published for them yet'
+    return f"Kangs rosters ({which}) are the {seasons} KingCo rosters, {why}. "
+
+
 def build(raw, year_slug, prev=None, update_rosters=False):
     a, b = year_slug.split('-')
     season = f'{a}–{b[-2:]}'
     levels = {k: build_level(k, raw[k], year_slug, ((prev or {}).get('levels') or {}).get(k), update_rosters) for k in LEVELS}
-    kept = sorted({v['rosterSeason'] for v in levels.values()} - {season})
-    roster_note = (f"Kangs rosters are the {' / '.join(kept)} KingCo rosters, kept for the {season} schedule by policy. ") if kept else ''
+    roster_note = roster_note_for(levels, season, update_rosters)
     return dict(season=season, checkedAt=datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 source=f'https://www.kingcoathletics.com/team/?schoolid={SCHOOL_ID}&sportid={SPORT_ID}', levels=levels,
                 notes=f"Dated public snapshot of the Lake Washington boys basketball Varsity, Junior Varsity and C-Team {season} schedules from KingCo Athletics (WPA Network). Games without a final score are upcoming and keep points/against as null; final scores are filled in when KingCo publishes them. {roster_note}refPointsPerGame is the previous season's team scoring average, used only to estimate player stats before any score exists. C-Team jersey numbers, heights and positions are not published; the game assigns jersey numbers and marks them numberAssigned. Opponent rosters come from each school's KingCo/WPA team page at the same level (latest published); opponents without one get fictional names (real: false). Skills, energy, morale, GPA and all simulated statistics are fictional.")

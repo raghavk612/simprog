@@ -227,7 +227,7 @@ export default {
  profile:{kicker:'選手プロフィール · #{{n}}',risk:'怪我のリスク',injured:'模擬の負傷：回復まであと {{n}} ステップ。',healthy:'表示されている健康状態は架空のものです。アスリートの個人情報は一切使用していません。',rename:'選手の表示名',save:'名前を保存',release:'ロスターから外す',sourceName:'出典での元の名前：{{name}}。',custom:'制作者が追加した選手で、公表されたロスターにはいません。',renameNote:'名前を変更しても、あなたのシミュレーションが変わるだけです。',est:'推定',riskHigh:'高め',riskLow:'低い',},
  result:{kicker:'フィルムルーム · {{outcome}}',win:'勝利',loss:'敗北',before:'ティップオフ前にしたこと',noPrep:'この試合では準備セッションが記録されていません。',defining:'決定的なポゼッション',shotQuality:'シュートの質：{{n}}%。',why:'なぜそうなったか · 決断の分析',whyBody:'直近のポゼッション：基本のシュート確率に対する変化（パーセントポイント）。これらはモデル上の寄与であり、現実に何が起きたかを示すものではありません。',former:'元ロスターの選手',pts:'{{n}} 点',pog:'最優秀選手：{{name}} — {{pts}}点 · {{reb}}リバウンド · {{ast}}アシスト',pogTitle:'この試合の最優秀選手',},
  notify:{storage:'ブラウザのストレージを利用できません。進行状況を残すにはシーズンをエクスポートしてください。',checked:'{{date}} の KingCo スナップショットを読み込みました。',snapshotFailed:'最後に確認済みのデータを使い続けます。',finishFirst:'先に試合を終えてください。',minutes:'0〜32の整数の分数を入力してください。',exported:'ダウンロードフォルダに kangs-season.json として保存しました。',tooLarge:'セーブファイルが大きすぎます',badSave:'互換性のある Kangs のシーズンファイルではありません。',saved:'保存しました。'},
- confirm:{replace:'このブラウザに保存されているシーズンを置き換えますか？残したい場合は先にエクスポートしてください。',import:'現在のローカルのシーズンをこのセーブで置き換えますか？',release:'この選手をシミュレーションのロスターから外しますか？'},
+ confirm:{replace:'このブラウザに保存されているシーズンを置き換えますか？残したい場合は先にエクスポートしてください。',import:'現在のローカルのシーズンをこのセーブで置き換えますか？',release:'この選手をシミュレーションのロスターから外しますか？',yes:'はい',no:'キャンセル',replaceYes:'シーズンを置き換える',importYes:'シーズンを読み込む',releaseYes:'選手を放出する',},
  // Play-by-play commentary templates: one sentence per template, filled from the play.
  cm:{
   join:'',
