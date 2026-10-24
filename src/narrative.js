@@ -16,6 +16,7 @@ export function logText(entry){
  if(!entry.k||!has(`log.${entry.k}`))return stored;
  const p={...entry.p};
  if(entry.k==='train'){p.plan=has(`plan.${p.plan}.name`)?t(`plan.${p.plan}.name`):p.plan;p.who=p.whole?t('log.wholeTeam'):p.who;}
+ else if(entry.k==='event'){p.title=has(`ev.${p.id}.title`)?t(`ev.${p.id}.title`):p.id;p.choice=has(`ev.${p.id}.o.${p.choice}`)?t(`ev.${p.id}.o.${p.choice}`):p.choice;}
  else if(entry.k==='hire')p.staff=has(`staff.${p.staff}.name`)?t(`staff.${p.staff}.name`):p.staff;
  else if(entry.k==='result'){p.outcome=up(t(p.won?'log.win':'log.loss'));p.reason=t(p.scouted?'log.reasonWithScouting':'log.reason',p);}
  return t(`log.${entry.k}`,p)+(entry.k==='train'&&p.perfect?` · ${t('log.perfectBonus')}`:'');

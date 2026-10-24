@@ -481,3 +481,24 @@ td .opp-badge,.opp-roster .opp-badge{position:relative;top:-1px}
 .bracket .round.next{border-color:#e9b858;box-shadow:0 0 0 3px #e9b85840}
 .bracket .round.out,.bracket .round.missed{opacity:.7;border-style:dashed}
 @media(max-width:850px){.bracket{grid-template-columns:minmax(0,1fr)}.bracket .round:not(:last-child)::after{display:none}}
+
+/* ---- coach's inbox and press room ---- */
+.inbox-card{display:grid;gap:10px;animation:inbox-in .28s ease-out}
+@keyframes inbox-in{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+.inbox-icon{width:56px;height:56px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#8b4fe03d,#8b4fe00f);border:1px solid #b48aff40;color:#d6bcff}
+.inbox-icon svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.inbox-text{font-size:calc(17px*var(--ts,1)*var(--ls,1));line-height:1.45;margin:0}
+.inbox-options{display:grid;gap:10px;margin:6px 0}
+.inbox-option{display:flex;gap:12px;align-items:flex-start;text-align:left;padding:12px 14px;border-radius:12px;border:1.5px solid #ffffff2e;background:#ffffff08;color:inherit;cursor:pointer;font:inherit}
+.inbox-option:hover:not(:disabled),.inbox-option:focus-visible{border-color:#b48aff;background:#8b4fe022}
+.inbox-option:disabled{opacity:.6;cursor:not-allowed}
+.inbox-option>span{display:grid;gap:6px;min-width:0}
+.inbox-option strong{font-size:calc(17px*var(--ts,1)*var(--ls,1))}
+.inbox-option kbd.key{margin:2px 0 0;flex:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-block;padding:3px 9px;border-radius:999px;font:700 calc(13px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:.6px;background:#ffffff14;border:1px solid #ffffff22}
+.chip.good{background:#4ade8022;border-color:#4ade8077;color:#bbf7d0}
+.chip.bad{background:#f8717122;border-color:#f8717177;color:#fecaca}
+.inbox-hq .chips{margin-top:6px}
+.cap-badge{display:inline-grid;place-items:center;min-width:1.3em;height:1.3em;margin-left:6px;border-radius:50%;background:#e9b858;color:#140c20;font:900 .7em var(--display);text-decoration:none;vertical-align:middle}
+.drill-pips i.now{background:#b48aff}

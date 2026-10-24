@@ -90,7 +90,7 @@ test('every message thrown by the interface has a translation entry',()=>{
  for(const message of thrown)assert.ok(en.errors[message],message);
 });
 test('every message thrown by the engine has a translation entry',()=>{
- const thrown=[...read('../src/engine.js').matchAll(/Error\('([^']+)'\)/g)].map(m=>m[1]);
+ const thrown=['../src/engine.js','../src/events.js','../src/press.js'].flatMap(f=>[...read(f).matchAll(/Error\('([^']+)'\)/g)].map(m=>m[1]));
  assert.ok(thrown.length>15);
  for(const message of thrown)assert.ok(en.errors[message],message);
 });
