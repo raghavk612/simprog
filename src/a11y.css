@@ -181,6 +181,12 @@ dialog:has(.settings) .modal-content{padding:0;display:flex;flex-direction:colum
 .a11y-high-contrast .inbox-icon{background:#000!important;border:2px solid #fff!important;color:#fff}.a11y-high-contrast .cap-badge{background:#ffe28a!important;color:#000!important}
 .chip.bad::before{content:'▼ ';font-size:.8em}.chip.good::before{content:'▲ ';font-size:.8em}
 
+/* Quarter break, highlights and Player of the Game: high contrast */
+.a11y-high-contrast .pog-card,.a11y-high-contrast .hl-card{background:#000!important;border:2px solid #fff!important}
+.a11y-high-contrast .pog-card small,.a11y-high-contrast .hl-tag,.a11y-high-contrast .break-adjust span,.a11y-high-contrast .break-score b{color:#ffe28a!important}
+.a11y-high-contrast .pog-line>span,.a11y-high-contrast .hl-score{background:#000!important;color:#fff!important;border:1px solid #fff}
+.a11y-high-contrast .hl-rank{color:#fff!important}
+
 /* Light theme: the page is inverted from the root (see applyA11y in settings.js), then pictures, the 3D court, avatars and colour swatches are inverted again so they keep their own colours. High contrast has its own palette and ignores it. */
 html.theme-light:not(.a11y-high-contrast){background:#f2f0f8}
 html.theme-light:not(.a11y-high-contrast) :is(canvas,img,video,svg.avatar,.mouse-icon svg,.shirt,.prospect-jersey,.opp-crest,.crest){filter:invert(1) hue-rotate(180deg)}

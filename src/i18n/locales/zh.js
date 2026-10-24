@@ -225,7 +225,7 @@ export default {
   kicker:'教练手册',
   },
  profile:{kicker:'球员档案 · #{{n}}',risk:'受伤风险',injured:'模拟伤病：还需 {{n}} 个恢复步骤。',healthy:'此处显示的健康状态是虚构的；未使用任何运动员的私人信息。',rename:'球员显示名称',save:'保存名称',release:'从名单中解约',sourceName:'数据源中的原始名称：{{name}}。',custom:'创作者新增，不在已公布的名单上。',renameNote:'重命名只会改变你的模拟。',est:'估',riskHigh:'偏高',riskLow:'低',},
- result:{kicker:'录像室 · {{outcome}}',win:'胜',loss:'负',before:'你在跳球前做了什么',noPrep:'这场比赛没有记录任何备战训练。',defining:'决定性回合',shotQuality:'出手质量：{{n}}%。',why:'为什么会这样 · 决策分析',whyBody:'最近一个回合：对基础投篮概率的改变量，以百分点计。这些是模型的贡献，并不代表现实中本会发生的事。',former:'前名单球员',pts:'{{n}} 分',pog:'单场最佳球员：{{name}} — {{pts}} 分 · {{reb}} 篮板 · {{ast}} 助攻',},
+ result:{kicker:'录像室 · {{outcome}}',win:'胜',loss:'负',before:'你在跳球前做了什么',noPrep:'这场比赛没有记录任何备战训练。',defining:'决定性回合',shotQuality:'出手质量：{{n}}%。',why:'为什么会这样 · 决策分析',whyBody:'最近一个回合：对基础投篮概率的改变量，以百分点计。这些是模型的贡献，并不代表现实中本会发生的事。',former:'前名单球员',pts:'{{n}} 分',pog:'单场最佳球员：{{name}} — {{pts}} 分 · {{reb}} 篮板 · {{ast}} 助攻',pogTitle:'本场最佳球员',},
  notify:{storage:'浏览器存储不可用。请导出你的赛季以保留进度。',checked:'已加载 {{date}} 的 KingCo 快照。',snapshotFailed:'继续使用最近一次验证过的数据。',finishFirst:'请先结束比赛。',minutes:'请输入 0 到 32 之间的整数分钟。',exported:'已在你的下载文件夹中保存为 kangs-season.json。',tooLarge:'存档文件太大',badSave:'这不是兼容的 Kangs 赛季文件。',saved:'已保存。'},
  confirm:{replace:'要替换此浏览器中已保存的赛季吗？如果想保留它，请先导出。',import:'要用这个存档替换当前的本地赛季吗？',release:'要把这名球员从你的模拟名单中解约吗？'},
  // Play-by-play commentary templates: one sentence per template, filled from the play.
@@ -261,7 +261,7 @@ export default {
   reasonWithScouting:'侦察为你的防守判断做好了准备。球队默契 {{chem}}；平均体能 {{energy}}。',
   runEnds:'本赛季的冠军之路到此结束。回顾你的决策，再试一次。',
   champions:'州冠军。一个赛季，你的球队。',
-  seasonComplete:'赛季结束。',perfectBonus:'满分训练奖励',captain:'{{name}} 现在是球队队长。',event:'信箱：{{title}} → {{choice}}',press:'新闻发布会：{{n}} 个回答将影响下一场比赛。',pressSkip:'跳过了新闻发布会。球迷 −10。',scoutP:'侦察了 {{name}}：花费 {{cost}} 代币，揭示了潜力与职业道德。',},
+  seasonComplete:'赛季结束。',perfectBonus:'满分训练奖励',captain:'{{name}} 现在是球队队长。',event:'信箱：{{title}} → {{choice}}',press:'新闻发布会：{{n}} 个回答将影响下一场比赛。',pressSkip:'跳过了新闻发布会。球迷 −10。',scoutP:'侦察了 {{name}}：花费 {{cost}} 代币，揭示了潜力与职业道德。',adjustTactic:'第{{q}}节休息：改为{{tactic}}。',adjustPace:'第{{q}}节休息：节奏改为{{pace}}。',},
  error:{title:'无法加载球队项目。',body:'网络恢复后请重新加载。',reload:'重新加载'},
  // Messages thrown by the simulation engine. The English text is the lookup key.
  errors:{
@@ -285,7 +285,7 @@ export default {
   'Minutes must be whole numbers from 0 to 32.':'分钟数必须是 0 到 32 的整数。',
   'Allocate exactly 160 player-minutes (five players × 32 minutes).':'请恰好分配 160 个球员分钟（五名球员 × 32 分钟）。',
   'No timeouts remaining.':'已没有剩余暂停。',
-  'No game in progress':'当前没有进行中的比赛','Your plan holds 3 sessions. Remove one first.':'你的计划最多容纳 3 个训练。请先移除一个。','No preparation slots left this week.':'本周已没有剩余的准备名额。','Answer the coach’s inbox first.':'请先处理教练信箱里的事项。','Nothing is waiting in the inbox.':'信箱里没有待处理的事项。','That choice is not available.':'这个选项目前不可用。','Prospect already scouted.':'该候选人已经侦察过了。',},
+  'No game in progress':'当前没有进行中的比赛','Your plan holds 3 sessions. Remove one first.':'你的计划最多容纳 3 个训练。请先移除一个。','No preparation slots left this week.':'本周已没有剩余的准备名额。','Answer the coach’s inbox first.':'请先处理教练信箱里的事项。','Nothing is waiting in the inbox.':'信箱里没有待处理的事项。','That choice is not available.':'这个选项目前不可用。','Prospect already scouted.':'该候选人已经侦察过了。','That adjustment is no longer available.':'该调整已不可用。',},
  settings:{
   title:'设置',
   eyebrow:'偏好',
@@ -323,4 +323,6 @@ export default {
  captain:{name:'任命队长',is:'队长 ✓',badge:'队长',c:'C',note:'队长在健康且状态良好时，每场比赛后为球队增加 2 点默契，并缓和坏消息的冲击。之后更换队长，原队长士气 −4，全队默契 −2。',set:'{{name}} 是队长。',},
  ach:{kicker:'成就',title:'赛季成就',count:'已获得 {{n}} / {{of}}',progress:'{{n}} / {{of}}',earned:'已获得',locked:'未解锁',unlocked:'成就解锁：{{name}}',items:{firstWin:{name:'首场胜利',desc:'赢下你的第一场比赛。'},perfectDrill:{name:'完美训练',desc:'以完美表现完成一次训练。'},streak10:{name:'十连胜',desc:'连续赢下十场比赛。'},undefeated:{name:'常规赛全胜',desc:'赢下常规赛的每一场比赛。'},zeroInjury:{name:'零伤病赛季',desc:'常规赛全程无人受伤。'},fullStrength:{name:'全员满状态',desc:'五名首发体力均不低于 80 开始比赛。'},champion:{name:'校队冠军',desc:'在 Varsity 级别夺冠。'}},},
  arc:{title:'成长轨迹',rose:'技术从 {{from}} 升至 {{to}}（{{n}} 场比赛）',fell:'技术从 {{from}} 降至 {{to}}（{{n}} 场比赛）',flat:'技术在 {{n}} 场比赛中保持 {{to}}',none:'打几场比赛后即可查看技术走势。',breakout:'爆发',slump:'低迷',breakoutNote:'最近 3 场技术提升 3 点或以上。',slumpNote:'最近 3 场体力与士气持续下滑。',potential:'潜力 {{n}}',room:'成长空间：{{level}}',level:{high:'大',some:'中',low:'接近上限'},},
- scoutP:{btn:'侦察 · {{cost}}',aria:'花费 {{cost}} 代币侦察 {{name}}，揭示潜力与职业道德',hidden:'潜力和职业道德在侦察前保持隐藏。',potential:'潜力',work:'职业道德',workAria:'职业道德：{{k}} / 5 星',toastTitle:'侦察完成',},};
+ scoutP:{btn:'侦察 · {{cost}}',aria:'花费 {{cost}} 代币侦察 {{name}}，揭示潜力与职业道德',hidden:'潜力和职业道德在侦察前保持隐藏。',potential:'潜力',work:'职业道德',workAria:'职业道德：{{k}} / 5 星',toastTitle:'侦察完成',},
+ break:{kicker:'节间休息',title:'第{{n}}节休息',suggested:'建议调整',none:'无需调整，战术运转良好。',keep:'继续比赛',applied:'已调整',toTactic:'把战术改为{{tactic}}。',toPace:'把节奏改为{{pace}}。',s:{counter:'录像分析有成效：{{tactic}}是应对他们打法的最佳选择。',threes:'他们三分{{att}}投{{made}}中。改打联防，及时扑防投手。',tired:'球员体力下降（体能{{energy}}）。放慢节奏，保存体力。',boards:'他们在篮板上占优，{{them}}比{{us}}。改用压迫防守逼出失误。',trailing:'你们落后{{n}}分。压迫持球人，制造抢断和额外回合。',push:'体力充沛（体能{{energy}}）。加快节奏，打快攻。',balanced:'一切正常。回到均衡战术。'},},
+ hl:{title:'精彩回放',note:'比赛最后阶段的精彩回合。选择一个即可重看。',kind:{dunk:'扣篮',three:'三分',two:'得分',block:'盖帽',steal:'抢断'},def:{block:'盖掉对手出手',steal:'断下球权'},watch:'回放：{{player}}，{{kind}}，比分{{home}}比{{away}}',},};

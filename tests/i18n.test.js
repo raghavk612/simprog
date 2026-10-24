@@ -59,6 +59,10 @@ for(const l of GRAPHICS_LEVELS)need.push(`settings.accessibility.graphicsOptions
  for(const v of ['injured','ineligible','exhausted'])need.push(`status.${v}`);
  for(const v of ['wholeTeam','train','recruit','release','hire','dismiss','talkListen','talkFundraise','talkAcademics','scout','tipoff','injury','win','loss','result','reason','reasonWithScouting','runEnds','champions','seasonComplete'])need.push(`log.${v}`);
  for(const v of ['calm','belief'])need.push(`timeout.feed.${v}`);need.push('timeout.feedPrefix');
+ for(const v of ['counter','threes','tired','boards','trailing','push','balanced'])need.push(`break.s.${v}`);
+ for(const v of ['adjustTactic','adjustPace'])need.push(`log.${v}`);
+ for(const v of ['dunk','three','two','block','steal'])need.push(`hl.kind.${v}`);
+ for(const v of ['block','steal'])need.push(`hl.def.${v}`);
  for(const [k,d] of Object.entries(DIFFICULTIES))need.push(`difficulty.${k}`,`level.${k}`,`team.${d.level}`);
  for(const v of ['runState','runTitle','stretchDistrict','stretchLeague'])need.push(`season.${v}`);
  for(const v of ['ppg','apg','rpg','bpg','spg'])need.push(`leaders.${v}`);
