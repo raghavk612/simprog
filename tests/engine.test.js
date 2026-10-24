@@ -103,3 +103,9 @@ test('missing the cut shows the run as never reached',()=>{
  const b=E.runBracket(s);assert.equal(b.gate,'failed');assert.ok(b.rounds.every(r=>r.status==='missed'));
  const c=game();c.results=Array.from({length:P.need},(_,i)=>({won:true,week:i}));assert.equal(E.runBracket(c).gate,'qualified','clinching early counts');
 });
+test('shooting lines look like high-school basketball: misses are common (threes most), blocks are frequent and scores are plausible',()=>{
+ let fga=0,fgm=0,tpa=0,tpm=0,blocks=0,games=0,pts=0;
+ for(let seed=1;seed<=30;seed++){const s=game();s.seed=seed*977;E.startMatch(s);while(s.match){const ev=E.possession(s);for(const p of ev.plays){if(p.team!=='home'||p.outcome==='steal')continue;fga++;if(p.points)fgm++;if(p.three){tpa++;if(p.points)tpm++;}}}
+  const r=s.results.at(-1);blocks+=r.stats.home.blocks+r.stats.away.blocks;games++;pts+=r.home+r.away;}
+ assert.ok(fgm/fga>.36&&fgm/fga<.56,`FG ${fgm/fga}`);assert.ok(tpm/tpa<.42&&tpm/tpa<fgm/fga-.05,`3P ${tpm/tpa}`);assert.ok(blocks/games>=7,`blocks ${blocks/games}`);assert.ok(pts/games>90&&pts/games<150,`points ${pts/games}`);
+});

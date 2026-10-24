@@ -78,6 +78,8 @@ export function opponentRating(s,g=s.schedule[s.week],week=s.week){const real=Nu
 export function opponent(s){const g=s.schedule[s.week];return {...g,roster:oppRoster(s,g.opponent),realRoster:!!s.opponents?.[g.opponent]?.real,rating:opponentRating(s,g),style:['perimeter','paint','transition'][s.week%3]};}
 export function startMatch(s){open(s);if(s.pendingEvent)throw Error('Answer the coach’s inbox first.');validateLineup(s);const nm=s.nextMods;if(s.press)s.press.done=true;if(nm){s.chemistry=cap(s.chemistry+(nm.chem||0));for(const p of s.players){p.morale=cap(p.morale+(nm.morale||0));p.energy=cap(p.energy+(nm.energy||0));}s.fans=Math.max(40,s.fans+(nm.fans||0));}s.nextMods=null;s.match={mods:nm?{offense:nm.offense||0,defense:nm.defense||0,oppRating:nm.oppRating||0}:undefined,possession:0,home:0,away:0,tactic:'balanced',pace:'steady',timeouts:3,boost:0,feed:[],box:Object.fromEntries(s.players.map(p=>[p.id,0])),line:Object.fromEntries(s.players.map(p=>[p.id,{...blankLine(),min:p.minutes,start:p.starter?1:0}])),events:[],seedStart:s.seed,feedMeta:[]};log(s,`Tip-off vs ${opponent(s).opponent}.`,'tipoff',{opp:opponent(s).opponent});}
 export function timeout(s,message){const m=s.match;if(!m||m.timeouts<=0)throw Error('No timeouts remaining.');m.timeouts--;m.boost=8;if(message==='calm')s.players.forEach(p=>p.energy=cap(p.energy+4));else s.players.forEach(p=>p.morale=cap(p.morale+3));m.feed.unshift(`TIMEOUT · ${message==='calm'?'Breathe. Settle. Execute. Energy +4.':'Trust each other. Morale +3.'}`);m.feedMeta?.unshift({t:'t',m:message==='calm'?'calm':'belief'});}
+/* Shot tuning: every shot is a little harder (miss), threes harder still (threeMiss), and blocks are more common. Measured with scripts/balance.mjs and the shooting-line check in the tests. */
+export const TUNING={miss:-.04,threeMiss:-.07,block3:.035,blockTight:.15,block:.06};
 function makePlay(s,team,shooter,helper,defender,opp,m){
  const home=team==='home',rng=()=>random(s);
  const kind=choosePlay(rng,home?m.tactic:opp.style==='perimeter'?'perimeter':'balanced',home?m.pace:opp.style==='transition'?'fast':'steady',m.events.at(-1)?.plays?.find(p=>p.team===team)?.kind);
@@ -86,9 +88,9 @@ function makePlay(s,team,shooter,helper,defender,opp,m){
  const counter={perimeter:'zone',paint:'pressure',transition:'balanced'}[opp.style];
  const tactical=(home?(s.scouted?.025:0)+(mods.offense||0)*.01:(m.tactic===counter?-.035:0)-(mods.defense||0)*.01);
  const impacts={skill:(skill-(home?orating:74))*.55,energy:(energy-65)*.15,morale:home?(shooter.morale-65)*.1:0,chemistry:(chemistry-60)*.1,shotType:spec.base*100,space:(separation-.5)*17,tactics:tactical*100};
- const chance=cap(.43+Object.values(impacts).reduce((a,b)=>a+b,0)/100+(home&&m.boost>0?.04:0)+(home?(s.difficulty==='rookie'?.075:s.difficulty==='elite'?-.04:0):0),.16,.86);
+ const chance=cap(.43+TUNING.miss+(spec.three?TUNING.threeMiss:0)+Object.values(impacts).reduce((a,b)=>a+b,0)/100+(home&&m.boost>0?.04:0)+(home?(s.difficulty==='rookie'?.075:s.difficulty==='elite'?-.04:0):0),.16,.86);
  const stealChance=home?.035+(contest==='tight'?.04:0)+(100-energy)*.0004:(m.tactic==='pressure'?.10:.035);
- const blockChance=spec.three?.018:(contest==='tight'?.13:.045)+(isDunk(kind)?.02:0);
+ const blockChance=spec.three?TUNING.block3:(contest==='tight'?TUNING.blockTight:TUNING.block)+(isDunk(kind)?.02:0);
  let outcome=rng()<stealChance?'steal':rng()<blockChance?'block':rng()<chance?'made':'miss';
  const points=outcome==='made'?(spec.three?3:2):0,assisted=points>0&&['catch','dunk'].includes(family(kind));
  const play={team,kind,label:spec.label,player:shooter.name,id:shooter.id,jersey:shooter.number,helper:helper.name,helperId:helper.id,defender:defender.name,defenderId:defender.id,rebounder:home?opp.roster[Math.floor(rng()*opp.roster.length)].name:defender.name,lane:rng()>.5?1:-1,contest,points,outcome,three:!!spec.three,assisted,shotChance:Math.round(chance*100),impacts};
