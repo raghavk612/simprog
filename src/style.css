@@ -399,3 +399,18 @@ dialog:has(.drill-shell){width:min(960px,calc(100vw - 24px))}
 .live-match .game-arena .camera-controls button{font:700 13px var(--display);letter-spacing:1px;text-transform:uppercase;padding:7px 10px;border-radius:7px;color:#d6c9e6}
 .live-match .game-arena .camera-controls button.active{background:#8b4fe0;color:#fff}
 @media(max-width:760px){.live-match .game-arena .arena-bottom{bottom:72px;left:8px;right:8px}.live-match .game-arena .camera-controls{flex-wrap:wrap}.live-match .game-arena .camera-controls button{padding:6px 7px;font-size:12px}}
+
+/* ---- handbook: body text under the headers is white ---- */
+.modal-content:has(.rule-tabs) .rule-panel p,.modal-content:has(.rule-tabs) .rule-panel .rule-lead,.modal-content:has(.rule-tabs) .ctl-row>span,.modal-content:has(.rule-tabs) .rule-list li,.modal-content:has(.rule-tabs) .rule-panel .muted{color:#fff}
+.modal-content:has(.rule-tabs) .rule-panel p{font-weight:500}
+.modal-content:has(.rule-tabs) .rule-panel .rule-lead{font-weight:700}
+.modal-content:has(.rule-tabs) .rule-list li{font-weight:500}
+.modal-content:has(.rule-tabs) .rule-list li b{color:#d6bcff}
+.modal-content:has(.rule-tabs) .rule-chips span{color:#fff}
+/* ---- first-person HUD label ---- */
+.fp-hud{position:absolute;z-index:6;left:20px;top:158px;display:flex;align-items:center;gap:10px;max-width:calc(100% - 40px);padding:7px 14px 7px 12px;border-radius:6px;border:1px solid #ffffff24;border-left:4px solid #e9b858;background:linear-gradient(180deg,#1d1330ee,#0d0915ee);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);box-shadow:0 12px 28px -10px #000c;pointer-events:none;font-family:var(--display)}
+.fp-hud[hidden]{display:none}
+.fp-hud b{flex:none;font:800 12px var(--display);letter-spacing:2.2px;color:#e9b858}
+.fp-hud span{font:800 italic 20px/1 var(--display);letter-spacing:.6px;color:#fff;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fp-hud em{flex:none;font:700 12px var(--display);font-style:normal;letter-spacing:1.4px;color:#c9a8ff;padding-left:10px;border-left:1px solid #ffffff2e}
+@media(max-width:760px){.fp-hud{left:8px;top:87px;gap:8px;padding:4px 10px 4px 9px;max-width:calc(100% - 16px)}.fp-hud span{font-size:16px}.fp-hud b{font-size:11px;letter-spacing:1.6px}}
