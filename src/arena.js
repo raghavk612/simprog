@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {CLIP_SECONDS, SHOTS, sampleClip} from './basketball.js';
-import {drawScoreboard, scoreboardData, scoreboardKey, setScoreboardLogo} from './scoreboard.js';
+import {drawScoreboard, scoreboardData, scoreboardKey, setScoreboardLogo, setScoreboardOpponentLogo} from './scoreboard.js';
+import {loadOpponentLogo} from './logos.js';
 const purple=0x6832ab;
 export class Arena{
  constructor(host){
@@ -124,7 +125,7 @@ export class Arena{
   const n=p.userData.number.material;n.map.dispose();n.map=this.textTexture(String(person?.number??11),bg,fg,128);
   const back=p.userData.nameplate.material;back.map.dispose();back.map=this.textTexture((person?.name||'VISITORS').split(' ').at(-1).toUpperCase(),bg,fg,256);
  }
- score(home,away){this.boardHome=home;this.boardAway=away;if(!this.boardCanvas)return;const data=scoreboardData(this.state,home,away,this.event),key=scoreboardKey(data);if(this.boardKey===key)return;this.boardKey=key;drawScoreboard(this.boardCanvas.getContext('2d'),this.boardCanvas.width,this.boardCanvas.height,data);this.boardTex.needsUpdate=true;}
+ score(home,away){this.boardHome=home;this.boardAway=away;if(!this.boardCanvas)return;const data=scoreboardData(this.state,home,away,this.event);(this.oppAsked??=new Set());if(!this.oppAsked.has(data.opponent)){this.oppAsked.add(data.opponent);const name=data.opponent;loadOpponentLogo(name).then(img=>{if(img){setScoreboardOpponentLogo(name,img);this.boardKey='';this.score(this.boardHome??0,this.boardAway??0);}});}const key=scoreboardKey(data);if(this.boardKey===key)return;this.boardKey=key;drawScoreboard(this.boardCanvas.getContext('2d'),this.boardCanvas.width,this.boardCanvas.height,data);this.boardTex.needsUpdate=true;}
  update(s){if(this.failed)return;this.state=s;if(!this.event){const starters=s?.players.filter(p=>p.starter)||[];for(let i=0;i<5;i++)this.setIdentity(this.people[i],starters[i]||{id:i,number:[0,2,3,11,20][i],name:'Kangs'});}
   if(!this.event){const m=s?.match,r=s?.results.at(-1);this.score(m?.home??r?.home??0,m?.away??r?.away??0);}
  }
