@@ -448,3 +448,18 @@ td .opp-badge,.opp-roster .opp-badge{position:relative;top:-1px}
 .why-drawer li i{grid-column:1/-1;height:5px;border-radius:3px;background:#4ade80;min-width:3px}
 .why-drawer li i.down{background:#f87171}
 .why-head{font-weight:700;margin:8px 0}
+
+/* ---- season report card ---- */
+.report-grid{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:center;margin:14px 0}
+.report-grade{display:grid;place-items:center;min-width:150px;padding:14px 18px;border-radius:14px;background:linear-gradient(155deg,#2d1749,#160e23);border:1px solid #b48aff2e;text-align:center}
+.report-grade small{font:700 calc(13px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:2px;color:#e9b858;text-transform:uppercase}
+.report-grade strong{font:900 italic calc(78px*var(--ts,1)*var(--ls,1))/1 var(--display);color:#fff}
+.report-grade span{font:700 calc(16px*var(--ts,1)*var(--ls,1)) var(--display);color:#c9a8ff}
+.report ul{list-style:none;padding:0;margin:0;display:grid;gap:6px}
+.report-parts li,.report-awards li{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:7px 0;border-bottom:1px solid #ffffff14}
+.report-awards li{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:2px 12px}
+.report-awards li small{grid-column:1/-1;color:#c9bdd8}
+.report-facts{margin:14px 0}
+.report .secondary{margin-top:6px}
+.pog{margin:6px 0}
+@media(max-width:620px){.report-grid{grid-template-columns:minmax(0,1fr)}.report-awards li{grid-template-columns:minmax(0,1fr)}}

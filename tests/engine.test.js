@@ -68,3 +68,22 @@ test('opponent strength follows the school, not the week, and real results set i
  const cut=E.seasonPlan(s).cut;assert.equal(+(E.opponentRating(s,a,cut)-E.opponentRating(s,a,0)).toFixed(1),7,'the final run is 7 points tougher');
  s.week=0;assert.equal(E.opponent(s).rating,E.opponentRating(s,s.schedule[0]));
 });
+const playSeason=(seed,diff='standard',practice=true)=>{const s=E.createGame(data,'Report',diff,seed);let guard=0;while(!s.finished&&guard++<s.schedule.length+1){if(practice){if(E.mean(s.players,'energy')<70&&s.actions>0)E.train(s,'recovery');if(E.mean(s.players,'gpa')<2.7&&s.actions>0)E.train(s,'study');while(s.actions>0)E.train(s,s.chemistry<85?'bond':'shooting');}E.autoLineup(s);if(s.players.filter(E.eligible).length<5)break;E.startMatch(s);let k=0;while(s.match&&k++<500)E.possession(s);}return s;};
+test('every game names a player of the game who played, and saves with or without it stay valid',()=>{
+ const s=playSeason(3);assert.ok(s.results.length>=5);
+ for(const r of s.results){assert.ok(r.pog,'a player of the game');const l=r.line[r.pog.id];assert.ok(l.min>0&&l.pts===r.pog.pts);assert.ok(r.box[r.pog.id]===r.pog.pts);const top=Math.max(...Object.entries(r.line).filter(([,x])=>x.min>0).map(([,x])=>x.pts+1.2*x.reb+1.5*x.ast+2*(x.stl+x.blk)-x.tov-.3*(x.fga-x.fgm)));assert.equal(+(l.pts+1.2*l.reb+1.5*l.ast+2*(l.stl+l.blk)-l.tov-.3*(l.fga-l.fgm)).toFixed(6),+top.toFixed(6));}
+ assert.ok(E.validSave(s));const old=structuredClone(s);old.results.forEach(r=>delete r.pog);old.players.forEach(p=>delete p.skill0);assert.ok(E.validSave(old),'older saves have neither field');
+ const bad=structuredClone(s);bad.results[0].pog.pts='x';assert.equal(E.validSave(bad),false);const bad2=structuredClone(s);bad2.players[0].skill0='x';assert.equal(E.validSave(bad2),false);
+});
+test('the season report: awards, a coach grade that adds up, and highlights',()=>{
+ const s=playSeason(5),R=E.seasonReport(s);
+ assert.deepEqual(R.record,[s.wins,s.losses]);assert.equal(R.games,s.results.length);assert.ok(R.ppg>20&&R.oppg>20);
+ const g=R.grade;assert.equal(g.total,Object.values(g.parts).reduce((a,b)=>a+b,0));assert.ok(g.total>=0&&g.total<=100);for(const [k,v] of Object.entries(g.parts))assert.ok(v>=0&&v<=E.GRADE_POINTS[k],k);
+ assert.match(g.letter,/^[A-DF][+-]?$/);
+ const keys=R.awards.map(a=>a.key);assert.ok(keys.includes('mvp')&&keys.includes('pog'));for(const a of R.awards)assert.ok(s.players.some(p=>p.id===a.id)&&a.value>0);
+ assert.ok(R.sessions>0&&R.perfect===0);if(R.bestWin)assert.ok(R.bestWin.home>R.bestWin.away);if(R.toughestLoss)assert.ok(R.toughestLoss.home<R.toughestLoss.away);
+ const idle=E.seasonReport(playSeason(5,'standard',false));assert.equal(idle.grade.parts.development,0);assert.ok(idle.grade.total<R.grade.total,'doing nothing grades lower than preparing');assert.equal(idle.sessions,0);
+ const champ=[...Array(60).keys()].map(i=>playSeason(i+1)).find(x=>x.champion);assert.ok(champ);assert.equal(E.coachGrade(champ).parts.postseason,25);
+ const old=structuredClone(s);old.players.forEach(p=>delete p.skill0);assert.equal(E.seasonReport(old).grade.parts.development,0);assert.ok(!E.seasonReport(old).awards.some(a=>a.key==='improved'));
+ const empty=E.createGame(data,'New','standard',1);const e=E.seasonReport(empty);assert.deepEqual(e.awards,[]);assert.equal(e.bestWin,null);assert.equal(e.grade.parts.wins,0);
+});

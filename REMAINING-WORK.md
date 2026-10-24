@@ -128,7 +128,7 @@ Effort: **S** < 1 day, **M** 1–3 days, **L** a week+. Ideas already covered by
 | # | Idea | Pitch | Effort |
 |---|---|---|---|
 | 1 | ✅ **Done:** **Judge / demo mode** | Title-screen "Demo" loads a mid-season save, with a hotkey to jump to the next elimination game and a 3-minute guided overlay for the FBLA presentation. | S |
-| 2 | **Season awards + report card** | MVP, Most Improved, Defensive Player, coach grade, "decisions that mattered", downloadable PNG. | S–M |
+| 2 | ✅ **Done (Player of the Game too; the highlight replays are not):** **Season awards + report card** | MVP, Most Improved, Defensive Player, coach grade, "decisions that mattered", downloadable PNG. | S–M |
 | 3 | **Playoff bracket view** | The final run shown as a bracket that fills in as you win. | S–M |
 | 4 | **Balance pass** | Real opponent strength, diminishing returns, token sinks (Section 3). | S |
 | 5 | ✱ Coach's inbox / random events | Covered by the mid-season events spec. | M |
