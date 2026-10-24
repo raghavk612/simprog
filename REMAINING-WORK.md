@@ -33,7 +33,7 @@ This file collects **everything that is still to do**: the designed-but-not-buil
 
 ---
 
-## 1. Designed, waiting for go-ahead (spec written)
+## 1. Built from the spec (rivalry-week events intentionally left out)
 
 Full spec: [`docs/superpowers/specs/2026-10-24-events-captain-locker-press-design.md`](docs/superpowers/specs/2026-10-24-events-captain-locker-press-design.md)
 
@@ -131,7 +131,7 @@ Effort: **S** < 1 day, **M** 1–3 days, **L** a week+. Ideas already covered by
 | 2 | ✅ **Done (Player of the Game too; the highlight replays are not):** **Season awards + report card** | MVP, Most Improved, Defensive Player, coach grade, "decisions that mattered", downloadable PNG. | S–M |
 | 3 | ✅ **Done:** **Playoff bracket view** | The final run shown as a bracket that fills in as you win. | S–M |
 | 4 | **Balance pass** | Real opponent strength, diminishing returns, token sinks (Section 3). | S |
-| 5 | ✱ Coach's inbox / random events | Covered by the mid-season events spec. | M |
+| 5 | ✅ **Done:** ✱ Coach's inbox / random events | Covered by the mid-season events spec. | M |
 | 6 | **Rivalry weeks** | Flag real rivals on the schedule: extra fans/tokens and bigger morale swings, with headlines. | S–M |
 | 7 | ✅ **Done (accessibility branch):** **Sound design** | Crowd, whistle, swish/rim, buzzer and a volume slider (WebAudio, no assets). | S–M |
 | 8 | ✅ **Done (accessibility branch):** **Accessibility pack** | Text size, high-contrast and color-blind palettes, "reduce 3D", dyslexia-friendly font, screen-reader scores. | M |
@@ -147,9 +147,9 @@ Effort: **S** < 1 day, **M** 1–3 days, **L** a week+. Ideas already covered by
 | 18 | **Budget & boosters** | Ticket revenue, sponsors, equipment/travel costs so tokens matter. | M |
 | 19 | **Academic calendar** | Finals week / report-card events that hit GPA unless study hall was scheduled. | S |
 | 20 | **Printable season report** | One-page PDF/PNG with record, leaders, standings and decision trail. | S |
-| 21 | ✱ Team captain | Covered by the spec. | S–M |
-| 22 | ✱ 3D locker-room jerseys | Covered by the spec. | M |
-| 23 | ✱ Post-game press conference | Covered by the spec. | M |
+| 21 | ✅ **Done:** ✱ Team captain | Covered by the spec. | S–M |
+| 22 | ✅ **Done:** ✱ 3D locker-room jerseys | Covered by the spec. | M |
+| 23 | ✅ **Done:** ✱ Post-game press conference | Covered by the spec. | M |
 | 24 | **Animated 3D player models** | See Section 6. | L |
 
 **Recommended order (impact ÷ effort):**

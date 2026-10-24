@@ -79,3 +79,13 @@ test('a full season with the inbox and press conferences resolved automatically 
    assert.ok(E.validSave(s));}
   assert.ok(s.finished,`${diff} ${seed}`);}
 });
+test('review fixes: releasing the captain keeps the save valid; stale or forged events are dropped; hostile names never reach the roster; previews match the softened result',()=>{
+ const s=fresh(5);const c=s.players.find(p=>!p.starter);E.setCaptain(s,c.id);E.release(s,c.id);assert.equal(s.captain,null);assert.ok(E.validSave(s));
+ const a=fresh(5);a.pendingEvent={id:'transfer',params:{name:'x'.repeat(50)}};a.players=a.players.slice(0,12);V.resolveEvent(a,0);assert.ok(a.players.every(p=>p.name.length<=36));assert.ok(E.validSave(a));
+ const b=fresh(5);b.pendingEvent={id:'recruiter',params:{pid:b.players[0].id,name:'A'}};E.release(b,b.players[0].id);assert.ok(V.eventStale(b));assert.equal(V.resolveEvent(b,0),null);assert.equal(b.pendingEvent,null);
+ const d=fresh(5);d.players.forEach(p=>p.morale=80);E.setCaptain(d,d.players[0].id);d.pendingEvent={id:'shots',params:{pid:d.players[1].id,name:'x'}};const shown=V.previewOptions(d)[1].chips.find(x=>x.k==='morale').v;const before=d.players[1].morale;V.resolveEvent(d,1);assert.equal(+(d.players[1].morale-before).toFixed(1),shown);
+ assert.throws(()=>E.addWalkOn(fresh(5),'',60));
+ const n=fresh(5);n.nextMods={offense:60};assert.equal(E.validSave(n),false);
+ const w=fresh(5);E.addWalkOn(w,'Walk On',60);assert.ok(!w.pool.some(p=>p.number===w.players.at(-1).number));
+ const j=fresh(5);j.pendingEvent={id:'finals',params:{}};assert.doesNotThrow(()=>E.playTo(j,2));assert.equal(j.pendingEvent,null);
+});
