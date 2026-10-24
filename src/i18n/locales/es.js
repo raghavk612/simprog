@@ -176,7 +176,7 @@ export default {
   look:'{{player}} · {{phase}} · {{contest}}',
   eliminationGame:'{{run}} · partido eliminatorio simulado',
   matchup:'{{type}} · resultado simulado',
-  typeDefault:'Partido publicado',upcoming:'Próximo · {{when}} · {{where}} · {{venue}}. Tu resultado aún no está escrito.',homeGame:'Local',awayGame:'Visitante',},
+  typeDefault:'Partido publicado',upcoming:'Próximo · {{when}} · {{where}} · {{venue}}. Tu resultado aún no está escrito.',homeGame:'Local',awayGame:'Visitante',why:'¿Por qué ese tiro?',whyNone:'Aquí aparecerá cada jugada resuelta.',whyShot:'{{player}} · {{shot}} · {{n}}% de probabilidad',},
  tactic:{balanced:'Equilibrado',zone:'Zona / cierres',pressure:'Defensa presionante',perimeter:'Abrir la cancha / tiros de tres'},
  pace:{steady:'Constante',fast:'Contraataque'},
  style:{perimeter:'Perímetro',paint:'Pintura',transition:'Transición'},

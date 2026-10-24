@@ -176,7 +176,7 @@ export default {
   look:'{{player}} · {{phase}} · {{contest}}',
   eliminationGame:'{{run}} · match à élimination simulé',
   matchup:'{{type}} · résultat simulé',
-  typeDefault:'Match publié',upcoming:'À venir · {{when}} · {{where}} · {{venue}}. Votre résultat n’est pas encore écrit.',homeGame:'À domicile',awayGame:'À l’extérieur',},
+  typeDefault:'Match publié',upcoming:'À venir · {{when}} · {{where}} · {{venue}}. Votre résultat n’est pas encore écrit.',homeGame:'À domicile',awayGame:'À l’extérieur',why:'Pourquoi ce tir ?',whyNone:'Chaque action terminée apparaît ici.',whyShot:'{{player}} · {{shot}} · {{n}} % de chances',},
  tactic:{balanced:'Équilibré',zone:'Zone / sorties sur les tireurs',pressure:'Défense de pression',perimeter:'Écarter le jeu / tirs à trois points'},
  pace:{steady:'Régulier',fast:'Contre-attaque'},
  style:{perimeter:'Périmètre',paint:'Raquette',transition:'Transition'},

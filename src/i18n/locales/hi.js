@@ -161,7 +161,7 @@ export default {
   look:'{{player}} · {{phase}} · {{contest}}',
   eliminationGame:'{{run}} · सिम्युलेटेड एलिमिनेशन मैच',
   matchup:'{{type}} · सिम्युलेटेड नतीजा',
-  typeDefault:'घोषित मुक़ाबला',upcoming:'आगामी · {{when}} · {{where}} · {{venue}}। आपका परिणाम अभी लिखा नहीं गया है।',homeGame:'घरेलू',awayGame:'बाहरी',},
+  typeDefault:'घोषित मुक़ाबला',upcoming:'आगामी · {{when}} · {{where}} · {{venue}}। आपका परिणाम अभी लिखा नहीं गया है।',homeGame:'घरेलू',awayGame:'बाहरी',why:'वह शॉट क्यों?',whyNone:'हर पूरा हुआ प्ले यहाँ दिखेगा।',whyShot:'{{player}} · {{shot}} · {{n}}% संभावना',},
  tactic:{balanced:'संतुलित',zone:'ज़ोन / क्लोज़आउट',pressure:'दबाव वाला डिफ़ेंस',perimeter:'फैलाव / तीन-अंकीय शॉट'},
  pace:{steady:'स्थिर',fast:'फ़ास्ट ब्रेक'},
  style:{perimeter:'पेरिमीटर',paint:'पेंट',transition:'ट्रांज़िशन'},

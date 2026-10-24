@@ -163,7 +163,7 @@ export default {
   look:'{{player}} · {{phase}} · {{contest}}',
   eliminationGame:'{{run}} · simulated elimination game',
   matchup:'{{type}} matchup · simulated outcome',
-  typeDefault:'Published',upcoming:'Upcoming · {{when}} · {{where}} · {{venue}}. Your result has not been written.',homeGame:'Home',awayGame:'Away',},
+  typeDefault:'Published',upcoming:'Upcoming · {{when}} · {{where}} · {{venue}}. Your result has not been written.',homeGame:'Home',awayGame:'Away',why:'Why that shot?',whyNone:'Each resolved play shows up here.',whyShot:'{{player}} · {{shot}} · {{n}}% chance',},
  tactic:{balanced:'Balanced',zone:'Zone / closeouts',pressure:'Pressure defense',perimeter:'Spread / shoot threes'},
  pace:{steady:'Steady',fast:'Fast break'},
  style:{perimeter:'Perimeter',paint:'Paint',transition:'Transition'},

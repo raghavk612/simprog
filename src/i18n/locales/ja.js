@@ -142,7 +142,7 @@ export default {
   look:'{{player}} · {{phase}} · {{contest}}',
   eliminationGame:'{{run}} · シミュレーションの一発勝負',
   matchup:'{{type}} · シミュレーション結果',
-  typeDefault:'公表された対戦',upcoming:'予定 · {{when}} · {{where}} · {{venue}}。あなたの結果はまだ記録されていません。',homeGame:'ホーム',awayGame:'アウェイ',},
+  typeDefault:'公表された対戦',upcoming:'予定 · {{when}} · {{where}} · {{venue}}。あなたの結果はまだ記録されていません。',homeGame:'ホーム',awayGame:'アウェイ',why:'なぜそのシュート？',whyNone:'決着したプレーがここに表示されます。',whyShot:'{{player}} · {{shot}} · 成功率 {{n}}%',},
  tactic:{balanced:'バランス',zone:'ゾーン / クローズアウト',pressure:'プレッシャーディフェンス',perimeter:'スペーシング / スリー重視'},
  pace:{steady:'じっくり',fast:'速攻'},
  style:{perimeter:'外角中心',paint:'インサイド中心',transition:'トランジション中心'},

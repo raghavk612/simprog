@@ -141,7 +141,7 @@ Effort: **S** < 1 day, **M** 1–3 days, **L** a week+. Ideas already covered by
 | 12 | **Player development arcs** | Skill sparklines, ceilings, breakout/slump tags. | M |
 | 13 | **Multi-season dynasty** | Seniors graduate, freshmen arrive, tokens/fans carry over. Changes the save schema. | L |
 | 14 | **Achievements** | Perfect Drill, Undefeated Regular Season, Beat the Rival, Zero-Injury Season, Varsity Champion. | S |
-| 15 | **"Why that shot?" live panel** | Show shot-probability factor bars (skill, energy, chemistry, tactics) during live play. Great for Q&A. | S |
+| 15 | ✅ **Done:** **"Why that shot?" live panel** | Show shot-probability factor bars (skill, energy, chemistry, tactics) during live play. Great for Q&A. | S |
 | 16 | **Broadcast highlights + Player of the Game** | Auto-replay the top 3 plays with lower-third graphics and a POG card. | M |
 | 17 | **Challenge codes / hot-seat duel** | Share a seed ("same season, who does better?") or alternate tactic picks with two coaches. | M / L |
 | 18 | **Budget & boosters** | Ticket revenue, sponsors, equipment/travel costs so tokens matter. | M |

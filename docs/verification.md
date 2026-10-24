@@ -55,3 +55,8 @@ The 3D action is a stylized visualization of the possession model, not a full ba
 - `npm test`: 52 passing tests. New tests cover the diminishing returns (`E.growthRoom`, the skill ceiling, development coach, the decision trail reporting the real gain), one-on-one sessions being worth 1.8×, and `E.opponentRating` (a school keeps its rating, real results set it, the final run is 7 points tougher).
 - `node scripts/balance.mjs 200` before and after: with sensible practice the title rate falls from 79 / 60 / 42 % to 58 / 35 / 23 % (C Team / JV / Varsity), and average skill after eight games falls from the 98 cap to about 89–90. No practice stays close to hopeless on JV and Varsity. The numbers depend on the simulation, not on real players, and are a design choice, not a prediction.
 - Not done: D3 (token sinks) needs a design decision. D4 is only partly solved: a plan made only of one-on-one sessions still wins about half as often as whole-team practice.
+
+## "Why that shot?" drawer
+
+- A third drawer under Play-by-play and Box score shows how each factor (skill, energy, morale, chemistry, shot type, space, tactics) moved the chance of the latest resolved play, as signed numbers in percentage points with decorative bars, plus the player, the shot and its chance. The numbers are the existing `play.impacts` already used by the postgame analysis, so nothing in the simulation changed. It is a live region, translated into all seven languages, restyled for high contrast, and opening it closes the other two drawers.
+- Checked in a browser with animation frames shimmed (the pane throttles them): after one possession the drawer showed "Jacoby Dickens · Catch-and-shoot three · 57 % chance" with seven factors. Not checked on a phone or with a screen reader.

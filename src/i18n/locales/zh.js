@@ -142,7 +142,7 @@ export default {
   look:'{{player}} · {{phase}} · {{contest}}',
   eliminationGame:'{{run}} · 模拟淘汰赛',
   matchup:'{{type}} · 模拟结果',
-  typeDefault:'已公布的比赛',upcoming:'即将进行 · {{when}} · {{where}} · {{venue}}。你的结果尚未写下。',homeGame:'主场',awayGame:'客场',},
+  typeDefault:'已公布的比赛',upcoming:'即将进行 · {{when}} · {{where}} · {{venue}}。你的结果尚未写下。',homeGame:'主场',awayGame:'客场',why:'为什么是这次出手？',whyNone:'每个已完成的回合都会显示在这里。',whyShot:'{{player}} · {{shot}} · 命中率 {{n}}%',},
  tactic:{balanced:'均衡',zone:'联防 / 补防',pressure:'压迫防守',perimeter:'拉开空间 / 投三分'},
  pace:{steady:'稳健',fast:'快攻'},
  style:{perimeter:'外线',paint:'内线',transition:'转换'},
