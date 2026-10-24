@@ -19,7 +19,8 @@ Open the URL Vite prints. Production files are in `dist/`; serve them over HTTP,
 
 - Named coach and three difficulties that pick which real team you coach: **C Team · Rookie**, **Junior Varsity · All-Star** or **Varsity · Hall of Fame**, each using that real team's roster. One-time introductory tour, local saves and validated JSON import/export.
 - 2K-style roster viewer: cycle players with arrows or ← →, generated avatars, OVR and letter-grade ratings (INS / MID / 3PT / PER D / INS D). Before a player's first game, stats are 2025–26 estimates built from the team's real points per game (no per-player stats are published on KingCo or MaxPreps).
-- Broadcast score bug, four camera views including a first-person Player view, and keyboard shortcuts (Space, W, T, 1–4, H). The handbook is a tabbed guide with key-cap icons.
+- Broadcast score bug, five camera views (Auto TV director that cuts wide → tracking → first-person on the shot, plus Wide, Courtside, Follow and Player view), switchable mid-game, and keyboard shortcuts (Space, W, T, 1–5, H). The handbook is a tabbed guide with key-cap icons.
+- Practice planner: pick up to three sessions (deselect any), then unlock each by winning a skill drill: three-point shooting with arc/power control, a free-throw challenge, close-out and recovery timing, or a rules quiz. Training never costs tokens; a perfect drill adds a small bonus.
 - Real 2025–26 rosters and completed schedules for all three levels from KingCo Athletics: Varsity 12 players / 30 games, JV 12 / 19, C-Team 13 / 18. Creator Malhar Pawar plays as #11 on the real JV roster.
 - Real opponent rosters at the matching level for every opponent that publishes one, so the play-by-play names actual players; opponents without a published roster get clearly flagged fictional names.
 - 15-player limit, fictional paid tryouts, release/rename, five starters, editable 160-minute rotation, eligibility checks.

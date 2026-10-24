@@ -124,6 +124,15 @@ function shield(ctx, cx, y0, w, h) {
   ctx.quadraticCurveTo(cx + w / 2, y0 + h * .86, cx, y0 + h); ctx.quadraticCurveTo(cx - w / 2, y0 + h * .86, cx - w / 2, y0 + h * .55); ctx.closePath();
 }
 
+/* Kangaroo logo (transparent PNG) supplied by the arena once it loads; the LW monogram is only a fallback. */
+let LOGO_IMG = null;
+export function setScoreboardLogo(img) { LOGO_IMG = img; }
+function logo(ctx, cx, cy, maxW, maxH) {
+  if (!LOGO_IMG || !LOGO_IMG.naturalWidth) return false;
+  const r = Math.min(maxW / LOGO_IMG.naturalWidth, maxH / LOGO_IMG.naturalHeight), w = LOGO_IMG.naturalWidth * r, h = LOGO_IMG.naturalHeight * r;
+  ctx.save(); ctx.shadowColor = 'rgba(255,255,255,.95)'; ctx.shadowBlur = 16; ctx.drawImage(LOGO_IMG, cx - w / 2, cy - h / 2, w, h); ctx.shadowColor = 'rgba(180,138,255,.9)'; ctx.shadowBlur = 30;
+  ctx.drawImage(LOGO_IMG, cx - w / 2, cy - h / 2, w, h); ctx.restore(); return true;
+}
 /* School monogram: block "LW" in purple with white and gold keylines, drawn (no image). */
 function monogram(ctx, cx, cy, size) {
   ctx.save(); ctx.font = `italic 900 ${size}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -193,10 +202,10 @@ export function drawScoreboard(ctx, w, h, data) {
     text(ctx, 'B', x, 386, 52, 60, { weight: 800, color: C.dim, glow: false });
   }
 
-  // Lower left: school monogram over an angled panel.
+  // Lower left: Kangs kangaroo logo over an angled panel.
   const lw = slab(30, 574, 640, 170, 0, 60);
   framed(ctx, lw, 574, 744, { fill0: '#2149b8', fill1: '#0c1f66', lw: 3 });
-  monogram(ctx, 330, 650, 238);
+  if (!logo(ctx, 330, 650, 520, 212)) monogram(ctx, 330, 650, 238);
 
   // Lower right: visitor crest on a white panel (we have no opponent logos, so a crest with initials).
   const vp = mirror(slab(30, 574, 640, 170, 0, 60), W);

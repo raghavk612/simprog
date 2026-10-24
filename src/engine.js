@@ -24,11 +24,11 @@ export function createGame(data,name,difficulty='standard',seed=Date.now()>>>0){
 export function log(s,text){s.log.unshift({week:s.week+1,text});s.log=s.log.slice(0,120);}
 function open(s){if(s.finished)throw Error('This season is complete. Start a new season to play again.');if(s.match)throw Error('Finish the current game first.');}
 function spend(s,cost,action=true){open(s);if(s.tokens<cost)throw Error('Not enough program tokens.');if(action&&s.actions<1)throw Error('Your three preparation slots are used. Play the next game.');s.tokens-=cost;if(action)s.actions--;}
-export function train(s,type,id='all'){
- const a=plans[type];if(!a)throw Error('Unknown practice');const selected=id==='all'?s.players:s.players.filter(p=>p.id===+id);if(!selected.length)throw Error('Choose a player');spend(s,a.cost);
- for(const p of selected){p.skill=cap(p.skill+a.skill+(s.assistant==='development'&&a.skill?1:0),35,98);p.energy=cap(p.energy+a.energy+(s.assistant==='recovery'&&type==='recovery'?8:0));p.morale=cap(p.morale+a.morale+(s.assistant==='culture'&&type==='bond'?3:0));p.gpa=cap(p.gpa+a.gpa,0,4);if(type==='recovery')p.injury=Math.max(0,p.injury-1);}
+export function train(s,type,id='all',opts={}){
+ const a=plans[type];if(!a)throw Error('Unknown practice');const selected=id==='all'?s.players:s.players.filter(p=>p.id===+id);if(!selected.length)throw Error('Choose a player');spend(s,0);const perfect=!!opts.perfect;
+ for(const p of selected){p.skill=cap(p.skill+a.skill+(s.assistant==='development'&&a.skill?1:0)+(perfect&&a.skill?1:0),35,98);p.energy=cap(p.energy+a.energy+(s.assistant==='recovery'&&type==='recovery'?8:0));p.morale=cap(p.morale+a.morale+(s.assistant==='culture'&&type==='bond'?3:0)+(perfect?2:0));p.gpa=cap(p.gpa+a.gpa,0,4);if(type==='recovery')p.injury=Math.max(0,p.injury-1);}
  s.chemistry=cap(s.chemistry+a.chem+(s.assistant==='culture'&&type==='bond'?3:0));
- const text=`${a.name}: ${selected.length===s.players.length?'whole team':selected[0].name} · skill ${a.skill>=0?'+':''}${a.skill}, energy ${a.energy>=0?'+':''}${a.energy}, GPA ${a.gpa>=0?'+':''}${a.gpa.toFixed(2)}`;
+ const text=`${a.name}: ${selected.length===s.players.length?'whole team':selected[0].name} · skill ${a.skill>=0?'+':''}${a.skill}, energy ${a.energy>=0?'+':''}${a.energy}, GPA ${a.gpa>=0?'+':''}${a.gpa.toFixed(2)}${perfect?' · perfect drill bonus':''}`;
  log(s,text);s.ripples.unshift({label:a.name,detail:text,week:s.week});s.ripples=s.ripples.slice(0,12);
 }
 export function recruit(s,id){const p=s.pool.find(p=>p.id===+id);if(!p)throw Error('Prospect unavailable');if(s.players.length>=15)throw Error('Roster full: release a player before signing.');spend(s,p.cost,false);s.players.push({...p});s.pool=s.pool.filter(x=>x.id!==p.id);log(s,`${p.name} joined through tryouts for ${p.cost} tokens.`);}

@@ -337,3 +337,65 @@ dialog:has(.rule-tabs){width:min(820px,calc(100vw - 30px))}
 body[data-view=home] #arena{height:clamp(540px,68vh,780px)}
 body:not(.live-match) .game-arena{height:clamp(520px,66vh,760px)!important}
 @media(max-width:620px){body[data-view=home] #arena{height:420px}body:not(.live-match) .game-arena{height:420px!important}}
+
+/* softer glow on selected nav + game tracker */
+.nav-item.active{box-shadow:0 6px 16px -10px #9d5cf2b3}
+.game-tracker{box-shadow:inset 0 1px 0 #ffffff10,0 12px 26px -22px #9d5cf2b3;border-color:#b48aff24}
+.gt-ticks i.next{box-shadow:0 0 0 1px #c9a8ff55,0 0 6px #b48aff80}
+
+/* ---- practice plan + skill drills ---- */
+.practice-plan{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:16px;align-items:stretch;margin:4px 0 20px;padding:16px;border-radius:14px;border:1px solid #b48aff2e;background:linear-gradient(150deg,#26153d,#150e21)}
+.plan-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.plan-slot{position:relative;min-height:84px;padding:12px 14px;border-radius:12px;border:1.5px dashed #ffffff26;display:flex;flex-direction:column;justify-content:center;gap:3px}
+.plan-slot span{font:700 11px var(--display);letter-spacing:2px;color:#a893c4}
+.plan-slot b{font:800 italic 20px/1.05 var(--display);color:#fff}
+.plan-slot small{font-size:13px;color:#c9bdd8}
+.plan-slot.filled{border:1.5px solid #b48aff80;background:linear-gradient(135deg,#8b4fe02e,#8b4fe00d)}
+.plan-slot.used{opacity:.45}
+.plan-slot.open b{color:#ffffff80}
+.plan-x{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:#ffffffa0;background:#ffffff0d}
+.plan-x:hover{background:#f8717140;color:#fff}
+.plan-x svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}
+.plan-go{display:flex;flex-direction:column;justify-content:center;gap:8px}
+.plan-go small{font-size:13px;color:#b8abc8;line-height:1.4}
+.card.plan.in-plan{border-color:#b48aff99;box-shadow:inset 0 0 0 1px #b48aff55}
+.drill-chip{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;margin:4px 0 2px;padding:4px 10px;border-radius:999px;background:#e9b8581f;color:#f2d38f;font:700 13px var(--display);letter-spacing:1px;text-transform:uppercase}
+.drill-chip svg{width:14px;height:14px;fill:currentColor}
+dialog:has(.drill-shell){width:min(960px,calc(100vw - 24px))}
+.drill-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin:8px 0 12px}
+.modal-content .drill-head h3{margin:4px 0 4px;font:800 italic 28px var(--display);color:#fff}
+.modal-content .drill-head p{margin:0;font-size:15px;line-height:1.45;color:#cbbfdc}
+.drill-score{flex:none;text-align:center;padding:8px 14px;border-radius:12px;background:#ffffff0a;border:1px solid #ffffff14;min-width:110px}
+.drill-score b{display:block;font:900 italic 34px/1 var(--display);color:#fff}
+.drill-score span{font:700 12px var(--display);letter-spacing:1.4px;color:#c9a8ff;text-transform:uppercase}
+.drill-pips{display:flex;justify-content:center;gap:4px;margin-top:6px}
+.drill-pips i{width:16px;height:5px;border-radius:2px;background:#ffffff24}
+.drill-pips i.done{background:#e9b858}
+.drill-canvas{display:block;width:100%;height:auto;border-radius:12px;border:1px solid #ffffff17;background:#100b1a}
+.drill-controls{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-top:12px}
+.drill-controls label{flex:1 1 200px;display:flex;flex-direction:column;gap:6px;font:700 13px var(--display);letter-spacing:1.6px;color:#c9a8ff}
+.drill-controls label b{color:#fff;font-size:18px;letter-spacing:.5px}
+.drill-controls input[type=range]{width:100%;accent-color:#b48aff;height:28px}
+.drill-controls .drill-go{min-width:150px;min-height:48px;font-size:16px}
+.modal-content .drill-msg{margin-top:10px;font-size:15px;color:#e6dcf3}
+.timing-bar{position:relative;height:64px;border-radius:12px;background:repeating-linear-gradient(90deg,#ffffff0a 0 2px,transparent 2px 40px),#140d20;border:1px solid #ffffff1c;overflow:hidden}
+.timing-zone{position:absolute;top:0;bottom:0;background:linear-gradient(180deg,#4ade8066,#22c55e40);border-left:2px solid #4ade80;border-right:2px solid #4ade80}
+.timing-mark{position:absolute;top:-4px;bottom:-4px;width:6px;margin-left:-3px;background:#fff;border-radius:3px;box-shadow:0 0 10px #fff}
+.timing-bar.hit{border-color:#4ade80}.timing-bar.miss{border-color:#f87171}
+.modal-content .quiz-q{font:700 20px/1.35 var(--body);color:#fff;margin:6px 0 12px}
+.quiz-opts{display:grid;gap:8px}
+.quiz-opts button{justify-content:flex-start;text-align:left;display:flex;align-items:center;gap:10px;padding:12px 14px;font-size:16px}
+.quiz-opts kbd.key{margin:0}
+.drill-result{text-align:center;padding:26px 10px 10px}
+.drill-result b{display:block;font:900 italic 40px var(--display);letter-spacing:2px}
+.drill-result.pass b{color:#4ade80}.drill-result.fail b{color:#f87171}
+.modal-content .drill-result p{max-width:560px;margin:8px auto 18px;color:#ddd3ea}
+@media(max-width:850px){.practice-plan{grid-template-columns:1fr}}
+@media(max-width:620px){.plan-slots{grid-template-columns:1fr}.drill-head{flex-direction:column}.drill-score{align-self:stretch}}
+
+/* ---- camera buttons are back during live play ---- */
+.live-match .game-arena .arena-bottom{display:flex;bottom:84px;left:24px;right:auto;z-index:3;pointer-events:none}
+.live-match .game-arena .arena-bottom .camera-controls{pointer-events:auto;display:flex;gap:4px;padding:4px;border-radius:10px;background:#120c1ee6;border:1px solid #ffffff1f;backdrop-filter:blur(8px)}
+.live-match .game-arena .camera-controls button{font:700 13px var(--display);letter-spacing:1px;text-transform:uppercase;padding:7px 10px;border-radius:7px;color:#d6c9e6}
+.live-match .game-arena .camera-controls button.active{background:#8b4fe0;color:#fff}
+@media(max-width:760px){.live-match .game-arena .arena-bottom{bottom:72px;left:8px;right:8px}.live-match .game-arena .camera-controls{flex-wrap:wrap}.live-match .game-arena .camera-controls button{padding:6px 7px;font-size:12px}}
