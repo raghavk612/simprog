@@ -127,7 +127,10 @@ export function makeBall(S) {
 
 /* ------------------------------------------------------------------ the gym */
 function courtTexture(S) {
-  const max = S.renderer.capabilities.maxTextureSize || 2048, X0 = -34, X1 = 34, Z0 = -14, Z1 = 62, W = Math.min(S.level === 'low' ? 1024 : 2048, max), k = W / (X1 - X0), H = Math.round((Z1 - Z0) * k);
+  const max = S.renderer.capabilities.maxTextureSize || 2048, X0 = -34, X1 = 34, Z0 = -14, Z1 = 62;
+  // Low graphics caps the longer side at 1024 px instead of 2048.
+  const dims = lvl => { const cap = Math.min(lvl === 'low' ? 1024 : 2048, max), kk = cap / (Z1 - Z0); return { kk, w: Math.round((X1 - X0) * kk), h: cap }; };
+  let { kk: k, w: W, h: H } = dims(S.level);
   const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'), tex = new THREE.CanvasTexture(c);
   const R = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
   const draw = () => {
@@ -160,6 +163,8 @@ function courtTexture(S) {
     x.restore(); tex.needsUpdate = true;
   };
   draw(); S.redraws.push(draw); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = Math.min(8, S.renderer.capabilities.getMaxAnisotropy()); S.track(tex);
+  // If auto graphics steps down to Low mid-drill, redraw the court at the smaller size.
+  S.onLevel.push(() => { const d = dims(S.level); if (d.h < c.height) { c.width = d.w; c.height = d.h; k = d.kk; W = d.w; H = d.h; tex.dispose(); draw(); } });
   return { tex, zMid: (Z0 + Z1) / 2, w: X1 - X0, d: Z1 - Z0 };
 }
 
@@ -326,10 +331,12 @@ export function buildFilmRoom(S) {
   coach.place(-14.2, -12.2, 0.5); coach.pose({ ...POSE.stand, sh: [-1.5, -0.05], sp: [0.1, 0.1], el: [-0.25, -0.2] });
   const laser = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff3b3b, toneMapped: false })); laser.position.set(-4, 9.5, -15.3); scene.add(laser);
   let react = { t0: -10, kind: 'idle' };
+  const calm = reducedMotion(); // no drifting dust, flicker, laser sweep, sway or celebrations
   return {
     setQuestion(text, head, foot, state = 'idle') { q.text = text; q.head = head; q.foot = foot; q.state = state; tex.userData.redraw(); },
     react(now, kind) { react = { t0: now, kind }; },
     update(now) {
+      if (calm) return;
       const pos = dgeo.attributes.position.array; for (let i = 0; i < N; i++) { pos[i * 3 + 1] += Math.sin(now * 0.4 + seed[i]) * 0.0016; pos[i * 3] += Math.cos(now * 0.3 + seed[i]) * 0.0014; } dgeo.attributes.position.needsUpdate = true;
       screen.material.opacity = 1; const flick = 0.97 + 0.03 * Math.sin(now * 31); screen.material.color.setScalar(flick);
       laser.position.set(-4 + Math.sin(now * 0.7) * 3.4, 9.5 + Math.sin(now * 1.1) * 1.8, -15.3);

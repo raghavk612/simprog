@@ -49,6 +49,13 @@ const flat = (S, w, h, color, opacity, tex) => {
 const dot = (S, r, color) => { const m = new THREE.Mesh(new THREE.CircleGeometry(r, 24), new THREE.MeshBasicMaterial({color, transparent: true, opacity: 0.55, depthWrite: false, toneMapped: false})); m.rotation.x = -Math.PI / 2; m.position.y = 0.045; m.renderOrder = 2; S.scene.add(m); return m; };
 // A key aimed at some other control (the dialog's close button, a link) is never ours to take.
 const foreign = e => !!e.target?.closest?.('button:not(.drill-go), a, input, select, textarea, summary');
+// Disabling the focused button would drop focus to <body>; give it back when the button is enabled again.
+function lockBtn(b, off) {
+  if (off) { if (document.activeElement === b) b._focused = true; b.disabled = true; return; }
+  b.disabled = false;
+  if (b._focused && (!document.activeElement || document.activeElement === document.body) && b.isConnected) b.focus({preventScroll: true});
+  b._focused = false;
+}
 const faceYaw = (from, to) => Math.atan2(to.x - from.x, to.z - from.z);
 
 // Press / click / tap / Space / Enter for the timing drills. Returns an unbind function.
@@ -88,7 +95,7 @@ function shot3d(kit, root, spec, onDone) {
     <span class="d3-chip d3-spot"></span>
     <div class="d3-meter"><em>${esc(tu('drill.power'))}</em><div class="d3-track"><i class="d3-fill"></i><i class="d3-band-made"></i><i class="d3-band-swish"></i><b class="d3-cursor"></b></div></div>
     <div class="d3-arc"><b>55°</b><small>${esc(tu('drill.arc'))}</small></div><div class="d3-banner"></div></div></div>
-   <div class="drill-controls d3-controls"><button class="primary drill-go" type="button">${esc(t('drill.shoot'))}</button><p class="d3-keys muted">${esc(t('drill.d3.keys'))}</p></div>
+   <div class="drill-controls d3-controls"><button class="primary drill-go" type="button">${esc(t('drill.shoot'))}</button><p class="d3-keys muted">${esc(t('drill.d3.keys'))}</p><p class="d3-tip" aria-hidden="true">${esc(t('drill.d3.tipShot'))}</p></div>
    <p class="drill-msg muted" aria-live="polite"></p><p class="sr-only d3-sr" aria-live="polite"></p></div>`;
   const $ = s => root.querySelector(s), stageEl = $('.d3-stage');
   const S = createStage(stageEl, {fov: 30, minAspect: 1.0}); if (!S) { root.innerHTML = ''; return null; }
@@ -158,7 +165,7 @@ function shot3d(kit, root, spec, onDone) {
     if (held < 0.14) { cancelCharge(); el.msg.textContent = t('drill.d3.holdMore'); return; }
     const meter = P.meterAt(held), power = P.effectivePower(meter, ideal, assist);
     result = P.simulateShot({spot, angle: arc, aim: aimEff(), power}); phase = 'rise'; riseT0 = S.now(); evIdx = 0;
-    el.btn.disabled = true; el.btn.textContent = t('drill.shoot'); el.meter.classList.remove('live'); guide.visible = false; floorLine.visible = false; ring.visible = false; ring2.visible = false;
+    lockBtn(el.btn, true); el.btn.textContent = t('drill.shoot'); el.meter.classList.remove('live'); guide.visible = false; floorLine.visible = false; ring.visible = false; ring2.visible = false;
   }
   function launch(now) {
     phase = 'flight'; launchT = now; spin = 0; trail.visible = false;
@@ -181,7 +188,7 @@ function shot3d(kit, root, spec, onDone) {
     if (done) { ended = true; el.msg.textContent = text; T.later(() => { if (!disposed) finish(root, spec, made, total, need, onDone); }, 1300); return; }
     const nextSp = queue[shot];
     el.msg.textContent = `${text} ${t('drill.nextSpot', {d: nextSp.dist.toFixed(1)})}`;
-    T.later(() => { if (disposed) return; setSpot(nextSp); phase = 'idle'; hideBanner(el.banner); guide.visible = true; floorLine.visible = true; ring.visible = true; ring2.visible = true; el.btn.disabled = false; announce(); }, 1250);
+    T.later(() => { if (disposed) return; setSpot(nextSp); phase = 'idle'; hideBanner(el.banner); guide.visible = true; floorLine.visible = true; ring.visible = true; ring2.visible = true; lockBtn(el.btn, false); announce(); }, 1250);
   }
 
   /* ---- per-frame ---- */
@@ -248,7 +255,7 @@ function shot3d(kit, root, spec, onDone) {
   let lastKey = 0;
   const key = e => {
     if (!root.isConnected || disposed || foreign(e)) return; const k = e.key;
-    if (k === ' ') { e.preventDefault(); e.stopPropagation(); lastKey = performance.now(); if (e.type === 'keydown') { if (!e.repeat) beginCharge('key'); } else if (chargeSrc === 'key') releaseShot(); return; }
+    if (k === ' ' || k === 'Enter') { e.preventDefault(); e.stopPropagation(); lastKey = performance.now(); if (e.type === 'keydown') { if (!e.repeat) beginCharge('key'); } else if (chargeSrc === 'key') releaseShot(); return; }
     if (k.toLowerCase?.() === 'h') { e.stopPropagation(); return; }
     if (e.type !== 'keydown' || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(k)) return;
     e.preventDefault(); e.stopPropagation(); if (phase !== 'idle' && phase !== 'charge') return;
@@ -283,7 +290,7 @@ function closeout3d(kit, root, spec, onDone) {
   const total = 3, need = 2, assist = !!getA11y().timingAssist, reduced = reducedMotion();
   root.innerHTML = `<div class="drill timing-drill d3-drill">${header(spec, 0, 0, total, need)}
    <div class="d3-stage" role="img" aria-label="${esc(t('drill.d3.canvasCloseout'))}"><div class="d3-hud" aria-hidden="true"><span class="d3-chip d3-round"></span><div class="d3-banner"></div></div></div>
-   <div class="drill-controls d3-controls"><button class="primary drill-go" type="button">${esc(t('drill.closeOut'))}</button><p class="d3-keys muted">${esc(t('drill.d3.coKeys'))}</p></div>
+   <div class="drill-controls d3-controls"><button class="primary drill-go" type="button">${esc(t('drill.closeOut'))}</button><p class="d3-keys muted">${esc(t('drill.d3.coKeys'))}</p><p class="d3-tip" aria-hidden="true">${esc(t('drill.d3.tipTiming'))}</p></div>
    <p class="drill-msg muted" aria-live="polite">${esc(t('drill.d3.coHelp'))}</p></div>`;
   const $ = s => root.querySelector(s), S = createStage($('.d3-stage'), {fov: 40, minAspect: 1.0}); if (!S) { root.innerHTML = ''; return null; }
   whenFonts(S);
@@ -308,7 +315,7 @@ function closeout3d(kit, root, spec, onDone) {
     shooter.place(p.x, p.z, p.faceYaw); defender.place(D0.x, D0.z, faceYaw(D0, S0)); shooter.pose(POSE.catch); defender.pose(POSE.stance);
     cam.to(camPos, camLook, r === 0 ? 0 : 1.0, S.now()); cam.off.set(0, 0, 0); cam.loff.set(0, 0, 0);
     el.chip.textContent = t('drill.d3.round', {n: r + 1, total}); hideBanner(el.banner);
-    el.msg.textContent = t('drill.d3.coHelp'); el.btn.disabled = false;
+    el.msg.textContent = t('drill.d3.coHelp'); lockBtn(el.btn, false);
     // the ring shrinks toward the green band; the band's width is the timing window
     const vRing = (7.4 - RT) / rd.approach; st.vRing = vRing; ringBand.userData.set(Math.max(0.2, RT - vRing * rd.half), RT + vRing * rd.half);
     ringEdge.userData.set(RT + vRing * rd.half - 0.03, RT + vRing * rd.half + 0.05);
@@ -340,7 +347,7 @@ function closeout3d(kit, root, spec, onDone) {
     st.phase = 'result'; const v = st.verdict || 'late', hit = v === 'hit'; if (hit) made++;
     setHeader(root, kit, spec, made, round + 1, total, need);
     const text = hit ? t('drill.handUp') : v === 'early' ? t('drill.d3.coEarly') : t('drill.d3.coLate');
-    banner(el.banner, text, hit ? 'ok' : 'bad'); el.msg.textContent = text; el.btn.disabled = true;
+    banner(el.banner, text, hit ? 'ok' : 'bad'); el.msg.textContent = text; lockBtn(el.btn, true);
     play(hit ? 'confirm' : 'error');
     ringMove.visible = ringBand.visible = ringEdge.visible = false;
     const done = round + 1 >= total || total - (round + 1) + made < need;
@@ -427,7 +434,7 @@ function breathe3d(kit, root, spec, onDone) {
   const total = 3, need = 2, assist = !!getA11y().timingAssist, reduced = reducedMotion();
   root.innerHTML = `<div class="drill timing-drill d3-drill">${header(spec, 0, 0, total, need)}
    <div class="d3-stage" role="img" aria-label="${esc(t('drill.d3.canvasBreathe'))}"><div class="d3-hud" aria-hidden="true"><span class="d3-chip d3-round"></span><div class="d3-cue"></div><div class="d3-banner"></div></div></div>
-   <div class="drill-controls d3-controls"><button class="primary drill-go" type="button">${esc(t('drill.release'))}</button><p class="d3-keys muted">${esc(t('drill.d3.brKeys'))}</p></div>
+   <div class="drill-controls d3-controls"><button class="primary drill-go" type="button">${esc(t('drill.release'))}</button><p class="d3-keys muted">${esc(t('drill.d3.brKeys'))}</p><p class="d3-tip" aria-hidden="true">${esc(t('drill.d3.tipBreathe'))}</p></div>
    <p class="drill-msg muted" aria-live="polite">${esc(t('drill.d3.brHelp'))}</p></div>`;
   const $ = s => root.querySelector(s), S = createStage($('.d3-stage'), {fov: 36}); if (!S) { root.innerHTML = ''; return null; }
   whenFonts(S);
@@ -446,14 +453,14 @@ function breathe3d(kit, root, spec, onDone) {
     const radius = tt => R0 + (R1 - R0) * TM.breath(tt - rd.lead, rd.period);
     st.radius = radius; const rLo = radius(rd.ideal + rd.half), rHi = radius(rd.ideal - rd.half);
     ringBand.userData.set(Math.min(rLo, rHi), Math.max(rLo, rHi)); ringEdge.userData.set(Math.min(rLo, rHi) - 0.04, Math.min(rLo, rHi) + 0.03);
-    el.chip.textContent = t('drill.d3.round', {n: r + 1, total}); hideBanner(el.banner); el.msg.textContent = t('drill.d3.brHelp'); el.btn.disabled = false;
+    el.chip.textContent = t('drill.d3.round', {n: r + 1, total}); hideBanner(el.banner); el.msg.textContent = t('drill.d3.brHelp'); lockBtn(el.btn, false);
     for (const rg of [ringMove, ringBand, ringEdge, ringGlow]) rg.visible = true;
   }
   function conclude(now, verdict) {
     if (st.phase !== 'play') return; st.phase = 'result'; st.verdict = verdict; const hit = verdict === 'hit'; if (hit) made++;
     setHeader(root, kit, spec, made, round + 1, total, need);
     const text = hit ? t('drill.smooth') : verdict === 'early' ? t('drill.early') : t('drill.late');
-    banner(el.banner, text, hit ? 'ok' : 'bad'); el.msg.textContent = text; el.btn.disabled = true; el.cue.textContent = ''; play(hit ? 'confirm' : 'error');
+    banner(el.banner, text, hit ? 'ok' : 'bad'); el.msg.textContent = text; lockBtn(el.btn, true); el.cue.textContent = ''; play(hit ? 'confirm' : 'error');
     ringMove.material.color.set(hit ? 0x4ade80 : 0xf87171);
     const done = round + 1 >= total || total - (round + 1) + made < need;
     if (done) { ended = true; T.later(() => { if (!disposed) finish(root, spec, made, total, need, onDone); }, 1300); }
@@ -506,7 +513,7 @@ function quiz3d(kit, root, spec, onDone) {
   };
   function answer(k) {
     if (ended || locked || disposed) return; const cur = qs[i], right = cur.order[k][1], correct = cur.order.find(o => o[1])[0];
-    if (right) made++; locked = true;
+    if (right) made++; locked = true; const hadFocus = ui.contains(document.activeElement);
     const msg = right ? t('drill.quizRight') : t('drill.quizWrong', {a: correct});
     room.react(S.now(), right ? 'right' : 'wrong'); play(right ? 'confirm' : 'error');
     setHeader(root, kit, spec, made, i + 1, total, need);
@@ -515,7 +522,7 @@ function quiz3d(kit, root, spec, onDone) {
     ui.querySelector('.drill-msg').textContent = msg;
     i++;
     if (i >= total || total - i + made < need) { ended = true; T.later(() => { if (!disposed) finish(root, spec, made, total, need, onDone); }, 1300); return; }
-    T.later(() => { if (disposed) return; locked = false; show(msg); }, 1050);
+    T.later(() => { if (disposed) return; locked = false; show(msg); if (hadFocus) ui.querySelector('[data-k]')?.focus({preventScroll: true}); }, 1050);
   }
   const key = e => { if (!root.isConnected || disposed) return; if (['1', '2', '3'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); if (e.type === 'keydown' && !e.repeat) answer(+e.key - 1); } else if (!foreign(e) && (e.key.toLowerCase?.() === 'h' || e.key === ' ')) e.stopPropagation(); };
   S.ticks.push(now => room.update(now));
