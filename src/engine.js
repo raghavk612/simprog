@@ -282,7 +282,8 @@ export function validSave(s){
    &&(x.pendingEvent==null||(only(x.pendingEvent,['id','params'])&&id(x.pendingEvent.id)&&small(x.pendingEvent.params||{})))
    &&(x.eventLog===undefined||(Array.isArray(x.eventLog)&&x.eventLog.length<=60&&x.eventLog.every(e=>only(e,['week','id','choice'])&&Number.isInteger(e.week)&&e.week>=0&&e.week<=41&&id(e.id)&&id(e.choice))))
    &&(x.upgrades===undefined||(Array.isArray(x.upgrades)&&x.upgrades.length<=UPGRADES.length&&new Set(x.upgrades).size===x.upgrades.length&&x.upgrades.every(k=>UPGRADES.some(u=>u.key===k))))&&(x.seed0===undefined||(Number.isInteger(x.seed0)&&x.seed0>=0&&x.seed0<=4294967295))
-   &&(x.press==null||(only(x.press,['week','questions','done'])&&typeof x.press.done==='boolean'&&Array.isArray(x.press.questions)&&x.press.questions.length<=5&&x.press.questions.every(q=>only(q,['id','params','answer'])&&id(q.id)&&small(q.params||{})&&(q.answer==null||id(q.answer)))));};
+   &&(x.press==null||(only(x.press,['week','questions','done'])&&typeof x.press.done==='boolean'&&Array.isArray(x.press.questions)&&x.press.questions.length<=5&&x.press.questions.every(q=>only(q,['id','params','answer'])&&id(q.id)&&small(q.params||{})&&(q.answer==null||id(q.answer)))))
+   &&(x.pregame==null||(only(x.pregame,['week','questions','done'])&&Number.isInteger(x.pregame.week)&&x.pregame.week>=0&&x.pregame.week<=41&&typeof x.pregame.done==='boolean'&&Array.isArray(x.pregame.questions)&&x.pregame.questions.length<=3&&x.pregame.questions.every(q=>only(q,['id','params','answer'])&&id(q.id)&&small(q.params||{})&&(q.answer==null||id(q.answer)))));};
  const num=(n,min,max)=>Number.isFinite(n)&&n>=min&&n<=max;
  const text=(v,max=200)=>typeof v==='string'&&v.length<=max;
  // Optional structured text: a short key plus a few scalar parameters.

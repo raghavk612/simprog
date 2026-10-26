@@ -11,6 +11,7 @@ import {createJerseyShowcase,SCRIPT_FONT} from './jerseys.js';
 import {lockerBody,jerseyWho,plateName,byNumber,kitName,kitHow} from './locker.js';
 import {gymColors,isSpecialKit,KITS} from './kits.js';
 import * as P from './press.js';
+import * as G from './pregame.js';
 import {t,tu,up,list,has,translateError,formatNumber,formatDate,formatDateTime,initLanguage,localeTag} from './i18n/index.js';
 import {commentaryText as commentary,explanationText,logText,reasonText,feedLines,tv} from './narrative.js';
 import {achievements,newlyEarned} from './achievements.js';
@@ -289,6 +290,19 @@ function choosePress(qi,ans){try{P.answerPress(state,qi,ans);save();
    show(`<div class="inbox-card press"><div class="inbox-icon reporter" aria-hidden="true">${svg(TOAST_ICONS.success)}</div><span class="eyebrow">${tu('press.kicker')}</span><h1>${t('press.done')}</h1><h2>${t('press.effects')}</h2><div class="chips">${chips.map(chipHtml).join('')||`<span class="chip">${t('press.none')}</span>`}</div><div class="modal-actions">${btn(t('inbox.continue'),'press-after','primary')}</div></div>`);modal.querySelector('[data-action="press-after"]')?.focus();render();}
   else showPress();}
  catch(err){notify(translateError(err.message),{type:'error'});play('error');}}
+// ---- Pregame press conference: asked when the coach heads to tip-off. Answers land on tonight's game; skipping costs 5 fans. ----
+const MIC='<rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 10.5a6.5 6.5 0 0013 0M12 17v4M8.5 21h7"/>';
+function preShell(i,total,body){const o=E.opponent(state);return `<div class="inbox-card press pregame"><div class="inbox-icon mic" aria-hidden="true">${svg(MIC)}</div><span class="eyebrow">${tu('pre.kicker')}${total?` · ${esc(t('press.progress',{n:i+1,total}))}`:''}</span><h1>${t('pre.title')}</h1><p class="pre-matchup"><b>${t('game.vs',{opp:esc(o.opponent)})}</b>${o.venue?` · ${esc(o.venue)}`:''}</p>${body}</div>`;}
+function showPregame(){const pr=state?.pregame;if(!pr||pr.done||pr.week!==state.week)return false;const prev=G.previewPregame(state),i=pr.questions.findIndex(x=>!x.answer);if(i<0)return false;const q=pr.questions[i];
+ const qText=t(`pre.${q.id}.q`,Object.fromEntries(Object.entries(q.params||{}).map(([k,v])=>[k,typeof v==='string'?esc(v):v])));
+ show(preShell(i,pr.questions.length,`<div class="drill-pips" aria-hidden="true">${pr.questions.map((x,k)=>`<i class="${x.answer?'done':k===i?'now':''}"></i>`).join('')}</div><p class="inbox-text"><b>${t('press.reporter')}:</b> ${qText}</p><div class="inbox-options">${prev[i].answers.map((a,k)=>`<button type="button" class="inbox-option" data-action="pick-pre" data-q="${i}" data-a="${a.id}" data-pick><kbd class="key">${k+1}</kbd><span><strong>${t(`pre.${q.id}.a.${a.id}`)}</strong><span class="chips">${a.chips.map(chipHtml).join('')||`<span class="chip">${t('press.none')}</span>`}</span></span></button>`).join('')}</div><div class="modal-actions">${btn(t('pre.skip'),'pre-skip','text-button')}</div>`));
+ modal.querySelector('[data-pick]')?.focus();announce(t('pre.title'));return true;}
+function choosePregame(qi,ans){try{G.answerPregame(state,qi,ans);save();
+  if(state.pregame.done){const chips=Object.entries(state.nextMods||{}).filter(([,v])=>v).map(([k,v])=>({k,v,who:'team'}));
+   show(preShell(0,0,`<h2>${t('pre.done')}</h2><h3>${t('pre.effects')}</h3><div class="chips">${chips.map(chipHtml).join('')||`<span class="chip">${t('press.none')}</span>`}</div><div class="modal-actions">${btn(t('pre.tip'),'pre-tip','primary')}</div>`));modal.querySelector('[data-action="pre-tip"]')?.focus();}
+  else showPregame();}
+ catch(err){notify(translateError(err.message),{type:'error'});play('error');}}
+function tipOff(){const bad=E.lineupIssues(state);if(bad.length)throw Error(issueText(bad));E.startMatch(state);lastWhy='';auto=false;arena.clear();setCamera('auto');}
 // After the press room: the inbox may have news.
 function afterPress(){modal.close();const pe=V.rollEvent(state);save();render();if(pe)showEvent();}
 // After a game result is closed: press room first (if the season goes on), then maybe an event.
@@ -466,7 +480,9 @@ return;}
  if(a==='jersey-step'){stepJerseyPlayer(+el.dataset.step);return;}
  if(a==='lk-pick'){play('select');captainPick=captainPick===+el.dataset.id?null:+el.dataset.id;render();return;}
  if(a==='lk-captain'){await makeCaptain(+el.dataset.id);return;}
- if(a==='start-match'){const bad=E.lineupIssues(state);if(bad.length)throw Error(issueText(bad));E.startMatch(state);lastWhy='';auto=false;arena.clear();setCamera('auto');}
+ if(a==='start-match'){const bad=E.lineupIssues(state);if(bad.length)throw Error(issueText(bad));if(!demo&&!state.match&&!state.pendingEvent&&!G.pregameReady(state)&&G.startPregame(state)){save();play('uiClick');if(showPregame())return;}tipOff();}
+ if(a==='pre-tip'||a==='pre-skip'){if(a==='pre-skip')G.skipPregame(state);modal.close();tipOff();play('whistle');save();render();return;}
+ if(a==='pick-pre'){play('select');choosePregame(+el.dataset.q,el.dataset.a);return;}
  if(a==='auto'&&closingMatch){play('uiClick');arena.paused=!arena.paused;render();return;}
  if(a==='auto'){play('uiClick');auto=!auto;arena.paused=!auto;gap=0;if(auto&&!arena.isPlaying()){step();return;}}
  if(a==='step'){play('uiClick');auto=false;arena.paused=false;step();return;}

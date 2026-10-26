@@ -807,3 +807,10 @@ dialog:has(.unlock-pop){width:min(470px,calc(100vw - 24px))}
 @keyframes up-fill{from{transform:scaleX(0)}}
 @media(prefers-reduced-motion:reduce){.unlock-pop,.unlock-pop *{animation:none!important}}
 .a11y-reduced-motion .unlock-pop,.a11y-reduced-motion .unlock-pop *{animation:none!important}
+
+/* ---- pregame press conference ---- */
+.inbox-icon.mic{background:linear-gradient(145deg,#e9b85838,#e9b8580d);border-color:#e9b85866;color:#f3d48f}
+.pregame .pre-matchup{margin:-4px 0 2px;font:700 14px var(--display);letter-spacing:1.3px;text-transform:uppercase;color:#a996c0}
+.pregame .pre-matchup b{color:#fff}
+.pregame h2{margin:4px 0 0}
+.pregame .modal-actions{margin-top:6px}

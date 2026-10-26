@@ -49,10 +49,10 @@ function faceTexture(kit,side,{number,name},font,locked){
   x.fillStyle=kit.ink;x.textAlign='center';x.textBaseline='alphabetic';x.lineJoin='round';
   const letter=(text,px,y,weight)=>{ if(kit.vintage){x.strokeStyle=kit.accent;x.lineWidth=Math.max(5,px/22);x.strokeText(text,W/2,y);} x.fillText(text,W/2,y); };
   if(side==='front'){
-   const script=(text,size,y,maxW,rot)=>{x.save();x.translate(W/2,y);x.rotate(rot);let s=size;x.font=`400 ${s}px ${SCRIPT_FONT}`;while(x.measureText(text).width>maxW&&s>40){s-=4;x.font=`400 ${s}px ${SCRIPT_FONT}`;}x.lineWidth=Math.max(6,s/9);x.strokeStyle=kit.scriptLine||kit.trim;x.strokeText(text,0,0);x.fillStyle=kit.script||kit.ink;x.fillText(text,0,0);x.restore();};
-   script('Lake',122,H*.37,W*.46,-.08);
-   x.font=`800 214px ${font}`;x.lineWidth=24;x.strokeStyle=kit.numLine||kit.trim;x.strokeText(String(number),W/2,H*.665);x.fillStyle=kit.num||kit.ink;x.fillText(String(number),W/2,H*.665);
-   script('Washington',108,H*.835,W*.76,-.07);
+   const script=(text,size,y,maxW,rot)=>{x.save();x.translate(W/2,y);x.rotate(rot);if('letterSpacing' in x)x.letterSpacing='3px';let s=size;x.font=`400 ${s}px ${SCRIPT_FONT}`;while(x.measureText(text).width>maxW&&s>40){s-=4;x.font=`400 ${s}px ${SCRIPT_FONT}`;}x.lineWidth=Math.max(6,s/9);x.strokeStyle=kit.scriptLine||kit.trim;x.strokeText(text,0,0);x.fillStyle=kit.script||kit.ink;x.fillText(text,0,0);x.restore();};
+   script('Lake',112,H*.35,W*.4,-.06);
+   x.font=`800 188px ${font}`;x.lineWidth=22;x.strokeStyle=kit.numLine||kit.trim;x.strokeText(String(number),W/2,H*.635);x.fillStyle=kit.num||kit.ink;x.fillText(String(number),W/2,H*.635);
+   script('Washington',92,H*.81,W*.62,-.045);
   }
   else{fitText(x,name,92,W*.62,800,font);letter(name,72,H*.33);x.font=`italic 900 300px ${font}`;letter(String(number),300,H*.8);}
   if(kit.star&&side==='back'){star(x,W/2,H*.9-2,30,kit.accent);star(x,W/2-74,H*.9+6,17,kit.accent);star(x,W/2+74,H*.9+6,17,kit.accent);}
