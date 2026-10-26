@@ -8,6 +8,7 @@ import {visitorCast} from './identities.js';
 import {qualityProfile, lowerLevel, autoDowngrade, probeDone, PROBE} from './graphics.js';
 import {loadOpponentLogo} from './logos.js';
 import {gymColors} from './kits.js';
+import {classicBody,attachBody,disposeBody,validBody} from './players.js';
 const purple=0x6832ab;
 export class Arena{
  constructor(host){
@@ -64,26 +65,11 @@ export class Arena{
  this.box(5.2,.03,4.6,0x3b2a52,16.3,.015,-13.4).castShadow=false;
  this.addDetails();this.box(2.1,2.7,.1,0x140d1d,-18.2,1.35,-15.96);this.sign('LOCKER ROOM',2.6,.6,-18.2,3.1,-15.93);this.sign('ALWAYS RISING.',10,1.6,9.5,6.4,-15.95,{italic:true});
  }
- player(i,color){const g=new THREE.Group();const skin=[0x9c6946,0xe4b58b,0x66432d,0xb67e57,0xd39871][i%5];const jersey=this.mat(color);const limb=(radius,length,c)=>new THREE.Mesh(new THREE.CapsuleGeometry(radius,length,4,8),this.mat(c));const body=new THREE.Mesh(new THREE.CylinderGeometry(.27,.22,.65,8),jersey);body.position.y=1.18;g.add(body);g.userData.jersey=jersey;const head=new THREE.Mesh(new THREE.SphereGeometry(.205,12,10),this.mat(skin));head.position.y=1.78;g.add(head);g.userData.head=head;const hair=new THREE.Mesh(new THREE.SphereGeometry(.21,12,8,0,Math.PI*2,0,Math.PI*.5),this.mat(0x242025));hair.position.y=1.82;g.add(hair);g.userData.hair=hair;
- const numberGeo=new THREE.PlaneGeometry(.35,.35),uv=numberGeo.attributes.uv;for(let k=0;k<uv.count;k++)uv.setX(k,.25+uv.getX(k)*.5);/* number textures are 2:1: sample the centre square so digits keep their shape */const number=new THREE.Mesh(numberGeo,new THREE.MeshStandardMaterial({map:this.textTexture(String([0,2,3,11,20][i%5]),i<5?'#6832ab':'#f1e9df',i<5?'#ffffff':'#562494',128),roughness:.68,side:THREE.DoubleSide}));number.position.set(0,1.23,.255);g.add(number);g.userData.number=number;const nameplate=new THREE.Mesh(new THREE.PlaneGeometry(.45,.23),new THREE.MeshStandardMaterial({map:this.textTexture('KANGS','#6832ab','#ffffff',256),roughness:.68}));nameplate.position.set(0,1.3,-.255);nameplate.rotation.y=Math.PI;g.add(nameplate);g.userData.nameplate=nameplate;/* small gold C beside the name on the captain's back plate; shown by setIdentity */const capBadge=new THREE.Mesh(new THREE.PlaneGeometry(.11,.11),(this.capMat??=new THREE.MeshBasicMaterial({map:this.textTexture('C','#e9b858','#2a1450',128,{aspect:1}),toneMapped:false})));capBadge.position.set(-.2,1.4,-.262);capBadge.rotation.y=Math.PI;capBadge.visible=false;g.add(capBadge);g.userData.capBadge=capBadge;
- g.userData.legs=[];g.userData.arms=[];
- for(const side of [-1,1]){
-  const hip=new THREE.Group();hip.position.set(side*.15,.86,0);g.add(hip);
-  const thigh=limb(.105,.21,skin);thigh.position.y=-.18;hip.add(thigh);
-  const shorts=new THREE.Mesh(new THREE.BoxGeometry(.25,.27,.3),jersey);shorts.position.y=-.06;hip.add(shorts);
-  const knee=new THREE.Group();knee.position.y=-.38;hip.add(knee);
-  const shin=limb(.085,.22,skin);shin.position.y=-.16;knee.add(shin);
-  const shoe=new THREE.Mesh(new THREE.BoxGeometry(.20,.14,.36),this.mat(0xffffff));shoe.position.set(0,-.34,.07);knee.add(shoe);
-  hip.userData.knee=knee;g.userData.legs.push(hip);
-  const shoulder=new THREE.Group();shoulder.position.set(side*.30,1.46,0);g.add(shoulder);
-  const upper=limb(.075,.18,skin);upper.position.y=-.14;shoulder.add(upper);
-  const elbow=new THREE.Group();elbow.position.y=-.29;shoulder.add(elbow);
-  const forearm=limb(.065,.17,skin);forearm.position.y=-.12;elbow.add(forearm);
-  const hand=new THREE.Mesh(new THREE.SphereGeometry(.075,8,6),this.mat(skin));hand.position.y=-.27;elbow.add(hand);
-  shoulder.userData.elbow=elbow;g.userData.arms.push(shoulder);
- }
- g.traverse(o=>{if(o.isMesh)o.castShadow=true;});return g;
- }
+ player(i,color){const g=new THREE.Group();g.userData.slot=i;attachBody(g,classicBody(this.bodyKit(),i,color));return g;}
+ /* What a body builder needs from the Arena: the shared material style, crisp canvas text and the captain badge. */
+ bodyKit(){return this.kit??={mat:(c,extra)=>this.mat(c,extra),textTexture:(...a)=>this.textTexture(...a),capMat:(this.capMat??=new THREE.MeshBasicMaterial({map:this.textTexture('C','#e9b858','#2a1450',128,{aspect:1}),toneMapped:false}))};}
+ /* Swaps one player's body (see src/players.js) and re-applies his name, number and kit colours to the new one. */
+ swapBody(p,body){if(!validBody(body))return false;const old=attachBody(p,body),who=p.userData.person;if(old&&old!==body&&!old.shared)disposeBody(old,new Set([this.capMat]));p.userData.identity=null;if(who)this.setIdentity(p,{...who,plate:p.userData.plate},who.home);return true;}
  addDetails(){
   // Physical sideline details, rather than extra floating UI.
   for(const side of [-1,1])this.box(1,.8,1.5,0x673a9b,side*14.95,.4,0); // padded stanchion bases, behind the baselines
@@ -132,7 +118,7 @@ export class Arena{
  setIdentity(p,person,home=true){
   const [kb,kf]=gymColors(this.state?.kit||'home',this.state?.trim||'#ffffff'),bg=home?kb:'#db7536';
   const fg=home?kf:'#ffffff';
-  p.userData.person={id:person?.id,number:person?.number,name:person?.name,position:person?.position,home};
+  p.userData.person={id:person?.id,number:person?.number,name:person?.name,position:person?.position,home};p.userData.plate=person?.plate;
   const cap=home&&person?.id!=null&&person.id===this.state?.captain,key=[person?.id,person?.number,person?.name,bg,fg,cap?'C':'',person?.plate||''].join('|');if(p.userData.identity===key)return;p.userData.identity=key;
   p.userData.jersey.color.set(bg);
   const n=p.userData.number.material;n.map.dispose();n.map=this.textTexture(String(person?.number??11),bg,fg,128);
