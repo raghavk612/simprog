@@ -110,6 +110,6 @@ function wall(s){
 export function lockerBody({state:s,avatar,jerseyId,captainPick}){
  const who=jerseyWho(s,jerseyId);
  return `<div class="lk-stage-row"><div id="jersey-stage" class="jersey-stage" role="group" tabindex="0" aria-label="${esc(t('lk.showcase'))}" aria-describedby="jersey-tip"><div class="jersey-caption" id="jersey-caption">${who?`<b>${esc(who.number)}</b> ${esc(plateName(who))}`:''}</div></div>
-  <section class="card lk-kits"><span class="eyebrow">${tu('locker.issue')}</span><h2>${t('locker.title')}</h2><div class="kit-options" role="group" aria-label="${esc(t('locker.kits'))}">${kitButtons(s)}</div>${jerseyPicker(s,jerseyId)}<p class="footnote">${t('locker.note')}</p></section></div>
+  <section class="card lk-kits"><span class="eyebrow">${tu('locker.issue')}</span><h2>${t('locker.title')}</h2><div class="kit-options sr-only" role="group" aria-label="${esc(t('locker.kits'))}">${kitButtons(s)}</div><p class="kit-hint">${svg('<path d="M9 11V5.5a1.5 1.5 0 013 0V10l4.6 1a2 2 0 011.6 2.3L17.5 18a3 3 0 01-3 2.5H11a3 3 0 01-2.4-1.2L5.3 15a1.4 1.4 0 012.1-1.9L9 14.5"/>')}${t('lk.pickHint')}</p><p class="kit-wearing">${t('lk.wearing',{kit:`<b>${esc(kitName(s.kit))}</b>`})}</p>${jerseyPicker(s,jerseyId)}<p class="footnote">${t('locker.note')}</p></section></div>
   <div class="lk-mid">${moodBoard(s)}${captainCard(s,{avatar,pick:captainPick})}</div>${wall(s)}`;
 }

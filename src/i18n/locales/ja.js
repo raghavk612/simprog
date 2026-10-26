@@ -197,6 +197,11 @@ export default {
   face:{happy:'上機嫌',neutral:'普通',upset:'不機嫌'},
   lockerLabel:'背番号{{num}} {{name}}{{cap}}。機嫌は{{face}}、士気{{morale}}、エネルギー{{energy}}。{{tag}}。プロフィールを開く。',
   capSuffix:'、キャプテン',
+  unlockKicker:'ロック解除の方法',
+  unlockGot:'了解',
+  unlockProgress:{throwback:'最長連勝：{{n}} / {{total}}',seniornight:'第{{n}}戦 / 全{{total}}戦 · 最後のホームゲームは第{{home}}戦',seniornightNone:'この日程には最終ラウンド前のホームゲームが残っていません。',blackout:'最終ラウンドは第{{cut}}戦から · 現在は第{{n}}戦'},
+  pickHint:'ジャージをクリックして着用。ロック中のジャージは入手方法を表示します。',
+  wearing:'着用中：{{kit}}',
  },
  locker:{kicker:'自分たちの個性をまとう',intro:'3D体育館で選手が着るユニフォームを選びます。選手の名前はロスターのプロフィールから変更できます。',issue:'Kangs チーム支給品',title:'自分たちらしく。',kits:'ユニフォーム',home:'ホームのパープル',away:'アウェイのホワイト',alternate:'ミッドナイトのオルタネート',note:'学校のパープルとホワイトの伝統にヒントを得たオリジナルのユニフォームです。実在の選手の肖像は使用していません。',showcase:'3種類のユニフォームを展示中：ホームのパープル、アウェイのホワイト、ミッドナイト。横のボタンで選べます。',picked:'{{kit}}のユニフォームを選択しました。',},
  journal:{

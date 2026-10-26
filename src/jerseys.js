@@ -6,6 +6,8 @@ import {KITS,ALL_KITS,SPECIAL_KITS} from './kits.js';
 export {KITS};
 
 const ORDER=ALL_KITS,SPACING=2.3,ROW_Y=[1.5,-1.55];
+// The front reads "Lake" / number / "Washington" in a script like the school's real jerseys (Yellowtail, bundled locally).
+export const SCRIPT_FONT='"Yellowtail","Brush Script MT","Segoe Script",cursive';
 
 // The outline of a tank top in a 0..W by 0..H box (y down), drawn into a 2D canvas path.
 function outline(x,W,H){
@@ -34,8 +36,8 @@ function faceTexture(kit,side,{number,name},font,locked){
  // side panels and a hem stripe
  x.fillStyle=kit.trim;x.globalAlpha=.9;x.fillRect(0,H-26,W,26);x.fillRect(W*.04,H*.34,16,H);x.fillRect(W-W*.04-16,H*.34,16,H);x.globalAlpha=1;
  x.fillStyle=kit.stripe||kit.accent;x.fillRect(0,H-34,W,8);
- if(kit.vintage){ // retro chest bands, purple over gold
-  const y=side==='front'?H*.455:H*.4;x.fillStyle=kit.trim;x.fillRect(0,y,W,22);x.fillStyle=kit.accent;x.fillRect(0,y+30,W,9);}
+ if(kit.vintage&&side==='back'){ // retro chest bands, purple over gold
+  const y=H*.4;x.fillStyle=kit.trim;x.fillRect(0,y,W,22);x.fillStyle=kit.accent;x.fillRect(0,y+30,W,9);}
  x.restore();
  // trim around the neck and arm holes
  x.lineWidth=kit.star?18:14;x.strokeStyle=kit.trim;x.lineJoin='round';
@@ -46,9 +48,14 @@ function faceTexture(kit,side,{number,name},font,locked){
  else{
   x.fillStyle=kit.ink;x.textAlign='center';x.textBaseline='alphabetic';x.lineJoin='round';
   const letter=(text,px,y,weight)=>{ if(kit.vintage){x.strokeStyle=kit.accent;x.lineWidth=Math.max(5,px/22);x.strokeText(text,W/2,y);} x.fillText(text,W/2,y); };
-  if(side==='front'){x.font=`italic 900 92px ${font}`;letter('KANGS',92,H*.42);x.font=`italic 900 230px ${font}`;letter(String(number),230,H*.8);}
+  if(side==='front'){
+   const script=(text,size,y,maxW,rot)=>{x.save();x.translate(W/2,y);x.rotate(rot);let s=size;x.font=`400 ${s}px ${SCRIPT_FONT}`;while(x.measureText(text).width>maxW&&s>40){s-=4;x.font=`400 ${s}px ${SCRIPT_FONT}`;}x.lineWidth=Math.max(6,s/9);x.strokeStyle=kit.scriptLine||kit.trim;x.strokeText(text,0,0);x.fillStyle=kit.script||kit.ink;x.fillText(text,0,0);x.restore();};
+   script('Lake',122,H*.37,W*.46,-.08);
+   x.font=`800 214px ${font}`;x.lineWidth=24;x.strokeStyle=kit.numLine||kit.trim;x.strokeText(String(number),W/2,H*.665);x.fillStyle=kit.num||kit.ink;x.fillText(String(number),W/2,H*.665);
+   script('Washington',108,H*.835,W*.76,-.07);
+  }
   else{fitText(x,name,92,W*.62,800,font);letter(name,72,H*.33);x.font=`italic 900 300px ${font}`;letter(String(number),300,H*.8);}
-  if(kit.star){star(x,W/2,H*.9-2,30,kit.accent);star(x,W/2-74,H*.9+6,17,kit.accent);star(x,W/2+74,H*.9+6,17,kit.accent);}
+  if(kit.star&&side==='back'){star(x,W/2,H*.9-2,30,kit.accent);star(x,W/2-74,H*.9+6,17,kit.accent);star(x,W/2+74,H*.9+6,17,kit.accent);}
  }
  const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;return t;
 }
@@ -80,7 +87,7 @@ export function createJerseyShowcase({onPick}={}){
  const pick=e=>{const r=canvas.getBoundingClientRect();ndc.set(((e.clientX-r.left)/r.width)*2-1,-(((e.clientY-r.top)/r.height)*2-1));ray.setFromCamera(ndc,camera);const hits=ray.intersectObjects(pieces.flatMap(p=>[p.front,p.back]));const h=hits[0]?.object;return pieces.findIndex(p=>p.front===h||p.back===h);};
  canvas.addEventListener('pointermove',e=>{const i=pick(e);if(i!==hoverIdx){hoverIdx=i;canvas.style.cursor=i>=0?'pointer':'default';wake();}});
  canvas.addEventListener('pointerleave',()=>{hoverIdx=-1;wake();});
- canvas.addEventListener('click',e=>{const i=pick(e);if(i>=0){selected=pieces[i].kitKey;onPick?.(selected);wake();}});
+ canvas.addEventListener('click',e=>{const i=pick(e);if(i>=0){const p=pieces[i];if(!p.locked)selected=p.kitKey;onPick?.(p.kitKey);wake();}});
  function resize(){const r=canvas.parentElement?.getBoundingClientRect();if(!r||!r.width||!r.height)return;if(Math.abs(r.width-size.w)<1&&Math.abs(r.height-size.h)<1)return;size={w:r.width,h:r.height};renderer.setSize(r.width,r.height,false);canvas.style.width='100%';canvas.style.height='100%';camera.aspect=r.width/r.height;
   // keep all six jerseys in view, whichever of width or height is the tight one
   const half=Math.tan(THREE.MathUtils.degToRad(camera.fov/2)),needW=(2*SPACING+2.5)/(2*half*Math.max(camera.aspect,.1)),needH=(ROW_Y[0]-ROW_Y[1]+3.5)/(2*half);camera.position.z=Math.max(5.4,needW,needH);camera.position.y=(ROW_Y[0]+ROW_Y[1])/2+.1;camera.lookAt(0,(ROW_Y[0]+ROW_Y[1])/2,0);camera.updateProjectionMatrix();}

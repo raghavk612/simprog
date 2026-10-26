@@ -230,6 +230,11 @@ export default {
   face:{happy:'joyeux',neutral:'neutre',upset:'contrarié'},
   lockerLabel:'N° {{num}} {{name}}{{cap}}. Humeur {{face}}, moral {{morale}}, énergie {{energy}}. {{tag}}. Ouvrir le profil.',
   capSuffix:', capitaine',
+  unlockKicker:'Comment débloquer',
+  unlockGot:'Compris',
+  unlockProgress:{throwback:'Meilleure série de victoires : {{n}} sur {{total}}',seniornight:'Match {{n}} sur {{total}} · le dernier match à domicile est le {{home}}',seniornightNone:'Ce calendrier n’a plus de match à domicile avant la phase finale.',blackout:'La phase finale commence au match {{cut}} · vous en êtes au match {{n}}'},
+  pickHint:'Cliquez sur un maillot pour le porter. Les maillots verrouillés indiquent comment les obtenir.',
+  wearing:'Tenue : {{kit}}',
  },
  locker:{
   kicker:'Affichez votre identité',

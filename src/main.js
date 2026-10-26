@@ -7,9 +7,9 @@ import {Arena} from './arena.js';
 import {mountDrill,drillName} from './drills.js';
 import {opponentLogo} from './logos.js';
 import * as V from './events.js';
-import {createJerseyShowcase} from './jerseys.js';
+import {createJerseyShowcase,SCRIPT_FONT} from './jerseys.js';
 import {lockerBody,jerseyWho,plateName,byNumber,kitName,kitHow} from './locker.js';
-import {gymColors,isSpecialKit} from './kits.js';
+import {gymColors,isSpecialKit,KITS} from './kits.js';
 import * as P from './press.js';
 import {t,tu,up,list,has,translateError,formatNumber,formatDate,formatDateTime,initLanguage,localeTag} from './i18n/index.js';
 import {commentaryText as commentary,explanationText,logText,reasonText,feedLines,tv} from './narrative.js';
@@ -300,8 +300,18 @@ function inboxCard(){if(!state||state.finished)return '';if(state.pendingEvent&&
 // Wearing a kit: core kits always, special kits once the season has earned them (E.setKit refuses a locked one).
 function wearKit(k){
  if(!state)return;
- if(!E.kitUnlocked(state,k)){play('error');notify(t('lk.lockedPick',{kit:kitName(k),how:kitHow(state,k)}),{type:'info',title:t('lk.locked'),icon:'staff'});return;}
+ if(!E.kitUnlocked(state,k)){unlockPopup(k);return;}
  E.setKit(state,k);save();play('select');announce(t('locker.picked',{kit:kitName(k)}));arena.update(state);render();
+}
+// A locked special jersey: an animated card that says how to earn it and how close the season is.
+function unlockPopup(k){
+ const P=E.seasonPlan(state),home=E.lastHomeGame(state),n=Math.min(state.week+1,state.schedule.length),total=state.schedule.length,col=KITS[k]||KITS.home;
+ let pct=0,prog='';
+ if(k==='throwback'){const best=E.winStreak(state);pct=Math.min(1,best/E.KIT_STREAK);prog=t('lk.unlockProgress.throwback',{n:Math.min(best,E.KIT_STREAK),total:E.KIT_STREAK});}
+ else if(k==='seniornight'){if(home<0)prog=t('lk.unlockProgress.seniornightNone');else{pct=Math.min(1,state.week/Math.max(1,home));prog=t('lk.unlockProgress.seniornight',{n,total,home:home+1});}}
+ else{pct=Math.min(1,state.week/Math.max(1,P.cut));prog=t('lk.unlockProgress.blackout',{cut:P.cut+1,n});}
+ play('select');
+ show(`<div class="unlock-pop" style="--kit:${col.body};--kit2:${col.trim}"><div class="up-art" aria-hidden="true"><svg class="up-shirt" viewBox="0 0 120 120"><path d="M40 10h11q9 13 18 0h11l27 15-11 23-12-6v66H36V42l-12 6-11-23z"/></svg><span class="up-shine"></span><span class="up-lock">${svg('<rect x="5" y="11" width="14" height="9.5" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>')}</span></div><span class="eyebrow">${tu('lk.unlockKicker')}</span><h1>${esc(kitName(k))}</h1><p class="up-how">${esc(t(`lk.how.${k}`,{n:E.KIT_STREAK}))}</p><div class="up-meter" role="progressbar" aria-label="${esc(prog)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct*100)}"><i style="--p:${pct}"></i></div><p class="up-prog">${esc(prog)}</p><div class="modal-actions">${btn(t('lk.unlockGot'),'close','primary')}</div></div>`);
 }
 // Name and number on all the showcase jerseys. Only the textures are repainted; the select, the caption and the 3D scene are updated in place.
 function applyJerseyPlayer(){
@@ -323,7 +333,7 @@ function stepJerseyPlayer(step){
  jerseyId=list[(i+step+list.length)%list.length].id;play('select');applyJerseyPlayer();announce(t('lk.jerseyNow',{num:jerseyWho(state,jerseyId).number,name:plateName(jerseyWho(state,jerseyId))}));
 }
 function mountJerseys(){const box=$('#jersey-stage');if(!box)return;
- if(!jerseysTried){jerseysTried=true;jerseys=createJerseyShowcase({onPick:wearKit});jerseys?.setMotion(!getA11y().reducedMotion);document.fonts?.ready.then(()=>jerseys?.refreshFont());}
+ if(!jerseysTried){jerseysTried=true;jerseys=createJerseyShowcase({onPick:wearKit});jerseys?.setMotion(!getA11y().reducedMotion);document.fonts?.ready.then(()=>jerseys?.refreshFont());document.fonts?.load(`400 100px ${SCRIPT_FONT}`).then(()=>jerseys?.refreshFont()).catch(()=>{});}
  if(!jerseys){box.classList.add('no-webgl');return;}
  jerseys.setUnlocked(state.unlockedKits||[]);jerseys.setKit(state.kit);applyJerseyPlayer();jerseys.mount(box);
  box.addEventListener('keydown',e=>{if((e.key!=='ArrowRight'&&e.key!=='ArrowLeft')||e.target!==box||e.ctrlKey||e.metaKey||e.altKey)return;e.preventDefault();stepJerseyPlayer(e.key==='ArrowRight'?1:-1);});
@@ -337,7 +347,7 @@ function renderTutorial(){const el=document.createElement('div');el.className='t
  const nav=$(`.sidebar [data-view="${['roster','practice','staff','game'][tutorial-1]}"]`);
  if(nav){nav.classList.add('tour-target');const r=nav.getBoundingClientRect();if(innerWidth>760&&r.width){el.classList.add('aimed');el.style.left=`${Math.round(r.right+24)}px`;el.style.bottom='auto';el.style.top=`${Math.max(60,Math.min(innerHeight-el.offsetHeight-20,Math.round(r.top-8)))}px`;el.querySelector('.tutorial-arrow').textContent='←';}}}
 const link=(href,label)=>`<a href="${href}" target="_blank" rel="noreferrer">${label}</a>`;
-function credits(){show(`<span class="eyebrow">${tu('credits.kicker')}</span><h1>${t('side.credits')}</h1><h2>${t('credits.creators')}</h2><p class="creator-names">Ajisth Sareen<br>Raghav Krishnan<br>Malhar Pawar</p><h2>${t('credits.assets')}</h2><ul class="sources"><li>${t('credits.logos')}</li><li>${t('credits.kenney',{link:link('https://kenney.nl/assets/furniture-kit','Kenney Furniture Kit'),loaded:arena.models})}</li><li>${t('credits.three',{link:link('https://threejs.org/','Three.js')})}</li><li>${t('credits.fonts',{barlow:link('https://fonts.google.com/specimen/Barlow','Barlow'),condensed:link('https://fonts.google.com/specimen/Barlow+Condensed','Barlow Condensed')})}</li><li>${t('credits.vite',{link:link('https://vite.dev/','Vite')})}</li><li>${t('credits.finalscore',{link:link(data.source,'KingCo Athletics'),season:esc(data.season)})}</li><li>${t('credits.kangs',{link:link('https://www.kangsbasketball.com/hs','Lake Washington Boys Basketball')})}</li><li>${t('credits.nfhs',{link:link('https://www.nfhs.org/sports/basketball/rules','NFHS basketball rules')})}</li><li>${t('credits.fbla',{event:link('https://www.fbla.org/competitive-events/computer-game-simulation-programming/','FBLA event'),guidelines:link('https://greektrack-fbla-public.s3.us-east-1.amazonaws.com/files/1/High%20School%20Competitive%20Events%20Resources/Individual%20Guidelines/Presentation%20Events/Computer-Game-Simulation-Programming.pdf','2026–27')})}</li><li>${t('credits.ecoquest',{link:link('https://github.com/Rishboy39/EcoQuest','EcoQuest')})}</li></ul><p>${t('credits.generated')}</p><p>${t('credits.render')}</p>`);}
+function credits(){show(`<span class="eyebrow">${tu('credits.kicker')}</span><h1>${t('side.credits')}</h1><h2>${t('credits.creators')}</h2><p class="creator-names">Ajisth Sareen<br>Raghav Krishnan<br>Malhar Pawar</p><h2>${t('credits.assets')}</h2><ul class="sources"><li>${t('credits.logos')}</li><li>${t('credits.kenney',{link:link('https://kenney.nl/assets/furniture-kit','Kenney Furniture Kit'),loaded:arena.models})}</li><li>${t('credits.three',{link:link('https://threejs.org/','Three.js')})}</li><li>${t('credits.fonts',{barlow:link('https://fonts.google.com/specimen/Barlow','Barlow'),condensed:link('https://fonts.google.com/specimen/Barlow+Condensed','Barlow Condensed')})}</li><li>${link('https://fonts.google.com/specimen/Yellowtail','Yellowtail')} · Astigmatic · Apache 2.0</li><li>${t('credits.vite',{link:link('https://vite.dev/','Vite')})}</li><li>${t('credits.finalscore',{link:link(data.source,'KingCo Athletics'),season:esc(data.season)})}</li><li>${t('credits.kangs',{link:link('https://www.kangsbasketball.com/hs','Lake Washington Boys Basketball')})}</li><li>${t('credits.nfhs',{link:link('https://www.nfhs.org/sports/basketball/rules','NFHS basketball rules')})}</li><li>${t('credits.fbla',{event:link('https://www.fbla.org/competitive-events/computer-game-simulation-programming/','FBLA event'),guidelines:link('https://greektrack-fbla-public.s3.us-east-1.amazonaws.com/files/1/High%20School%20Competitive%20Events%20Resources/Individual%20Guidelines/Presentation%20Events/Computer-Game-Simulation-Programming.pdf','2026–27')})}</li><li>${t('credits.ecoquest',{link:link('https://github.com/Rishboy39/EcoQuest','EcoQuest')})}</li></ul><p>${t('credits.generated')}</p><p>${t('credits.render')}</p>`);}
 
 const RULE_TABS=['controls','goal','difficulty','rotation','prep','gameday','court','data'];
 function rules(tab=0){tab=(tab+RULE_TABS.length)%RULE_TABS.length;const P=state?plan():null;const row=(keyHtml,text)=>`<div class="ctl-row"><div class="ctl-keys">${keyHtml}</div><span>${text}</span></div>`;const chips=list=>`<div class="rule-chips">${list.map(([a,b])=>`<div><strong>${a}</strong><span>${b}</span></div>`).join('')}</div>`;const key=name=>kbd(esc(keyLabel(keys[name])));

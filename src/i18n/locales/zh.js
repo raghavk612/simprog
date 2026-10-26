@@ -197,6 +197,11 @@ export default {
   face:{happy:'开心',neutral:'平静',upset:'沮丧'},
   lockerLabel:'{{num}} 号 {{name}}{{cap}}。情绪{{face}}，士气 {{morale}}，体力 {{energy}}。{{tag}}。打开资料。',
   capSuffix:'，队长',
+  unlockKicker:'如何解锁',
+  unlockGot:'知道了',
+  unlockProgress:{throwback:'最长连胜：{{n}} / {{total}}',seniornight:'第 {{n}} 场，共 {{total}} 场 · 最后一场主场是第 {{home}} 场',seniornightNone:'本赛程在最终阶段前已没有主场比赛。',blackout:'最终阶段从第 {{cut}} 场开始 · 你现在是第 {{n}} 场'},
+  pickHint:'点击球衣即可穿上。未解锁的球衣会显示获得方法。',
+  wearing:'当前球衣：{{kit}}',
  },
  locker:{kicker:'穿上属于你的身份',intro:'选择球员在 3D 球馆里穿的球衣。可在球员资料中修改球员姓名。',issue:'Kangs 球队队服',title:'让它属于你。',kits:'球衣款式',home:'主场紫',away:'客场白',alternate:'午夜备选',note:'原创球衣设计，灵感来自学校的紫白配色。未使用任何真实运动员的肖像。',showcase:'展示三件球衣：主场紫色、客场白色和午夜黑。请用旁边的按钮选择。',picked:'已选择{{kit}}球衣。',},
  journal:{

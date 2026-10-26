@@ -218,6 +218,11 @@ export default {
   face:{happy:'happy',neutral:'neutral',upset:'upset'},
   lockerLabel:'#{{num}} {{name}}{{cap}}. Mood {{face}}, morale {{morale}}, energy {{energy}}. {{tag}}. Open profile.',
   capSuffix:', captain',
+  unlockKicker:'How to unlock',
+  unlockGot:'Got it',
+  unlockProgress:{throwback:'Best win streak: {{n}} of {{total}}',seniornight:'Game {{n}} of {{total}} · the last home game is game {{home}}',seniornightNone:'This schedule has no home game left before the final run.',blackout:'The final run starts at game {{cut}} · you are on game {{n}}'},
+  pickHint:'Click a jersey to wear it. Locked jerseys show how to earn them.',
+  wearing:'Wearing: {{kit}}',
  },
  locker:{kicker:'Wear your identity',intro:'Choose the kit your players wear in the 3D gym. Rename players through their roster profiles.',issue:'Kangs team issue',title:'Make it yours.',kits:'Jersey kits',home:'Home purple',away:'Away white',alternate:'Midnight alternate',note:'Original jersey designs inspired by the school’s purple and white identity. No athlete likeness is used.',showcase:'Three jerseys on display: home purple, away white and midnight. Use the buttons beside them to choose one.',picked:'{{kit}} jersey selected.',},
  journal:{
