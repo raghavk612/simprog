@@ -16,5 +16,5 @@ export const KITS={
  // Blackout: black with purple and gold.
  blackout:{body:'#0b0910',dark:'#030207',trim:'#9d5cf2',ink:'#e9b858',accent:'#9d5cf2',stripe:'#e9b858'}
 };
-const GYM={home:['#6832ab',null],away:['#f4effc','#562494'],alternate:['#191126',null],throwback:['#f1e6c8','#6832ab'],seniornight:['#6832ab','#e9b858'],blackout:['#0b0910','#b78cff']};
+const GYM={home:['#6832ab',null],away:['#f4effc','#562494'],alternate:['#191126',null],throwback:['#f1e6c8','#6832ab'],seniornight:['#6832ab','#e9b858'],blackout:['#0b0910','#e9b858']};
 export const gymColors=(kit,trim='#ffffff')=>{const [bg,fg]=GYM[kit]||GYM.home;return [bg,fg||trim];};

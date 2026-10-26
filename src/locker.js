@@ -100,7 +100,7 @@ function wall(s){
    const st=lockerStatus(p),cap=p.id===s.captain,en=Math.round(p.energy),mo=Math.round(p.morale),tag=t(`lk.tag.${st.tag}`);
    const label=t('lk.lockerLabel',{num:p.number,name:esc(p.name),cap:cap?t('lk.capSuffix'):'',face:t(`lk.face.${moodFace(p.morale)}`),morale:mo,energy:en,tag});
    return `<button type="button" data-action="player" data-id="${p.id}" class="lk ${st.glow?`glow ${st.glow}`:''} ${cap?'captain':''}" aria-label="${label}">
-    ${cap?`<span class="lk-c" aria-hidden="true">${t('captain.c')}</span>`:''}<span class="lk-top"><b class="lk-num">${esc(p.number)}</b>${face(p.morale)}</span><span class="lk-vents" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    ${cap?`<span class="lk-c" aria-hidden="true">${t('captain.c')}</span>`:''}<span class="lk-row"><b class="lk-num">${esc(p.number)}</b>${face(p.morale)}</span><span class="lk-vents" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
     <span class="lk-plate"><strong>${esc(plateName(p))}</strong><small>${esc(givenNames(p))||'&nbsp;'}</small></span>
     <span class="lk-energy" aria-hidden="true"><span class="lk-bar"><i class="${en<40?'low':''}" style="width:${en}%"></i></span><em>${en}</em></span>
     <span class="lk-tag ${st.tone}" aria-hidden="true">${tag}${st.tag==='gpa'?` ${p.gpa.toFixed(1)}`:''}</span><span class="lk-handle" aria-hidden="true"></span></button>`;}).join('')}</div></section>`;
@@ -109,7 +109,7 @@ function wall(s){
 /* The whole page body (below the page heading). ctx: {state, avatar(p,size), jerseyId, captainPick}. */
 export function lockerBody({state:s,avatar,jerseyId,captainPick}){
  const who=jerseyWho(s,jerseyId);
- return `<div class="lk-top"><div id="jersey-stage" class="jersey-stage" role="group" tabindex="0" aria-label="${esc(t('lk.showcase'))}" aria-describedby="jersey-tip"><div class="jersey-caption" id="jersey-caption">${who?`<b>${esc(who.number)}</b> ${esc(plateName(who))}`:''}</div></div>
+ return `<div class="lk-stage-row"><div id="jersey-stage" class="jersey-stage" role="group" tabindex="0" aria-label="${esc(t('lk.showcase'))}" aria-describedby="jersey-tip"><div class="jersey-caption" id="jersey-caption">${who?`<b>${esc(who.number)}</b> ${esc(plateName(who))}`:''}</div></div>
   <section class="card lk-kits"><span class="eyebrow">${tu('locker.issue')}</span><h2>${t('locker.title')}</h2><div class="kit-options" role="group" aria-label="${esc(t('locker.kits'))}">${kitButtons(s)}</div>${jerseyPicker(s,jerseyId)}<p class="footnote">${t('locker.note')}</p></section></div>
   <div class="lk-mid">${moodBoard(s)}${captainCard(s,{avatar,pick:captainPick})}</div>${wall(s)}`;
 }

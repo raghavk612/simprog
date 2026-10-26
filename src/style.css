@@ -613,8 +613,8 @@ img.opp-logo,.bug2k .bug-team img.bug-logo,img.opp-badge:not(.ph){filter:drop-sh
 @media(max-width:620px){.nudge-card p{font-size:calc(16px*var(--ts,1)*var(--ls,1))}}
 
 /* ---- locker room hub: showcase + kits, captain's corner, mood board, player lockers ---- */
-.lk-top{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px;align-items:stretch;margin-bottom:22px}
-.lk-top .jersey-stage{min-height:600px}
+.lk-stage-row{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:22px;align-items:stretch;margin-bottom:22px}
+.lk-stage-row .jersey-stage{min-height:600px}
 .jersey-stage:focus-visible{outline:3px solid #a879e5;outline-offset:3px}
 .jersey-caption{position:absolute;z-index:2;left:50%;bottom:14px;transform:translateX(-50%);padding:6px 18px;border-radius:999px;background:#140d20d6;border:1px solid #ffffff2e;color:#fff;font:800 calc(21px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:.6px;pointer-events:none;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis;text-transform:uppercase}
 .jersey-caption b{color:#e9b858;margin-right:6px}
@@ -714,7 +714,7 @@ img.opp-logo,.bug2k .bug-team img.bug-logo,img.opp-badge:not(.ph){filter:drop-sh
 @keyframes lk-warn{50%{box-shadow:0 0 0 2px #f0a93bd9,0 0 38px #f0a93bcc,inset 0 1px 0 #ffffff33,inset 0 -12px 20px #00000045}}
 @keyframes lk-bad{50%{box-shadow:0 0 0 2px #ff5c5cf0,0 0 40px #ff5c5ccc,inset 0 1px 0 #ffffff33,inset 0 -12px 20px #00000045}}
 .lk-c{position:absolute;top:-10px;right:-8px;z-index:2;display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#e9b858;color:#140c20;font:900 calc(17px*var(--ts,1)*var(--ls,1)) var(--display);box-shadow:0 2px 8px #000a,0 0 0 2px #1d1530}
-.lk .lk-top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.lk .lk-row{display:flex;align-items:center;justify-content:space-between;gap:6px}
 .lk-num{font:900 italic calc(36px*var(--ts,1)*var(--ls,1))/1 var(--display);color:#e9b858;letter-spacing:.5px;text-shadow:0 2px 0 #00000055}
 .lk-face{flex:none;width:30px;height:30px;overflow:visible}
 .lk-face .fc{fill:#f2c75c;stroke:#2b1d12;stroke-width:1}
@@ -736,12 +736,12 @@ img.opp-logo,.bug2k .bug-team img.bug-logo,img.opp-badge:not(.ph){filter:drop-sh
 .lk-tag.warn{color:#ffd48f;background:#f0a93b2e;border-color:#f0a93b99}
 .lk-tag.bad{color:#ffb4b4;background:#ff5c5c2e;border-color:#ff5c5ca0}
 .lk-handle{position:absolute;right:5px;top:56%;width:5px;height:34px;border-radius:3px;background:linear-gradient(90deg,#c7c0da,#7d7596);box-shadow:0 1px 2px #000a}
-@media(max-width:1150px){.lk-top .jersey-stage{min-height:520px}.lk-wall{grid-template-columns:repeat(auto-fill,minmax(124px,1fr))}}
+@media(max-width:1150px){.lk-stage-row .jersey-stage{min-height:520px}.lk-wall{grid-template-columns:repeat(auto-fill,minmax(124px,1fr))}}
 @media(max-width:1150px){.lk-captain{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr)}.cc-act{grid-column:1/-1}}
-@media(max-width:960px){.lk-captain{grid-template-columns:minmax(0,1fr)}.lk-top{grid-template-columns:minmax(0,1fr)}.lk-top .jersey-stage{min-height:440px}}
+@media(max-width:960px){.lk-captain{grid-template-columns:minmax(0,1fr)}.lk-stage-row{grid-template-columns:minmax(0,1fr)}.lk-stage-row .jersey-stage{min-height:440px}}
 @media(max-width:620px){
- .lk-top,.lk-mid{gap:16px;margin-bottom:16px}.lk-captain{gap:18px}
- .lk-top .jersey-stage{min-height:400px}
+ .lk-stage-row,.lk-mid{gap:16px;margin-bottom:16px}.lk-captain{gap:18px}
+ .lk-stage-row .jersey-stage{min-height:400px}
  .jersey-caption{font-size:calc(17px*var(--ts,1)*var(--ls,1));bottom:10px}
  .lk-kits .kit-options{gap:6px}.lk-kits .kit{padding:10px 3px}
  .kit-how{font-size:calc(11px*var(--ts,1)*var(--ls,1))}

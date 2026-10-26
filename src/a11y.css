@@ -224,3 +224,6 @@ html.theme-light:not(.a11y-high-contrast) :is(.whiteboard,.lk-wall){filter:inver
 .a11y-high-contrast .lk-chip{border:2px solid #fff!important;background:#000!important}.a11y-high-contrast .lk-chip.current,.a11y-high-contrast .lk-chip.picked{border:4px double #ffe28a!important}
 .a11y-high-contrast .cc-now,.a11y-high-contrast .cc-cost{background:#000!important;border:2px solid #fff!important;color:#fff}
 .a11y-high-contrast .kit.locked{border:2px dashed #fff!important}.a11y-high-contrast .kit-how,.a11y-high-contrast .kit-lock{color:#fff!important}
+.a11y-high-contrast .whiteboard *{color:#000!important;text-shadow:none!important}
+.a11y-high-contrast .whiteboard .mb-flags li b{color:#fff!important}
+.a11y-high-contrast .whiteboard .cap-badge{color:#000!important}
