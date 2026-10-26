@@ -4,6 +4,7 @@
 import {t,tu,list} from './i18n/index.js';
 import {getA11y} from './settings.js';
 import {play} from './audio.js';
+import {mount3d} from './drillscenes.js';
 
 // Names, instructions and quiz questions live in the language files (drill.*); only the mechanics are described here.
 export const DRILLS = {
@@ -19,11 +20,21 @@ export const drillName = key => t(`drill.${key}.name`);
 const bag = () => { const ids = new Set(); return { later: (fn, ms) => { const id = setTimeout(() => { ids.delete(id); fn(); }, ms); ids.add(id); }, clear: () => { ids.forEach(clearTimeout); ids.clear(); } }; };
 const shuffle = (a, r = Math.random) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
+// Every drill is played in 3D (drillscenes.js). If WebGL is not available the original 2D drills below take over,
+// so a practice session can always be completed.
 export function mountDrill(root, key, onDone) {
   const spec = DRILLS[key] && { ...DRILLS[key], key }; if (!spec) throw Error('Unknown drill');
-  if (spec.kind === 'three' || spec.kind === 'freethrow') return shotDrill(root, spec, onDone);
-  if (spec.kind === 'quiz') return quizDrill(root, spec, onDone);
-  return timingDrill(root, spec, onDone);
+  const mount2d = () => {
+    if (spec.kind === 'three' || spec.kind === 'freethrow') return shotDrill(root, spec, onDone);
+    if (spec.kind === 'quiz') return quizDrill(root, spec, onDone);
+    return timingDrill(root, spec, onDone);
+  };
+  let current = null, swapped = false;
+  // If the GPU drops the WebGL context mid-drill, restart this drill cleanly in 2D.
+  const kit = { header, bag, finish, shuffle, onLost() { if (swapped) return; swapped = true; try { current?.(); } catch { /* already torn down */ } root.innerHTML = ''; current = mount2d(); } };
+  try { current = mount3d(kit, root, spec, onDone); } catch (err) { console.warn('3D drill unavailable, using the 2D drill', err); root.innerHTML = ''; }
+  if (!current) { swapped = true; current = mount2d(); }
+  return () => { const c = current; current = null; c?.(); };
 }
 
 function header(spec, made, i, total, need) {

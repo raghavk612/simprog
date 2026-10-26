@@ -1,6 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
 import en from '../src/i18n/locales/en.js';
 import {GRAPHICS_LEVELS} from '../src/graphics.js';
+import {THREE_SPOTS,FT_SPOT} from '../src/shotphysics.js';
 import {LANGUAGES,t,tu,list,has,translateError,setLanguage,getLanguage,detectLanguage,formatDate,supported} from '../src/i18n/index.js';
 import {plans,staff,DIFFICULTIES,UPGRADES} from '../src/engine.js';import {VALUES} from '../src/narrative.js';import {SHOTS} from '../src/basketball.js';import {SOUND_KEYS} from '../src/audio.js';import {ACTIONS} from '../src/keys.js';
 const read=f=>fs.readFileSync(new URL(f,import.meta.url),'utf8');
@@ -21,7 +22,7 @@ test('every language is listed, supported and has a locale file',()=>{
 });
 test('every static translation key used by the code exists in English',()=>{
  const missing=[];
- for(const file of ['../src/main.js','../src/settingsDialog.js','../src/narrative.js','../src/drills.js','../src/locker.js','../src/i18n/index.js']){
+ for(const file of ['../src/main.js','../src/settingsDialog.js','../src/narrative.js','../src/drills.js','../src/locker.js','../src/drillscenes.js','../src/drills3d.js','../src/i18n/index.js']){
   for(const m of read(file).matchAll(/\b(?:t|tu|tb|list|has)\('([a-zA-Z0-9_.]+)'/g)){
    const key=m[1];if(!Object.keys(flat).some(k=>k===key||k.startsWith(`${key}.`)))missing.push(`${file}: ${key}`);
   }
@@ -54,6 +55,8 @@ for(const l of GRAPHICS_LEVELS)need.push(`settings.accessibility.graphicsOptions
  for(const v of ['none','deuteranopia','protanopia','tritanopia'])need.push(`settings.accessibility.colorBlindOptions.${v}`);
  for(const v of ['default','modern','readable'])need.push(`settings.accessibility.fontOptions.${v}`);
  for(const v of ['0_5','0_75','1'])need.push(`settings.accessibility.playbackSpeedOptions.${v}`);
+ for(const v of [...THREE_SPOTS.map(x=>x.id),FT_SPOT.id])need.push(`drill.d3.spots.${v}`);
+ for(const v of ['left','right','onLine'])need.push(`drill.d3.${v}`);
  for(const v of ['guard','forward'])need.push(`pos.${v}`);
  for(const v of ['senior','junior','sophomore','prospect','tryout'])need.push(`year.${v}`);
  for(const v of ['injured','ineligible','exhausted'])need.push(`status.${v}`);
