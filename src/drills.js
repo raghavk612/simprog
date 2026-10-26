@@ -24,12 +24,17 @@ const shuffle = (a, r = Math.random) => { a = [...a]; for (let i = a.length - 1;
 // so a practice session can always be completed.
 export function mountDrill(root, key, onDone) {
   const spec = DRILLS[key] && { ...DRILLS[key], key }; if (!spec) throw Error('Unknown drill');
-  let cleanup3d = null;
-  try { cleanup3d = mount3d({ header, bag, finish, shuffle }, root, spec, onDone); } catch (err) { console.warn('3D drill unavailable, using the 2D drill', err); root.innerHTML = ''; }
-  if (cleanup3d) return cleanup3d;
-  if (spec.kind === 'three' || spec.kind === 'freethrow') return shotDrill(root, spec, onDone);
-  if (spec.kind === 'quiz') return quizDrill(root, spec, onDone);
-  return timingDrill(root, spec, onDone);
+  const mount2d = () => {
+    if (spec.kind === 'three' || spec.kind === 'freethrow') return shotDrill(root, spec, onDone);
+    if (spec.kind === 'quiz') return quizDrill(root, spec, onDone);
+    return timingDrill(root, spec, onDone);
+  };
+  let current = null, swapped = false;
+  // If the GPU drops the WebGL context mid-drill, restart this drill cleanly in 2D.
+  const kit = { header, bag, finish, shuffle, onLost() { if (swapped) return; swapped = true; try { current?.(); } catch { /* already torn down */ } root.innerHTML = ''; current = mount2d(); } };
+  try { current = mount3d(kit, root, spec, onDone); } catch (err) { console.warn('3D drill unavailable, using the 2D drill', err); root.innerHTML = ''; }
+  if (!current) { swapped = true; current = mount2d(); }
+  return () => { const c = current; current = null; c?.(); };
 }
 
 function header(spec, made, i, total, need) {

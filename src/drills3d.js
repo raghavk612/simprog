@@ -27,6 +27,8 @@ export function createStage(host, { fov = 38, minAspect = 1.0 } = {}) {
   renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.95;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.setClearColor(0x100e22);
   const canvas = renderer.domElement; canvas.className = 'd3-canvas'; canvas.setAttribute('aria-hidden', 'true'); host.prepend(canvas);
+  canvas.addEventListener('contextmenu', e => e.preventDefault()); // long-press on touch must not open a menu mid-shot
+  canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); if (!S.dead) host.dispatchEvent(new CustomEvent('d3lost', { bubbles: true })); });
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(fov, 16 / 9, 0.5, 400);
   const S = { host, canvas, renderer, scene, camera, level, profile: null, size: { w: 1, h: 1 }, ticks: [], onLevel: [], redraws: [], sun: null, baseFov: fov, minAspect, dead: false };
   // A clock that stops while the tab is hidden, so a timing round cannot run out unseen.
@@ -125,7 +127,7 @@ export function makeBall(S) {
 
 /* ------------------------------------------------------------------ the gym */
 function courtTexture(S) {
-  const max = S.renderer.capabilities.maxTextureSize || 2048, X0 = -34, X1 = 34, Z0 = -14, Z1 = 62, W = Math.min(2048, max), k = W / (X1 - X0), H = Math.round((Z1 - Z0) * k);
+  const max = S.renderer.capabilities.maxTextureSize || 2048, X0 = -34, X1 = 34, Z0 = -14, Z1 = 62, W = Math.min(S.level === 'low' ? 1024 : 2048, max), k = W / (X1 - X0), H = Math.round((Z1 - Z0) * k);
   const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'), tex = new THREE.CanvasTexture(c);
   const R = n => { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); };
   const draw = () => {
@@ -391,7 +393,7 @@ export const POSE = {
   set: { y: 0.55, lean: 0.03, head: -0.1, hip: [-0.12, -0.12], knee: [0.3, 0.3], sh: [-2.5, -2.5], sp: [0.3, 0.3], el: [-1.35, -1.35] },
   release: { y: 0.9, lean: -0.03, head: -0.12, hip: [0.12, 0.05], knee: [0.15, 0.4], sh: [-2.95, -2.95], sp: [0.14, 0.14], el: [-0.12, -0.12] },
   follow: { y: 0.55, lean: -0.05, head: -0.1, hip: [0.2, 0.1], knee: [0.3, 0.6], sh: [-3.0, -3.0], sp: [0.1, 0.1], el: [0, 0] },
-  stance: { y: 0, lean: 0.24, head: -0.25, hip: [-0.62, -0.5], knee: [1.15, 1.0], sh: [-0.35, -0.35], sp: [-0.95, -0.95], el: [-0.5, -0.5] },
+  stance: { y: 0, lean: 0.24, head: -0.25, hip: [-0.62, -0.5], knee: [1.15, 1.0], sh: [-0.8, -0.8], sp: [-0.55, -0.55], el: [-0.95, -0.95] },
   contest: { y: 0.6, lean: 0.06, head: -0.1, hip: [-0.18, -0.12], knee: [0.35, 0.3], sh: [-2.95, -2.9], sp: [-0.18, -0.25], el: [-0.05, -0.05] },
   catch: { y: 0, lean: 0.06, head: -0.05, hip: [-0.34, -0.3], knee: [0.65, 0.6], sh: [-1.3, -1.3], sp: [0.28, 0.28], el: [-0.7, -0.7] },
 };

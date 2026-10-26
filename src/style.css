@@ -488,7 +488,7 @@ dialog:has(.drill-shell){width:min(960px,calc(100vw - 24px))}
 .d3-controls .drill-go{flex:none}
 .quiz-opts button.good{border-color:#4ade80;background:#4ade8024}.quiz-opts button.bad{border-color:#f87171;background:#f8717124}
 .quiz-ui .quiz-opts{margin-top:12px}
-@media(max-width:620px){.d3-stage{aspect-ratio:1/1;max-height:44vh;min-height:260px}.d3-stage.d3-film{aspect-ratio:4/3;max-height:34vh;min-height:200px}.d3-banner{font-size:calc(24px*var(--ts,1)*var(--ls,1))}.d3-meter{width:34px}.d3-controls .drill-go{flex:1 1 100%}}
+@media(max-width:620px){.d3-stage{aspect-ratio:4/5;max-height:54vh;min-height:280px}.d3-drill .drill-head{flex-direction:row;align-items:center;gap:10px;margin:2px 0 8px}.modal-content .d3-drill .drill-head h3{font-size:calc(22px*var(--ts,1)*var(--ls,1));margin:2px 0 0}.modal-content .d3-drill .drill-head p{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}.d3-drill .drill-score{align-self:center;min-width:74px;padding:4px 10px}.d3-drill .drill-score b{font-size:calc(26px*var(--ts,1)*var(--ls,1))}.d3-drill .d3-keys{display:none}.d3-drill .d3-controls{margin-top:8px}.d3-stage.d3-film{aspect-ratio:4/3;max-height:34vh;min-height:200px}.d3-banner{font-size:calc(24px*var(--ts,1)*var(--ls,1))}.d3-meter{width:34px}.d3-controls .drill-go{flex:1 1 100%}}
 @media(prefers-reduced-motion:reduce){.d3-banner,.d3-arc{transition:none}}
 
 /* ---- camera buttons are back during live play ---- */

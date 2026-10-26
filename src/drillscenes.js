@@ -11,13 +11,18 @@ const R2D = Math.PI / 180, RISE = 0.26;
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
 
 export function mount3d(kit, root, spec, onDone) {
+  // The GPU can take the context away mid-drill; the stage announces it and the caller swaps in the 2D drill.
+  const lost = () => kit.onLost?.();
+  root.addEventListener('d3lost', lost);
+  let cleanup = null;
   try {
-    if (spec.kind === 'three' || spec.kind === 'freethrow') return shot3d(kit, root, spec, onDone);
-    if (spec.kind === 'closeout') return closeout3d(kit, root, spec, onDone);
-    if (spec.kind === 'breathe') return breathe3d(kit, root, spec, onDone);
-    if (spec.kind === 'quiz') return quiz3d(kit, root, spec, onDone);
+    if (spec.kind === 'three' || spec.kind === 'freethrow') cleanup = shot3d(kit, root, spec, onDone);
+    else if (spec.kind === 'closeout') cleanup = closeout3d(kit, root, spec, onDone);
+    else if (spec.kind === 'breathe') cleanup = breathe3d(kit, root, spec, onDone);
+    else if (spec.kind === 'quiz') cleanup = quiz3d(kit, root, spec, onDone);
   } catch (err) { abortStage(); root.innerHTML = ''; console.warn('3D drill failed to start', err); }
-  return null;
+  if (!cleanup) { root.removeEventListener('d3lost', lost); return null; }
+  return () => { root.removeEventListener('d3lost', lost); cleanup(); };
 }
 
 /* ---------------------------------------------------------------- shared bits */
@@ -42,13 +47,15 @@ const flat = (S, w, h, color, opacity, tex) => {
   m.rotation.x = -Math.PI / 2; m.position.y = 0.05; m.renderOrder = 2; S.scene.add(m); return m;
 };
 const dot = (S, r, color) => { const m = new THREE.Mesh(new THREE.CircleGeometry(r, 24), new THREE.MeshBasicMaterial({color, transparent: true, opacity: 0.55, depthWrite: false, toneMapped: false})); m.rotation.x = -Math.PI / 2; m.position.y = 0.045; m.renderOrder = 2; S.scene.add(m); return m; };
+// A key aimed at some other control (the dialog's close button, a link) is never ours to take.
+const foreign = e => !!e.target?.closest?.('button:not(.drill-go), a, input, select, textarea, summary');
 const faceYaw = (from, to) => Math.atan2(to.x - from.x, to.z - from.z);
 
 // Press / click / tap / Space / Enter for the timing drills. Returns an unbind function.
 function bindPress(root, S, fire) {
   const down = e => { if (e.button > 0) return; e.preventDefault(); fire('pointer'); };
   const key = e => {
-    if (!root.isConnected) return;
+    if (!root.isConnected || foreign(e)) return;
     if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); if (!e.repeat && e.type === 'keydown') fire('key'); return; }
     if (e.key.toLowerCase?.() === 'h') e.stopPropagation();
   };
@@ -180,15 +187,15 @@ function shot3d(kit, root, spec, onDone) {
   /* ---- per-frame ---- */
   S.ticks.push((now, dt) => {
     gym.update(now);
-    const pulse = 1 + 0.08 * Math.sin(now * 5);
-    ring.userData.set(0.95 * pulse, 1.3 * pulse); ring2.userData.set(1.7, 1.8 + 0.1 * Math.sin(now * 3));
+    const pulse = reduced ? 1 : 1 + 0.08 * Math.sin(now * 5);
+    ring.userData.set(0.95 * pulse, 1.3 * pulse); ring2.userData.set(1.7, 1.8 + (reduced ? 0 : 0.1 * Math.sin(now * 3)));
     // meter
     if (phase === 'charge') {
       const held = now - chargeT0, m = P.meterAt(held); el.fill.style.height = m + '%'; el.cursor.style.bottom = m + '%';
     }
     // shooter + ball
     let pose;
-    if (phase === 'idle') pose = mixPose(POSE.ready, POSE.dip, 0.12 + 0.1 * Math.sin(now * 2.2) ** 2);
+    if (phase === 'idle') pose = mixPose(POSE.ready, POSE.dip, 0.12 + (reduced ? 0 : 0.1 * Math.sin(now * 2.2) ** 2));
     else if (phase === 'charge') pose = shotPose(-1, smooth((now - chargeT0) / 0.5));
     else if (phase === 'rise') pose = shotPose(now - riseT0, 1);
     else pose = shotPose(now - launchT + RISE, 1);
@@ -221,7 +228,7 @@ function shot3d(kit, root, spec, onDone) {
     }
     // arc readout rides next to the end of the guide
     if (phase === 'idle' || phase === 'charge') {
-      const q = S.project(guideEnd); el.arc.style.transform = `translate(${clamp(q.x + 12, 8, S.size.w - 74)}px, ${clamp(q.y - 30, 8, S.size.h - 54)}px)`; el.arc.style.opacity = '1';
+      const q = S.project(guideEnd); el.arc.style.transform = `translate(${clamp(q.x + 12, 8, S.size.w - 74)}px, ${clamp(q.y - 30, 42, S.size.h - 54)}px)`; el.arc.style.opacity = '1';
       dots.forEach((d, i) => { d.visible = true; });
     } else el.arc.style.opacity = '0';
     cam.update(now);
@@ -238,10 +245,9 @@ function shot3d(kit, root, spec, onDone) {
   const pmove = e => { if (!drag || e.pointerId !== drag.id || (phase !== 'charge')) return; aim = clamp(drag.aim + (e.clientX - drag.x) * KX, -P.AIM_MAX, P.AIM_MAX); arc = clamp(drag.arc - (e.clientY - drag.y) * KY, P.ARC_MIN, P.ARC_MAX); refreshGuide(); };
   const pup = e => { if (!drag || e.pointerId !== drag.id) return; drag = null; releaseShot(); };
   const pcancel = e => { if (!drag || e.pointerId !== drag.id) return; drag = null; cancelCharge(); };
-  S.canvas.addEventListener('pointerdown', pdown); S.canvas.addEventListener('pointermove', pmove); S.canvas.addEventListener('pointerup', pup); S.canvas.addEventListener('pointercancel', pcancel);
   let lastKey = 0;
   const key = e => {
-    if (!root.isConnected || disposed) return; const k = e.key;
+    if (!root.isConnected || disposed || foreign(e)) return; const k = e.key;
     if (k === ' ') { e.preventDefault(); e.stopPropagation(); lastKey = performance.now(); if (e.type === 'keydown') { if (!e.repeat) beginCharge('key'); } else if (chargeSrc === 'key') releaseShot(); return; }
     if (k.toLowerCase?.() === 'h') { e.stopPropagation(); return; }
     if (e.type !== 'keydown' || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(k)) return;
@@ -250,7 +256,7 @@ function shot3d(kit, root, spec, onDone) {
     if (k === 'ArrowLeft') adjust(-0.25 * big, 0); else if (k === 'ArrowRight') adjust(0.25 * big, 0); else if (k === 'ArrowUp') adjust(0, 1 * (e.shiftKey ? 3 : 1)); else adjust(0, -1 * (e.shiftKey ? 3 : 1));
     announce();
   };
-  window.addEventListener('keydown', key, true); window.addEventListener('keyup', key, true);
+  const onBlur = () => { if (phase === 'charge') { drag = null; cancelCharge(); } };
   // The button works without holding anything: press once to start charging, press again to release.
   el.btn.addEventListener('click', e => {
     if (e.detail === 0 && performance.now() - lastKey < 400) return;
@@ -259,10 +265,15 @@ function shot3d(kit, root, spec, onDone) {
 
   setSpot(queue[0], true); cam.set(camBase.pos, camBase.look);
   el.msg.textContent = t(three ? 'drill.d3.spot' : 'drill.d3.line', {d: place.dist.toFixed(1)}); announce();
+  // Global listeners go in last, so a scene that fails to start cannot leave any behind.
+  S.canvas.addEventListener('pointerdown', pdown); S.canvas.addEventListener('pointermove', pmove); S.canvas.addEventListener('pointerup', pup); S.canvas.addEventListener('pointercancel', pcancel);
+  window.addEventListener('keydown', key, true); window.addEventListener('keyup', key, true); window.addEventListener('blur', onBlur);
+  // The dialog opens with focus on its close button; hand it to the drill so Space and Enter act on the drill, and Shift+Tab still reaches the close button.
+  el.btn.focus({preventScroll: true});
   return () => {
     if (disposed) return; disposed = true; T.clear();
     S.canvas.removeEventListener('pointerdown', pdown); S.canvas.removeEventListener('pointermove', pmove); S.canvas.removeEventListener('pointerup', pup); S.canvas.removeEventListener('pointercancel', pcancel);
-    window.removeEventListener('keydown', key, true); window.removeEventListener('keyup', key, true); S.dispose();
+    window.removeEventListener('keydown', key, true); window.removeEventListener('keyup', key, true); window.removeEventListener('blur', onBlur); S.dispose();
   };
 }
 
@@ -356,7 +367,7 @@ function closeout3d(kit, root, spec, onDone) {
     else if (u < -0.4) sp = mixPose(POSE.catch, POSE.ready, smooth((rt - rd.catchT) / 0.25));
     else if (u < 0) sp = mixPose(POSE.ready, POSE.dip, smooth((u + 0.4) / 0.4));
     else { const k = u / RISE; sp = k < 1 ? (k < 0.62 ? mixPose(POSE.dip, POSE.set, smooth(k / 0.62)) : mixPose(POSE.set, POSE.release, smooth((k - 0.62) / 0.38))) : (u - RISE < 0.5 ? mixPose(POSE.release, POSE.follow, smooth((u - RISE) / 0.5)) : mixPose(POSE.follow, POSE.ready, smooth((u - RISE - 0.5) / 0.45))); }
-    if (rt >= rd.catchT && u < -0.4) { const b = 0.06 * Math.sin(now * 5); sp = {...sp, y: sp.y + b}; }
+    if (rt >= rd.catchT && u < -0.4) { const b = reduced ? 0 : 0.06 * Math.sin(now * 5); sp = {...sp, y: sp.y + b}; }
     // early press: the shooter reads the closing defender and pump-fakes until he is past
     shooter.pose(sp);
     if (!st.launched && rt >= st.TR - 0.0 && st.phase === 'play') { shooter.root.updateMatrixWorld(true); shooter.handMid(handPos); ball.position.copy(handPos); launchShot(now); }
@@ -378,7 +389,7 @@ function closeout3d(kit, root, spec, onDone) {
     ballBlob.position.set(ball.position.x, 0.05, ball.position.z); ballBlob.scale.setScalar(1.2 - clamp(ball.position.y / 12, 0, 0.6)); ballBlob.visible = !S.profile.shadows && ball.position.y < 30;
     // defender
     let dp, dpos = st.D0, dyaw = faceYaw(st.D0, st.S0);
-    if (st.press === null) { dp = mixPose(POSE.stance, POSE.stance, 0); dp = {...dp, y: 0.05 * Math.sin(now * 6)}; dp.sh = [dp.sh[0] + 0.1 * Math.sin(now * 5), dp.sh[1] - 0.1 * Math.sin(now * 5)]; }
+    if (st.press === null) { dp = mixPose(POSE.stance, POSE.stance, 0); const sw = reduced ? 0 : Math.sin(now * 5); dp = {...dp, y: reduced ? 0 : 0.05 * Math.sin(now * 6)}; dp.sh = [dp.sh[0] + 0.1 * sw, dp.sh[1] - 0.1 * sw]; }
     else {
       const tr = now - st.pressAbs, A = rd.arrive, run = Math.min(1, tr / A), toward = st.verdict === 'early' ? st.S0.clone().addScaledVector(st.lat, st.side * 2.0) : st.Dc;
       if (st.verdict === 'early') {
@@ -402,9 +413,11 @@ function closeout3d(kit, root, spec, onDone) {
     const s = Math.sin(ph), c = Math.cos(ph);
     return {y: 0.1 * Math.abs(c), lean: 0.3, head: -0.3, hip: [-0.9 * s, 0.9 * s], knee: [Math.max(0, 1.3 * c), Math.max(0, -1.3 * c)], sh: [-0.4 + 0.9 * s, -0.4 - 0.9 * s], sp: [0.05, 0.05], el: [-1.3, -1.3]};
   }
-  const unpress = bindPress(root, S, press);
   el.btn.addEventListener('click', e => { if (e.detail === 0) return; press(); });
   startRound(0); cam.set(st.camPos, st.camLook);
+  const unpress = bindPress(root, S, press);
+  // The dialog opens with focus on its close button; hand it to the drill so Space and Enter act on the drill, and Shift+Tab still reaches the close button.
+  el.btn.focus({preventScroll: true});
   return () => { if (disposed) return; disposed = true; T.clear(); unpress(); S.dispose(); };
 }
 
@@ -465,9 +478,11 @@ function breathe3d(kit, root, spec, onDone) {
     if (!reduced) { cam.off.set(Math.sin(now * 0.25) * 0.25, 0, 0); }
     cam.update(now);
   });
-  const unpress = bindPress(root, S, press);
   el.btn.addEventListener('click', e => { if (e.detail === 0) return; press(); });
   startRound(0);
+  const unpress = bindPress(root, S, press);
+  // The dialog opens with focus on its close button; hand it to the drill so Space and Enter act on the drill, and Shift+Tab still reaches the close button.
+  el.btn.focus({preventScroll: true});
   return () => { if (disposed) return; disposed = true; T.clear(); unpress(); S.dispose(); };
 }
 
@@ -502,9 +517,9 @@ function quiz3d(kit, root, spec, onDone) {
     if (i >= total || total - i + made < need) { ended = true; T.later(() => { if (!disposed) finish(root, spec, made, total, need, onDone); }, 1300); return; }
     T.later(() => { if (disposed) return; locked = false; show(msg); }, 1050);
   }
-  const key = e => { if (!root.isConnected || disposed) return; if (['1', '2', '3'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); if (e.type === 'keydown') answer(+e.key - 1); } else if (e.key.toLowerCase?.() === 'h' || e.key === ' ') e.stopPropagation(); };
-  window.addEventListener('keydown', key, true);
+  const key = e => { if (!root.isConnected || disposed) return; if (['1', '2', '3'].includes(e.key)) { e.preventDefault(); e.stopPropagation(); if (e.type === 'keydown' && !e.repeat) answer(+e.key - 1); } else if (!foreign(e) && (e.key.toLowerCase?.() === 'h' || e.key === ' ')) e.stopPropagation(); };
   S.ticks.push(now => room.update(now));
   show();
+  window.addEventListener('keydown', key, true);
   return () => { if (disposed) return; disposed = true; T.clear(); window.removeEventListener('keydown', key, true); S.dispose(); };
 }
