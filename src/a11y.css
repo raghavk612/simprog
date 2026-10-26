@@ -206,3 +206,11 @@ html.theme-light:not(.a11y-high-contrast) :is(canvas,img,video,svg.avatar,.mouse
 .a11y-high-contrast .arc .spark circle{fill:#fff!important}
 .a11y-high-contrast .code-box,.a11y-high-contrast .model-list li,.a11y-high-contrast .nudge-card{border-color:#fff;background:#000;color:#fff}
 .a11y-high-contrast .nudge-card{border-left-width:6px}
+
+/* 3D drills: high contrast keeps the HUD readable on top of the canvas */
+.a11y-high-contrast .d3-stage{border:2px solid #fff}
+.a11y-high-contrast .d3-chip,.a11y-high-contrast .d3-arc,.a11y-high-contrast .d3-banner,.a11y-high-contrast .d3-cue{background:#000!important;border:2px solid #fff!important;color:#fff!important}
+.a11y-high-contrast .d3-track{background:#000!important;border:2px solid #fff!important}
+.a11y-high-contrast .d3-band-swish{background:#ffe28a!important}.a11y-high-contrast .d3-fill{background:#b48aff!important}
+.a11y-high-contrast .quiz-opts button.good{border-color:#4ade80!important}.a11y-high-contrast .quiz-opts button.bad{border-color:#f87171!important}
+.a11y-reduced-motion .d3-banner,.a11y-reduced-motion .d3-arc{transition:none!important}

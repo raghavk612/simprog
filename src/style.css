@@ -462,6 +462,35 @@ dialog:has(.drill-shell){width:min(960px,calc(100vw - 24px))}
 @media(max-width:850px){.practice-plan{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:620px){.plan-slots{grid-template-columns:minmax(0,1fr)}.drill-head{flex-direction:column}.drill-score{align-self:stretch}}
 
+/* ---- 3D skill drills (drillscenes.js): stage, on-canvas HUD, meter ---- */
+.d3-stage{position:relative;width:100%;aspect-ratio:16/9;max-height:min(52vh,520px);min-height:220px;border-radius:12px;overflow:hidden;border:1px solid #ffffff1c;background:#100b1a;touch-action:none;user-select:none;-webkit-user-select:none;box-shadow:0 14px 40px -24px #000}
+.d3-stage.d3-film{aspect-ratio:2.2/1;max-height:min(36vh,340px)}
+.d3-canvas{display:block;width:100%;height:100%;touch-action:none;cursor:crosshair}
+.d3-hud{position:absolute;inset:0;pointer-events:none;font-family:var(--display);color:#fff}
+.d3-chip{position:absolute;left:12px;top:10px;max-width:calc(100% - 80px);padding:5px 12px;border-radius:999px;background:#150d25b8;border:1px solid #ffffff26;font:800 italic calc(15px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:1.2px;text-transform:uppercase;backdrop-filter:blur(4px)}
+.d3-meter{position:absolute;right:12px;top:48px;bottom:14px;width:38px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.d3-meter em{font:700 calc(11px*var(--ts,1)*var(--ls,1)) var(--display);font-style:normal;letter-spacing:1.6px;color:#d9c4ff;text-shadow:0 1px 3px #000}
+.d3-track{position:relative;flex:1;width:18px;border-radius:10px;background:#150d25b0;border:1.5px solid #ffffff38;overflow:hidden}
+.d3-fill{position:absolute;left:0;right:0;bottom:0;height:0;background:linear-gradient(0deg,#6832ab,#b48aff)}
+.d3-band-made{position:absolute;left:0;right:0;background:#e9b85850}
+.d3-band-swish{position:absolute;left:0;right:0;background:#e9b858d0}
+.d3-cursor{position:absolute;left:-2px;right:-2px;bottom:0;height:4px;margin-bottom:-2px;background:#fff;border-radius:2px;box-shadow:0 0 8px #fff}
+.d3-meter.live .d3-track{border-color:#e9b858;box-shadow:0 0 14px #e9b85888}
+.d3-arc{position:absolute;left:0;top:0;padding:4px 10px 5px;border-radius:10px;background:#150d25d0;border:1px solid #e9b85899;transition:opacity .15s;white-space:nowrap;will-change:transform}
+.d3-arc b{display:block;font:900 italic calc(24px*var(--ts,1)*var(--ls,1))/1 var(--display)}
+.d3-arc small{font:700 calc(10px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:1.6px;color:#e9b858}
+.d3-banner{position:absolute;left:50%;top:15%;transform:translate(-50%,-8px) scale(.96);opacity:0;max-width:84%;padding:8px 22px;border-radius:14px;background:#150d25e0;border:2px solid #fff;text-align:center;font:900 italic calc(32px*var(--ts,1)*var(--ls,1))/1.1 var(--display);letter-spacing:.8px;text-transform:uppercase;transition:opacity .18s,transform .18s}
+.d3-banner.show{opacity:1;transform:translate(-50%,0) scale(1)}
+.d3-banner.ok{border-color:#4ade80;color:#86efac}.d3-banner.bad{border-color:#f87171;color:#fca5a5}
+.d3-cue{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);padding:6px 20px;border-radius:999px;background:#150d25c4;border:1px solid #c9a8ff66;font:800 italic calc(24px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:2px;text-transform:uppercase;color:#d9c4ff;min-width:150px;text-align:center}
+.d3-cue:empty{display:none}.d3-cue.out{color:#86efac;border-color:#4ade8088}
+.d3-controls .d3-keys{flex:1 1 240px;margin:0;font-size:calc(13px*var(--ts,1)*var(--ls,1));line-height:1.4;align-self:center}
+.d3-controls .drill-go{flex:none}
+.quiz-opts button.good{border-color:#4ade80;background:#4ade8024}.quiz-opts button.bad{border-color:#f87171;background:#f8717124}
+.quiz-ui .quiz-opts{margin-top:12px}
+@media(max-width:620px){.d3-stage{aspect-ratio:1/1;max-height:44vh;min-height:260px}.d3-stage.d3-film{aspect-ratio:4/3;max-height:34vh;min-height:200px}.d3-banner{font-size:calc(24px*var(--ts,1)*var(--ls,1))}.d3-meter{width:34px}.d3-controls .drill-go{flex:1 1 100%}}
+@media(prefers-reduced-motion:reduce){.d3-banner,.d3-arc{transition:none}}
+
 /* ---- camera buttons are back during live play ---- */
 .live-match .game-arena .arena-bottom{display:flex;bottom:84px;left:24px;right:auto;z-index:3;pointer-events:none}
 .live-match .game-arena .arena-bottom .camera-controls{pointer-events:auto;display:flex;gap:4px;padding:4px;border-radius:10px;background:#120c1ee6;border:1px solid #ffffff1f;backdrop-filter:blur(8px)}
