@@ -19,6 +19,7 @@ export function logText(entry){
  else if(entry.k==='event'){p.title=has(`ev.${p.id}.title`)?t(`ev.${p.id}.title`):p.id;p.choice=has(`ev.${p.id}.o.${p.choice}`)?t(`ev.${p.id}.o.${p.choice}`):p.choice;}
  else if(entry.k==='upgrade')p.item=has(`upg.${p.item}.name`)?t(`upg.${p.item}.name`):p.item;
  else if(entry.k==='hire')p.staff=has(`staff.${p.staff}.name`)?t(`staff.${p.staff}.name`):p.staff;
+ else if(entry.k==='kitUnlocked')p.kit=has(`lk.kit.${p.kit}`)?t(`lk.kit.${p.kit}`):has(`locker.${p.kit}`)?t(`locker.${p.kit}`):p.kit;
  else if(entry.k==='adjustTactic')p.tactic=has(`tactic.${p.tactic}`)?t(`tactic.${p.tactic}`):p.tactic;
  else if(entry.k==='adjustPace')p.pace=has(`pace.${p.pace}`)?t(`pace.${p.pace}`):p.pace;
  else if(entry.k==='result'){p.outcome=up(t(p.won?'log.win':'log.loss'));p.reason=t(p.scouted?'log.reasonWithScouting':'log.reason',p);}

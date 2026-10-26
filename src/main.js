@@ -8,6 +8,8 @@ import {mountDrill,drillName} from './drills.js';
 import {opponentLogo} from './logos.js';
 import * as V from './events.js';
 import {createJerseyShowcase} from './jerseys.js';
+import {lockerBody,jerseyWho,plateName,byNumber,kitName,kitHow} from './locker.js';
+import {gymColors,isSpecialKit} from './kits.js';
 import * as P from './press.js';
 import {t,tu,up,list,has,translateError,formatNumber,formatDate,formatDateTime,initLanguage,localeTag} from './i18n/index.js';
 import {commentaryText as commentary,explanationText,logText,reasonText,feedLines,tv} from './narrative.js';
@@ -25,7 +27,7 @@ await initLanguage();initSettings();
 const app=$('#app'),modal=$('#modal'),host=$('#scene');const arena=new Arena(host);let data,state=null,view='home',auto=false,tutorial=0,selected='all',lastError='',playbackSpeed=1,closingMatch=null,pendingResult=null,replayEvent=null,keys=loadKeys(),gap=0,cued='';const KEY='kangs-three-season-v2',TUTORIAL='kangs-three-tutorial-v2';
 // Judge demo: a repeatable mid-season save kept under its own key, so a player's own season is never overwritten.
 const DEMOKEY='kangs-demo-season-v1',DEMO_TIMES=['0:00','0:25','0:50','1:20','1:50','2:15','2:40','3:00'],DEMO_VIEWS=['home','roster','practice','game','season','home','data','game'];
-let saveKey=KEY,demo=null,realState=null,jerseys=null,jerseysTried=false;const hintJ='aria-keyshortcuts="J"';
+let saveKey=KEY,demo=null,realState=null,jerseys=null,jerseysTried=false,jerseyId=null,captainPick=null;const hintJ='aria-keyshortcuts="J"';
 const team=()=>E.teamFor(data,state?.difficulty??'elite');
 const routes=['home','roster','practice','recruit','staff','game','locker','season','data'];
 const routeNumber=v=>String(routes.indexOf(v)+1).padStart(2,'0');
@@ -102,7 +104,7 @@ function landing(){return `<main class="landing" id="main"><div class="landing-b
 function home(){const opp=!state.finished?E.opponent(state):null,last=state.results.at(-1),P=plan(),names=stages();return `${header(tu('home.kicker'),t('home.welcome',{name:esc(state.coach)}),state.finished?t('home.doneIntro'):t('home.intro'))}${meters()}${nudgeCard()}<div class="hq-grid"><div>${stage()}<div class="quick-grid">${[['roster',tu('home.quickRosterA'),t('home.quickRosterB'),'↗'],['practice',tu('home.quickPracticeA'),t('home.quickPracticeB',{n:state.actions}),'↗'],['staff',tu('home.quickStaffA'),t('home.quickStaffB'),'↗']].map(([v,a,b,c])=>`<button class="quick" data-view="${v}"><span>${a}</span><strong>${b}</strong><i aria-hidden="true">${c}</i></button>`).join('')}</div></div><aside class="right-rail" aria-label="${esc(t('home.sidebar'))}"><section class="card next-game"><span class="eyebrow">${state.finished?tu('home.finalChapter'):tu('home.nextOnSchedule')}</span>${state.finished?`<div class="matchup solo"><img src="${LOGO}" alt="${esc(t('game.kangs'))}"></div>`:`<div class="matchup"><img src="${LOGO}" alt="${esc(t('game.kangs'))}"><span aria-hidden="true">${tu('home.vs')}</span>${oppMark(opp.opponent,'opp-logo',`<b class="opp-crest" aria-hidden="true">${esc(crestText(opp.opponent))}</b>`)}</div>`}<h2>${state.finished?(state.champion?t('home.champions'):t('home.seasonEnds')):esc(opp.opponent)}</h2><p>${state.finished?t('home.finalRecord',{w:state.wins,l:state.losses}):`${esc(formatDate(opp.date))} · ${esc(opp.venue)}`}</p>${btn(state.finished?t('home.viewStory'):t('home.prepare'),state.finished?'journal':'game','primary wide')}<small>${state.week>=P.cut?tu('home.bracketNote',{run:names.run}):tu('home.seasonNote',{team:teamLabel()})}</small></section>${inboxCard()}${leadersCard()}<section class="card"><span class="eyebrow">${tu('home.rippleKicker')}</span><h3>${t('home.rippleTitle')}</h3><p>${esc(state.ripples[0]?logText(state.ripples[0]):t('home.rippleDefault'))}</p>${last?`<div class="mini-result"><span aria-hidden="true">${last.won?'W':'L'}</span> <strong>${last.home}–${last.away}</strong> ${esc(last.opponent)}<span class="sr-only"> (${last.won?t('result.win'):t('result.loss')})</span></div>`:''}</section></aside></div>`;}
 const SKIN=['#f1c7a3','#e0a87e','#c68a5e','#a86f45','#8a5634','#6b3f24','#4f2c19','#d9a07a'];
 const HAIR=['#17110d','#2a1b12','#3d2616','#5b3a22','#8a5a2e','#b9874a','#d8b06a','#20180f'];
-function avatar(p,size=48){const h=E.hashStr((p.originalName||p.name)+'|'+p.id),g=n=>(h>>>n),skin=SKIN[g(1)%SKIN.length],hair=HAIR[(g(4)+(SKIN.indexOf(skin)>3?0:2))%HAIR.length],style=(g(7)+p.id)%7,rx=21+g(11)%4,ry=26+g(13)%3,band=g(16)%6===0,beard=['Junior','Senior'].includes(p.year)&&g(18)%3===0,kit=state?.kit==='away'?['#f4effc','#562494']:state?.kit==='alternate'?['#191126','#e9b858']:['#6832ab','#ffffff'],uid='a'+h.toString(36)+p.id;
+function avatar(p,size=48){const h=E.hashStr((p.originalName||p.name)+'|'+p.id),g=n=>(h>>>n),skin=SKIN[g(1)%SKIN.length],hair=HAIR[(g(4)+(SKIN.indexOf(skin)>3?0:2))%HAIR.length],style=(g(7)+p.id)%7,rx=21+g(11)%4,ry=26+g(13)%3,band=g(16)%6===0,beard=['Junior','Senior'].includes(p.year)&&g(18)%3===0,kit=isSpecialKit(state?.kit)?gymColors(state.kit):state?.kit==='away'?['#f4effc','#562494']:state?.kit==='alternate'?['#191126','#e9b858']:['#6832ab','#ffffff'],uid='a'+h.toString(36)+p.id;
  const top=60-ry,shade=`color-mix(in srgb,${skin} 78%,#000)`;
  const hairSvg=[
   `<path d="M${60-rx} ${58-ry*.15}Q${60-rx} ${top-3} 60 ${top-3}Q${60+rx} ${top-3} ${60+rx} ${58-ry*.15}Q${60+rx-3} ${top+8} 60 ${top+6}Q${60-rx+3} ${top+8} ${60-rx} ${58-ry*.15}Z" fill="${hair}" opacity=".9"/>`,
@@ -195,7 +197,7 @@ ${esc(arena.presentation()?.clip?shot(arena.presentation().clip):t('game.chooseP
 ${hasScore(o)?t('game.reference',{a:o.points,b:o.against}):t('game.upcoming',{when:`${esc(formatDate(o.date))}${o.time?` · ${esc(o.time)}`:''}`,where:t(o.home?'game.homeGame':'game.awayGame'),venue:esc(o.venue)})}</p>
 <div class="effect-list"><span>${t('game.strength')} <b>${Math.round(o.rating)}</b></span><span>${t('game.style')} <b>${state.scouted?t(`style.${o.style}`):t('game.unscouted')}</b></span></div>${state.scouted?`<p class="notice">${t(`game.advice.${o.style}`)} ${t('game.adviceNote')}</p>`:btn(t('game.scout'),'scout','secondary')}</section>${tipoffCard()}`}${m?`<details class="box-drawer"><summary>${t('game.boxScore')}</summary>${teamStats(m.stats,o.opponent)}${boxTable(m.line,up(t('game.kangs')),true)}</details><details class="why-drawer"><summary>${t('game.why')}</summary><p class="muted">${t('result.whyBody')}</p>${btn(t('tipoff.model'),'model','secondary small')}<div id="why-body" aria-live="polite">${lastWhy||`<p>${t('game.whyNone')}</p>`}</div></details>`:''}</div><aside class="right-rail" aria-label="${esc(t('game.controls'))}"><section class="card"><span class="eyebrow">${m?tu('game.sideline'):tu('game.startingFive')}</span>${m?`<h2>${t('game.callPlay')}</h2><label>${tu('game.system')}<select id="tactic">${['balanced','zone','pressure','perimeter'].map(v=>`<option value="${v}" ${m.tactic===v?'selected':''}>${t(`tactic.${v}`)}</option>`).join('')}</select></label><label>${tu('game.tempo')}<select id="pace">${['steady','fast'].map(v=>`<option value="${v}" ${m.pace===v?'selected':''}>${t(`pace.${v}`)}</option>`).join('')}</select></label>${speedControls()}${
 btn(closingMatch?(arena.paused?t('game.resumeFinal'):t('game.pauseFinal')):auto?t('game.pause'):arena.paused?t('game.resume'):t('game.watch'),'auto','primary wide',hint('playPause'))}${btn(t('game.next'),'step','secondary wide',`${hint('nextPlay')} ${arena.isPlaying()||closingMatch?'disabled':''}`)}${btn(t('game.timeout',{n:m.timeouts}),'timeout','secondary wide',`${hint('timeout')} ${m.timeouts&&!closingMatch?'':'disabled'}`)}`:`<h2>${t('game.ready')}</h2>${state.players.filter(p=>p.starter).map(p=>{const why=lineupBad.find(x=>x.id===p.id)?.reason;return `<div class="lineup-row"><span class="jersey">${p.number}</span><strong>${esc(p.name)}</strong>${why?`<span class="pill warn">${t(`lineup.${why}`)}</span>`:''}<span>${t('game.minShort',{n:p.minutes})}</span></div>`;}).join('')}<p>${t('game.assigned',{n:state.players.reduce((s,p)=>s+p.minutes,0)})}</p>${lineupBad.length?`<p class="notice" role="alert">${issueText(lineupBad,true)}</p>${btn(t('lineup.fix'),'auto-lineup','primary wide')}`:''}${btn(t('game.adjust'),'rotation','secondary wide')}${btn(t('game.tipOff'),'start-match','primary wide')}`}</section></aside></div>`;}
-function locker(){return `${header(tu('locker.kicker'),t('nav.locker'),t('locker.intro'))}<div class="locker-layout"><div id="jersey-stage" class="jersey-stage" role="img" aria-label="${esc(t('locker.showcase'))}"></div><section class="card"><span class="eyebrow">${tu('locker.issue')}</span><h2>${t('locker.title')}</h2><div class="kit-options" role="group" aria-label="${esc(t('locker.kits'))}">${['home','away','alternate'].map(k=>`<button data-action="kit" data-kit="${k}" class="kit ${state.kit===k?'selected':''}" aria-pressed="${state.kit===k}"><div class="shirt ${k}" aria-hidden="true">K<br><b>11</b></div><strong>${t(`locker.${k}`)}</strong></button>`).join('')}</div><p>${t('locker.note')}</p></section></div>`;}
+function locker(){return `${header(tu('locker.kicker'),t('nav.locker'),t('locker.intro'))}${lockerBody({state,avatar,jerseyId,captainPick})}`;}
 // The final run drawn as a bracket: four win-or-go-home rounds that fill in as games are played.
 function bracket(){const B=E.runBracket(state),names=stages();
  const gate=B.gate==='qualified'?t('bracket.qualified',{w:B.wins,need:B.need}):B.gate==='failed'?t('bracket.failed',{w:B.wins,cut:B.cut,need:B.need}):t('bracket.open',{w:B.wins,need:B.need,cut:B.cut,played:B.played});
@@ -295,12 +297,40 @@ function inboxCard(){if(!state||state.finished)return '';if(state.pendingEvent&&
  if(!pe&&!pressNew&&!pressOpen&&!nm.length)return '';
  return `<section class="card inbox-hq"><span class="eyebrow">${tu('inbox.kicker')}</span>${pe?`<p><b>${t(`ev.${pe.id}.title`)}</b><br>${t('inbox.blocked')}</p>${btn(t('inbox.open'),'inbox-open','primary small')}`:''}${pressNew||pressOpen?`<p>${t('press.waiting')}</p>${btn(t('press.again'),'press-open','secondary small')}`:''}${nm.length?`<h3>${t('press.effects')}</h3><div class="chips">${nm.map(([k,v])=>chipHtml({k,v,who:'next'})).join('')}</div>`:''}</section>`;}
 // The locker room's rotating 3D jerseys: one canvas, created on first use and moved into the page each time it is drawn.
+// Wearing a kit: core kits always, special kits once the season has earned them (E.setKit refuses a locked one).
+function wearKit(k){
+ if(!state)return;
+ if(!E.kitUnlocked(state,k)){play('error');notify(t('lk.lockedPick',{kit:kitName(k),how:kitHow(state,k)}),{type:'info',title:t('lk.locked'),icon:'staff'});return;}
+ E.setKit(state,k);save();play('select');announce(t('locker.picked',{kit:kitName(k)}));arena.update(state);render();
+}
+// Name and number on all the showcase jerseys. Only the textures are repainted; the select, the caption and the 3D scene are updated in place.
+function applyJerseyPlayer(){
+ const p=jerseyWho(state,jerseyId);if(!p)return;
+ jerseys?.setPlayer({name:plateName(p),number:p.number});
+ const sel=$('#jersey-player');if(sel)sel.value=String(p.id);
+ const cap=$('#jersey-caption');if(cap)cap.innerHTML=`<b>${esc(p.number)}</b> ${esc(plateName(p))}`;
+}
+// Naming (or changing) the captain uses the engine's setCaptain; the dialog states the price first.
+async function makeCaptain(id){
+ const p=state.players.find(x=>x.id===id);if(!p)return;
+ const old=state.players.find(x=>x.id===state.captain);
+ const msg=old&&old.id!==p.id?t('lk.confirmChange',{name:plateName(p),old:plateName(old),morale:E.CAPTAIN_COST.morale,chem:E.CAPTAIN_COST.chem}):t('lk.confirmFirst',{name:plateName(p)});
+ if(!await confirmDialog(msg,{yes:t('lk.confirmYes')}))return;
+ E.setCaptain(state,id);captainPick=null;save();play('confirm');notify(t('captain.set',{name:p.name}),{type:'success',icon:'staff'});render();
+}
+function stepJerseyPlayer(step){
+ const list=byNumber(state.players),cur=jerseyWho(state,jerseyId),i=Math.max(0,list.findIndex(p=>p.id===cur?.id));
+ jerseyId=list[(i+step+list.length)%list.length].id;play('select');applyJerseyPlayer();announce(t('lk.jerseyNow',{num:jerseyWho(state,jerseyId).number,name:plateName(jerseyWho(state,jerseyId))}));
+}
 function mountJerseys(){const box=$('#jersey-stage');if(!box)return;
- if(!jerseysTried){jerseysTried=true;jerseys=createJerseyShowcase({onPick:k=>{state.kit=k;save();play('select');announce(t('locker.picked',{kit:t(`locker.${k}`)}));arena.update(state);render();}});jerseys?.setMotion(!getA11y().reducedMotion);document.fonts?.ready.then(()=>jerseys?.refreshFont());}
+ if(!jerseysTried){jerseysTried=true;jerseys=createJerseyShowcase({onPick:wearKit});jerseys?.setMotion(!getA11y().reducedMotion);document.fonts?.ready.then(()=>jerseys?.refreshFont());}
  if(!jerseys){box.classList.add('no-webgl');return;}
- const c=state.players.find(p=>p.id===state.captain)||state.players.find(p=>p.starter);jerseys.setNumber(c?.number??11);jerseys.setKit(state.kit);jerseys.mount(box);
+ jerseys.setUnlocked(state.unlockedKits||[]);jerseys.setKit(state.kit);applyJerseyPlayer();jerseys.mount(box);
+ box.addEventListener('keydown',e=>{if((e.key!=='ArrowRight'&&e.key!=='ArrowLeft')||e.target!==box||e.ctrlKey||e.metaKey||e.altKey)return;e.preventDefault();stepJerseyPlayer(e.key==='ArrowRight'?1:-1);});
  const group=$('.kit-options');group?.addEventListener('focusin',e=>{const i=[...group.querySelectorAll('button')].indexOf(e.target.closest('button'));jerseys.focusKit(i);});group?.addEventListener('focusout',()=>jerseys.focusKit(-1));
  group?.addEventListener('keydown',e=>{if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;const b=[...group.querySelectorAll('button')],i=b.indexOf(document.activeElement);if(i<0)return;e.preventDefault();b[(i+(e.key==='ArrowRight'?1:b.length-1))%b.length].focus();});}
+// A special jersey was just earned: tell the coach where to find it.
+function announceKits(kits){for(const k of kits||[]){const name=kitName(k);notify(t('lk.unlockedMsg',{kit:name}),{type:'success',icon:'staff',title:t('lk.unlockedTitle')});announce(t('lk.unlockedTitle')+': '+name);}}
 function renderTutorial(){const el=document.createElement('div');el.className='tutorial';el.setAttribute('role','region');el.setAttribute('aria-label',t('tutorial.label'));el.innerHTML=`<div class="tutorial-arrow" aria-hidden="true">↖</div><span class="eyebrow">${tu('tutorial.kicker',{n:tutorial})}</span><h3>${t(`tutorial.step${tutorial}.title`)}</h3><p>${t(`tutorial.step${tutorial}.body`)}</p>${btn(tutorial===4?t('tutorial.finish'):t('tutorial.next'),'tutorial-next','primary')}${btn(t('tutorial.skip'),'tutorial-skip','text-button')}`;app.append(el);
  // Each step points at the sidebar item it is about (on wide screens, where the sidebar sits beside the page).
  document.querySelectorAll('.tour-target').forEach(x=>x.classList.remove('tour-target'));
@@ -358,7 +388,7 @@ function syncPresentation(p){
  const feed=$('.play-feed');if(feed){const m=state.match||closingMatch;const rows=replayEvent?(p.index===1&&p.resolved?arena.clips.map(commentary).reverse():p.index===0&&!p.resolved?[]:[commentary(arena.clips[0])]):m?(p.index===1&&p.resolved?feedLines(m):p.index===0&&!p.resolved?feedLines(m).slice(2):feedLines(m).slice(1)):[];feed.innerHTML=rows.map((text,i)=>`<p class="${i===0?'new':''}">${esc(text)}</p>`).join('');}
  if(p.resolved&&p.clip?.impacts){lastWhy=whyHtml(p.clip);const w=$('#why-body');if(w)w.innerHTML=lastWhy;}
  const next=$('[data-action="step"]');if(next)next.disabled=arena.isPlaying()||!!closingMatch;
- if(p.done&&pendingResult!==null){const index=pendingResult;pendingResult=null;closingMatch=null;auto=false;arena.clear();render();play(state.results[index].won?'victory':'defeat');flowPending=!state.finished;result(index);}
+ if(p.done&&pendingResult!==null){const index=pendingResult;pendingResult=null;closingMatch=null;auto=false;arena.clear();render();play(state.results[index].won?'victory':'defeat');flowPending=!state.finished;result(index);announceKits(state.results[index].kits);}
  else if(p.done)maybeBreak();
 }
 let replayOpp='',lastWhy='';
@@ -393,7 +423,7 @@ new MutationObserver(()=>{const n=$('.nav-item.active'),bar=n?.parentElement;if(
 let lastInteract=0,viaPointer=false;
 document.addEventListener('pointerdown',()=>{viaPointer=true;lastInteract=Date.now();},true);
 document.addEventListener('keydown',()=>{viaPointer=false;lastInteract=Date.now();},true);
-document.addEventListener('change',e=>{const el=e.target;try{if(el.matches('[data-starter]')){if(state.match)throw Error(t('notify.finishFirst'));E.setStarter(state,el.dataset.starter,el.checked);save();play('select');render();}if(el.matches('[data-minutes]')){if(state.match)throw Error(t('notify.finishFirst'));const n=Number(el.value);if(!Number.isInteger(n)||n<0||n>32)throw Error(t('notify.minutes'));state.players.find(p=>p.id===+el.dataset.minutes).minutes=n;save();render();play('select');}if(el.id==='training-target'){selected=el.value;play('select');render();}if(el.id==='tactic'&&state.match){state.match.tactic=el.value;save();play('select');if(viaPointer)el.blur();}if(el.id==='pace'&&state.match){state.match.pace=el.value;save();play('select');if(viaPointer)el.blur();}}catch(err){notify(translateError(err.message),{type:'error'});play('error');render();}});
+document.addEventListener('change',e=>{if(e.target.id==='jersey-player'&&state){jerseyId=+e.target.value;play('select');applyJerseyPlayer();return;}const el=e.target;try{if(el.matches('[data-starter]')){if(state.match)throw Error(t('notify.finishFirst'));E.setStarter(state,el.dataset.starter,el.checked);save();play('select');render();}if(el.matches('[data-minutes]')){if(state.match)throw Error(t('notify.finishFirst'));const n=Number(el.value);if(!Number.isInteger(n)||n<0||n>32)throw Error(t('notify.minutes'));state.players.find(p=>p.id===+el.dataset.minutes).minutes=n;save();render();play('select');}if(el.id==='training-target'){selected=el.value;play('select');render();}if(el.id==='tactic'&&state.match){state.match.tactic=el.value;save();play('select');if(viaPointer)el.blur();}if(el.id==='pace'&&state.match){state.match.pace=el.value;save();play('select');if(viaPointer)el.blur();}}catch(err){notify(translateError(err.message),{type:'error'});play('error');render();}});
 // Which sound confirms which action. Anything not listed is a plain interface click.
 const CUES={train:'confirm',recruit:'signing',hire:'signing',upgrade:'signing',talk:'confirm',scout:'confirm','auto-lineup':'confirm',huddle:'timeout','start-match':'whistle',kit:'select',camera:'select',speed:'select',release:'select',dismiss:'select'};
 document.addEventListener('click',async e=>{const el=e.target.closest('button[data-action],a[data-action],button[data-view]');if(!el)return;e.preventDefault();if(el.dataset.view){play('uiClick');go(el.dataset.view);return;}const a=el.dataset.action;const was=state?{tokens:state.tokens,actions:state.actions,chemistry:state.chemistry}:null;try{
@@ -410,7 +440,7 @@ return;}
  if(a==='report-save'){play('uiClick');saveReportCard();return;}if(a==='demo-start'){play('whistle');enterDemo();return;}if(a==='demo-next'){play('uiClick');demoStep(1);return;}if(a==='demo-back'){play('uiClick');demoStep(-1);return;}if(a==='demo-exit'){play('uiClick');exitDemo();return;}if(a==='demo-hide'||a==='demo-show'){play('uiClick');demo.hidden=a==='demo-hide';render();return;}if(a==='demo-jump'){play('uiClick');demoJump();return;}
  if(a==='tutorial-skip'){play('uiClick');finishTour();return;}if(a==='tutorial-next'){play('uiClick');if(tutorial===4){finishTour();return;}tutorial++;view=['roster','practice','staff','game'][tutorial-1];render();return;}
  if(a==='export'){play('confirm');const blob=new Blob([E.exportJson(state)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='kangs-season.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify(t('notify.exported'),{type:'success',title:t('toast.exportedTitle')});return;}
- if(a==='import'){play('uiClick');const input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.hidden=true;document.body.append(input);input.oncancel=()=>input.remove();input.onchange=async()=>{try{if(input.files[0].size>2e6)throw Error(t('notify.tooLarge'));const s=JSON.parse(await input.files[0].text());if(!E.validSave(s))throw Error(t('notify.badSave'));if(state&&!await confirmDialog(t('confirm.import'),{yes:t('confirm.importYes'),danger:true}))return;state=s;save();go('home');}catch(err){notify(err.message,{type:'error',title:t('toast.importFailed')});play('error');}finally{input.remove();}};input.click();return;}
+ if(a==='import'){play('uiClick');const input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.hidden=true;document.body.append(input);input.oncancel=()=>input.remove();input.onchange=async()=>{try{if(input.files[0].size>2e6)throw Error(t('notify.tooLarge'));const s=JSON.parse(await input.files[0].text());if(!E.validSave(s))throw Error(t('notify.badSave'));if(state&&!await confirmDialog(t('confirm.import'),{yes:t('confirm.importYes'),danger:true}))return;state=s;E.updateKits(state);save();go('home');}catch(err){notify(err.message,{type:'error',title:t('toast.importFailed')});play('error');}finally{input.remove();}};input.click();return;}
  if(a==='player'){play('uiClick');profile(el.dataset.id);return;}if(a==='rv-select'){play('select');rosterSel=+el.dataset.id;render();return;}if(a==='rv-cycle'){cycleRoster(+el.dataset.step);return;}if(a==='result'){play('uiClick');result(+el.dataset.index);return;}if(a==='replay'){play('uiClick');const event=state.results[+el.dataset.index].events[+el.dataset.event];flowPending=false;modal.close();go('game');replayEvent=event;replayOpp=state.results[+el.dataset.index].opponent||'';arena.play(event);applyArena();render();return;}if(a==='replay-pause'){play('select');arena.paused=!arena.paused;render();return;}if(a==='replay-again'){play('select');arena.play(replayEvent);applyArena();render();return;}if(a==='speed'){play('select');playbackSpeed=Number(el.dataset.speed);applyArena();render();announce(t('a11y.speed',{speed:speedLabel(playbackSpeed)}));return;}
  if(a==='plan-toggle'){play('select');togglePlan(el.dataset.plan);return;}if(a==='practice-start'){play('whistle');startPractice();return;}if(a==='practice-next'){play('uiClick');nextDrill();return;}if(a==='train')E.train(state,el.dataset.plan,selected);
  if(a==='recruit')E.recruit(state,el.dataset.id);
@@ -422,7 +452,11 @@ return;}
  if(a==='talk')E.talk(state,el.dataset.choice);
  if(a==='scout')E.scout(state);
  if(a==='auto-lineup')E.autoLineup(state);
- if(a==='kit')state.kit=el.dataset.kit;
+ if(a==='kit'){wearKit(el.dataset.kit);return;}
+ if(a==='kit-locked'){wearKit(el.dataset.kit);return;}
+ if(a==='jersey-step'){stepJerseyPlayer(+el.dataset.step);return;}
+ if(a==='lk-pick'){play('select');captainPick=captainPick===+el.dataset.id?null:+el.dataset.id;render();return;}
+ if(a==='lk-captain'){await makeCaptain(+el.dataset.id);return;}
  if(a==='start-match'){const bad=E.lineupIssues(state);if(bad.length)throw Error(issueText(bad));E.startMatch(state);lastWhy='';auto=false;arena.clear();setCamera('auto');}
  if(a==='auto'&&closingMatch){play('uiClick');arena.paused=!arena.paused;render();return;}
  if(a==='auto'){play('uiClick');auto=!auto;arena.paused=!auto;gap=0;if(auto&&!arena.isPlaying()){step();return;}}
@@ -460,7 +494,7 @@ document.addEventListener('keydown',e=>{
 setInterval(()=>{if(arena.failed&&arena.event&&!arena.paused){arena.playTime=Math.min(CLIP_SECONDS*2,arena.playTime+.1*arena.speed);syncPresentation(arena.presentation());}if(auto&&view==='game'&&state?.match&&!modal.open&&!arena.isPlaying()&&!(['SELECT','INPUT'].includes(document.activeElement?.tagName)&&Date.now()-lastInteract<4000)){gap+=100;if(!getA11y().timingAssist||gap>=2500)step();}},100);
 onSettingsChange(type=>{applyArena();if(type==='sound')syncCrowd();if(type==='sound'||type==='a11y')refreshTopbar();});
 window.addEventListener('kangs-language-changed',()=>{if(data)render();});
-try{data=await fetch(`${import.meta.env.BASE_URL}data/kangs.json`).then(r=>{if(!r.ok)throw Error('Data unavailable');return r.json();});try{const s=JSON.parse(localStorage.getItem(KEY));if(E.validSave(s))state=s;}catch{}view='landing';render();}catch(error){app.innerHTML=`<div class="error-screen"><h1>${t('error.title')}</h1><p>${t('error.body')}</p><button onclick="location.reload()">${t('error.reload')}</button></div>`;}
+try{data=await fetch(`${import.meta.env.BASE_URL}data/kangs.json`).then(r=>{if(!r.ok)throw Error('Data unavailable');return r.json();});try{const s=JSON.parse(localStorage.getItem(KEY));if(E.validSave(s)){state=s;E.updateKits(state);}}catch{}view='landing';render();}catch(error){app.innerHTML=`<div class="error-screen"><h1>${t('error.title')}</h1><p>${t('error.body')}</p><button onclick="location.reload()">${t('error.reload')}</button></div>`;}
 // Check the same-origin published snapshot periodically; no third-party browser scraping.
 setInterval(async()=>{try{const d=await fetch(`${import.meta.env.BASE_URL}data/kangs.json`,{cache:'no-store'}).then(r=>r.json());if(d.levels?.varsity?.players?.length)data=d;}catch{}},300000);
 

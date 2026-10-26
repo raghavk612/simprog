@@ -206,3 +206,21 @@ html.theme-light:not(.a11y-high-contrast) :is(canvas,img,video,svg.avatar,.mouse
 .a11y-high-contrast .arc .spark circle{fill:#fff!important}
 .a11y-high-contrast .code-box,.a11y-high-contrast .model-list li,.a11y-high-contrast .nudge-card{border-color:#fff;background:#000;color:#fff}
 .a11y-high-contrast .nudge-card{border-left-width:6px}
+
+/* Locker room: the whiteboard and the steel locker wall keep their own colours in the light theme, and read as plain high-contrast panels in high contrast. */
+html.theme-light:not(.a11y-high-contrast) :is(.whiteboard,.lk-wall){filter:invert(1) hue-rotate(180deg)}
+.a11y-high-contrast .lk{background:#000!important;border:2px solid #fff!important;box-shadow:none!important;animation:none!important}
+.a11y-high-contrast .lk.glow{border:5px double #ffe28a!important}
+.a11y-high-contrast .lk-wall{background:#000!important;border:2px solid #fff!important;box-shadow:none!important}
+.a11y-high-contrast .lk-plate{background:#fff!important;color:#000!important;border:2px solid #fff}
+.a11y-high-contrast .lk-plate small,.a11y-high-contrast .lk-energy em{color:#000!important}.a11y-high-contrast .lk-energy em{color:#fff!important}
+.a11y-high-contrast .lk-tag{background:#000!important;color:#fff!important;border:2px solid #fff!important}
+.a11y-high-contrast .lk-num,.a11y-high-contrast .jersey-caption b{color:#ffe28a!important}
+.a11y-high-contrast .lk-c,.a11y-high-contrast .lk-chip i{background:#ffe28a!important;color:#000!important}
+.a11y-high-contrast .whiteboard{background:#fff!important;color:#000!important;border:4px solid #000!important;box-shadow:none!important}
+.a11y-high-contrast .whiteboard h2,.a11y-high-contrast .whiteboard h3,.a11y-high-contrast .mb-kicker,.a11y-high-contrast .mb-cap,.a11y-high-contrast .mb-cap b,.a11y-high-contrast .mb-note,.a11y-high-contrast .mb-clear,.a11y-high-contrast .mb-spark-foot b,.a11y-high-contrast .mb-delta,.a11y-high-contrast .mb-flags li em{color:#000!important;text-shadow:none!important}
+.a11y-high-contrast .mb-flags li b{background:#000!important;color:#fff!important}
+.a11y-high-contrast .mb-bar i{background:#000!important}.a11y-high-contrast .mb-spark polyline{stroke:#000!important}.a11y-high-contrast .mb-spark circle{stroke:#000!important}.a11y-high-contrast .mb-spark circle.now{fill:#000!important}
+.a11y-high-contrast .lk-chip{border:2px solid #fff!important;background:#000!important}.a11y-high-contrast .lk-chip.current,.a11y-high-contrast .lk-chip.picked{border:4px double #ffe28a!important}
+.a11y-high-contrast .cc-now,.a11y-high-contrast .cc-cost{background:#000!important;border:2px solid #fff!important;color:#fff}
+.a11y-high-contrast .kit.locked{border:2px dashed #fff!important}.a11y-high-contrast .kit-how,.a11y-high-contrast .kit-lock{color:#fff!important}

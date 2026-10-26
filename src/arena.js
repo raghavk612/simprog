@@ -7,6 +7,7 @@ import {oppRoster} from './engine.js';
 import {visitorCast} from './identities.js';
 import {qualityProfile, lowerLevel, autoDowngrade, probeDone, PROBE} from './graphics.js';
 import {loadOpponentLogo} from './logos.js';
+import {gymColors} from './kits.js';
 const purple=0x6832ab;
 export class Arena{
  constructor(host){
@@ -129,8 +130,8 @@ export class Arena{
   const [pos,tgt]=shot==='wide'?[V(x*.45,15,21),V(x*.55,0,0)]:shot==='track'?[V(x-dir*4,6.2,12.5),V(x+dir*1.5,1.3,a.z*.4)]:[V(dir*17.5,4.2,dir*4.5),V(dir*9,2,0)];
   this.camera.position.lerp(pos,shot==='baseline'?.07:.05);this.controls.target.lerp(tgt,.09);return false;}
  setIdentity(p,person,home=true){
-  const kit=this.state?.kit||'home',bg=home?(kit==='away'?'#f4effc':kit==='alternate'?'#191126':'#6832ab'):'#db7536';
-  const fg=home?(kit==='away'?'#562494':this.state?.trim||'#ffffff'):'#ffffff';
+  const [kb,kf]=gymColors(this.state?.kit||'home',this.state?.trim||'#ffffff'),bg=home?kb:'#db7536';
+  const fg=home?kf:'#ffffff';
   p.userData.person={id:person?.id,number:person?.number,name:person?.name,position:person?.position,home};
   const cap=home&&person?.id!=null&&person.id===this.state?.captain,key=[person?.id,person?.number,person?.name,bg,fg,cap?'C':'',person?.plate||''].join('|');if(p.userData.identity===key)return;p.userData.identity=key;
   p.userData.jersey.color.set(bg);

@@ -21,7 +21,7 @@ test('every language is listed, supported and has a locale file',()=>{
 });
 test('every static translation key used by the code exists in English',()=>{
  const missing=[];
- for(const file of ['../src/main.js','../src/settingsDialog.js','../src/narrative.js','../src/drills.js','../src/i18n/index.js']){
+ for(const file of ['../src/main.js','../src/settingsDialog.js','../src/narrative.js','../src/drills.js','../src/locker.js','../src/i18n/index.js']){
   for(const m of read(file).matchAll(/\b(?:t|tu|tb|list|has)\('([a-zA-Z0-9_.]+)'/g)){
    const key=m[1];if(!Object.keys(flat).some(k=>k===key||k.startsWith(`${key}.`)))missing.push(`${file}: ${key}`);
   }
@@ -42,7 +42,7 @@ for(const l of GRAPHICS_LEVELS)need.push(`settings.accessibility.graphicsOptions
  for(const v of ['perimeter','paint','transition'])need.push(`style.${v}`,`game.advice.${v}`);
  for(const v of ['balanced','zone','pressure','perimeter'])need.push(`tactic.${v}`);
  for(const v of ['steady','fast'])need.push(`pace.${v}`);
- for(const v of ['home','away','alternate'])need.push(`locker.${v}`);
+ for(const v of ['home','away','alternate'])need.push(`locker.${v}`);for(const v of ['throwback','seniornight','blackout'])need.push(`lk.kit.${v}`,`lk.how.${v}`);for(const v of ['injured','gpa','energy','bench'])need.push(`lk.flag.${v}`);for(const v of ['ready','tired','injured','gpa'])need.push(`lk.tag.${v}`);for(const v of ['happy','neutral','upset'])need.push(`lk.face.${v}`);need.push('log.kitUnlocked');
  for(const v of ['rookie','standard','elite'])need.push(`level.${v}`,`difficulty.${v}`);
  for(const n of [1,2,3,4])need.push(`tutorial.step${n}.title`,`tutorial.step${n}.body`);
  for(const v of ['made','miss','block','steal'])need.push(`outcome.${v}`);
