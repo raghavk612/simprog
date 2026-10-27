@@ -30,12 +30,24 @@ test('athlete bodies: every variant file loads as a rigged body the Arena can dr
  for(const v of BODY_VARIANTS){
   const buf=fs.readFileSync(new URL(`../public/models/players/${v}.glb`,import.meta.url));
   const gltf=await new Promise((res,rej)=>new GLTFLoader().parse(buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength),'',res,rej));
-  const b=athleteBody(gltf,kit,3,0x6832ab,v);assert.ok(validBody(b),v);assert.equal(b.variant,v);
-  assert.ok(b.parts.head.isMesh&&!b.parts.head.isBone,'head is the mesh, not the bone');assert.ok(b.parts.hair.isMesh);
+  const look={hair:'afro',hairColor:0x221813,headband:true,armSleeve:true,legSleeve:false};
+  const b=athleteBody(gltf,kit,3,0x6832ab,v,look);assert.ok(validBody(b),v);assert.equal(b.variant,v);assert.equal(b.key,`${v}|afro+band+arm`);
+  assert.ok(b.parts.head.isMesh&&!b.parts.head.isBone,'head is the mesh, not the bone');
+  assert.deepEqual(b.parts.hair.children.map(o=>o.name).sort(),['headband_mesh','hair_afro_mesh'].sort(),'one hair style plus the headband, hidden together in Player view');
+  const names=[];b.root.traverse(o=>{if(o.isSkinnedMesh||(o.isGroup&&o.name.endsWith('_mesh')))names.push(o.name);});
+  for(const n of ['jersey_mesh','shorts_mesh','shoes_mesh','sleeve_arm_mesh'])assert.ok(names.includes(n),n);
+  for(const n of ['hair_buzz_mesh','hair_crop_mesh','hair_rows_mesh','sleeve_leg_mesh'])assert.ok(!names.includes(n),`${n} is dropped`);
+  const kitMeshes=[];b.root.traverse(o=>{if(o.isSkinnedMesh&&o.material===b.parts.jersey)kitMeshes.push(o.name);});assert.deepEqual(kitMeshes.sort(),['jersey_mesh','shorts_mesh'],'team colour reaches jersey and shorts');
   assert.deepEqual(b.parts.legs.map(l=>l.name),['hip_R','hip_L']);assert.deepEqual(b.parts.arms.map(a=>a.name),['shoulder_R','shoulder_L']);
   for(const bone of [...b.parts.legs,...b.parts.arms])assert.deepEqual(bone.quaternion.toArray(),[0,0,0,1],'bones rest unrotated');
   assert.ok(b.parts.legs[0].position.x<0&&b.parts.arms[0].getWorldPosition(new THREE.Vector3()).x<0,'x<0 side first, like the classic figure');
-  let tris=0;b.root.traverse(o=>{if(o.isSkinnedMesh){tris+=o.geometry.index.count/3;assert.equal(o.frustumCulled,false);}});assert.ok(tris>6000&&tris<12000,`${v}: ${tris} triangles in budget`);
+  let tris=0;b.root.traverse(o=>{if(o.isSkinnedMesh){tris+=o.geometry.index.count/3;assert.equal(o.frustumCulled,false);}});assert.ok(tris>10000&&tris<15000,`${v}: ${tris} triangles in budget`);
   const box=new THREE.Box3().setFromObject(b.root);const h=box.max.y;assert.ok(h>2.0&&h<2.4,`${v} height ${h}`);
  }
+});
+test('looks: the same player always gets the same hair and options, and players differ',async()=>{
+ const {lookFor,lookKey,HAIR_STYLES}=await import('../src/players.js');
+ assert.deepEqual(lookFor(42),lookFor(42));const keys=new Set(),hair=new Set();
+ for(let i=0;i<60;i++){const l=lookFor('player'+i);keys.add(lookKey(l));hair.add(l.hair);assert.ok(HAIR_STYLES.includes(l.hair));}
+ assert.equal(hair.size,4,'every hair style is used');assert.ok(keys.size>8,'plenty of different looks');
 });

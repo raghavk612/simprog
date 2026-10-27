@@ -39,7 +39,7 @@ export function classicBody(kit,i,color){
   shoulder.userData.elbow=elbow;parts.arms.push(shoulder);
  }
  g.traverse(o=>{if(o.isMesh)o.castShadow=true;});
- return {root:g,parts,style:'classic',variant:'classic'};
+ return {root:g,parts,style:'classic',variant:'classic',key:'classic'};
 }
 
 /* Puts a body into a player's outer group, replacing the previous one, and points the player's userData at the new parts.
@@ -60,7 +60,7 @@ export function attachBody(player,body){
 /* Frees what only this body owns (geometry, materials and their canvas textures). Shared materials are listed in keep. */
 export function disposeBody(body,keep=new Set()){
  if(!body)return;const mats=new Set();
- body.root.traverse(o=>{if(o.isMesh){o.geometry?.dispose();(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m&&!keep.has(m)&&mats.add(m));}});
+ body.root.traverse(o=>{if(o.isMesh){if(!body.sharedGeometry||!o.isSkinnedMesh)o.geometry?.dispose();(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m&&!keep.has(m)&&mats.add(m));}});
  mats.forEach(m=>{m.map?.dispose();m.dispose();});
 }
 
@@ -74,14 +74,27 @@ export function validBody(body){
 /* ---- Athletes: the rigged bodies built in Houdini (assets-src/players) and rigged by scripts/build_players.py ---- */
 export const BODY_VARIANTS=['guard','forward','center'];
 export const SKIN_TONES=[0x8a5a3c,0xd8a47a,0x5a3825,0xb27a50,0xc8905f,0x3f2a1e,0xe6bf98];
+export const HAIR_STYLES=['buzz','crop','afro','rows'];
+const HAIR_COLORS=[0x161210,0x161210,0x221813,0x2e2118,0x161210,0x4a3424];
+const hash=s=>{let h=2166136261;for(const c of String(s))h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;};
+/* A player's look (hair style and colour, headband, arm and leg sleeves), the same every time for the same player. */
+export function lookFor(seed){const h=hash(seed);return {hair:HAIR_STYLES[h%4],hairColor:HAIR_COLORS[(h>>>4)%HAIR_COLORS.length],headband:(h>>>8)%5===0,armSleeve:(h>>>11)%4===0,legSleeve:(h>>>14)%6===0};}
+export const lookKey=l=>l?`${l.hair}${l.headband?'+band':''}${l.armSleeve?'+arm':''}${l.legSleeve?'+leg':''}`:'';
 /* template = a loaded glTF (public/models/players/<variant>.glb). Bones rest unrotated, so the Arena's hip/knee/shoulder/elbow
-   swings work exactly as on the classic figure; legs and arms are listed in the same order (x<0 side first). */
-export function athleteBody(template,kit,i,color,variant){
- const root=cloneSkinned(template.scene),bones={},objs={};let info={};
- root.traverse(o=>{if(o.isBone)bones[o.name]=o;else if(o.name)objs[o.name]??=o;if(o.userData&&o.userData.number)info=o.userData;});/* bones and meshes share names (head): parts take the mesh */
- const jersey=kit.mat(color),skin=new THREE.MeshStandardMaterial({color:SKIN_TONES[i%SKIN_TONES.length],roughness:.55}),shoes=kit.mat(0xf4f4f4,{roughness:.45}),hairMat=kit.mat(0x161210,{roughness:.85});
- const pick={kit:jersey,skin,shoes,hair:hairMat};
+   swings work exactly as on the classic figure; legs and arms are listed in the same order (x<0 side first).
+   Geometry stays shared with the template (only materials and decals belong to the body). */
+export function athleteBody(template,kit,i,color,variant,look=lookFor(i)){
+ const root=cloneSkinned(template.scene),bones={},objs={};let info={},holder=null;
+ root.traverse(o=>{if(o.isBone)bones[o.name]=o;else if(o.name)objs[o.name]??=o;if(o.userData&&o.userData.number){info=o.userData;holder=o;}});/* bones and meshes share names (head): parts take the mesh */
+ const jersey=kit.mat(color),skin=new THREE.MeshStandardMaterial({color:SKIN_TONES[i%SKIN_TONES.length],roughness:.55}),shoes=kit.mat(0xf4f4f4,{roughness:.45}),sole=kit.mat(0x1d1d22,{roughness:.6}),
+  hairMat=kit.mat(look.hairColor??0x161210,{roughness:.85}),band=kit.mat(0xffffff,{roughness:.8}),sleeve=kit.mat(0x111114,{roughness:.6});
+ const pick={kit:jersey,skin,shoes,sole,hair:hairMat,band,sleeve};
+ // keep one hair style and the chosen options; drop the rest
+ const keep=new Set([`hair_${look.hair}_mesh`,look.headband&&'headband_mesh',look.armSleeve&&'sleeve_arm_mesh',look.legSleeve&&'sleeve_leg_mesh'].filter(Boolean));
+ for(const [name,o] of Object.entries(objs))if(/^(hair_|headband_|sleeve_)/.test(name)&&!keep.has(name))o.parent?.remove(o);
  root.traverse(o=>{if(o.isMesh){const name=o.material?.name;o.material=pick[name]||skin;o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;}});
+ // head and hair (with the headband) hide together in Player view
+ const hair=new THREE.Group();hair.name='hair';(holder||root).add(hair);for(const n of [`hair_${look.hair}_mesh`,'headband_mesh'])if(keep.has(n)&&objs[n])hair.add(objs[n]);
  const ds=info.decalScale||1,chest=bones.chest;
  const numberGeo=new THREE.PlaneGeometry(.3*ds,.3*ds),uv=numberGeo.attributes.uv;for(let k=0;k<uv.count;k++)uv.setX(k,.25+uv.getX(k)*.5);
  const number=new THREE.Mesh(numberGeo,new THREE.MeshStandardMaterial({map:kit.textTexture(String([0,2,3,11,20][i%5]),'#6832ab','#ffffff',128),roughness:.68,transparent:true,alphaTest:.02}));
@@ -90,5 +103,5 @@ export function athleteBody(template,kit,i,color,variant){
  for(const [m,at] of [[number,info.number],[nameplate,info.nameplate],[capBadge,info.capBadge]]){if(at)m.position.fromArray(at);chest?.add(m);}
  const legs=[bones.hip_R,bones.hip_L],arms=[bones.shoulder_R,bones.shoulder_L];
  legs.forEach((b,j)=>b&&(b.userData.knee=bones[j?'knee_L':'knee_R']));arms.forEach((b,j)=>b&&(b.userData.elbow=bones[j?'elbow_L':'elbow_R']));
- return {root,parts:{jersey,head:objs.head_mesh,hair:objs.hair_mesh,number,nameplate,capBadge,legs,arms},style:'athletes',variant,owned:[skin,shoes,hairMat]};
+ return {root,parts:{jersey,head:objs.head_mesh,hair,number,nameplate,capBadge,legs,arms},style:'athletes',variant,key:`${variant}|${lookKey(look)}`,look,sharedGeometry:true};
 }

@@ -8,8 +8,9 @@ body_shapes.json the Houdini builder used (assets-src/players/). Output: public/
 What is in each .glb (one scene, game units, y up, +z forward, feet at y=0):
   * a skeleton whose bones rest with no rotation (so the game's hip/knee/shoulder/elbow swings work unchanged):
     pelvis > spine > chest > neck > head, chest > shoulder > elbow > wrist (per side), pelvis > hip > knee > ankle (per side)
-  * three skinned meshes sharing that skeleton: "body_mesh" (materials skin, kit, shoes), "head_mesh" (skin) and "hair_mesh",
-    so the game can hide the head and hair in Player view and recolour the kit material per team
+  * skinned meshes sharing that skeleton: "body_mesh" and "head_mesh" (skin), "jersey_mesh" and "shorts_mesh" (kit, recoloured
+    per team), "shoes_mesh" (shoes, sole), four hair styles "hair_buzz/crop/afro/rows_mesh", and the options "headband_mesh",
+    "sleeve_arm_mesh" (right arm) and "sleeve_leg_mesh" (left leg). The game keeps one hair style and the options it wants.
   * scene extras: decal anchors (chest number, back nameplate, captain badge) relative to the chest bone, and the height
 """
 import json, math, os, struct, sys
@@ -27,6 +28,10 @@ BONES = [  # name, parent, joint key in body_shapes.json
     ('hip_L', 'pelvis', 'hip_L'), ('knee_L', 'hip_L', 'knee_L'), ('ankle_L', 'knee_L', 'ankle_L'),
     ('hip_R', 'pelvis', 'hip_R'), ('knee_R', 'hip_R', 'knee_R'), ('ankle_R', 'knee_R', 'ankle_R')]
 BI = {b[0]: i for i, b in enumerate(BONES)}
+# Clothing and hair from Houdini (OBJ group -> body part its skin weights are copied from, material).
+GARMENTS = {'jersey': ('core', 'kit'), 'shorts': ('core', 'kit'), 'shoes': ('core', 'shoes'),
+            'hair_buzz': ('core', 'hair'), 'hair_crop': ('core', 'hair'), 'hair_afro': ('core', 'hair'), 'hair_rows': ('core', 'hair'),
+            'headband': ('core', 'band'), 'sleeve_arm': ('arm_R', 'sleeve'), 'sleeve_leg': ('core', 'sleeve')}
 
 def read_obj(path):
     v, vt, vn, faces, group = [], [], [], [], ''
@@ -123,22 +128,30 @@ def build_variant(name, spec, objpath):
     JW = np.take_along_axis(W, order, 1); JW[JW < 1e-3] = 0
     JW /= np.maximum(JW.sum(1, keepdims=True), 1e-9)
     JI = np.where(JW > 0, order, 0)
+    # clothing and hair follow the skin under them: copy the weights of the nearest body vertex of their source part
+    for g, (srcpart, _) in GARMENTS.items():
+        m = np.where(G == g)[0]
+        if not len(m): continue
+        src = np.where(G == srcpart)[0]
+        near = np.empty(len(m), int)
+        for k in range(0, len(m), 512):
+            d = ((P[m[k:k + 512], None, :] - P[None, src, :]) ** 2).sum(-1)
+            near[k:k + 512] = src[d.argmin(1)]
+        JW[m] = JW[near]; JI[m] = JI[near]
+        # cylindrical UVs round the body axis (or the limb) so a fabric pattern can tile on them
+        c = P[m].mean(0)
+        UV[m, 0] = np.arctan2(P[m, 0] - c[0], P[m, 2] - c[2]) / (2 * np.pi) + .5
+        UV[m, 1] = P[m, 1] / H * 4
 
     # materials and meshes by region (heights as fractions of H)
     y = lambda f: f * H
     def region(tri, g):
-        c = P[tri].mean(0); x, yy, z = c
-        if g != 'core': return ('body', 'skin')
-        if yy > J['neck'][1] + .012 * H:  # head
-            top = yy > y(.935) - (z > .02 * H) * y(.006) and not (z > .03 * H and yy < y(.955))
-            back = yy > y(.905) and z < -.015 * H
-            return ('hair', 'hair') if (top or back) else ('head', 'skin')
-        if yy < y(.062): return ('body', 'shoes')
-        neck_scoop = yy > y(.765) and abs(x) < .05 * H * (1 + (yy - y(.765)) / y(.06)) and z > 0
-        back_scoop = yy > y(.79) and abs(x) < .05 * H and z <= 0
-        armhole = abs(x) > .085 * H * v['shoulder'] and yy > y(.70)
-        if y(.535) < yy < y(.81) and not neck_scoop and not back_scoop and not armhole: return ('body', 'kit')  # tank top
-        if y(.37) < yy <= y(.56): return ('body', 'kit')  # shorts
+        c = P[tri].mean(0)
+        if g in GARMENTS:
+            mat = GARMENTS[g][1]
+            if g == 'shoes' and c[1] < y(.011): mat = 'sole'
+            return (g, mat)
+        if g == 'core' and c[1] > J['neck'][1] + .012 * H: return ('head', 'skin')
         return ('body', 'skin')
     meshes = {}
     for tri, g in tris:
@@ -147,11 +160,12 @@ def build_variant(name, spec, objpath):
 
     S = UNITS_PER_M
     chest = J['chest']
-    z_front = P[(np.abs(P[:, 0]) < .03 * H) & (np.abs(P[:, 1] - y(.745)) < .015 * H) & core][:, 2].max()
-    z_back = P[(np.abs(P[:, 0]) < .03 * H) & (np.abs(P[:, 1] - y(.765)) < .015 * H) & core][:, 2].min()
+    jersey = (G == 'jersey') if (G == 'jersey').any() else core
+    z_front = P[(np.abs(P[:, 0]) < .03 * H) & (np.abs(P[:, 1] - y(.71)) < .015 * H) & jersey][:, 2].max()
+    z_back = P[(np.abs(P[:, 0]) < .03 * H) & (np.abs(P[:, 1] - y(.765)) < .015 * H) & jersey][:, 2].min()
     extras = {'variant': name, 'height': H * S,
-              'number': [0, (y(.735) - chest[1]) * S, (z_front - chest[2] + .004) * S],
-              'nameplate': [0, (y(.775) - chest[1]) * S, (z_back - chest[2] - .004) * S],
+              'number': [0, (y(.705) - chest[1]) * S, (z_front - chest[2] + .003) * S],
+              'nameplate': [0, (y(.775) - chest[1]) * S, (z_back - chest[2] - .003) * S],
               'capBadge': [-.06 * H * S, (y(.792) - chest[1]) * S, (z_back - chest[2] - .006) * S],
               'decalScale': H * S / 2.15}
     return write_glb(os.path.join(OUT, name + '.glb'), P * S, N, UV, JI, JW, meshes, {k: J[BONES[i][2]] * S for i, (k, _, _) in enumerate(BONES)}, extras)
@@ -184,9 +198,10 @@ def write_glb(path, P, N, UV, JI, JW, meshes, joint_pos, extras):
     skin = {'joints': list(range(len(BONES))), 'inverseBindMatrices': ibm_acc, 'skeleton': 0}
     materials = []
     mat_index = {}
-    MAT = {'skin': ([.55, .36, .25, 1], .55), 'kit': ([.41, .2, .67, 1], .7), 'shoes': ([.95, .95, .95, 1], .45), 'hair': ([.07, .06, .06, 1], .8)}
+    MAT = {'skin': ([.55, .36, .25, 1], .55), 'kit': ([.41, .2, .67, 1], .7), 'shoes': ([.95, .95, .95, 1], .45), 'sole': ([.12, .12, .14, 1], .6),
+           'hair': ([.07, .06, .06, 1], .8), 'band': ([1, 1, 1, 1], .8), 'sleeve': ([.06, .06, .07, 1], .6)}
     gl_meshes = []
-    for mesh_name in ('body', 'head', 'hair'):
+    for mesh_name in ['body', 'head'] + [g for g in GARMENTS if g in meshes]:
         prims = []
         for mat, tris in meshes.get(mesh_name, {}).items():
             used = sorted({i for t in tris for i in t}); remap = {o: n for n, o in enumerate(used)}

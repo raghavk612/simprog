@@ -1,6 +1,6 @@
 # Visual overhaul: 2K-style players and arena
 
-Status: **Stage 0 and Stage 1 done on the `visual-overhaul` branch** (not on the live site yet).
+Status: **Stages 0–2 done on the `visual-overhaul` branch** (not on the live site yet).
 
 Restore point: branch `backup/pre-2k-overhaul` (commit `c9342d1`, the version live on Oct 25, 2026). To roll back, run `git checkout backup/pre-2k-overhaul` or reset `main` to it. All overhaul work happens on the `visual-overhaul` branch and reaches `main` (and the live site) one approved stage at a time.
 
@@ -104,11 +104,22 @@ Notes:
 
 On Raghav's Mac the working copies live in `~/coding/kangs-assets/` (Houdini reads and writes there).
 
+### Houdini (Stage 2: clothing and hair)
+Each variant in `kangs_players.hipnc` also builds clothing and hair as offsets of its own body, so they fit every size:
+- **Clothing:** `jersey` (loose tank top with deep armholes, a scoop neck, and folds at the waist and straps), `shorts` (baggy, with a gathered waistband and soft folds) and `shoes` (high-tops with a flat sole).
+- **Hair:** `hair_buzz`, `hair_crop`, `hair_afro` and `hair_rows` (cornrows).
+- **Options:** `headband`, `sleeve_arm` (right arm) and `sleeve_leg` (left leg).
+
+Each piece is a Volume Wrangle (`sdf_<piece>`) whose code is in `GARMENT_VEX` in `build_players.py`. The **Clothing/hair detail** parameter scales their triangle budgets.
+
+`scripts/build_players.py` copies each piece's skin weights from the nearest skin, so it moves with the body, and gives it tiling UVs for the fabric textures in Stage 3.
+
 ### In the game
 - **Turning it on:** Settings › Accessibility › Graphics › **Player models** › "3D athletes (beta)". Low graphics always uses the classic figures.
 - **Positions:** guards get the guard body, centers the center body, and everyone else the forward body.
+- **Looks:** each player gets one of the four hair styles and colours, and may get a headband, a shooting sleeve or a leg sleeve. The choice comes from the player's id, so it is the same every game (`lookFor` in `src/players.js`). The team colour goes on the jersey and the shorts.
 - **Code:** `src/players.js` (classic and athlete bodies) and `src/arena.js` (`setPlayers`, `styleBody`).
-- **Budget:** about 8.8k triangles per player and 3 × 0.32 MB of models, loaded only when the setting is on.
+- **Budget:** about 13k visible triangles per player and 3 × 0.54 MB of models, loaded only when the setting is on. Stage 8 will trim this with lower-detail versions.
 
 ### Spline scenes
 (to be added in Stage 4)

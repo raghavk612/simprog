@@ -16,8 +16,6 @@ import hou, json, os
 ASSETS = '/Users/raghav/coding/kangs-assets'
 SPEC = ASSETS + '/body_shapes.json'
 EXPORT = ASSETS + '/houdini/export'
-PARTS = ('core', 'arm_L', 'arm_R')
-
 # Python SOP: one point per shape, carrying what the SDF needs (all in metres, scaled by the body's parameters).
 SHAPES_SOP = r'''
 import hou, json
@@ -58,9 +56,11 @@ for s in spec['shapes']:
         pt.setAttribValue('basis', [xa[0], d[0], za[0], xa[1], d[1], za[1], xa[2], d[2], za[2]])
 '''
 
-# Volume Wrangle: smooth union of every shape of one part. density = -distance, so the surface is the 0 iso.
-SDF_VEX = r'''
+# Volume Wrangles. HEADER has the shape distance functions; each part / garment appends its own body.
+# density = -distance, so every surface is the 0 iso.
+HEADER = r"""
 float smin(float a; float b; float k) { float h = max(k - abs(a - b), 0.0) / k; return min(a, b) - h * h * k * 0.25; }
+float smax(float a; float b; float k) { return -smin(-a, -b, k); }
 float roundcone(vector q; float r1; float r2; float h) {
     float b = (r1 - r2) / h; float a = sqrt(max(1.0 - b * b, 1e-6));
     vector2 w = set(length(set(q.x, q.z)), q.y);
@@ -69,32 +69,146 @@ float roundcone(vector q; float r1; float r2; float h) {
     if (k > a * h) return length(w - set(0.0, h)) - r2;
     return dot(w, set(a, b)) - r1;
 }
-float blend = max(ch("../blend"), 1e-4);
-float d = 1e9;
-int n = npoints(1);
-for (int i = 0; i < n; i++) {
-    if (point(1, "part", i) != "PART") continue;
-    vector c = point(1, "P", i);
-    matrix3 m = point(1, "basis", i);
-    vector q = (v@P - c) * m;
-    float s;
-    if (point(1, "kind", i) == 0) {
-        vector r = point(1, "r", i);
-        float k0 = length(q / r); float k1 = length(q / (r * r));
-        s = k0 * (k0 - 1.0) / max(k1, 1e-6);
-    } else {
-        q.z /= point(1, "aspect", i);
-        s = roundcone(q, point(1, "ra", i), point(1, "rb", i), max(point(1, "len", i), 1e-4));
+float sdell(vector p; vector c; vector r) { vector q = p - c; float k0 = length(q / r); float k1 = length(q / (r * r)); return k0 * (k0 - 1.0) / max(k1, 1e-6); }
+// smooth union of every body shape of one part (core, arm_L, arm_R) at point P
+float part_sdf(string part; vector P; float blend) {
+    float d = 1e9;
+    int n = npoints(1);
+    for (int i = 0; i < n; i++) {
+        if (point(1, "part", i) != part) continue;
+        vector c = point(1, "P", i);
+        matrix3 m = point(1, "basis", i);
+        vector q = (P - c) * m;
+        float s;
+        if (point(1, "kind", i) == 0) {
+            vector r = point(1, "r", i);
+            float k0 = length(q / r); float k1 = length(q / (r * r));
+            s = k0 * (k0 - 1.0) / max(k1, 1e-6);
+        } else {
+            q.z /= point(1, "aspect", i);
+            s = roundcone(q, point(1, "ra", i), point(1, "rb", i), max(point(1, "len", i), 1e-4));
+        }
+        d = d > 1e8 ? s : smin(d, s, blend);
     }
-    d = d > 1e8 ? s : smin(d, s, blend);
+    return d;
 }
-f@surface = -d;
-'''
+float H = ch("../height_m"); float SH = ch("../shoulder"); float B = max(ch("../blend"), 1e-4);
+float SIDES[] = {-1.0, 1.0};
+vector P = v@P;
+"""
 
-# Volume box per part, as fractions of height (centre and size); x of arms follows the shoulder factor.
-BOX = {'core': ((0, .5, .02), (.34, 1.04, .26), False),
-       'arm_L': ((.123, .61, .005), (.11, .5, .12), True),
-       'arm_R': ((-.123, .61, .005), (.11, .5, .12), True)}
+PART_VEX = 'f@surface = -part_sdf("PART", P, B);'
+
+# Clothing and hair. Each is an offset of the body (so it fits every variant) cut to its region,
+# with loose drape and folds where real ones hang. Sizes are fractions of height H, offsets in metres.
+GARMENT_VEX = {
+'jersey': r"""
+float body = part_sdf("core", P, B);
+vector q = P - set(0, .55 * H, .004 * H); q.z /= .64;
+float drape = roundcone(q, .084 * H, .095 * H * pow(SH, .25), .2 * H);   // hangs straight from the chest, not tight at the waist
+float d = smin(body - .007, drape, .02);
+float ang = atan2(P.z, P.x);
+d -= .0028 * sin(ang * 15.0 + P.y * 35.0) * (1.0 - smooth(.565 * H, .64 * H, P.y));   // folds where it tucks into the shorts
+d -= .0015 * sin(ang * 9.0 + P.y * 60.0) * smooth(.77 * H, .83 * H, P.y);           // light folds at the straps
+d = smax(d, .545 * H - P.y, .004);
+d = smax(d, P.y - .875 * H, .004);
+foreach (float sd; SIDES)
+    d = smax(d, -sdell(P, set(sd * .118 * H * SH, .762 * H, -.006 * H), set(.05 * H, .072 * H, .075 * H)), .006);   // deep arm holes
+d = smax(d, -sdell(P, set(0, .835 * H, .03 * H), set(.048 * H, .06 * H, .06 * H)), .005);    // front neck scoop
+d = smax(d, -sdell(P, set(0, .85 * H, -.035 * H), set(.045 * H, .035 * H, .05 * H)), .005);  // back neck
+f@surface = -d;
+""",
+'shorts': r"""
+float d = part_sdf("core", P, B) - .012;
+foreach (float sd; SIDES) {
+    vector q = P - set(sd * .057 * H, .33 * H, .004 * H);
+    d = smin(d, roundcone(q, .061 * H, .058 * H, .2 * H), .015);   // baggy legs, a touch wider at the hem
+}
+d = smax(d, .325 * H - P.y, .004);
+d = smax(d, P.y - .575 * H, .004);
+float ang = atan2(P.z, P.x - (P.x > 0 ? .057 : -.057) * H);
+d -= .0009 * sin(ang * 7.0 + P.y * 18.0) * smooth(.33 * H, .38 * H, P.y) * (1.0 - smooth(.42 * H, .5 * H, P.y));   // soft vertical folds above the hem
+d -= .0018 * sin(atan2(P.z, P.x) * 18.0) * smooth(.53 * H, .57 * H, P.y);            // gathered waistband
+f@surface = -d;
+""",
+'shoes': r"""
+float d = 1e9;
+foreach (float sd; SIDES) {
+    vector a = set(sd * .045 * H, .026 * H, -.022 * H);
+    vector q = P - a; vector qq = set(q.x, q.z, q.y / .72);   // capsule along +z, flattened in y
+    float foot = roundcone(qq, .028 * H, .024 * H, .132 * H);
+    float collar = roundcone(P - set(sd * .044 * H, .02 * H, -.01 * H), .031 * H, .027 * H, .058 * H);   // high-top collar round the ankle
+    d = smin(d, smin(foot, collar, .02), .001);
+}
+d = smax(d, -P.y, .002);   // flat sole on the floor
+f@surface = -d;
+""",
+'hair_buzz': r"""
+float d = part_sdf("core", P, B) - .0035;
+d = smax(d, (.921 * H + P.z * .35) - P.y, .003);
+foreach (float sd; SIDES) d = smax(d, -sdell(P, set(sd * .041 * H, .921 * H, -.004 * H), set(.016 * H, .02 * H, .018 * H)), .003);
+f@surface = -d;
+""",
+'hair_crop': r"""
+float t = .004 + .011 * smooth(.93 * H, .985 * H, P.y);
+float d = part_sdf("core", P, B) - t;
+d = smax(d, (.925 * H + P.z * .35) - P.y, .004);
+foreach (float sd; SIDES) d = smax(d, -sdell(P, set(sd * .041 * H, .921 * H, -.004 * H), set(.016 * H, .02 * H, .018 * H)), .003);
+f@surface = -d;
+""",
+'hair_afro': r"""
+float head = part_sdf("core", P, B);
+float d = smin(head - .022, sdell(P, set(0, .962 * H, -.012 * H), set(.072 * H, .062 * H, .072 * H)), .035);
+d -= .0015 * sin(P.x * 900.0) * sin(P.y * 870.0) * sin(P.z * 930.0);   // a little curl texture
+d = smax(d, (.918 * H + P.z * .4) - P.y, .008);
+f@surface = -d;
+""",
+'hair_rows': r"""
+float ridge = max(0.0, sin(P.x / (.018 * H) * 3.14159));
+float d = part_sdf("core", P, B) - (.0035 + .0045 * ridge);   // cornrows running front to back
+d = smax(d, (.923 * H + P.z * .35) - P.y, .003);
+foreach (float sd; SIDES) d = smax(d, -sdell(P, set(sd * .041 * H, .921 * H, -.004 * H), set(.016 * H, .02 * H, .018 * H)), .003);
+f@surface = -d;
+""",
+'headband': r"""
+float d = part_sdf("core", P, B) - .007;
+float lo = .934 * H + P.z * .18;
+d = smax(d, lo - P.y, .002);
+d = smax(d, P.y - (lo + .021 * H), .002);
+f@surface = -d;
+""",
+'sleeve_arm': r"""
+float d = part_sdf("arm_R", P, B) - .0035;
+d = smax(d, .505 * H - P.y, .003);
+d = smax(d, P.y - .745 * H, .003);
+f@surface = -d;
+""",
+'sleeve_leg': r"""
+float d = part_sdf("core", P, B) - .0035;
+d = smax(d, .105 * H - P.y, .003);
+d = smax(d, P.y - .315 * H, .003);
+d = smax(d, .015 * H - P.x, .002);   // left leg only
+f@surface = -d;
+""",
+}
+
+# Volume box per piece: centre and size as fractions of height, whether x follows the shoulder factor,
+# voxel scale (x the Voxel size parameter) and triangle budget.
+BOX = {'core': ((0, .5, .02), (.34, 1.04, .26), False, 1.0, 'target_core'),
+       'arm_L': ((.123, .61, .005), (.11, .5, .12), True, 1.0, 'target_arm'),
+       'arm_R': ((-.123, .61, .005), (.11, .5, .12), True, 1.0, 'target_arm'),
+       'jersey': ((0, .71, .005), (.32, .36, .26), True, 1.0, 1500),
+       'shorts': ((0, .45, .005), (.3, .28, .24), False, 1.0, 1300),
+       'shoes': ((0, .05, .045), (.2, .11, .25), False, .8, 900),
+       'hair_buzz': ((0, .945, -.005), (.17, .14, .19), False, .7, 600),
+       'hair_crop': ((0, .95, -.005), (.17, .15, .19), False, .7, 700),
+       'hair_afro': ((0, .96, -.01), (.22, .19, .24), False, .8, 800),
+       'hair_rows': ((0, .945, -.005), (.17, .14, .19), False, .6, 900),
+       'headband': ((0, .945, 0), (.17, .07, .19), False, .6, 250),
+       'sleeve_arm': ((-.123, .625, .005), (.1, .27, .11), True, .8, 350),
+       'sleeve_leg': ((.05, .21, 0), (.1, .23, .1), False, .8, 350)}
+PARTS = ('core', 'arm_L', 'arm_R')
+PIECES = PARTS + tuple(GARMENT_VEX)
 
 def add_parms(geo, v):
     ptg = geo.parmTemplateGroup()
@@ -104,8 +218,9 @@ def add_parms(geo, v):
     f.addParmTemplate(hou.FloatParmTemplate('mass', 'Muscle mass', 1, default_value=(v['mass'],), min=0.7, max=1.4))
     f.addParmTemplate(hou.FloatParmTemplate('blend', 'Blend radius (m)', 1, default_value=(0.03,), min=0.001, max=0.08))
     f.addParmTemplate(hou.FloatParmTemplate('voxel', 'Voxel size (m)', 1, default_value=(0.006,), min=0.003, max=0.02))
-    f.addParmTemplate(hou.IntParmTemplate('target_core', 'Triangles: body', 1, default_value=(7000,), min=1000, max=40000))
+    f.addParmTemplate(hou.IntParmTemplate('target_core', 'Triangles: body', 1, default_value=(6200,), min=1000, max=40000))
     f.addParmTemplate(hou.IntParmTemplate('target_arm', 'Triangles: each arm', 1, default_value=(900,), min=200, max=8000))
+    f.addParmTemplate(hou.FloatParmTemplate('garment_detail', 'Clothing/hair detail', 1, default_value=(1.0,), min=0.3, max=4.0))
     f.addParmTemplate(hou.ToggleParmTemplate('do_uv', 'Unwrap UVs', default_value=True))
     f.addParmTemplate(hou.StringParmTemplate('spec_path', 'Shape table', 1, default_value=(SPEC,), string_type=hou.stringParmType.FileReference))
     f.addParmTemplate(hou.StringParmTemplate('export_path', 'Export OBJ', 1, default_value=(EXPORT + '/' + geo.name() + '.obj',), string_type=hou.stringParmType.FileReference))
@@ -123,20 +238,21 @@ def build(name, v, tx=0.0, overrides=None):
         geo.parm(k).set(val)
     shapes = geo.createNode('python', 'shapes'); shapes.parm('python').set(SHAPES_SOP)
     merge = geo.createNode('merge', 'body')
-    for part in PARTS:
-        (cx, cy, cz), (sx, sy, sz), side = BOX[part]
+    for part in PIECES:
+        (cx, cy, cz), (sx, sy, sz), side, vscale, budget = BOX[part]
         vol = geo.createNode('volume', 'box_' + part)
         vol.parm('name').set('surface')
         sh = '*ch("../shoulder")' if side else ''
         for axis, val, size in (('x', cx, sx), ('y', cy, sy), ('z', cz, sz)):
             vol.parm('t' + axis).setExpression('%f*ch("../height_m")%s' % (val, sh if axis == 'x' else ''))
             vol.parm('size' + axis).setExpression('%f*ch("../height_m")%s' % (size, sh if axis == 'x' else ''))
-        vol.parm('uniformsamples').set('size'); vol.parm('divsize').setExpression('ch("../voxel")')
+        vol.parm('uniformsamples').set('size'); vol.parm('divsize').setExpression('ch("../voxel")*%f' % vscale)
         wr = geo.createNode('volumewrangle', 'sdf_' + part); wr.setInput(0, vol); wr.setInput(1, shapes)
-        wr.parm('snippet').set(SDF_VEX.replace('PART', part))
+        wr.parm('snippet').set(HEADER + (PART_VEX.replace('PART', part) if part in PARTS else GARMENT_VEX[part]))
         mesh = geo.createNode('convertvolume', 'mesh_' + part); mesh.setInput(0, wr); mesh.parm('iso').set(0)
         red = geo.createNode('polyreduce::2.0', 'reduce_' + part); red.setInput(0, mesh)
-        red.parm('target').set('poly_count'); red.parm('finalcount').setExpression('ch("../%s")' % ('target_core' if part == 'core' else 'target_arm'))
+        red.parm('target').set('poly_count')
+        red.parm('finalcount').setExpression('ch("../%s")' % budget if isinstance(budget, str) else 'int(%d*ch("../garment_detail"))' % budget)
         grp = geo.createNode('groupcreate', 'group_' + part); grp.setInput(0, red); grp.parm('groupname').set(part)
         merge.setNextInput(grp)
     nrm = geo.createNode('normal', 'smooth_normals'); nrm.setInput(0, merge); nrm.parm('type').set('typepoint')

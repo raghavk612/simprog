@@ -8,7 +8,7 @@ import {visitorCast} from './identities.js';
 import {qualityProfile, lowerLevel, autoDowngrade, probeDone, PROBE} from './graphics.js';
 import {loadOpponentLogo} from './logos.js';
 import {gymColors} from './kits.js';
-import {classicBody,attachBody,disposeBody,validBody,athleteBody,variantFor,BODY_VARIANTS} from './players.js';
+import {classicBody,attachBody,disposeBody,validBody,athleteBody,variantFor,BODY_VARIANTS,lookFor,lookKey} from './players.js';
 import {effectivePlayers} from './graphics.js';
 const purple=0x6832ab;
 export class Arena{
@@ -76,9 +76,9 @@ export class Arena{
   if(want==='athletes'&&!this.templates){(this.bodiesLoading??=Promise.all(BODY_VARIANTS.map(v=>new GLTFLoader().loadAsync(`${import.meta.env.BASE_URL}models/players/${v}.glb`).then(g=>[v,g])))).then(list=>{this.templates=Object.fromEntries(list);this.applyPlayers();}).catch(e=>{console.warn('Player models unavailable, keeping classic',e);this.bodiesLoading=null;this.playerStyle='classic';});return;}
   this.people.forEach(p=>this.styleBody(p));}
  /* Gives one player the body the current setting asks for: classic, or the athlete variant for his position. */
- styleBody(p){const u=p.userData,i=u.slot??0,want=this.playerStyle==='athletes'&&this.templates?variantFor(u.person?.position):'classic';if(u.body?.variant===want)return false;
+ styleBody(p){const u=p.userData,i=u.slot??0,want=this.playerStyle==='athletes'&&this.templates?variantFor(u.person?.position):'classic',look=want==='classic'?null:lookFor(u.person?.id??u.person?.name??i),key=want==='classic'?'classic':`${want}|${lookKey(look)}`;if(u.body?.key===key)return false;
   const color=u.jersey?.color?.getHex?.()??(i<5?purple:0xf1e9df);
-  const body=want==='classic'?classicBody(this.bodyKit(),i,color):athleteBody(this.templates[want],this.bodyKit(),i,color,want);
+  const body=want==='classic'?classicBody(this.bodyKit(),i,color):athleteBody(this.templates[want],this.bodyKit(),i,color,want,look);
   return this.swapBody(p,body);}
  swapBody(p,body){if(!validBody(body))return false;const old=attachBody(p,body),who=p.userData.person;if(old&&old!==body&&!old.shared)disposeBody(old,new Set([this.capMat]));p.userData.identity=null;if(who)this.setIdentity(p,{...who,plate:p.userData.plate},who.home);return true;}
  addDetails(){
