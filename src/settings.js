@@ -2,7 +2,7 @@
 import {SOUND_KEYS,configureAudio} from './audio.js';
 import {configureSpeech} from './speech.js';
 import {FILTER_ID,installColorFilters} from './a11y.js';
-import {GRAPHICS_LEVELS} from './graphics.js';
+import {GRAPHICS_LEVELS,PLAYER_MODELS} from './graphics.js';
 const EVENT='kangs-settings-changed',STORE={sound:'kangs_sound',a11y:'kangs_accessibility'};
 const read=k=>{try{return JSON.parse(localStorage.getItem(k));}catch{return null;}};
 const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
@@ -15,7 +15,7 @@ export const PLAYBACK_SPEEDS=[.5,.75,1];
 export const TEXT_SCALE={min:.7,max:1.8,step:.05};
 // Sound effects start off, as before; volume and the individual sounds are remembered.
 export const SOUND_DEFAULTS={volume:.35,muted:true,commentary:true,toggles:Object.fromEntries(SOUND_KEYS.map(k=>[k,true]))};
-export const A11Y_DEFAULTS={lightTheme:false,colorBlindMode:'none',highContrast:false,reducedMotion:false,screenShake:true,flashReduction:false,textScale:1,fontFamily:'default',playbackSpeed:1,timingAssist:false,simplifiedUI:false,graphics:'auto'};
+export const A11Y_DEFAULTS={lightTheme:false,colorBlindMode:'none',highContrast:false,reducedMotion:false,screenShake:true,flashReduction:false,textScale:1,fontFamily:'default',playbackSpeed:1,timingAssist:false,simplifiedUI:false,graphics:'auto',players:'classic'};
 const cache={};
 export function normalizeSound(raw){
  const r=raw&&typeof raw==='object'?raw:{},t=r.toggles&&typeof r.toggles==='object'?r.toggles:{};
@@ -27,7 +27,7 @@ export function normalizeA11y(raw,base=A11Y_DEFAULTS){
   lightTheme:bool(r.lightTheme,d.lightTheme),colorBlindMode:pick(r.colorBlindMode,COLOR_MODES,d.colorBlindMode),highContrast:bool(r.highContrast,d.highContrast),reducedMotion:bool(r.reducedMotion,d.reducedMotion),
   screenShake:bool(r.screenShake,d.screenShake),flashReduction:bool(r.flashReduction,d.flashReduction),textScale:Math.round(num(r.textScale,TEXT_SCALE.min,TEXT_SCALE.max,d.textScale)*100)/100,
   fontFamily:pick(r.fontFamily,FONT_FAMILIES,d.fontFamily),playbackSpeed:pick(+r.playbackSpeed,PLAYBACK_SPEEDS,d.playbackSpeed),timingAssist:bool(r.timingAssist,d.timingAssist),simplifiedUI:bool(r.simplifiedUI,d.simplifiedUI),
-  graphics:pick(r.graphics,GRAPHICS_LEVELS,d.graphics)
+  graphics:pick(r.graphics,GRAPHICS_LEVELS,d.graphics),players:pick(r.players,PLAYER_MODELS,d.players)
  };
 }
 // First visit: adopt the operating-system preferences for motion and contrast.
@@ -45,7 +45,7 @@ export const resetSound=()=>commitSound(normalizeSound(null));
 export const setA11y=patch=>commitA11y(normalizeA11y({...getA11y(),...patch}));
 export const resetA11y=()=>commitA11y({...A11Y_DEFAULTS});
 // Number of accessibility options that differ from their defaults (shown as a badge on the tab).
-export const activeA11yCount=(s=getA11y())=>Object.keys(A11Y_DEFAULTS).filter(k=>k!=='graphics'&&s[k]!==A11Y_DEFAULTS[k]).length;
+export const activeA11yCount=(s=getA11y())=>Object.keys(A11Y_DEFAULTS).filter(k=>k!=='graphics'&&k!=='players'&&s[k]!==A11Y_DEFAULTS[k]).length;
 export const isTouchOnly=()=>typeof matchMedia==='function'&&matchMedia('(hover: none) and (pointer: coarse)').matches;
 // Mirrors the settings onto <html> as classes and custom properties; the stylesheet does the rest.
 export function applyA11y(s=getA11y()){

@@ -25,3 +25,17 @@ test('validBody rejects bodies missing a part, and positions map to body variant
  assert.equal(validBody({...b,parts:{...b.parts,legs:[b.parts.legs[0]]}}),false);assert.equal(validBody(null),false);
  assert.equal(variantFor('Guard'),'guard');assert.equal(variantFor('Point Guard'),'guard');assert.equal(variantFor('Center'),'center');assert.equal(variantFor('Forward'),'forward');assert.equal(variantFor(undefined),'forward');
 });
+test('athlete bodies: every variant file loads as a rigged body the Arena can drive',async()=>{
+ const fs=await import('node:fs');const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');const {athleteBody,BODY_VARIANTS}=await import('../src/players.js');
+ for(const v of BODY_VARIANTS){
+  const buf=fs.readFileSync(new URL(`../public/models/players/${v}.glb`,import.meta.url));
+  const gltf=await new Promise((res,rej)=>new GLTFLoader().parse(buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength),'',res,rej));
+  const b=athleteBody(gltf,kit,3,0x6832ab,v);assert.ok(validBody(b),v);assert.equal(b.variant,v);
+  assert.ok(b.parts.head.isMesh&&!b.parts.head.isBone,'head is the mesh, not the bone');assert.ok(b.parts.hair.isMesh);
+  assert.deepEqual(b.parts.legs.map(l=>l.name),['hip_R','hip_L']);assert.deepEqual(b.parts.arms.map(a=>a.name),['shoulder_R','shoulder_L']);
+  for(const bone of [...b.parts.legs,...b.parts.arms])assert.deepEqual(bone.quaternion.toArray(),[0,0,0,1],'bones rest unrotated');
+  assert.ok(b.parts.legs[0].position.x<0&&b.parts.arms[0].getWorldPosition(new THREE.Vector3()).x<0,'x<0 side first, like the classic figure');
+  let tris=0;b.root.traverse(o=>{if(o.isSkinnedMesh){tris+=o.geometry.index.count/3;assert.equal(o.frustumCulled,false);}});assert.ok(tris>6000&&tris<12000,`${v}: ${tris} triangles in budget`);
+  const box=new THREE.Box3().setFromObject(b.root);const h=box.max.y;assert.ok(h>2.0&&h<2.4,`${v} height ${h}`);
+ }
+});

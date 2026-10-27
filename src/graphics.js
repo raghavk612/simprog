@@ -1,5 +1,8 @@
 // Graphics quality: pure helpers (no Three.js) so the choices can be unit-tested. The Arena applies the profile.
 export const GRAPHICS_LEVELS=['auto','low','medium','high'];
+// Player models: 'classic' (the original figures) or 'athletes' (the rigged Houdini bodies). Low quality always draws classic.
+export const PLAYER_MODELS=['classic','athletes'];
+export const effectivePlayers=(choice,level)=>level==='low'||!PLAYER_MODELS.includes(choice)?'classic':choice;
 // pixelRatio is a ceiling for devicePixelRatio; shadowSize 0 turns the sun's shadow off; crowd is 'full' | 'noshadow' | 'hidden'.
 const PROFILES={low:{pixelRatio:1,shadowSize:0,crowd:'hidden'},medium:{pixelRatio:1.5,shadowSize:1024,crowd:'noshadow'},high:{pixelRatio:2,shadowSize:2048,crowd:'full'}};
 // 'auto' starts at the current (High) look and may be lowered later by autoDowngrade.

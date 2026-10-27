@@ -1,6 +1,6 @@
 // Settings dialog: controls, sound, accessibility and language. Every change applies immediately and is saved.
 import {t,tu,LANGUAGES,getLanguage,setLanguage} from './i18n/index.js';
-import {GRAPHICS_LEVELS} from './graphics.js';
+import {GRAPHICS_LEVELS,PLAYER_MODELS} from './graphics.js';
 import {getSound,setSound,resetSound,getA11y,setA11y,resetA11y,activeA11yCount,isTouchOnly,TEXT_SCALE,COLOR_MODES,FONT_FAMILIES,PLAYBACK_SPEEDS} from './settings.js';
 import {SOUND_KEYS,preview} from './audio.js';
 import {ACTIONS,DEFAULT_KEYS,loadKeys,saveKeys,keyLabel,findConflict} from './keys.js';
@@ -49,7 +49,7 @@ export function createSettingsDialog({modal,show,notify,onKeysChange}){
     selectRow('a11y.playbackSpeed',t('settings.accessibility.playbackSpeed'),t('settings.accessibility.playbackSpeedDesc'),a.playbackSpeed,PLAYBACK_SPEEDS.map(v=>[v,t(`settings.accessibility.playbackSpeedOptions.${String(v).replace('.','_')}`)]))+
     toggleRow('a11y.timingAssist',t('settings.accessibility.timingAssist'),t('settings.accessibility.timingAssistDesc'),a.timingAssist))+
    section(t('settings.accessibility.cognitive'),toggleRow('a11y.simplifiedUI',t('settings.accessibility.simplifiedUI'),t('settings.accessibility.simplifiedUIDesc'),a.simplifiedUI))+
-   section(t('settings.accessibility.graphicsTitle'),selectRow('a11y.graphics',t('settings.accessibility.graphics'),t('settings.accessibility.graphicsDesc'),a.graphics,GRAPHICS_LEVELS.map(l=>[l,t(`settings.accessibility.graphicsOptions.${l}`)])))+
+   section(t('settings.accessibility.graphicsTitle'),selectRow('a11y.graphics',t('settings.accessibility.graphics'),t('settings.accessibility.graphicsDesc'),a.graphics,GRAPHICS_LEVELS.map(l=>[l,t(`settings.accessibility.graphicsOptions.${l}`)]))+selectRow('a11y.players',t('settings.accessibility.players'),t('settings.accessibility.playersDesc'),a.players,PLAYER_MODELS.map(l=>[l,t(`settings.accessibility.playersOptions.${l}`)])))+
    resetButton('reset-a11y',t('settings.accessibility.resetAll'))+`<p class="statement">${esc(t('settings.accessibility.statement'))}</p>`;
  }
  function languagePanel(){

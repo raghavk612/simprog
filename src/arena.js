@@ -8,7 +8,8 @@ import {visitorCast} from './identities.js';
 import {qualityProfile, lowerLevel, autoDowngrade, probeDone, PROBE} from './graphics.js';
 import {loadOpponentLogo} from './logos.js';
 import {gymColors} from './kits.js';
-import {classicBody,attachBody,disposeBody,validBody} from './players.js';
+import {classicBody,attachBody,disposeBody,validBody,athleteBody,variantFor,BODY_VARIANTS} from './players.js';
+import {effectivePlayers} from './graphics.js';
 const purple=0x6832ab;
 export class Arena{
  constructor(host){
@@ -69,6 +70,16 @@ export class Arena{
  /* What a body builder needs from the Arena: the shared material style, crisp canvas text and the captain badge. */
  bodyKit(){return this.kit??={mat:(c,extra)=>this.mat(c,extra),textTexture:(...a)=>this.textTexture(...a),capMat:(this.capMat??=new THREE.MeshBasicMaterial({map:this.textTexture('C','#e9b858','#2a1450',128,{aspect:1}),toneMapped:false}))};}
  /* Swaps one player's body (see src/players.js) and re-applies his name, number and kit colours to the new one. */
+ /* Player models setting. 'athletes' loads the three rigged bodies once (about 1 MB) and keeps classic figures until they arrive or if they fail. */
+ setPlayers(choice){if(this.failed)return;this.playersChoice=choice;this.applyPlayers();}
+ applyPlayers(){const want=effectivePlayers(this.playersChoice,this.level);this.playerStyle=want;
+  if(want==='athletes'&&!this.templates){(this.bodiesLoading??=Promise.all(BODY_VARIANTS.map(v=>new GLTFLoader().loadAsync(`${import.meta.env.BASE_URL}models/players/${v}.glb`).then(g=>[v,g])))).then(list=>{this.templates=Object.fromEntries(list);this.applyPlayers();}).catch(e=>{console.warn('Player models unavailable, keeping classic',e);this.bodiesLoading=null;this.playerStyle='classic';});return;}
+  this.people.forEach(p=>this.styleBody(p));}
+ /* Gives one player the body the current setting asks for: classic, or the athlete variant for his position. */
+ styleBody(p){const u=p.userData,i=u.slot??0,want=this.playerStyle==='athletes'&&this.templates?variantFor(u.person?.position):'classic';if(u.body?.variant===want)return false;
+  const color=u.jersey?.color?.getHex?.()??(i<5?purple:0xf1e9df);
+  const body=want==='classic'?classicBody(this.bodyKit(),i,color):athleteBody(this.templates[want],this.bodyKit(),i,color,want);
+  return this.swapBody(p,body);}
  swapBody(p,body){if(!validBody(body))return false;const old=attachBody(p,body),who=p.userData.person;if(old&&old!==body&&!old.shared)disposeBody(old,new Set([this.capMat]));p.userData.identity=null;if(who)this.setIdentity(p,{...who,plate:p.userData.plate},who.home);return true;}
  addDetails(){
   // Physical sideline details, rather than extra floating UI.
@@ -99,7 +110,8 @@ export class Arena{
  setQuality(q){if(this.failed||q===this.quality)return;this.quality=q;this.level=q==='auto'?'high':q;this.probe=q==='auto'?{times:[],frames:0,done:false}:{done:true};this.applyLevel();}
  applyLevel(){const p=qualityProfile(this.level,devicePixelRatio),sun=this.sun;this.renderer.setPixelRatio(p.pixelRatio);
   if(sun){sun.castShadow=p.shadows;if(p.shadows&&sun.shadow.mapSize.x!==p.shadowSize){sun.shadow.mapSize.set(p.shadowSize,p.shadowSize);sun.shadow.map?.dispose();sun.shadow.map=null;}}
-  for(const o of this.crowd||[]){o.visible=p.crowd!=='hidden';o.castShadow=p.crowd==='full';}}
+  for(const o of this.crowd||[]){o.visible=p.crowd!=='hidden';o.castShadow=p.crowd==='full';}
+  if(this.playersChoice)this.applyPlayers();}
  /* Auto mode: after a short warm-up, time about two seconds of rendered frames; if the typical frame is slower than ~28 fps drop one level, once. Nothing is remembered. */
  measure(now){const pr=this.probe;if(pr.done)return;const raw=this.lastT?now-this.lastT:0;this.lastT=now;if(raw<=0||++pr.frames<=PROBE.warmup)return;pr.times.push(raw);if(probeDone(pr.times)){pr.done=true;if(autoDowngrade(pr.times)){this.level=lowerLevel(this.level);this.applyLevel();}}}
  setView(mode){if(this.failed)return;this.mode=mode;this.userMoved=false;this.controls.enabled=mode!=='player';if(mode==='player'){this.fpLook=null;return;}const w=this.host.clientWidth,h=this.host.clientHeight,a=w>1&&h>1?w/h:16/9,tall=a<.8,fixed={locker:[[-9,5.5,-6],[-15.5,1.4,-15]],office:[[18.6,4.4,-6],[15.6,1,-13.2]],follow:[[7,tall?11:9,tall?17:16],[7,1,0]]};
@@ -118,7 +130,7 @@ export class Arena{
  setIdentity(p,person,home=true){
   const [kb,kf]=gymColors(this.state?.kit||'home',this.state?.trim||'#ffffff'),bg=home?kb:'#db7536';
   const fg=home?kf:'#ffffff';
-  p.userData.person={id:person?.id,number:person?.number,name:person?.name,position:person?.position,home};p.userData.plate=person?.plate;
+  p.userData.person={id:person?.id,number:person?.number,name:person?.name,position:person?.position,home};p.userData.plate=person?.plate;if(this.playerStyle==='athletes'&&this.templates&&this.styleBody(p))return;
   const cap=home&&person?.id!=null&&person.id===this.state?.captain,key=[person?.id,person?.number,person?.name,bg,fg,cap?'C':'',person?.plate||''].join('|');if(p.userData.identity===key)return;p.userData.identity=key;
   p.userData.jersey.color.set(bg);
   const n=p.userData.number.material;n.map.dispose();n.map=this.textTexture(String(person?.number??11),bg,fg,128);
