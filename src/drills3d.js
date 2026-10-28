@@ -283,47 +283,55 @@ export function buildStudio(S) {
 /* ------------------------------------------------------------------ film room */
 export function buildFilmRoom(S) {
   const scene = S.scene; scene.background = new THREE.Color('#07060d'); scene.fog = new THREE.Fog('#07060d', 30, 90);
-  scene.add(new THREE.HemisphereLight(0x8f86b8, 0x120d1c, 0.55));
+  scene.add(new THREE.HemisphereLight(0xd9d1f2, 0x271d17, 0.85));
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), mat(0x1a1328, { roughness: 0.95 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(80, 30), mat(0x1c1430, { roughness: 0.95 })); wall.position.set(0, 15, -16); wall.receiveShadow = true; scene.add(wall);
   for (const sx of [-1, 1]) { const w = new THREE.Mesh(new THREE.PlaneGeometry(60, 30), mat(0x181127, { roughness: 0.95 })); w.position.set(sx * 24, 15, 6); w.rotation.y = -sx * Math.PI / 2; scene.add(w); }
   // acoustic panels
   for (let i = 0; i < 7; i++) for (const sx of [-1, 1]) box(S, 0.3, 5, 2.4, i % 2 ? 0x2a1d44 : 0x33224f, sx * 23.8, 6, -12 + i * 3.2, { cast: false });
   // screen with a bezel
-  const SW = 21, SH = 11.8;
-  box(S, SW + 0.9, SH + 0.9, 0.35, 0x050409, 0, 9.2, -15.6, { cast: false });
+  const SW = 29, SH = 16.3;
+  box(S, SW + 0.9, SH + 0.9, 0.35, 0x050409, 0, 11, -15.6, { cast: false });
+  // Warm architectural accents, screen surround and tiered seating.
+  for(const sx of [-1,1]){
+    for(let j=0;j<7;j++)box(S,.18,20,.35,0x70503d,sx*(16+j*.55),10,-15.3,{cast:false});
+    box(S,.16,12,.2,0xf1c47b,sx*20.8,10,-15,{cast:false});
+    const warm=new THREE.PointLight(0xffcf91,220,28);warm.position.set(sx*17,11,-8);scene.add(warm);
+  }
+  box(S,42,.22,3,0x3b2c28,0,.12,-11,{cast:false});
+  for(const z of [2,7]){box(S,22,.28,3.8,0x25212d,0,.14,z,{cast:false});box(S,22,.05,.08,0xd3aa62,0,.31,z+1.9,{cast:false});}
   const q = { text: '', head: '', foot: '', state: 'idle' };
   const tex = textTexture(S, (x, w, h) => {
-    const g = x.createLinearGradient(0, 0, w, h); g.addColorStop(0, '#231a45'); g.addColorStop(1, '#0f2038'); x.fillStyle = g; x.fillRect(0, 0, w, h);
+    const g = x.createLinearGradient(0, 0, w, h); g.addColorStop(0, '#17182b'); g.addColorStop(1, '#172d41'); x.fillStyle = g; x.fillRect(0, 0, w, h);
     x.strokeStyle = 'rgba(255,255,255,.07)'; x.lineWidth = 3; x.strokeRect(w * 0.08, h * 0.2, w * 0.84, h * 0.7); x.beginPath(); x.arc(w * 0.5, h * 0.9, h * 0.34, Math.PI, 0); x.stroke(); x.strokeRect(w * 0.36, h * 0.62, w * 0.28, h * 0.28);
-    x.fillStyle = 'rgba(233,184,88,.55)'; x.font = FONT(900, h * 0.075); x.textAlign = 'left'; x.textBaseline = 'middle'; x.fillText(q.head, w * 0.045, h * 0.09);
-    x.textAlign = 'right'; x.fillStyle = 'rgba(255,255,255,.5)'; x.fillText(q.foot, w * 0.955, h * 0.09);
+    x.fillStyle = '#e9c780'; x.font = FONT(900, h * 0.075); x.textAlign = 'left'; x.textBaseline = 'middle'; x.fillText(q.head, w * 0.045, h * 0.09);
+    x.textAlign = 'right'; x.fillStyle = '#d8dcec'; x.fillText(q.foot, w * 0.955, h * 0.09);
     x.textAlign = 'center'; x.fillStyle = q.state === 'right' ? '#8bf0b0' : q.state === 'wrong' ? '#ffb0b0' : '#ffffff';
     let fs = h * 0.115, lines; for (; fs > 24; fs -= 4) { x.font = FONT(800, fs, false); lines = wrap(x, q.text, w * 0.8); if (lines.length * fs * 1.18 <= h * 0.58) break; }
     lines.forEach((l, i) => x.fillText(l, w / 2, h * 0.52 + (i - (lines.length - 1) / 2) * fs * 1.18));
     if (q.state !== 'idle') { x.fillStyle = q.state === 'right' ? 'rgba(80,220,140,.16)' : 'rgba(248,113,113,.16)'; x.fillRect(0, 0, w, h); }
     // scanlines
-    x.fillStyle = 'rgba(0,0,0,.12)'; for (let yy = 0; yy < h; yy += 6) x.fillRect(0, yy, w, 2);
+    // Crisp projection: no scanline mask over the question.
   }, 1280, 720);
-  const screen = new THREE.Mesh(new THREE.PlaneGeometry(SW, SH), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })); screen.position.set(0, 9.2, -15.4); scene.add(screen);
-  const glow = new THREE.PointLight(0x8fb5ff, 1400, 60); glow.position.set(0, 9, -11); scene.add(glow);
-  const glow2 = new THREE.PointLight(0xb48aff, 600, 40); glow2.position.set(0, 3, 8); scene.add(glow2);
+  const screen = new THREE.Mesh(new THREE.PlaneGeometry(SW, SH), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false })); screen.position.set(0, 11, -15.4); scene.add(screen);
+  const glow = new THREE.PointLight(0xb8d4ff, 850, 60); glow.position.set(0, 9, -11); scene.add(glow);
+  const glow2 = new THREE.PointLight(0xffc987, 100, 40); glow2.position.set(0, 3, 8); scene.add(glow2);
   // projector beam and dust
   const beam = new THREE.Mesh(new THREE.ConeGeometry(11, 30, 28, 1, true), new THREE.MeshBasicMaterial({ color: 0x9fb8ff, transparent: true, opacity: 0.045, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
   beam.position.set(0, 9.2, 0); beam.rotation.x = -Math.PI / 2; beam.position.z = -0.4; scene.add(beam); beam.scale.set(1, 1, 0.56);
   box(S, 1.6, 0.8, 2.2, 0x22202a, 0, 16, 12, { cast: false });
-  const N = 140, dp = new Float32Array(N * 3), seed = new Float32Array(N); for (let i = 0; i < N; i++) { dp[i * 3] = (Math.random() - 0.5) * 20; dp[i * 3 + 1] = 2 + Math.random() * 12; dp[i * 3 + 2] = -14 + Math.random() * 28; seed[i] = Math.random() * 6.28; }
+  const N = 45, dp = new Float32Array(N * 3), seed = new Float32Array(N); for (let i = 0; i < N; i++) { dp[i * 3] = (Math.random() - 0.5) * 20; dp[i * 3 + 1] = 2 + Math.random() * 12; dp[i * 3 + 2] = -14 + Math.random() * 28; seed[i] = Math.random() * 6.28; }
   const dgeo = new THREE.BufferGeometry(); dgeo.setAttribute('position', new THREE.BufferAttribute(dp, 3));
-  const dust = new THREE.Points(dgeo, new THREE.PointsMaterial({ color: 0xcfd9ff, size: 0.09, transparent: true, opacity: 0.5, depthWrite: false })); dust.frustumCulled = false; scene.add(dust);
+  const dust = new THREE.Points(dgeo, new THREE.PointsMaterial({ color: 0xcfd9ff, size: 0.09, transparent: true, opacity: 0.18, depthWrite: false })); dust.frustumCulled = false; scene.add(dust);
   // chairs with players watching, seen from behind
   const crew = [];
-  const rows = [[10.5, 5, 0], [6.8, 6, 1], [3.2, 5, 2]];
+  const rows = [[8.5, 4, 0], [3.2, 5, 1]];
   rows.forEach(([z, n, ri]) => {
     for (let i = 0; i < n; i++) {
       const x = (i - (n - 1) / 2) * 3.6 + (ri % 2 ? 0.5 : -0.3);
-      box(S, 2.2, 0.35, 2.2, 0x2a1d44, x, 1.55, z, {}); box(S, 2.2, 2.6, 0.35, 0x2a1d44, x, 2.9, z + 1.0, {});
+      box(S, 2.2, 0.35, 2.2, 0x302a38, x, 1.55, z, {}); box(S, 2.2, 2.6, 0.35, 0x302a38, x, 2.9, z + 1.0, {});
       if ((i + ri) % 4 === 1 && ri === 1) continue; // an empty seat
-      const rig = makeRig(S, { jersey: i % 2 ? PURPLE : 0x562494, skin: SKINS[(i + ri) % 5], number: String((i * 3 + ri * 7) % 24), numberBg: '#6832ab', name: ['KANGS', 'LW', 'KANGS'][ri % 3] });
+      const rig = makeRig(S, { jersey: i % 2 ? PURPLE : 0x562494, skin: SKINS[(i + ri) % 5], number: String((i * 3 + ri * 7) % 24), numberBg: '#6832ab', name: ['KANGS', 'LW', 'KANGS'][ri % 3], scale:2.1 });
       rig.place(x, z + 0.15, Math.PI); rig.blob.visible = false; rig.pose({ ...POSE.stand, y: 1.55, hip: [-1.4, -1.4], knee: [1.45, 1.45], sh: [-0.5, -0.5], sp: [0.3, 0.3], el: [-1.3, -1.3], lean: 0.05, head: 0 }); rig.seat = rig.inner.position.y; crew.push(rig);
     }
   });
@@ -338,7 +346,7 @@ export function buildFilmRoom(S) {
     update(now) {
       if (calm) return;
       const pos = dgeo.attributes.position.array; for (let i = 0; i < N; i++) { pos[i * 3 + 1] += Math.sin(now * 0.4 + seed[i]) * 0.0016; pos[i * 3] += Math.cos(now * 0.3 + seed[i]) * 0.0014; } dgeo.attributes.position.needsUpdate = true;
-      screen.material.opacity = 1; const flick = 0.97 + 0.03 * Math.sin(now * 31); screen.material.color.setScalar(flick);
+      screen.material.opacity = 1; screen.material.color.setScalar(1);
       laser.position.set(-4 + Math.sin(now * 0.7) * 3.4, 9.5 + Math.sin(now * 1.1) * 1.8, -15.3);
       coach.pose({ ...POSE.stand, sh: [-1.45 - 0.1 * Math.sin(now * 1.1), -0.05], sp: [0.14, 0.1], el: [-0.28, -0.2], lean: 0.02 });
       const tau = now - react.t0;

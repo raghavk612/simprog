@@ -5,6 +5,8 @@ import * as THREE from 'three';
 import {KITS,ALL_KITS,SPECIAL_KITS} from './kits.js';
 export {KITS};
 
+const lockedStamp=typeof Image==='undefined'?null:new Image();
+if(lockedStamp)lockedStamp.src=`${import.meta.env?.BASE_URL??'/'}images/locked-stamp.png`;
 const ORDER=ALL_KITS,SPACING=2.3,ROW_Y=[1.5,-1.55];
 // The front reads "Lake" / number / "Washington" in a script like the school's real jerseys (Yellowtail, bundled locally).
 export const SCRIPT_FONT='"Yellowtail","Brush Script MT","Segoe Script",cursive';
@@ -44,7 +46,7 @@ function faceTexture(kit,side,{number,name},font,locked){
  x.beginPath();x.moveTo(W*.38,2);x.quadraticCurveTo(W/2,H*(side==='front'?.19:.1),W*.62,2);x.stroke();
  x.beginPath();x.moveTo(W*.70,2);x.bezierCurveTo(W*.70,H*.2,W*.84,H*.22,W*.96,H*.3);x.stroke();
  x.beginPath();x.moveTo(W*.30,2);x.bezierCurveTo(W*.30,H*.2,W*.16,H*.22,W*.04,H*.3);x.stroke();
- if(locked){padlock(x,W,H);}
+ if(locked){if(lockedStamp?.complete&&lockedStamp.naturalWidth)x.drawImage(lockedStamp,W*.12,H*.32,W*.76,W*.76*lockedStamp.naturalHeight/lockedStamp.naturalWidth);else padlock(x,W,H);}
  else{
   x.fillStyle=kit.ink;x.textAlign='center';x.textBaseline='alphabetic';x.lineJoin='round';
   const letter=(text,px,y,weight)=>{ if(kit.vintage){x.strokeStyle=kit.accent;x.lineWidth=Math.max(5,px/22);x.strokeText(text,W/2,y);} x.fillText(text,W/2,y); };
@@ -105,6 +107,7 @@ export function createJerseyShowcase({onPick,kitKeys=ORDER,preview=false}={}){
  function wake(){if(!raf&&canvas.isConnected){last=performance.now();raf=requestAnimationFrame(frame);}}
  const onVisibility=()=>{if(!document.hidden)wake();};
  document.addEventListener('visibilitychange',onVisibility);
+ const refreshStamp=()=>{paint();wake();};lockedStamp?.addEventListener('load',refreshStamp);
  paint();
  return {
   canvas,
@@ -117,6 +120,6 @@ export function createJerseyShowcase({onPick,kitKeys=ORDER,preview=false}={}){
   setMotion(on){motion=!!on;wake();},
   focusKit(i){focusIdx=i;wake();},
   refreshFont(f){font=f||font;paint();wake();},
-  dispose(){cancelAnimationFrame(raf);resizer?.disconnect();document.removeEventListener('visibilitychange',onVisibility);scene.traverse(o=>{o.geometry?.dispose();if(o.material){o.material.map?.dispose();o.material.dispose();}});renderer.dispose();renderer.forceContextLoss();canvas.remove();}
+  dispose(){lockedStamp?.removeEventListener('load',refreshStamp);cancelAnimationFrame(raf);resizer?.disconnect();document.removeEventListener('visibilitychange',onVisibility);scene.traverse(o=>{o.geometry?.dispose();if(o.material){o.material.map?.dispose();o.material.dispose();}});renderer.dispose();renderer.forceContextLoss();canvas.remove();}
  };
 }
