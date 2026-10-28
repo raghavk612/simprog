@@ -1,3 +1,5 @@
+import {GEAR,GEAR_SLOTS,gearItem,gearOwner,gearBonus,effectiveStat,validGear} from './gear.js';
+export {GEAR,GEAR_SLOTS,gearItem,gearOwner,gearBonus,effectiveStat};
 import {SHOTS,choosePlay,describePlay,family,isDunk} from './basketball.js';
 import {CORE_KITS,SPECIAL_KITS,KIT_NAMES} from './kits.js';
 export const VERSION=3;
@@ -47,7 +49,7 @@ export function train(s,type,id='all',opts={}){
 }
 export function recruit(s,id){const p=s.pool.find(p=>p.id===+id);if(!p)throw Error('Prospect unavailable');if(s.players.length>=15)throw Error('Roster full: release a player before signing.');spend(s,p.cost,false);s.players.push({...p,...prospectTraits(s.seed,p.id)});s.pool=s.pool.filter(x=>x.id!==p.id);log(s,`${p.name} joined through tryouts for ${p.cost} tokens.`,'recruit',{name:p.name,cost:p.cost});}
 export function scoutProspect(s,id){const p=s.pool.find(p=>p.id===+id);if(!p)throw Error('Prospect unavailable');if(s.scoutedProspects?.[p.id])throw Error('Prospect already scouted.');spend(s,SCOUT_COST,false);(s.scoutedProspects??={})[p.id]=true;log(s,`Scouted ${p.name}: potential and work ethic revealed for ${SCOUT_COST} tokens.`,'scoutP',{name:p.name,cost:SCOUT_COST});}
-export function release(s,id){open(s);if(s.players.length<=5)throw Error('Keep at least five players.');const p=s.players.find(p=>p.id===+id);if(!p)throw Error('Player unavailable');s.players=s.players.filter(x=>x.id!==p.id);if(s.captain===p.id)s.captain=null;log(s,`${p.name} released from the active roster.`,'release',{name:p.name});}
+export function release(s,id){open(s);if(s.players.length<=5)throw Error('Keep at least five players.');const p=s.players.find(p=>p.id===+id);if(!p)throw Error('Player unavailable');s.players=s.players.filter(x=>x.id!==p.id);if(s.gear)delete s.gear.equipped[p.id];if(s.captain===p.id)s.captain=null;log(s,`${p.name} released from the active roster.`,'release',{name:p.name});}
 export function hire(s,key){if(s.assistant)throw Error('One assistant allowed. Dismiss your assistant first.');const a=staff.find(a=>a.key===key);if(!a)throw Error('Coach unavailable');spend(s,a.cost,false);s.assistant=key;log(s,`Hired ${a.name}.`,'hire',{staff:key});}
 export function talk(s,choice){if(s.conversation)throw Error('This week’s team conversation is complete.');spend(s,0);s.conversation=true;
  if(choice==='listen'){s.players.forEach(p=>p.morale=cap(p.morale+7));s.chemistry=cap(s.chemistry+5);log(s,'You listened to the bench: morale +7, chemistry +5.','talkListen');}
@@ -63,6 +65,9 @@ export const UPGRADES=[{key:'film',name:'Film room',cost:250},{key:'facility',na
 export const hasUpgrade=(s,k)=>!!s.upgrades?.includes(k);
 export function gameIncome(s,won,g){const base=ECON.base,fans=Math.min(ECON.fansCap,Math.floor((s.fans||0)/ECON.fansPer)),bonus=won?ECON.win:0,upkeep=s.assistant?ECON.upkeep:0,travel=g&&g.home===false?ECON.travel:0,income=base+fans+bonus;return {base,fans,bonus,income,upkeep,travel,net:income-upkeep-travel};}
 export function buyUpgrade(s,key){const u=UPGRADES.find(u=>u.key===key);if(!u)throw Error('Upgrade unavailable');if(hasUpgrade(s,key))throw Error('You already own that upgrade.');spend(s,u.cost,false);(s.upgrades??=[]).push(key);log(s,`Bought ${u.name} for ${u.cost} tokens.`,'upgrade',{item:key,cost:u.cost});}
+export function buyGear(s,key){const item=gearItem(key);if(!item)throw Error('Gear unavailable.');if(s.gear?.owned?.includes(key))throw Error('You already own this gear.');spend(s,item.cost,false);s.gear??={owned:[],equipped:{}};s.gear.owned.push(key);log(s,`Bought ${key} for ${item.cost} tokens.`,'gearBuy',{item:key,cost:item.cost});}
+export function equipGear(s,id,key){open(s);const p=s.players.find(p=>p.id===+id),item=gearItem(key);if(!p)throw Error('Choose a player');if(!item||!s.gear?.owned?.includes(key))throw Error('Buy this gear first.');for(const slots of Object.values(s.gear.equipped))if(slots[item.slot]===key)delete slots[item.slot];(s.gear.equipped[p.id]??={})[item.slot]=key;log(s,`Equipped ${key} on ${p.name}.`,'gearEquip',{item:key,name:p.name});}
+export function unequipGear(s,id,slot){open(s);if(!s.players.some(p=>p.id===+id)||!GEAR_SLOTS.includes(slot))throw Error('Choose a player');const key=s.gear?.equipped?.[id]?.[slot];if(!key)return;delete s.gear.equipped[id][slot];log(s,`Returned ${key} to team inventory.`,'gearRemove',{item:key});}
 export function autoLineup(s){open(s);const list=s.players.filter(eligible).sort((a,b)=>(b.skill+b.energy*.2)-(a.skill+a.energy*.2));s.players.forEach(p=>{p.starter=false;p.minutes=0;});list.slice(0,5).forEach(p=>{p.starter=true;p.minutes=32;});}
 /* A fictional walk-on or transfer joins the roster (up to 15). Ids 110 and up never clash with the tryout pool (100–105). */
 export function addWalkOn(s,name,skill=62){if(typeof name!=='string'||!name.trim()||name.length>36)throw Error('Choose a player');if(s.players.length>=15)throw Error('Roster full: release a player before signing.');let id=110;while(s.players.some(p=>p.id===id)||s.pool.some(p=>p.id===id))id++;const used=new Set(s.players.map(p=>p.number));for(const q of s.pool)used.add(q.number);let number=40;while(used.has(number))number++;const p={id,name,originalName:name,number,position:id%2?'Forward':'Guard',height:'Tryout',year:'Fictional prospect',...totals(),skill,skill0:skill,energy:90,morale:75,gpa:3,injury:0,starter:false,minutes:0,points:0,games:0,custom:true};s.players.push(p);return p;}
@@ -158,10 +163,10 @@ function makePlay(s,team,shooter,helper,defender,opp,m){
  const home=team==='home',rng=()=>random(s);
  const kind=choosePlay(rng,home?m.tactic:opp.style==='perimeter'?'perimeter':'balanced',home?m.pace:opp.style==='transition'?'fast':'steady',m.events.at(-1)?.plays?.find(p=>p.team===team)?.kind);
  const spec=SHOTS[kind],separation=rng(),contest=separation>.68?'open':separation<.3?'tight':'contested';
- const mods=m.mods||{},orating=opp.rating+(mods.oppRating||0),skill=home?shooter.skill:orating,energy=home?shooter.energy:78,chemistry=home?s.chemistry:65;
+ const mods=m.mods||{},orating=opp.rating+(mods.oppRating||0),skill=home?effectiveStat(s,shooter,'skill'):orating,energy=home?effectiveStat(s,shooter,'energy'):78,chemistry=home?s.chemistry:65;
  const counter={perimeter:'zone',paint:'pressure',transition:'balanced'}[opp.style];
  const tactical=(home?(s.scouted?.025:0)+(mods.offense||0)*.01:(m.tactic===counter?-.035:0)-(mods.defense||0)*.01);
- const impacts={skill:(skill-(home?orating:74))*.55,energy:(energy-65)*.15,morale:home?(shooter.morale-65)*.1:0,chemistry:(chemistry-60)*.1,shotType:spec.base*100,space:(separation-.5)*17,tactics:tactical*100};
+ const impacts={skill:(skill-(home?orating:74))*.55,energy:(energy-65)*.15,morale:home?(effectiveStat(s,shooter,'morale')-65)*.1:0,chemistry:(chemistry-60)*.1,shotType:spec.base*100,space:(separation-.5)*17,tactics:tactical*100};
  const chance=cap(.43+TUNING.miss+(spec.three?TUNING.threeMiss:0)+Object.values(impacts).reduce((a,b)=>a+b,0)/100+(home&&m.boost>0?.04:0)+(home?(s.difficulty==='rookie'?.075:s.difficulty==='elite'?-.04:0):0),.16,.86);
  const stealChance=home?.035+(contest==='tight'?.04:0)+(100-energy)*.0004:(m.tactic==='pressure'?.10:.035);
  const blockChance=spec.three?TUNING.block3:(contest==='tight'?TUNING.blockTight:TUNING.block)+(isDunk(kind)?.02:0);
@@ -272,7 +277,7 @@ function progressOk(s){
  return [...(Array.isArray(s.players)?s.players:[]),...(Array.isArray(s.pool)?s.pool:[])].every(p=>!obj(p)||(series(p.hist,0,100)&&series(p.form,0,100)&&(p.ceil===undefined||(Number.isFinite(p.ceil)&&p.ceil>=35&&p.ceil<=100))&&(p.work===undefined||int(p.work,1,5))));
 }
 export function validSave(s){
- if(s&&typeof s==='object'&&!progressOk(s))return false;
+ if(s&&typeof s==='object'&&(!progressOk(s)||!validGear(s)))return false;
  const extras=x=>{
   const id=v=>typeof v==='string'&&/^[a-z0-9]{1,24}$/.test(v),obj=o=>!!o&&typeof o==='object'&&!Array.isArray(o),only=(o,keys)=>obj(o)&&Object.keys(o).every(k=>keys.includes(k));
   // Parameters are short plain values: no markup characters, so nothing in a save can become HTML.
@@ -339,7 +344,7 @@ export function nextStep(s){
 /* ---- Tip-off preview: what the coach knows before the game starts. ---- */
 export function tipoffPreview(s){
  const o=opponent(s),act=s.players.filter(p=>p.minutes>0),pool=act.length?act:s.players,nm=s.nextMods||{};
- return {rating:o.rating,effective:Math.round((o.rating+(nm.oppRating||0))*10)/10,scouted:!!s.scouted,style:s.scouted?o.style:null,energy:Math.round(mean(pool,'energy')),morale:Math.round(mean(pool,'morale')),chemistry:Math.round(s.chemistry),timeouts:TIMEOUTS,away:o.home===false,travel:gameIncome(s,false,o).travel,mods:Object.entries(nm).filter(([,v])=>v)};
+ return {rating:o.rating,effective:Math.round((o.rating+(nm.oppRating||0))*10)/10,scouted:!!s.scouted,style:s.scouted?o.style:null,energy:Math.round(mean(pool.map(p=>({...p,energy:effectiveStat(s,p,'energy')})),'energy')),morale:Math.round(mean(pool.map(p=>({...p,morale:effectiveStat(s,p,'morale')})),'morale')),chemistry:Math.round(s.chemistry),timeouts:TIMEOUTS,away:o.home===false,travel:gameIncome(s,false,o).travel,mods:Object.entries(nm).filter(([,v])=>v)};
 }
 /* ---- The shot model written out (mirrors makePlay above; tests check that it reproduces the chance of simulated plays). Each factor adds or subtracts percentage points to the base chance. ---- */
 export const MODEL={base:.43,skillW:.55,oppDefault:74,energyMid:65,energyW:.15,moraleMid:65,moraleW:.1,chemMid:60,chemW:.1,spaceW:17,scout:.025,boost:.04,min:.16,max:.86,diff:{rookie:.075,standard:0,elite:-.04}};
@@ -347,7 +352,7 @@ export function modelChance(impacts,{three=false,boost=false,difficulty='standar
 /* The factors with the program's current numbers (next game, the rotation that will play, next-game modifiers included). pp values are percentage points. */
 export function modelSnapshot(s){
  const o=s.finished?null:opponent(s),nm=s.nextMods||{},act=s.players.filter(p=>p.minutes>0),use=act.length?act:s.players.filter(p=>p.starter),pool=use.length?use:s.players;
- const skill=mean(pool,'skill'),energy=cap(mean(pool,'energy')+(nm.energy||0)),morale=cap(mean(pool,'morale')+(nm.morale||0)),chem=cap(s.chemistry+(nm.chem||0)),rating=(o?o.rating:MODEL.oppDefault)+(nm.oppRating||0);
+ const buffed=pool.map(p=>({...p,skill:effectiveStat(s,p,'skill'),energy:effectiveStat(s,p,'energy'),morale:effectiveStat(s,p,'morale')})),skill=mean(buffed,'skill'),energy=cap(mean(buffed,'energy')+(nm.energy||0)),morale=cap(mean(buffed,'morale')+(nm.morale||0)),chem=cap(s.chemistry+(nm.chem||0)),rating=(o?o.rating:MODEL.oppDefault)+(nm.oppRating||0);
  const pp={skill:(skill-rating)*MODEL.skillW,energy:(energy-MODEL.energyMid)*MODEL.energyW,morale:(morale-MODEL.moraleMid)*MODEL.moraleW,chemistry:(chem-MODEL.chemMid)*MODEL.chemW,tactics:((s.scouted?MODEL.scout:0)+(nm.offense||0)*.01)*100};
  const R=n=>Math.round(n*10)/10,diff=R((MODEL.diff[s.difficulty]??0)*100),types=Object.values(SHOTS).map(x=>x.base*100);
  return {skill,energy,morale,chem,rating,pp,diff,level:s.difficulty,before:Math.round(cap(MODEL.base+TUNING.miss+Object.values(pp).reduce((a,b)=>a+b,0)/100+diff/100,MODEL.min,MODEL.max)*100),shotLo:R(Math.min(...types)),shotHi:R(Math.max(...types)),space:R(MODEL.spaceW/2),scout:R(MODEL.scout*100),boost:R(MODEL.boost*100),base:R(MODEL.base*100),miss:R(TUNING.miss*100),threeMiss:R(TUNING.threeMiss*100),min:R(MODEL.min*100),max:R(MODEL.max*100)};

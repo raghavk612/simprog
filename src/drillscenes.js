@@ -502,13 +502,13 @@ function quiz3d(kit, root, spec, onDone) {
    <div class="quiz-ui"></div></div>`;
   const $ = s => root.querySelector(s), S = createStage($('.d3-stage'), {fov: 32}); if (!S) { root.innerHTML = ''; return null; }
   whenFonts(S);
-  const room = buildFilmRoom(S); S.camera.position.set(0, 9.6, 20); S.camera.lookAt(0, 7.6, -15);
+  const room = buildFilmRoom(S); S.camera.position.set(0, 12.5, 17); S.camera.lookAt(0, 10.5, -15);
   let i = 0, made = 0, ended = false, disposed = false, locked = false;
   const ui = $('.quiz-ui');
   const show = (msg, state = 'idle') => {
     const cur = qs[i];
     if (cur) room.setQuestion(cur.q, t('drill.d3.filmHead'), `${Math.min(i + 1, total)} / ${total}`, state);
-    ui.innerHTML = `${cur ? `<p class="quiz-q sr-only">${esc(cur.q)}</p><div class="quiz-opts">${cur.order.map(([o], k) => `<button type="button" class="secondary" data-k="${k}"><kbd class="key">${k + 1}</kbd>${esc(o)}</button>`).join('')}</div>` : ''}<p class="drill-msg muted" aria-live="polite">${esc(msg || t('drill.quizPick'))}</p>`;
+    ui.innerHTML = `${cur ? `<p class="quiz-q film-question">${esc(cur.q)}</p><div class="quiz-opts">${cur.order.map(([o], k) => `<button type="button" class="secondary" data-k="${k}"><kbd class="key">${k + 1}</kbd>${esc(o)}</button>`).join('')}</div>` : ''}<p class="drill-msg muted" aria-live="polite">${esc(msg || t('drill.quizPick'))}</p>`;
     ui.querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => answer(+b.dataset.k)));
   };
   function answer(k) {

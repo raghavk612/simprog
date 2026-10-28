@@ -17,6 +17,7 @@ export function logText(entry){
  const p={...entry.p};
  if(entry.k==='train'){p.plan=has(`plan.${p.plan}.name`)?t(`plan.${p.plan}.name`):p.plan;p.who=p.whole?t('log.wholeTeam'):p.who;}
  else if(entry.k==='event'){p.title=has(`ev.${p.id}.title`)?t(`ev.${p.id}.title`):p.id;p.choice=has(`ev.${p.id}.o.${p.choice}`)?t(`ev.${p.id}.o.${p.choice}`):p.choice;}
+ else if(['gearBuy','gearEquip','gearRemove'].includes(entry.k))p.item=has(`gear.items.${p.item}`)?t(`gear.items.${p.item}`):p.item;
  else if(entry.k==='upgrade')p.item=has(`upg.${p.item}.name`)?t(`upg.${p.item}.name`):p.item;
  else if(entry.k==='hire')p.staff=has(`staff.${p.staff}.name`)?t(`staff.${p.staff}.name`):p.staff;
  else if(entry.k==='kitUnlocked')p.kit=has(`lk.kit.${p.kit}`)?t(`lk.kit.${p.kit}`):has(`locker.${p.kit}`)?t(`locker.${p.kit}`):p.kit;

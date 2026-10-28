@@ -1,10 +1,12 @@
+import en from './en.js';
 // 简体中文。键和 {{占位符}} 与 en.js 完全一致。
 export default {
+ gear:{"kicker":"装备室","intro":"使用球队代币为每位球员搭配装备，无需真实货币。","tagline":"小小提升，关键时刻。","rules":"每个部位限一件。每次购买获得一件全队共享装备，赛前可免费转移。加成仅在佩戴时用于比赛，不改变基础属性。","ownedCount":"已收集 {{n}} / {{total}}","loadout":"球员装备","selectPlayer":"选择球员","boost":"装备 +{{n}}（上限 100）","base":"基础属性","slots":{"feet":"球鞋","arm":"护臂","head":"头饰"},"items":{"courtshoes":"专业球鞋","speedshoes":"快攻球鞋","shootingsleeve":"投篮护袖","compression":"压缩护袖","headband":"队长头带","focusband":"专注头带"},"unequip":"卸下","empty":"空栏位","pickBelow":"在下方选择已拥有的装备。","shop":"装备商店","all":"全部装备","owned":"已拥有","equipped":"已装备","wornBy":"{{name}} 正在使用","equip":"装备给 {{name}}","move":"转移给 {{name}}","noOwned":"库存为空。请在全部装备中购买第一件。","bought":"{{item}} 已加入库存。选择球员后装备。","equipDone":"{{name}} 已装备 {{item}}。"},
  meta:{title:'KANGS • 通往冠军之路',description:'一支球队，一个赛季，由你决策。在 3D 篮球管理模拟中执教 Lake Washington Kangs 队。'},
  lang:{en:'英语',es:'西班牙语',zh:'中文',fr:'法语',ja:'日语',it:'意大利语',hi:'印地语'},
  a11y:{skip:'跳到主要内容',closeDialog:'关闭对话框',stage:'可交互的 3D Kangs 球馆',pageOpened:'已打开页面：{{page}}',newTab:'在新标签页中打开',score:'比分：Kangs {{home}}，客队 {{away}}。',soundOn:'音效已开启',soundOff:'音效已关闭',motionOn:'动态效果已开启',motionOff:'动态效果已关闭',camera:'镜头视角：{{view}}',speed:'观看速度 {{speed}}',languageChanged:'语言已切换为{{language}}',notifications:'通知',themeLight:'已开启浅色主题。',themeDark:'已开启深色主题。',},
  keys:{shortcut:'快捷键：{{key}}'},
- nav:{home:'项目总部',roster:'阵容与轮换',practice:'训练计划',recruit:'选拔试训',staff:'教练办公室',game:'比赛日',locker:'更衣室',season:'赛季日志',data:'Kangs 真实数据'},
+ nav:{gear:"装备商店",home:'项目总部',roster:'阵容与轮换',practice:'训练计划',recruit:'选拔试训',staff:'教练办公室',game:'比赛日',locker:'更衣室',season:'赛季日志',data:'Kangs 真实数据'},
  top:{brand:'通往冠军之路',soundOn:'声音已开',soundOff:'声音已关',motionOn:'动态已开',motionOff:'动态已关',settings:'设置',export:'保存 / 导出',help:'帮助',title:'标题页',theme:'浅色主题',},
  side:{sub:'篮球运营',badge:'冠军计划',nav:'项目导航',rules:'规则手册与操作',credits:'致谢与资料来源',coach:'{{name}} 教练',footer:'永远向上。',footerNote:'本地自动保存 · 虚构模拟 / 有来源的公开名单'},
  stage:{venue:'Kangs 球馆',place:'华盛顿州柯克兰',tagline:'我们的主场，你的球队。',camera:'镜头视角',wide:'全景',court:'场边',follow:'跟随',auto:'自动',player:'球员视角',orbit:'环绕',zoom:'缩放',autoTitle:'电视风格镜头，随每回合切换',playerTitle:'持球队员的第一人称视角',},
@@ -81,7 +83,7 @@ export default {
  plan:{shooting:{name:'投篮训练',desc:'反复练习能把空位机会变成得分。提升技能，但会消耗体能。'},defense:{name:'防守轮转',desc:'协同移动。打磨基本功，增进球队默契。'},recovery:{name:'恢复与灵活性',desc:'帮助模拟伤病恢复，并为比赛日恢复体能。'},study:{name:'自习室',desc:'守住参赛资格。学业准备是健康项目的一部分。'},bond:{name:'球队聚餐',desc:'一起吃饭能建立信任、提升士气、增进感情。'}},
  staff:{development:{name:'成长培养专家',detail:'技能训练 +1 技能'},recovery:{name:'运动恢复教练',detail:'恢复时 +8 体能；降低受伤风险'},culture:{name:'球队文化建设者',detail:'球队聚餐时 +3 士气和默契'}},
  recruit:{kicker:'发现下一个改变局面的人',intro:'虚构的候选人会加入你的真实名单模拟。招募只使用项目代币，绝不涉及真钱。',tokens:'可用代币 {{n}}',tryout:'虚构试训 · {{pos}}',sign:'签约 · {{cost}} 代币',signAria:'以 {{cost}} 代币签下 {{name}}',none:'所有试训候选人都已签约。'},
- office:{
+ office:{inboxFirst:"请先回复教练收件箱。",vacant:"可聘用",slotCost:"1 次备战机会 · 每周一次",choose:"选择交流",checkDone:"本周交流已完成",noSlots:"没有剩余备战机会",seasonDone:"赛季已结束",gameActive:"请先完成当前比赛",slotFull:"先解聘现有助教才能聘用其他人",needTokens:"还需 {{n}} 代币",hireCost:"聘用 · {{cost}} 代币",permanent:"一次性购买",budgetDetails:"下场比赛预算",
   kicker:'领导球队项目',
   intro:'你的教练组和谈话会在记分牌之外塑造这支球队。',
   weekly:'每周球队沟通',
@@ -100,7 +102,7 @@ export default {
   cost:'{{cost}} 代币',
   hireAria:'以 {{cost}} 代币聘请{{name}}',
   dismiss:'解雇助理教练',upgKicker:'球队升级',upgTitle:'为球队投资。',upgBody:'每项升级只能购买一次，购买前会显示价格和效果。比赛也要花代币：助理教练的费用和客场出行。',upgBudget:'下一场比赛：扣除助理费用 {{upkeep}} 和出行费用 {{travel}} 后，输球可得 {{lo}} 代币，赢球可得 {{hi}} 代币。',upgBuy:'购买 · {{cost}} 代币',upgOwned:'已拥有',upgAria:'花费 {{cost}} 代币购买{{name}}。{{effect}}',},
- game:{
+ game:{strengthLevel:{"low":"中等","medium":"强劲","high":"精英"},
   speed:'观看速度',
   kangs:'Kangs',
   visitors:'客队',
@@ -291,7 +293,7 @@ export default {
   rebound:'{{rebounder}}拿下篮板。'
  },
  // Decision-trail and result lines written by the simulation.
- log:{
+ log:{gearBuy:"花费 {{cost}} 代币购买 {{item}}。",gearEquip:"{{name}} 装备了 {{item}}。",gearRemove:"{{item}} 已归还库存。",
   kitUnlocked:'球衣已解锁：{{kit}}。',
   wholeTeam:'全队',
   train:'{{plan}}：{{who}} · 技能 {{skill}}，体能 {{energy}}，绩点 {{gpa}}',
@@ -315,7 +317,7 @@ export default {
   seasonComplete:'赛季结束。',perfectBonus:'满分训练奖励',captain:'{{name}} 现在是球队队长。',event:'信箱：{{title}} → {{choice}}',press:'新闻发布会：{{n}} 个回答将影响下一场比赛。',pressSkip:'跳过了新闻发布会。球迷 −10。',pregame:'赛前新闻发布会：{{n}}个回答定下基调。',pregameSkip:'跳过了赛前新闻发布会。球迷 −5。',scoutP:'侦察了 {{name}}：花费 {{cost}} 代币，揭示了潜力与职业道德。',adjustTactic:'第{{q}}节休息：改为{{tactic}}。',adjustPace:'第{{q}}节休息：节奏改为{{pace}}。',upgrade:'花费 {{cost}} 代币购买了{{item}}。',budget:'预算：收入 +{{inc}}，助理 −{{upkeep}}，出行 −{{travel}}（净 {{net}}）。',},
  error:{title:'无法加载球队项目。',body:'网络恢复后请重新加载。',reload:'重新加载'},
  // Messages thrown by the simulation engine. The English text is the lookup key.
- errors:{
+ errors:{...en.errors,
   'This season is complete. Start a new season to play again.':'本赛季已结束。开始新赛季即可再次游玩。',
   'Finish the current game first.':'请先结束当前比赛。',
   'Not enough program tokens.':'项目代币不足。',
@@ -382,5 +384,5 @@ export default {
  upg:{film:{name:'录像室',fx:'侦察对手不再花费代币。'},facility:{name:'训练馆',fx:'训练获得的技能提升 +10%。'},nutrition:{name:'营养计划',fx:'每场比赛后，每名球员体能 +3。'},tutor:{name:'辅导中心',fx:'每场比赛损失的绩点减半。'},},
  nudge:{kicker:'我现在该做什么？',finished:'赛季已结束。去看看你的赛季故事和成绩单。',live:'比赛正在进行。回到球场吧。',inbox:'你的收件箱有待处理的消息，请先处理。',press:'上一场比赛后，新闻发布会在等你。',issues:'轮换阵容中有 {{n}} 名球员无法上场，请调整阵容。',practice:'剩余备战名额：{{n}}。开球前先安排训练。',scout:'开球前先侦察 {{opp}}，让战术判断更准。',lineup:'轮换尚未设置，需要五名首发和 160 分钟。',tipoff:'一切就绪，迎战 {{opp}}。',btn:{finished:'打开赛季日志',live:'前往比赛日',inbox:'打开收件箱',press:'打开新闻发布室',issues:'调整阵容',practice:'安排训练',scout:'去侦察',lineup:'设置轮换',tipoff:'前往比赛日'},},
  tipoff:{kicker:'开球前预览',effective:'计入本周修正后强度 {{n}}',energy:'轮换阵容体能',morale:'轮换阵容士气',timeouts:'暂停',mods:'当前修正',none:'目前没有来自发布会或收件箱的修正。',travel:'客场比赛：出行花费 {{n}} 代币。',homeGame:'主场比赛：无出行费用。',model:'模型如何运作',},
- model:{title:'投篮模型如何运作',intro:'每次投篮都从一个基础概率开始。每个因素加减若干百分点（pp），最终结果限制在 {{min}}% 到 {{max}}% 之间。这些就是游戏实际使用的数字，下面显示的是你的球队在下一场比赛的数值。',base:'初始概率：{{base}}%。每次投篮 {{miss}} pp，三分再 {{three}} pp。',skill:'投篮者技能减去对手强度，再乘 0.55。你的轮换平均 {{a}}，对手 {{b}}：{{pp}} pp。',energy:'体能高于或低于 65 的部分乘 0.15。你的轮换平均 {{v}}：{{pp}} pp。',morale:'士气高于或低于 65 的部分乘 0.1。你的轮换平均 {{v}}：{{pp}} pp。',chemistry:'球队化学反应高于或低于 60 的部分乘 0.1。现在是 {{v}}：{{pp}} pp。',shotType:'出手类型：扣篮起点最多好 {{hi}} pp，后撤步三分则为 {{lo}} pp。',space:'空间：空位出手最多加 {{n}} pp，被紧逼则最多减 {{n}} pp。',tactics:'战术：侦察后 {{scout}} pp，另有发布会或收件箱选择带来的最多 4 pp。现在：{{pp}} pp。',diff:'难度：{{level}} 使 Kangs 的每次投篮变化 {{pp}} pp。',boost:'暂停会在接下来几个回合增加 {{n}} pp。',total:'按目前的平均值，在不计出手类型和空间之前，Kangs 的典型投篮约为 {{n}}%。',note:'抢断和盖帽在投篮概率之前决定。这是游戏模型，不是对真实篮球的预测。',l:{base:'初始概率',diff:'难度',boost:'暂停',total:'典型投篮'},},
+ model:{visual:{"typical":"典型投篮命中率","context":"当前轮换阵容，尚未计入投篮类型和防守空间。","adjustments":"球队调整","factors":"影响命中率的因素","pp":"每点增加或减少 1 个百分点。","details":"查看公式和上下限"},title:'投篮模型如何运作',intro:'每次投篮都从一个基础概率开始。每个因素加减若干百分点（pp），最终结果限制在 {{min}}% 到 {{max}}% 之间。这些就是游戏实际使用的数字，下面显示的是你的球队在下一场比赛的数值。',base:'初始概率：{{base}}%。每次投篮 {{miss}} pp，三分再 {{three}} pp。',skill:'投篮者技能减去对手强度，再乘 0.55。你的轮换平均 {{a}}，对手 {{b}}：{{pp}} pp。',energy:'体能高于或低于 65 的部分乘 0.15。你的轮换平均 {{v}}：{{pp}} pp。',morale:'士气高于或低于 65 的部分乘 0.1。你的轮换平均 {{v}}：{{pp}} pp。',chemistry:'球队化学反应高于或低于 60 的部分乘 0.1。现在是 {{v}}：{{pp}} pp。',shotType:'出手类型：扣篮起点最多好 {{hi}} pp，后撤步三分则为 {{lo}} pp。',space:'空间：空位出手最多加 {{n}} pp，被紧逼则最多减 {{n}} pp。',tactics:'战术：侦察后 {{scout}} pp，另有发布会或收件箱选择带来的最多 4 pp。现在：{{pp}} pp。',diff:'难度：{{level}} 使 Kangs 的每次投篮变化 {{pp}} pp。',boost:'暂停会在接下来几个回合增加 {{n}} pp。',total:'按目前的平均值，在不计出手类型和空间之前，Kangs 的典型投篮约为 {{n}}%。',note:'抢断和盖帽在投篮概率之前决定。这是游戏模型，不是对真实篮球的预测。',l:{base:'初始概率',diff:'难度',boost:'暂停',total:'典型投篮'},},
  code:{kicker:'赛季代码',body:'分享这个代码，别人就能开始同一个赛季：相同的球队、赛程和随机数。你的决策仍会让它独一无二。',copy:'复制赛季代码',copied:'已复制赛季代码 {{code}}。',failed:'无法自动复制。请选中代码后手动复制。',field:'赛季代码（可选）',placeholder:'KNG-J-1A2B3C',hint:'与朋友开始同一个赛季。留空则开始新赛季。',invalid:'这不是有效的赛季代码。代码格式如 KNG-J-1A2B3C。',unavailable:'这个赛季开始于赛季代码功能出现之前。',},};

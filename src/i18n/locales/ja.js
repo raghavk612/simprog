@@ -1,10 +1,12 @@
+import en from './en.js';
 // 日本語。キーと {{プレースホルダー}} は en.js と同一です。
 export default {
+ gear:{"kicker":"用具室","intro":"プログラムトークンで選手を装備。実際のお金は使いません。","tagline":"小さな強化。大きな瞬間。","rules":"各部位に1個。購入品はチームで共有する1個です。試合前に無料で移せます。装備中の試合にのみ効果があり、基礎能力は変わりません。","ownedCount":"{{n}} / {{total}} 個所持","loadout":"選手の装備","selectPlayer":"選手を選択","boost":"装備 +{{n}}（上限100）","base":"基礎能力","slots":{"feet":"シューズ","arm":"アーム","head":"ヘッド"},"items":{"courtshoes":"コートプロシューズ","speedshoes":"速攻シューズ","shootingsleeve":"シュートスリーブ","compression":"着圧スリーブ","headband":"キャプテンバンド","focusband":"集中バンド"},"unequip":"外す","empty":"空きスロット","pickBelow":"下から所持品を選んでください。","shop":"用具ショップ","all":"全用具","owned":"所持品","equipped":"装備中","wornBy":"{{name}} が使用中","equip":"{{name}} に装備","move":"{{name}} に移す","noOwned":"所持品はありません。全用具で購入してください。","bought":"{{item}} を入手。選手を選んで装備してください。","equipDone":"{{name}} に {{item}} を装備しました。"},
  meta:{title:'KANGS • チャンピオンシップへの道',description:'ひとつのチーム、ひとつのシーズン、あなたの決断。3Dバスケットボール経営シミュレーションで Lake Washington Kangs を率いよう。'},
  lang:{en:'英語',es:'スペイン語',zh:'中国語',fr:'フランス語',ja:'日本語',it:'イタリア語',hi:'ヒンディー語'},
  a11y:{skip:'メインコンテンツへ移動',closeDialog:'ダイアログを閉じる',stage:'操作できる3D Kangs体育館',pageOpened:'ページを開きました：{{page}}',newTab:'新しいタブで開きます',score:'スコア：Kangs {{home}}、ビジター {{away}}。',soundOn:'効果音をオンにしました',soundOff:'効果音をオフにしました',motionOn:'モーションをオンにしました',motionOff:'モーションをオフにしました',camera:'カメラビュー：{{view}}',speed:'視聴速度 {{speed}}',languageChanged:'言語を{{language}}に変更しました',notifications:'通知',themeLight:'ライトテーマをオンにしました。',themeDark:'ダークテーマをオンにしました。',},
  keys:{shortcut:'ショートカット：{{key}}'},
- nav:{home:'プログラム本部',roster:'ロスターとローテーション',practice:'練習プランナー',recruit:'トライアウト',staff:'コーチ室',game:'試合当日',locker:'ロッカールーム',season:'シーズン日誌',data:'Kangs の実データ'},
+ nav:{gear:"用具ショップ",home:'プログラム本部',roster:'ロスターとローテーション',practice:'練習プランナー',recruit:'トライアウト',staff:'コーチ室',game:'試合当日',locker:'ロッカールーム',season:'シーズン日誌',data:'Kangs の実データ'},
  top:{brand:'チャンピオンシップへの道',soundOn:'サウンド オン',soundOff:'サウンド オフ',motionOn:'モーション オン',motionOff:'モーション オフ',settings:'設定',export:'保存 / エクスポート',help:'ヘルプ',title:'タイトル',theme:'ライトテーマ',},
  side:{sub:'バスケットボール運営',badge:'チャンピオンシッププロジェクト',nav:'プログラムのナビゲーション',rules:'ルールブックと操作',credits:'クレジットと出典',coach:'{{name}} コーチ',footer:'常に高みへ。',footerNote:'ローカルに自動保存 · 架空のシミュレーション / 出典付きの公開ロスター'},
  stage:{venue:'Kangs フィールドハウス',place:'ワシントン州カークランド',tagline:'ここは私たちのホーム。あなたのプログラム。',camera:'カメラビュー',wide:'ワイド',court:'コートサイド',follow:'追従',auto:'オート',player:'プレーヤー視点',orbit:'回転',zoom:'ズーム',autoTitle:'プレーごとに切り替わるテレビ風カメラ',playerTitle:'ボールを持つ選手の一人称視点',},
@@ -81,7 +83,7 @@ export default {
  plan:{shooting:{name:'シューティング練習',desc:'反復練習が、フリーのチャンスを得点に変えます。スキルは上がりますが体力を消費します。'},defense:{name:'ディフェンスのローテーション',desc:'みんなで動く。基本を磨き、チームワークを高めます。'},recovery:{name:'回復とモビリティ',desc:'模擬の負傷からの回復を助け、試合当日に向けて体力を戻します。'},study:{name:'自習室',desc:'出場資格を守ります。学業の準備も健全なプログラムの一部です。'},bond:{name:'チームディナー',desc:'一緒に食事をすると、信頼、士気、つながりが育ちます。'}},
  staff:{development:{name:'育成スペシャリスト',detail:'スキル練習でスキル +1'},recovery:{name:'スポーツ回復コーチ',detail:'回復で体力 +8、負傷リスクが低下'},culture:{name:'チーム文化づくり担当',detail:'チームディナーで士気とチームワーク +3'}},
  recruit:{kicker:'次の流れを変える選手を見つけよう',intro:'架空の候補選手が、実在ロスターのシミュレーションに加わります。獲得にはプログラムトークンを使い、実際のお金は使いません。',tokens:'利用可能なトークン {{n}}',tryout:'架空のトライアウト · {{pos}}',sign:'契約 · {{cost}} トークン',signAria:'{{name}} を {{cost}} トークンで契約',none:'トライアウトの候補はすべて契約済みです。'},
- office:{
+ office:{inboxFirst:"先にコーチの受信箱に返信してください。",vacant:"採用できます",slotCost:"準備枠1つ · 週1回",choose:"この面談を選ぶ",checkDone:"今週の面談は完了",noSlots:"準備枠がありません",seasonDone:"シーズン終了",gameActive:"現在の試合を終了してください",slotFull:"別の採用には助手の解任が必要です",needTokens:"あと {{n}} トークン必要",hireCost:"採用 · {{cost}} トークン",permanent:"一度だけ購入",budgetDetails:"次の試合の予算",
   kicker:'プログラムを率いる',
   intro:'スタッフとの関わりや会話は、スコアボードの外でもチームを形づくります。',
   weekly:'週ごとのチーム面談',
@@ -100,7 +102,7 @@ export default {
   cost:'{{cost}} トークン',
   hireAria:'{{name}} を {{cost}} トークンで採用',
   dismiss:'アシスタントを解任',upgKicker:'プログラム強化',upgTitle:'プログラムに投資しよう。',upgBody:'各強化は一度だけ購入できます。購入前に価格と効果が表示されます。試合にもトークンがかかります。アシスタントの維持費とアウェー遠征費です。',upgBudget:'次の試合：アシスタント維持費 {{upkeep}} と遠征費 {{travel}} を引いて、負けなら {{lo}}、勝てば {{hi}} トークンを獲得します。',upgBuy:'購入 · {{cost}} トークン',upgOwned:'購入済み',upgAria:'{{name}}を{{cost}}トークンで購入。{{effect}}',},
- game:{
+ game:{strengthLevel:{"low":"標準","medium":"強い","high":"精鋭"},
   speed:'視聴速度',
   kangs:'Kangs',
   visitors:'ビジター',
@@ -291,7 +293,7 @@ export default {
   rebound:'{{rebounder}}がリバウンドを確保。'
  },
  // Decision-trail and result lines written by the simulation.
- log:{
+ log:{gearBuy:"{{item}} を {{cost}} トークンで購入。",gearEquip:"{{name}} に {{item}} を装備。",gearRemove:"{{item}} を所持品に戻しました。",
   kitUnlocked:'ユニフォーム解放：{{kit}}。',
   wholeTeam:'チーム全員',
   train:'{{plan}}：{{who}} · スキル {{skill}}、体力 {{energy}}、GPA {{gpa}}',
@@ -315,7 +317,7 @@ export default {
   seasonComplete:'シーズン終了。',perfectBonus:'パーフェクトドリルボーナス',captain:'{{name}}がチームキャプテンになりました。',event:'受信箱：{{title}} → {{choice}}',press:'記者会見：{{n}}件の回答が次の試合に影響します。',pressSkip:'記者会見を省略しました。ファン −10。',pregame:'試合前の記者会見：{{n}}つの回答が流れを決める。',pregameSkip:'試合前の記者会見をスキップ。ファン −5。',scoutP:'{{name}}をスカウト：{{cost}}トークンで潜在能力と勤勉さが判明。',adjustTactic:'第{{q}}クォーター終了：{{tactic}}に切り替え。',adjustPace:'第{{q}}クォーター終了：テンポを{{pace}}に設定。',upgrade:'{{item}}を{{cost}}トークンで購入しました。',budget:'予算：収入 +{{inc}}、アシスタント −{{upkeep}}、遠征 −{{travel}}（差引 {{net}}）。',},
  error:{title:'プログラムを読み込めませんでした。',body:'接続が回復したら再読み込みしてください。',reload:'再読み込み'},
  // Messages thrown by the simulation engine. The English text is the lookup key.
- errors:{
+ errors:{...en.errors,
   'This season is complete. Start a new season to play again.':'このシーズンは終了しました。もう一度遊ぶには新しいシーズンを始めてください。',
   'Finish the current game first.':'先に現在の試合を終えてください。',
   'Not enough program tokens.':'プログラムトークンが足りません。',
@@ -400,5 +402,5 @@ export default {
  upg:{film:{name:'映像ルーム',fx:'相手の偵察が無料になります。'},facility:{name:'トレーニング施設',fx:'練習で得るスキルが10%増えます。'},nutrition:{name:'栄養プラン',fx:'各試合後、全選手のエネルギーが3回復します。'},tutor:{name:'学習サポートセンター',fx:'試合ごとのGPA低下が半分になります。'},},
  nudge:{kicker:'今、何をすればいい？',finished:'シーズンは終了しました。シーズンの物語と成績表を見てみましょう。',live:'試合の最中です。コートに戻りましょう。',inbox:'受信箱に知らせが届いています。まずそちらに対応しましょう。',press:'前の試合後の記者会見が待っています。',issues:'ローテーションに出場できない選手がいます（{{n}}人）。ラインナップを直しましょう。',practice:'空いている準備枠：{{n}}。ティップオフ前に練習を計画しましょう。',scout:'ティップオフ前に{{opp}}を偵察して、戦術の読みを磨きましょう。',lineup:'ローテーションが未設定です。先発5人と160分が必要です。',tipoff:'準備完了です。{{opp}}との試合に臨みましょう。',btn:{finished:'シーズンジャーナルを開く',live:'試合日へ',inbox:'受信箱を開く',press:'記者会見室を開く',issues:'ラインナップを直す',practice:'練習を計画',scout:'偵察に行く',lineup:'ローテーションを設定',tipoff:'試合日へ'},},
  tipoff:{kicker:'ティップオフ プレビュー',effective:'今週の補正込みで強さ {{n}}',energy:'ローテーションのエネルギー',morale:'ローテーションの士気',timeouts:'タイムアウト',mods:'有効な補正',none:'記者会見や受信箱による補正はありません。',travel:'アウェー戦：遠征費は {{n}} トークンです。',homeGame:'ホーム戦：遠征費はかかりません。',model:'モデルの仕組み',},
- model:{title:'シュートモデルの仕組み',intro:'どのシュートも基本確率から始まります。各要素がパーセントポイント（pp）を加減し、合計は {{min}}% から {{max}}% の範囲に収められます。ゲームが実際に使う数値で、次の試合に向けたプログラムの値を表示しています。',base:'開始確率：{{base}}%。すべてのシュートに {{miss}} pp、3ポイントにはさらに {{three}} pp。',skill:'シューターのスキル − 相手の強さ、× 0.55。ローテーションの平均 {{a}} に対し相手は {{b}}：{{pp}} pp。',energy:'エネルギーの65との差 × 0.15。ローテーションの平均は {{v}}：{{pp}} pp。',morale:'士気の65との差 × 0.1。ローテーションの平均は {{v}}：{{pp}} pp。',chemistry:'チームワークの60との差 × 0.1。現在は {{v}}：{{pp}} pp。',shotType:'シュートの種類：ダンクは最大 {{hi}} pp 有利、ステップバック3ポイントは {{lo}} pp。',space:'スペース：オープンなら最大 {{n}} pp 加算、タイトなら最大 {{n}} pp 減算。',tactics:'戦術：偵察すると {{scout}} pp、記者会見や受信箱の選択でさらに最大 4 pp。現在：{{pp}} pp。',diff:'難易度：{{level}} はKangsのすべてのシュートを {{pp}} pp 変化させます。',boost:'タイムアウトの後、数ポゼッションは {{n}} pp 加算されます。',total:'現在の平均で、シュートの種類とスペースを除くと、Kangsの典型的なシュートは約 {{n}}% です。',note:'スティールとブロックはシュート確率より先に決まります。これはゲームのモデルであり、実際のバスケットボールの予測ではありません。',l:{base:'開始確率',diff:'難易度',boost:'タイムアウト',total:'典型的なシュート'},},
+ model:{visual:{"typical":"通常のシュート成功率","context":"現在のローテーション。シュート種類と守備の間隔は含みません。","adjustments":"チームの補正","factors":"成功率を変える要素","pp":"1点につき成功率が1パーセントポイント変化します。","details":"計算式と上限・下限を見る"},title:'シュートモデルの仕組み',intro:'どのシュートも基本確率から始まります。各要素がパーセントポイント（pp）を加減し、合計は {{min}}% から {{max}}% の範囲に収められます。ゲームが実際に使う数値で、次の試合に向けたプログラムの値を表示しています。',base:'開始確率：{{base}}%。すべてのシュートに {{miss}} pp、3ポイントにはさらに {{three}} pp。',skill:'シューターのスキル − 相手の強さ、× 0.55。ローテーションの平均 {{a}} に対し相手は {{b}}：{{pp}} pp。',energy:'エネルギーの65との差 × 0.15。ローテーションの平均は {{v}}：{{pp}} pp。',morale:'士気の65との差 × 0.1。ローテーションの平均は {{v}}：{{pp}} pp。',chemistry:'チームワークの60との差 × 0.1。現在は {{v}}：{{pp}} pp。',shotType:'シュートの種類：ダンクは最大 {{hi}} pp 有利、ステップバック3ポイントは {{lo}} pp。',space:'スペース：オープンなら最大 {{n}} pp 加算、タイトなら最大 {{n}} pp 減算。',tactics:'戦術：偵察すると {{scout}} pp、記者会見や受信箱の選択でさらに最大 4 pp。現在：{{pp}} pp。',diff:'難易度：{{level}} はKangsのすべてのシュートを {{pp}} pp 変化させます。',boost:'タイムアウトの後、数ポゼッションは {{n}} pp 加算されます。',total:'現在の平均で、シュートの種類とスペースを除くと、Kangsの典型的なシュートは約 {{n}}% です。',note:'スティールとブロックはシュート確率より先に決まります。これはゲームのモデルであり、実際のバスケットボールの予測ではありません。',l:{base:'開始確率',diff:'難易度',boost:'タイムアウト',total:'典型的なシュート'},},
  code:{kicker:'シーズンコード',body:'このコードを共有すると、同じシーズンを始められます。同じチーム、日程、サイコロです。あなたの判断がそれを自分だけのものにします。',copy:'シーズンコードをコピー',copied:'シーズンコード {{code}} をコピーしました。',failed:'自動でコピーできませんでした。コードを選択してコピーしてください。',field:'シーズンコード（任意）',placeholder:'KNG-J-1A2B3C',hint:'友だちと同じシーズンを始められます。空欄なら新しいシーズンです。',invalid:'有効なシーズンコードではありません。コードは KNG-J-1A2B3C のような形式です。',unavailable:'このシーズンはシーズンコードの導入前に始まりました。',},};
