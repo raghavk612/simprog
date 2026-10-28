@@ -117,7 +117,7 @@ export class Arena{
  mount(target){target.append(this.host);}
  /* Graphics quality (see graphics.js). 'auto' starts at High and measures ~2 s of frames once; setting the same level again is a no-op, so applyArena can call this freely. */
  setQuality(q){if(this.failed||q===this.quality)return;this.quality=q;this.level=q==='auto'?'high':q;this.probe=q==='auto'?{times:[],frames:0,done:false}:{done:true};this.applyLevel();}
- applyLevel(){const p=qualityProfile(this.level,devicePixelRatio),sun=this.sun;this.renderer.setPixelRatio(p.pixelRatio);
+ applyLevel(){const p=qualityProfile(this.level,devicePixelRatio,{width:this.host.clientWidth,height:this.host.clientHeight}),sun=this.sun;if(this.renderer.getPixelRatio()!==p.pixelRatio){this.renderer.setPixelRatio(p.pixelRatio);if(this.w)this.look?.resize(this.w,this.h);}
   if(sun){sun.castShadow=p.shadows;if(p.shadows&&sun.shadow.mapSize.x!==p.shadowSize){sun.shadow.mapSize.set(p.shadowSize,p.shadowSize);sun.shadow.map?.dispose();sun.shadow.map=null;}}
   for(const o of this.crowd||[]){o.visible=p.crowd!=='hidden';o.castShadow=p.crowd==='full';}
   if(this.playersChoice)this.applyPlayers();}
@@ -190,7 +190,7 @@ export class Arena{
   if(u.body?.style==='athletes')animateAthlete(player,pose,{dt:this.frameDt||0,motion:this.motion&&!(this.event&&this.paused),gait:this.gait,ball:this.ball?.position});
  }
  frame(){if(this.failed)return;const dt=Math.min(this.clock.getDelta(),.05),w=this.host.clientWidth,h=this.host.clientHeight;
-  if(w<1||h<1||this.host.hidden){this.lastT=0;return;}this.measure(performance.now());if(this.w!==w||this.h!==h){this.w=w;this.h=h;this.renderer.setSize(w,h,false);this.look?.resize(w,h);this.camera.aspect=w/h;this.camera.fov=w/h<.8?65:43;this.camera.updateProjectionMatrix();}
+  if(w<1||h<1||this.host.hidden){this.lastT=0;return;}this.measure(performance.now());if(this.w!==w||this.h!==h){this.w=w;this.h=h;this.renderer.setPixelRatio(qualityProfile(this.level,devicePixelRatio,{width:w,height:h}).pixelRatio);this.renderer.setSize(w,h,false);this.look?.resize(w,h);this.camera.aspect=w/h;this.camera.fov=w/h<.8?65:43;this.camera.updateProjectionMatrix();}
   if(this.motion)this.time+=dt;this.frameDt=this.event&&this.paused?0:dt*(this.event?this.speed||1:1);
   // One continuous stride/dribble clock, so legs and arms never jump when a clip restarts.
   this.gait=(this.gait||0)+(this.motion&&!(this.event&&this.paused)?dt*(this.event?this.speed:1):0);

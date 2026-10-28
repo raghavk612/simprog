@@ -237,7 +237,7 @@ What each graphics level turns on with the 3D athletes:
 | | Low | Medium | High |
 |---|---|---|---|
 | Player models | Classic | Athletes (far LOD) | Athletes (far LOD) |
-| Pixel ratio cap | 1× | 1.5× | 2× |
+| Pixel ratio cap | 1× | 1.5× (max 2.4 MP) | 2× (max 3.7 MP) |
 | Sun shadows | off | 1024 | 2048 |
 | Crowd | hidden | no shadows | shadows |
 | Spotlights | 3 (gym) | 3 | 6 |
@@ -245,6 +245,10 @@ What each graphics level turns on with the 3D athletes:
 | Ambient occlusion (GTAO) | — | — | yes |
 | Bloom, grade, contact shadows | — | yes | yes |
 | Depth of field | — | replays and close angles | replays and close angles |
+
+**Real-GPU result (Mac, Chrome, full-screen Retina 3484×1644 at 2×, High with the athletes):** 56 fps, 18.0 ms typical frame, 22.0 ms at the 95th percentile, 442 draw calls, 514k triangles. Auto kept High.
+- The cost was mostly pixels, so High and Medium now have a **pixel budget** (`MAX_PIXELS` in `src/graphics.js`): 3.7 million pixels on High and 2.4 million on Medium.
+- That canvas now renders at 1.6×. Normal-sized windows keep 2×, and the ratio never drops below 1×.
 
 **Auto** starts at High, times about two seconds of frames, and drops one level if the typical frame is slower than about 28 fps.
 

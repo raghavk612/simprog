@@ -9,6 +9,9 @@ test('quality levels map to renderer profiles; High keeps the current look',()=>
  assert.deepEqual(qualityProfile('low',3),{pixelRatio:1,shadowSize:0,crowd:'hidden',shadows:false});
  assert.equal(qualityProfile('high',1).pixelRatio,1,'never above the screen ratio');
  assert.equal(qualityProfile('auto',2).pixelRatio,2,'auto starts at the High look');
+ assert.equal(qualityProfile('high',2,{width:1742,height:822}).pixelRatio,1.6,'a full-screen Retina canvas is held to the High pixel budget');
+ assert.ok(1742*822*1.6**2<=3.7e6);assert.equal(qualityProfile('high',2,{width:1280,height:720}).pixelRatio,2,'normal windows keep 2x');
+ assert.equal(qualityProfile('medium',2,{width:3000,height:2000}).pixelRatio,1,'never below 1x');
  assert.equal(qualityProfile('nonsense',NaN).pixelRatio,1);assert.equal(qualityProfile('high',0).pixelRatio,1);
 });
 test('lowerLevel drops exactly one step and stops at Low',()=>{assert.equal(lowerLevel('high'),'medium');assert.equal(lowerLevel('medium'),'low');assert.equal(lowerLevel('low'),'low');});

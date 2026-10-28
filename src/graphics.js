@@ -5,8 +5,14 @@ export const PLAYER_MODELS=['classic','athletes'];
 export const effectivePlayers=(choice,level)=>level==='low'||!PLAYER_MODELS.includes(choice)?'classic':choice;
 // pixelRatio is a ceiling for devicePixelRatio; shadowSize 0 turns the sun's shadow off; crowd is 'full' | 'noshadow' | 'hidden'.
 const PROFILES={low:{pixelRatio:1,shadowSize:0,crowd:'hidden'},medium:{pixelRatio:1.5,shadowSize:1024,crowd:'noshadow'},high:{pixelRatio:2,shadowSize:2048,crowd:'full'}};
-// 'auto' starts at the current (High) look and may be lowered later by autoDowngrade.
-export const qualityProfile=(level,dpr=1)=>{const p=PROFILES[level]||PROFILES.high,d=Number.isFinite(+dpr)&&+dpr>0?+dpr:1;return {...p,pixelRatio:Math.min(d,p.pixelRatio),shadows:p.shadowSize>0};};
+// Pixel budget per level: on very large canvases (e.g. a full-screen Retina window, 5.7 million pixels at 2x) the ratio is
+// lowered so the canvas stays under this many pixels, never below 1x. Measured on a Mac: High at 5.7 MP (3484×1644) ran at ~56 fps (18 ms); the budget brings that canvas to 1.6x.
+export const MAX_PIXELS={high:3.7e6,medium:2.4e6,low:Infinity};
+// 'auto' starts at the current (High) look and may be lowered later by autoDowngrade. size = the canvas's CSS size, if known.
+export const qualityProfile=(level,dpr=1,size=null)=>{const p=PROFILES[level]||PROFILES.high,d=Number.isFinite(+dpr)&&+dpr>0?+dpr:1;let pixelRatio=Math.min(d,p.pixelRatio);
+ const area=size&&size.width>0&&size.height>0?size.width*size.height:0,max=MAX_PIXELS[PROFILES[level]?level:'high'];
+ if(area&&area*pixelRatio*pixelRatio>max)pixelRatio=Math.max(1,Math.floor(Math.sqrt(max/area)*20)/20);
+ return {...p,pixelRatio,shadows:p.shadowSize>0};};
 export const lowerLevel=level=>level==='high'?'medium':'low';
 // Frame-time probe: ignore the shader-compile warm-up, collect about two seconds, then decide once.
 export const PROBE={warmup:12,seconds:2,minFrames:20,maxFrames:600,slowMs:1000/28};
