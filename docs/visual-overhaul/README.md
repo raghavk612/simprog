@@ -160,3 +160,23 @@ Each piece is a Volume Wrangle (`sdf_<piece>`) whose code is in `GARMENT_VEX` in
   - A glossy clearcoat mirrored the key light as a glare blob, so the floor is satin.
   - Contact shadows blend in linear light before tone mapping, so they are drawn wider and darker than they would be with plain rendering.
 - **Testing:** set `window.__kangsLook = {...}` before the page loads to switch parts off, e.g. `{noPost:true}`, `{f:{bloom:false}}`, `{spot:0}`, `{clearcoat:0}`.
+
+### Animation polish (Stage 5: `src/motion.js`)
+- **Scope:** the 3D athletes only. The plays still decide where every player stands and which way he faces; this layer only bends the joints. Classic players keep their old animation.
+- **Foot planting:**
+  - A two-bone leg IK (`solveLeg`) keeps the planted foot on the floor.
+  - The stride advances with the distance the player actually travels, not with a clock, so feet don't skate. Stride length grows with speed (`strideFor`).
+  - The swing foot lifts and reaches ahead (`footAt`). Strides follow the direction of travel, so a defensive slide becomes a side shuffle instead of feet stepping forward.
+- **Stances:**
+  - An athletic crouch at rest, a lower crouch while dribbling, and a wide, low defensive stance.
+  - Knees tuck in the air for shots, rebounds and blocks.
+- **Weight:**
+  - A slow side-to-side weight shift when standing.
+  - When running: a hip bob, hip and shoulder counter-twist, and a torso lean that grows with speed.
+- **Arms and head:**
+  - Relaxed arms swing opposite the legs.
+  - The dribble hand pumps in time with the ball's bounce.
+  - The head turns toward the ball, limited to about ±60°.
+- **Easing:** every channel eases with exponential smoothing, so poses blend instead of snapping. Pausing a replay freezes it.
+- **Reduced motion:** players hold a still stance instead.
+- **Tests:** `tests/motion.test.js` checks that the IK places the ankle exactly on its target and never bends a knee backwards, and that planted feet move back exactly as far as the body moves forward.

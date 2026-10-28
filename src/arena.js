@@ -12,6 +12,7 @@ import {classicBody,attachBody,disposeBody,validBody,athleteBody,variantFor,BODY
 import {effectivePlayers} from './graphics.js';
 import {ballMaterial} from './materials.js';
 import {BroadcastLook} from './broadcast.js';
+import {animateAthlete} from './motion.js';
 const purple=0x6832ab;
 export class Arena{
  constructor(host){
@@ -179,10 +180,11 @@ export class Arena{
    if(pose.arms==='dribble'){x=j?-.25+Math.sin(t*18)*.25:-.6;elbow=j?-.15:-.8;}
    const r=arm.rotation,e=arm.userData.elbow.rotation;r.set(r.x+(x-r.x)*ease,0,r.z+(z-r.z)*ease);e.x+=(elbow-e.x)*ease;
   });
+  if(u.body?.style==='athletes')animateAthlete(player,pose,{dt:this.frameDt||0,motion:this.motion&&!(this.event&&this.paused),gait:this.gait,ball:this.ball?.position});
  }
  frame(){if(this.failed)return;const dt=Math.min(this.clock.getDelta(),.05),w=this.host.clientWidth,h=this.host.clientHeight;
   if(w<1||h<1||this.host.hidden){this.lastT=0;return;}this.measure(performance.now());if(this.w!==w||this.h!==h){this.w=w;this.h=h;this.renderer.setSize(w,h,false);this.look?.resize(w,h);this.camera.aspect=w/h;this.camera.fov=w/h<.8?65:43;this.camera.updateProjectionMatrix();}
-  if(this.motion)this.time+=dt;
+  if(this.motion)this.time+=dt;this.frameDt=this.event&&this.paused?0:dt*(this.event?this.speed||1:1);
   // One continuous stride/dribble clock, so legs and arms never jump when a clip restarts.
   this.gait=(this.gait||0)+(this.motion&&!(this.event&&this.paused)?dt*(this.event?this.speed:1):0);
   if(this.event){
