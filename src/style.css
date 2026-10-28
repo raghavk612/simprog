@@ -629,7 +629,7 @@ img.opp-logo,.bug2k .bug-team img.bug-logo,img.opp-badge:not(.ph){filter:drop-sh
 .scout-traits{margin:6px 0}
 
 /* ---- token economy, "what now" nudge, tip-off preview, season code, model panel ---- */
-.nudge-card{border-left:4px solid #e9b858;margin-bottom:20px}
+.nudge-card{margin-bottom:20px}
 .nudge-card p{margin:8px 0 14px;font-size:calc(17px*var(--ts,1)*var(--ls,1));font-weight:600}
 .tipoff-card h3{margin:14px 0 8px;font-size:calc(14px*var(--ts,1)*var(--ls,1))}
 .tipoff-card p{font-size:calc(14px*var(--ts,1)*var(--ls,1))}
@@ -814,3 +814,7 @@ dialog:has(.unlock-pop){width:min(470px,calc(100vw - 24px))}
 .pregame .pre-matchup b{color:#fff}
 .pregame h2{margin:4px 0 0}
 .pregame .modal-actions{margin-top:6px}
+
+.prospect-jersey-stage{height:220px;width:100%;margin:0 auto 20px;display:grid;place-items:center}
+.prospect-jersey-stage .jersey-canvas{display:block;max-width:100%}
+.prospect-jersey-stage .prospect-jersey{margin:0}

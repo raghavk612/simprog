@@ -61,7 +61,7 @@ function faceTexture(kit,side,{number,name},font,locked){
 }
 function glow(color){const cv=document.createElement('canvas');cv.width=cv.height=128;const x=cv.getContext('2d'),g=x.createRadialGradient(64,64,6,64,64,64);g.addColorStop(0,color);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(0,0,128,128);const t=new THREE.CanvasTexture(cv);return t;}
 
-export function createJerseyShowcase({onPick}={}){
+export function createJerseyShowcase({onPick,kitKeys=ORDER,preview=false}={}){
  let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});}catch{return null;}
  renderer.setPixelRatio(Math.min(2,globalThis.devicePixelRatio||1));renderer.outputColorSpace=THREE.SRGBColorSpace;
  const canvas=renderer.domElement;canvas.className='jersey-canvas';canvas.setAttribute('aria-hidden','true');
@@ -71,8 +71,8 @@ export function createJerseyShowcase({onPick}={}){
  const rim=new THREE.PointLight(0x9d5cf2,40,14);rim.position.set(-3,1,-2);scene.add(rim);
  const spot=new THREE.PointLight(0xe9b858,16,10);spot.position.set(0,3,3);scene.add(spot);
  const floorGlow=glow('rgba(180,138,255,.55)'),goldGlow=glow('rgba(233,184,88,.9)');
- const pieces=ORDER.map((kitKey,i)=>{
-  const col=i%3,row=Math.floor(i/3),baseY=ROW_Y[row],group=new THREE.Group();group.position.set((col-1)*SPACING,baseY,0);
+ const pieces=kitKeys.map((kitKey,i)=>{
+  const col=preview?1:i%3,row=Math.floor(i/3),baseY=preview?0:ROW_Y[row],group=new THREE.Group();group.position.set((col-1)*SPACING,baseY,0);
   const geo=()=>{const gm=new THREE.PlaneGeometry(2,2.5,28,36),p=gm.attributes.position;for(let k=0;k<p.count;k++){const u=p.getX(k)/1;p.setZ(k,.15*(1-u*u)*(1-.25*(p.getY(k)/1.25)));}gm.computeVertexNormals();return gm;};
   const mat=()=>new THREE.MeshStandardMaterial({transparent:false,alphaTest:.5,side:THREE.DoubleSide,roughness:.72,metalness:.04});
   const front=new THREE.Mesh(geo(),mat()),back=new THREE.Mesh(geo(),mat());back.rotation.y=Math.PI;back.scale.z=1;
@@ -81,16 +81,16 @@ export function createJerseyShowcase({onPick}={}){
   const ring=new THREE.Mesh(new THREE.CircleGeometry(1.45,40),new THREE.MeshBasicMaterial({map:goldGlow,transparent:true,depthWrite:false,opacity:0}));ring.rotation.x=-Math.PI/2;ring.position.y=-1.49;group.add(ring);
   scene.add(group);return {kitKey,group,front,back,ring,col,baseY,hover:0,sel:0,phase:i*1.7,locked:SPECIAL_KITS.includes(kitKey)};
  });
- let resizer=null,player={number:11,name:'KANGS'},font='"Barlow Condensed",Arial,sans-serif',selected='home',motion=true,hoverIdx=-1,raf=0,last=performance.now(),size={w:0,h:0},focusIdx=-1;
+ let resizer=null,player={number:11,name:'KANGS'},font='"Barlow Condensed",Arial,sans-serif',selected=preview?null:'home',motion=true,hoverIdx=-1,raf=0,last=performance.now(),size={w:0,h:0},focusIdx=-1;
  const paint=()=>{for(const p of pieces){const kit=KITS[p.kitKey];for(const [m,side] of [[p.front,'front'],[p.back,'back']]){m.material.map?.dispose();m.material.map=faceTexture(kit,side,player,font,p.locked);m.material.needsUpdate=true;}}};
  const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
  const pick=e=>{const r=canvas.getBoundingClientRect();ndc.set(((e.clientX-r.left)/r.width)*2-1,-(((e.clientY-r.top)/r.height)*2-1));ray.setFromCamera(ndc,camera);const hits=ray.intersectObjects(pieces.flatMap(p=>[p.front,p.back]));const h=hits[0]?.object;return pieces.findIndex(p=>p.front===h||p.back===h);};
- canvas.addEventListener('pointermove',e=>{const i=pick(e);if(i!==hoverIdx){hoverIdx=i;canvas.style.cursor=i>=0?'pointer':'default';wake();}});
+ canvas.addEventListener('pointermove',e=>{const i=pick(e);if(i!==hoverIdx){hoverIdx=i;canvas.style.cursor=i>=0&&onPick?'pointer':'default';wake();}});
  canvas.addEventListener('pointerleave',()=>{hoverIdx=-1;wake();});
- canvas.addEventListener('click',e=>{const i=pick(e);if(i>=0){const p=pieces[i];if(!p.locked)selected=p.kitKey;onPick?.(p.kitKey);wake();}});
+ canvas.addEventListener('click',e=>{if(!onPick)return;const i=pick(e);if(i>=0){const p=pieces[i];if(!p.locked)selected=p.kitKey;onPick?.(p.kitKey);wake();}});
  function resize(){const r=canvas.parentElement?.getBoundingClientRect();if(!r||!r.width||!r.height)return;if(Math.abs(r.width-size.w)<1&&Math.abs(r.height-size.h)<1)return;size={w:r.width,h:r.height};renderer.setSize(r.width,r.height,false);canvas.style.width='100%';canvas.style.height='100%';camera.aspect=r.width/r.height;
   // keep all six jerseys in view, whichever of width or height is the tight one
-  const half=Math.tan(THREE.MathUtils.degToRad(camera.fov/2)),needW=(2*SPACING+2.5)/(2*half*Math.max(camera.aspect,.1)),needH=(ROW_Y[0]-ROW_Y[1]+3.5)/(2*half);camera.position.z=Math.max(5.4,needW,needH);camera.position.y=(ROW_Y[0]+ROW_Y[1])/2+.1;camera.lookAt(0,(ROW_Y[0]+ROW_Y[1])/2,0);camera.updateProjectionMatrix();}
+  const half=Math.tan(THREE.MathUtils.degToRad(camera.fov/2)),needW=(preview?2.8:2*SPACING+2.5)/(2*half*Math.max(camera.aspect,.1)),needH=(preview?3.5:ROW_Y[0]-ROW_Y[1]+3.5)/(2*half);camera.position.z=Math.max(5.4,needW,needH);camera.position.y=(ROW_Y[0]+ROW_Y[1])/2+.1;camera.lookAt(0,(ROW_Y[0]+ROW_Y[1])/2,0);camera.updateProjectionMatrix();}
  function frame(now){
   raf=0;if(!canvas.isConnected)return;const dt=Math.min(.05,(now-last)/1000);last=now;resize();let moving=false;
   pieces.forEach((p,i)=>{
@@ -103,7 +103,8 @@ export function createJerseyShowcase({onPick}={}){
   if(motion||moving)raf=requestAnimationFrame(frame);
  }
  function wake(){if(!raf&&canvas.isConnected){last=performance.now();raf=requestAnimationFrame(frame);}}
- document.addEventListener('visibilitychange',()=>{if(!document.hidden)wake();});
+ const onVisibility=()=>{if(!document.hidden)wake();};
+ document.addEventListener('visibilitychange',onVisibility);
  paint();
  return {
   canvas,
@@ -116,6 +117,6 @@ export function createJerseyShowcase({onPick}={}){
   setMotion(on){motion=!!on;wake();},
   focusKit(i){focusIdx=i;wake();},
   refreshFont(f){font=f||font;paint();wake();},
-  dispose(){cancelAnimationFrame(raf);for(const p of pieces){p.front.material.map?.dispose();p.back.material.map?.dispose();}renderer.dispose();canvas.remove();}
+  dispose(){cancelAnimationFrame(raf);resizer?.disconnect();document.removeEventListener('visibilitychange',onVisibility);scene.traverse(o=>{o.geometry?.dispose();if(o.material){o.material.map?.dispose();o.material.dispose();}});renderer.dispose();renderer.forceContextLoss();canvas.remove();}
  };
 }
