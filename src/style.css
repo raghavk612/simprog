@@ -815,7 +815,7 @@ dialog:has(.unlock-pop){width:min(470px,calc(100vw - 24px))}
 .pregame h2{margin:4px 0 0}
 .pregame .modal-actions{margin-top:6px}
 
-.prospect-jersey-stage{height:220px;width:100%;margin:0 auto 20px;display:grid;place-items:center}
+.prospect-jersey-stage{position:relative;height:220px;width:100%;margin:0 auto 20px;display:grid;place-items:center;overflow:hidden;border-radius:10px;background:radial-gradient(ellipse at 50% 30%,#44256f,#171020 70%)}
 .prospect-jersey-stage .jersey-canvas{display:block;max-width:100%}
 .prospect-jersey-stage .prospect-jersey{margin:0}
 
@@ -851,11 +851,9 @@ dialog:has(.unlock-pop){width:min(470px,calc(100vw - 24px))}
 .d3-stage.d3-film{aspect-ratio:2/1;max-height:min(43vh,440px);border-color:#bca17e55;background:#101220}.quiz-ui .quiz-opts{grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}.quiz-ui .quiz-opts button{min-height:72px;border-radius:10px;padding:16px;background:linear-gradient(135deg,#352841,#21192c);border:1px solid #a78bb84a;color:#f7efff;font-weight:600}.quiz-ui .quiz-opts button:hover:not(:disabled){border-color:#cba8f4;background:#483057}.quiz-ui .film-question{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 @media(max-width:700px){.quiz-ui .quiz-opts{grid-template-columns:1fr;gap:8px}.quiz-ui .quiz-opts button{min-height:52px}.quiz-ui .film-question{position:static;width:auto;height:auto;overflow:visible;clip-path:none;margin-top:14px}.d3-stage.d3-film{aspect-ratio:1.8;min-height:180px;max-height:30vh}}
 
-/* Transparent stamp indicates an unavailable action without covering its label. */
-button:disabled:not(.quiz-opts button):not(.owned button),button[aria-disabled=true],.kit.locked{position:relative}
-button:disabled:not(.quiz-opts button):not(.owned button):not(.toast-close)::after,button[aria-disabled=true]::after{content:'';display:inline-block;width:62px;height:32px;margin-left:8px;vertical-align:middle;background:url('/images/locked-stamp.png') center/contain no-repeat;pointer-events:none;flex-shrink:0}
-.office-action:disabled::after{margin:0;align-self:flex-end}.kit.locked::after{position:absolute;right:4px;top:8px;width:72px!important;height:38px!important}.gear-card.owned button:disabled::after{display:none}
-
-.gear-card.owned button.locked-action::after{content:'';display:inline-block;width:62px;height:32px;background:url('/images/locked-stamp.png') center/contain no-repeat;vertical-align:middle;margin-left:8px}
+/* The LOCKED stamp marks unlockable items only (jersey kits, achievements, the unlock popup; the 3D jerseys paint their own).
+   Actions that are simply unavailable (signing, scouting, buying, office actions) keep their normal disabled look. */
+.kit.locked{position:relative}
+.kit.locked::after{content:'';position:absolute;right:4px;top:8px;width:72px;height:38px;background:url('/images/locked-stamp.png') center/contain no-repeat;pointer-events:none}
 .ach-list li.locked .ach-state{font-size:0;width:78px;height:42px;background:url('/images/locked-stamp.png') center/contain no-repeat;flex-shrink:0}
 .unlock-pop .up-lock{width:110px;height:60px;background:url('/images/locked-stamp.png') center/contain no-repeat;border:0;box-shadow:none;border-radius:0}.unlock-pop .up-lock svg{display:none}
