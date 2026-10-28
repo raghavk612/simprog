@@ -81,13 +81,14 @@ def build_variant(name, spec, objpath):
     for (a, b, c, g) in faces:
         tri = []
         for (pi, ti, ni) in (a, b, c):
-            key = (pi, ti, ni)
+            # Houdini writes one normal per corner: merge corners whose normals match, keep splits at sharp edges
+            key = (pi, ti, tuple(np.round(nrm[ni], 3)) if nrm is not None and ni >= 0 else ni)
             if key not in key_index:
                 key_index[key] = len(verts); verts.append(key); groups.append(g)
             tri.append(key_index[key])
         tris.append((tri, g))
     P = np.array([pos[k[0]] for k in verts])
-    N = np.array([nrm[k[2]] if nrm is not None and k[2] >= 0 else [0, 1, 0] for k in verts]); N /= np.linalg.norm(N, axis=1, keepdims=True)
+    N = np.array([k[2] if isinstance(k[2], tuple) else [0, 1, 0] for k in verts], float); N /= np.linalg.norm(N, axis=1, keepdims=True)
     UV = np.array([uv[k[1]] if uv is not None and k[1] >= 0 else [0, 0] for k in verts])
     G = np.array(groups)
 
@@ -138,6 +139,16 @@ def build_variant(name, spec, objpath):
             d = ((P[m[k:k + 512], None, :] - P[None, src, :]) ** 2).sum(-1)
             near[k:k + 512] = src[d.argmin(1)]
         JW[m] = JW[near]; JI[m] = JI[near]
+        if g == 'shorts':
+            # the crotch panel follows the pelvis, not one thigh, so the shorts never split down the middle on a wide stride
+            mid = (1 - smooth(.012 * H, .05 * H, np.abs(P[m, 0]))) * smooth(.43 * H, .49 * H, P[m, 1])
+            for k, vi in enumerate(m):
+                if mid[k] <= 0: continue
+                w = dict(zip(JI[vi].tolist(), (JW[vi] * (1 - mid[k])).tolist()))
+                w[BI['pelvis']] = w.get(BI['pelvis'], 0) + mid[k]
+                top = sorted(w.items(), key=lambda kv: -kv[1])[:4]
+                JI[vi] = [t[0] for t in top] + [0] * (4 - len(top)); JW[vi] = [t[1] for t in top] + [0] * (4 - len(top))
+                JW[vi] /= max(JW[vi].sum(), 1e-9)
         # cylindrical UVs round the body axis (or the limb) so a fabric pattern can tile on them
         c = P[m].mean(0)
         UV[m, 0] = np.arctan2(P[m, 0] - c[0], P[m, 2] - c[2]) / (2 * np.pi) + .5
@@ -152,10 +163,12 @@ def build_variant(name, spec, objpath):
             if g == 'shoes' and c[1] < y(.011): mat = 'sole'
             return (g, mat)
         if g == 'core' and c[1] > J['neck'][1] + .012 * H: return ('head', 'skin')
+        if g == 'core' and c[1] < y(.07) and 'shoes' in GARMENTS and (G == 'shoes').any(): return (None, None)  # feet are inside the shoes
         return ('body', 'skin')
     meshes = {}
     for tri, g in tris:
         mesh, mat = region(tri, g)
+        if mesh is None: continue
         meshes.setdefault(mesh, {}).setdefault(mat, []).append(tri)
 
     S = UNITS_PER_M
@@ -164,10 +177,23 @@ def build_variant(name, spec, objpath):
     z_front = P[(np.abs(P[:, 0]) < .03 * H) & (np.abs(P[:, 1] - y(.71)) < .015 * H) & jersey][:, 2].max()
     z_back = P[(np.abs(P[:, 0]) < .03 * H) & (np.abs(P[:, 1] - y(.765)) < .015 * H) & jersey][:, 2].min()
     extras = {'variant': name, 'height': H * S,
-              'number': [0, (y(.705) - chest[1]) * S, (z_front - chest[2] + .003) * S],
+              'number': [0, (y(.705) - chest[1]) * S, (z_front - chest[2] + .009) * S],
               'nameplate': [0, (y(.775) - chest[1]) * S, (z_back - chest[2] - .003) * S],
               'capBadge': [-.06 * H * S, (y(.792) - chest[1]) * S, (z_back - chest[2] - .006) * S],
               'decalScale': H * S / 2.15}
+    # face: where the painted face sits on the head (relative to the head bone) and how much the face curves
+    headv = P[core & (P[:, 1] > J['neck'][1] + .012 * H)]
+    eye = headv[np.abs(headv[:, 1] - y(.912)) < .006 * H]
+    zf = eye[np.abs(eye[:, 0]) < .006 * H][:, 2].max()
+    a = np.abs(eye[eye[:, 2] > 0][:, 0]).max(); b = zf - eye[:, 2].min()
+    extras['face'] = [0, (y(.91) - J['head'][1]) * S, (zf - J['head'][2] + .0015) * S]
+    extras['faceSize'] = [.072 * H * S, .062 * H * S]
+    extras['faceRadius'] = float(a * a / max(b / 2, 1e-3) * S * .9)
+    # how much the jersey curves across the chest and back (ellipse curvature at the centre line), so decals can follow it
+    for key, yy, sel in (('chestRadius', y(.705), lambda z: z > 0), ('backRadius', y(.775), lambda z: z < 0)):
+        band = P[(np.abs(P[:, 1] - yy) < .01 * H) & jersey]
+        a = np.abs(band[:, 0]).max(); zs = band[:, 2]; b = (zs.max() - zs.min()) / 2
+        extras[key] = float(a * a / max(b, 1e-3) * S * .8)  # a little tighter than the fabric so the edges never float
     return write_glb(os.path.join(OUT, name + '.glb'), P * S, N, UV, JI, JW, meshes, {k: J[BONES[i][2]] * S for i, (k, _, _) in enumerate(BONES)}, extras)
 
 def write_glb(path, P, N, UV, JI, JW, meshes, joint_pos, extras):

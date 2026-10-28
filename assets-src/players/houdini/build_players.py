@@ -124,10 +124,11 @@ foreach (float sd; SIDES) {
     vector q = P - set(sd * .057 * H, .33 * H, .004 * H);
     d = smin(d, roundcone(q, .061 * H, .058 * H, .2 * H), .015);   // baggy legs, a touch wider at the hem
 }
+vector wq = P - set(0, .522 * H, .004 * H); wq.z /= .66;
+d = smin(d, roundcone(wq, .088 * H, .09 * H * pow(SH, .25), .055 * H), .01);   // waistband sits over the tucked-in jersey
+d = smax(d, -sdell(P, set(0, .325 * H, .004 * H), set(.011 * H, .13 * H, .2 * H)), .006);   // inseam: the legs part below the crotch
 d = smax(d, .325 * H - P.y, .004);
-d = smax(d, P.y - .575 * H, .004);
-float ang = atan2(P.z, P.x - (P.x > 0 ? .057 : -.057) * H);
-d -= .0009 * sin(ang * 7.0 + P.y * 18.0) * smooth(.33 * H, .38 * H, P.y) * (1.0 - smooth(.42 * H, .5 * H, P.y));   // soft vertical folds above the hem
+d = smax(d, P.y - .578 * H, .004);
 d -= .0018 * sin(atan2(P.z, P.x) * 18.0) * smooth(.53 * H, .57 * H, P.y);            // gathered waistband
 f@surface = -d;
 """,
@@ -137,7 +138,7 @@ foreach (float sd; SIDES) {
     vector a = set(sd * .045 * H, .026 * H, -.022 * H);
     vector q = P - a; vector qq = set(q.x, q.z, q.y / .72);   // capsule along +z, flattened in y
     float foot = roundcone(qq, .028 * H, .024 * H, .132 * H);
-    float collar = roundcone(P - set(sd * .044 * H, .02 * H, -.01 * H), .031 * H, .027 * H, .058 * H);   // high-top collar round the ankle
+    float collar = roundcone(P - set(sd * .044 * H, .02 * H, -.01 * H), .033 * H, .029 * H, .06 * H);   // high-top collar round the ankle
     d = smin(d, smin(foot, collar, .02), .001);
 }
 d = smax(d, -P.y, .002);   // flat sole on the floor
@@ -159,7 +160,7 @@ f@surface = -d;
 'hair_afro': r"""
 float head = part_sdf("core", P, B);
 float d = smin(head - .022, sdell(P, set(0, .962 * H, -.012 * H), set(.072 * H, .062 * H, .072 * H)), .035);
-d -= .0015 * sin(P.x * 900.0) * sin(P.y * 870.0) * sin(P.z * 930.0);   // a little curl texture
+d -= .0008 * sin(P.x * 420.0) * sin(P.y * 400.0) * sin(P.z * 440.0);   // a little curl texture (fine curl comes from the hair material)
 d = smax(d, (.918 * H + P.z * .4) - P.y, .008);
 f@surface = -d;
 """,
@@ -202,7 +203,7 @@ BOX = {'core': ((0, .5, .02), (.34, 1.04, .26), False, 1.0, 'target_core'),
        'shoes': ((0, .05, .045), (.2, .11, .25), False, .8, 900),
        'hair_buzz': ((0, .945, -.005), (.17, .14, .19), False, .7, 600),
        'hair_crop': ((0, .95, -.005), (.17, .15, .19), False, .7, 700),
-       'hair_afro': ((0, .96, -.01), (.22, .19, .24), False, .8, 800),
+       'hair_afro': ((0, .96, -.01), (.22, .19, .24), False, .6, 1700),
        'hair_rows': ((0, .945, -.005), (.17, .14, .19), False, .6, 900),
        'headband': ((0, .945, 0), (.17, .07, .19), False, .6, 250),
        'sleeve_arm': ((-.123, .625, .005), (.1, .27, .11), True, .8, 350),
@@ -255,7 +256,7 @@ def build(name, v, tx=0.0, overrides=None):
         red.parm('finalcount').setExpression('ch("../%s")' % budget if isinstance(budget, str) else 'int(%d*ch("../garment_detail"))' % budget)
         grp = geo.createNode('groupcreate', 'group_' + part); grp.setInput(0, red); grp.parm('groupname').set(part)
         merge.setNextInput(grp)
-    nrm = geo.createNode('normal', 'smooth_normals'); nrm.setInput(0, merge); nrm.parm('type').set('typepoint')
+    nrm = geo.createNode('normal', 'smooth_normals'); nrm.setInput(0, merge); nrm.parm('type').set('typevertex'); nrm.parm('cuspangle').set(60)  # smooth skin, crisp hems and cuffs
     seams = geo.createNode('uvautoseam', 'uv_seams'); seams.setInput(0, nrm)
     flat = geo.createNode('uvflatten::3.0', 'uv_flatten'); flat.setInput(0, seams)
     lay = geo.createNode('uvlayout::3.0', 'uv_layout'); lay.setInput(0, flat)

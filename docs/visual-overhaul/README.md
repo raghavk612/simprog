@@ -1,6 +1,6 @@
 # Visual overhaul: 2K-style players and arena
 
-Status: **Stages 0–2 done on the `visual-overhaul` branch** (not on the live site yet).
+Status: **Stages 0–3 done on the `visual-overhaul` branch** (not on the live site yet).
 
 Restore point: branch `backup/pre-2k-overhaul` (commit `c9342d1`, the version live on Oct 25, 2026). To roll back, run `git checkout backup/pre-2k-overhaul` or reset `main` to it. All overhaul work happens on the `visual-overhaul` branch and reaches `main` (and the live site) one approved stage at a time.
 
@@ -113,6 +113,20 @@ Each variant in `kangs_players.hipnc` also builds clothing and hair as offsets o
 Each piece is a Volume Wrangle (`sdf_<piece>`) whose code is in `GARMENT_VEX` in `build_players.py`. The **Clothing/hair detail** parameter scales their triangle budgets.
 
 `scripts/build_players.py` copies each piece's skin weights from the nearest skin, so it moves with the body, and gives it tiling UVs for the fabric textures in Stage 3.
+
+### Materials (Stage 3), in `src/materials.js`
+- **Fine detail:** small tiling height maps are generated in code at start-up (skin pores, perforated jersey mesh, pebbled leather, hair strands), so there are no texture downloads. The shader applies them as bump detail with triplanar mapping on the rest pose, so they stay glued to a moving body, and fades them out with distance so they never shimmer.
+- **Skin:** physical material with wrap lighting (a soft subsurface look, reddish where light bleeds round the edge), pores and a slight sweat sheen (clearcoat). There are seven skin tones.
+- **Faces:** brows, eyes, nose and lips are painted straight onto the head in the skin shader, projected from the front, so they are lit exactly like the skin and hide with the head in Player view.
+- **Clothing:**
+  - Jersey and shorts: cloth sheen and the athletic mesh, with geometric folds from Houdini.
+  - Sleeves and headband: smoother compression fabric.
+  - Lettering: the number and name are drawn outlined in the team's text colour, on decals bent to the curve of the chest and back.
+- **Shoes:** glossy leather-like upper and a matte rubber sole.
+- **Hair:** an anisotropic highlight that runs round the head, plus fine strands.
+- **Ball:** with the athletes it is real size (24 cm) in pebbled leather. Near the floor it is drawn lower by the size difference, so dribbles still touch the wood; the ball's game position is unchanged. Classic keeps the original ball.
+- **Shorts at the crotch:** the panel follows the pelvis, not one thigh, so the shorts stay closed on a stride. Feet are left out of the body mesh because the shoes cover them.
+- **Previewing models:** `preview-players.html` (run `npx vite`, then open `/preview-players.html?pose=1`) shows the four looks side by side; `cam=` and `fov=` move the camera.
 
 ### In the game
 - **Turning it on:** Settings › Accessibility › Graphics › **Player models** › "3D athletes (beta)". Low graphics always uses the classic figures.

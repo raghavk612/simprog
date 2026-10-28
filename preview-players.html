@@ -1,0 +1,22 @@
+<!doctype html><html><body style="margin:0;background:#120e1e"><script type="module">
+import * as THREE from 'three';import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {athleteBody,attachBody} from './src/players.js';import {ballMaterial} from './src/materials.js';
+const q=new URLSearchParams(location.search);
+const r=new THREE.WebGLRenderer({antialias:true});r.setSize(innerWidth,innerHeight);r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=.95;r.outputColorSpace=THREE.SRGBColorSpace;r.shadowMap.enabled=true;r.shadowMap.type=THREE.PCFSoftShadowMap;document.body.append(r.domElement);
+const s=new THREE.Scene();s.background=new THREE.Color('#141024');s.add(new THREE.HemisphereLight(0xded5ff,0x2a1f3c,.95));
+const sun=new THREE.DirectionalLight(0xffeee2,2.2);sun.position.set(3,9,6);sun.castShadow=true;sun.shadow.bias=-.0005;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-4,right:4,top:4,bottom:-4});s.add(sun);
+const spot=new THREE.SpotLight(0xf4edff,60,20,.6,.6,1.4);spot.position.set(0,7,2);s.add(spot);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(20,20),new THREE.MeshStandardMaterial({color:0xd6a972,roughness:.4}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;s.add(floor);
+const textTexture=()=>new THREE.Texture();const kit={mat:(c,e={})=>new THREE.MeshStandardMaterial({color:c,roughness:.68,...e}),textTexture,capMat:new THREE.MeshBasicMaterial({color:0xe9b858})};
+const L=new GLTFLoader();const vs=['guard','forward','center'];const gl={};for(const v of vs)gl[v]=await L.loadAsync(`/models/players/${v}.glb`);
+const looks=[{hair:'crop',hairColor:0x161210,headband:false,armSleeve:true,legSleeve:false},{hair:'afro',hairColor:0x221813,headband:true,armSleeve:false,legSleeve:false},{hair:'rows',hairColor:0x161210,headband:false,armSleeve:false,legSleeve:true},{hair:'buzz',hairColor:0x2e2118,headband:true,armSleeve:true,legSleeve:false}];
+const cols=[0x6832ab,0xdb7536,0x6832ab,0xf1e9df];const people=[];
+[[ 'guard',-1.8],['forward',-.6],['center',.6],['forward',1.8]].forEach(([v,x],i)=>{const p=new THREE.Group();const b=athleteBody(gl[v],kit,i+1,cols[i],v,looks[i]);attachBody(p,b);b.setLettering(String([3,11,23,0][i]),['BALSER','PAWAR','KING','VISITOR'][i],['#6832ab','#db7536','#6832ab','#f1e9df'][i],['#ffffff','#ffffff','#ffffff','#562494'][i]);p.position.x=x;p.rotation.y=+q.get('turn')||0;s.add(p);people.push(p);});
+if(q.has('noshadow'))s.traverse(o=>{if(o.isMesh)o.castShadow=false;});
+if(q.has('flatcloth'))s.traverse(o=>{if(o.isMesh&&o.material?.name==='kit'){o.material=new THREE.MeshStandardMaterial({color:o.material.color,roughness:.8});}});
+const ball=new THREE.Mesh(new THREE.SphereGeometry(.13,48,32),ballMaterial());ball.position.set(-1.25,1.1,.4);ball.castShadow=true;s.add(ball);
+// optional pose to check skinning
+if(q.has('pose'))people.forEach((p,i)=>{const u=p.userData;u.arms[1].rotation.x=-2.6;u.arms[0].rotation.set(-.5,0,-1.0);u.arms[0].userData.elbow.rotation.x=-.3;u.legs[0].rotation.x=.55;u.legs[1].rotation.x=-.45;u.legs[1].userData.knee.rotation.x=.8;});
+const cam=new THREE.PerspectiveCamera(+(q.get('fov')||32),innerWidth/innerHeight,.05,100);const [cx,cy,cz,tx,ty,tz]=(q.get('cam')||'0,1.4,6.5,0,1.1,0').split(',').map(Number);cam.position.set(cx,cy,cz);cam.lookAt(tx,ty,tz);
+setTimeout(()=>{r.render(s,cam);document.title='done';},800);
+</script></body></html>

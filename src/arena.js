@@ -10,6 +10,7 @@ import {loadOpponentLogo} from './logos.js';
 import {gymColors} from './kits.js';
 import {classicBody,attachBody,disposeBody,validBody,athleteBody,variantFor,BODY_VARIANTS,lookFor,lookKey} from './players.js';
 import {effectivePlayers} from './graphics.js';
+import {ballMaterial} from './materials.js';
 const purple=0x6832ab;
 export class Arena{
  constructor(host){
@@ -74,7 +75,11 @@ export class Arena{
  setPlayers(choice){if(this.failed)return;this.playersChoice=choice;this.applyPlayers();}
  applyPlayers(){const want=effectivePlayers(this.playersChoice,this.level);this.playerStyle=want;
   if(want==='athletes'&&!this.templates){(this.bodiesLoading??=Promise.all(BODY_VARIANTS.map(v=>new GLTFLoader().loadAsync(`${import.meta.env.BASE_URL}models/players/${v}.glb`).then(g=>[v,g])))).then(list=>{this.templates=Object.fromEntries(list);this.applyPlayers();}).catch(e=>{console.warn('Player models unavailable, keeping classic',e);this.bodiesLoading=null;this.playerStyle='classic';});return;}
-  this.people.forEach(p=>this.styleBody(p));}
+  this.people.forEach(p=>this.styleBody(p));this.styleBall(want==='athletes'&&!!this.templates);}
+ /* With the athletes the ball is drawn at its real size (24 cm across) in pebbled leather; classic keeps the bigger toy ball. Presentation only. */
+ styleBall(real){const sphere=this.ball?.children[0];if(!sphere)return;this.ballReal=real;sphere.userData.classic??=sphere.material;if(real){sphere.material=this.ballMat??=ballMaterial();this.ball.scale.setScalar(.13/.28);}else{sphere.material=sphere.userData.classic;this.ball.scale.setScalar(1);this.ball.children.forEach(c=>c.position.y=0);}}
+ /* The plays place the ball for the classic 0.28 ball; near the floor the smaller real ball drops by the difference so its bounces still touch the wood. Drawing only: the ball's position is untouched. */
+ settleBall(){if(!this.ballReal||!this.ball)return;const s=this.ball.scale.x,y=this.ball.position.y,drop=(.28-.13)*Math.max(0,Math.min(1,1-(y-.28)/1.2));this.ball.children.forEach(c=>c.position.y=-drop/s);}
  /* Gives one player the body the current setting asks for: classic, or the athlete variant for his position. */
  styleBody(p){const u=p.userData,i=u.slot??0,want=this.playerStyle==='athletes'&&this.templates?variantFor(u.person?.position):'classic',look=want==='classic'?null:lookFor(u.person?.id??u.person?.name??i),key=want==='classic'?'classic':`${want}|${lookKey(look)}`;if(u.body?.key===key)return false;
   const color=u.jersey?.color?.getHex?.()??(i<5?purple:0xf1e9df);
@@ -133,8 +138,9 @@ export class Arena{
   p.userData.person={id:person?.id,number:person?.number,name:person?.name,position:person?.position,home};p.userData.plate=person?.plate;if(this.playerStyle==='athletes'&&this.templates&&this.styleBody(p))return;
   const cap=home&&person?.id!=null&&person.id===this.state?.captain,key=[person?.id,person?.number,person?.name,bg,fg,cap?'C':'',person?.plate||''].join('|');if(p.userData.identity===key)return;p.userData.identity=key;
   p.userData.jersey.color.set(bg);
-  const n=p.userData.number.material;n.map.dispose();n.map=this.textTexture(String(person?.number??11),bg,fg,128);
-  const back=p.userData.nameplate.material;back.map.dispose();back.map=this.textTexture((person?.plate||(person?.name||'VISITORS').split(' ').at(-1)).toUpperCase(),bg,fg,256);p.userData.capBadge&&(p.userData.capBadge.visible=cap);
+  const num=String(person?.number??11),plate=(person?.plate||(person?.name||'VISITORS').split(' ').at(-1)).toUpperCase();
+  if(p.userData.body?.setLettering)p.userData.body.setLettering(num,plate,bg,fg);
+  else{const n=p.userData.number.material;n.map.dispose();n.map=this.textTexture(num,bg,fg,128);const back=p.userData.nameplate.material;back.map.dispose();back.map=this.textTexture(plate,bg,fg,256);}p.userData.capBadge&&(p.userData.capBadge.visible=cap);
  }
  /* Opponent bodies wear real names and numbers: the clip's shooter and helper first, then the rest of the roster (fictional rosters read as the school name). */
  castVisitors(){const s=this.state;if(!s)return;const opp=boardGame(s,this.event).opponent;visitorCast(oppRoster(s,opp),this.clips?.[1],opp).forEach((v,i)=>this.setIdentity(this.people[i+5],v,false));}
@@ -206,6 +212,6 @@ export class Arena{
   if(this.mode==='follow'&&this.event){const side=this.clipIndex===1?-1:1;const focus=this.people[side===1?0:5].position;const x=THREE.MathUtils.clamp(focus.x,-10,10);this.camera.position.lerp(new THREE.Vector3(x,8.5,14),.045);this.controls.target.lerp(new THREE.Vector3(x,1.2,0),.08);}const fp=this.mode==='player'||(this.mode==='auto'&&this.autoDirector());this.fpActive=!!fp;if(fp){this.firstPerson();}else{this.restoreHead();this.controls.update();}const fov=fp?74:(this.w/this.h<.8?65:43);if(this.camera.fov!==fov){this.camera.fov=fov;this.camera.updateProjectionMatrix();}
   // Impact shake: a short camera jitter on dunks and blocks. Off with reduced motion or the screen-shake setting.
   let jx=0,jy=0;if(this.shake>0){if(this.motion&&this.shakeOn){jx=(Math.random()-.5)*this.shake;jy=(Math.random()-.5)*this.shake;}this.shake*=Math.pow(.02,dt);if(this.shake<.004)this.shake=0;}
-  this.camera.position.x+=jx;this.camera.position.y+=jy;this.renderer.render(this.scene,this.camera);this.camera.position.x-=jx;this.camera.position.y-=jy;
+  this.settleBall();this.camera.position.x+=jx;this.camera.position.y+=jy;this.renderer.render(this.scene,this.camera);this.camera.position.x-=jx;this.camera.position.y-=jy;
  }
 }

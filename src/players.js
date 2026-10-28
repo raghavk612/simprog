@@ -6,6 +6,7 @@
 // "classic" is the original primitive figure, unchanged. Imported (skinned glTF) bodies plug in through attachBody.
 import * as THREE from 'three';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
+import {skinMaterial,clothMaterial,shoeMaterial,soleMaterial,hairMaterial,fabricMaterial,letteringTexture,bentPlane,decalMaterial,faceTexture} from './materials.js';
 
 export const PLAYER_STYLES=['classic','realistic'];
 export const BODY_PARTS=['jersey','head','hair','number','nameplate','capBadge','legs','arms'];
@@ -73,7 +74,7 @@ export function validBody(body){
 
 /* ---- Athletes: the rigged bodies built in Houdini (assets-src/players) and rigged by scripts/build_players.py ---- */
 export const BODY_VARIANTS=['guard','forward','center'];
-export const SKIN_TONES=[0x8a5a3c,0xd8a47a,0x5a3825,0xb27a50,0xc8905f,0x3f2a1e,0xe6bf98];
+export const SKIN_TONES=[0x8a5a3c,0xc99a7a,0x5a3825,0xa8754f,0xbf8a63,0x3f2a1e,0xdcb59b];
 export const HAIR_STYLES=['buzz','crop','afro','rows'];
 const HAIR_COLORS=[0x161210,0x161210,0x221813,0x2e2118,0x161210,0x4a3424];
 const hash=s=>{let h=2166136261;for(const c of String(s))h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0;};
@@ -86,8 +87,8 @@ export const lookKey=l=>l?`${l.hair}${l.headband?'+band':''}${l.armSleeve?'+arm'
 export function athleteBody(template,kit,i,color,variant,look=lookFor(i)){
  const root=cloneSkinned(template.scene),bones={},objs={};let info={},holder=null;
  root.traverse(o=>{if(o.isBone)bones[o.name]=o;else if(o.name)objs[o.name]??=o;if(o.userData&&o.userData.number){info=o.userData;holder=o;}});/* bones and meshes share names (head): parts take the mesh */
- const jersey=kit.mat(color),skin=new THREE.MeshStandardMaterial({color:SKIN_TONES[i%SKIN_TONES.length],roughness:.55}),shoes=kit.mat(0xf4f4f4,{roughness:.45}),sole=kit.mat(0x1d1d22,{roughness:.6}),
-  hairMat=kit.mat(look.hairColor??0x161210,{roughness:.85}),band=kit.mat(0xffffff,{roughness:.8}),sleeve=kit.mat(0x111114,{roughness:.6});
+ const jersey=clothMaterial(color),skin=skinMaterial(SKIN_TONES[i%SKIN_TONES.length]),shoes=shoeMaterial(0xf4f4f4),sole=soleMaterial(0x1d1d22),
+  hairMat=hairMaterial(look.hairColor??0x161210),band=fabricMaterial(0xffffff),sleeve=fabricMaterial(0x111114);
  const pick={kit:jersey,skin,shoes,sole,hair:hairMat,band,sleeve};
  // keep one hair style and the chosen options; drop the rest
  const keep=new Set([`hair_${look.hair}_mesh`,look.headband&&'headband_mesh',look.armSleeve&&'sleeve_arm_mesh',look.legSleeve&&'sleeve_leg_mesh'].filter(Boolean));
@@ -96,12 +97,20 @@ export function athleteBody(template,kit,i,color,variant,look=lookFor(i)){
  // head and hair (with the headband) hide together in Player view
  const hair=new THREE.Group();hair.name='hair';(holder||root).add(hair);for(const n of [`hair_${look.hair}_mesh`,'headband_mesh'])if(keep.has(n)&&objs[n])hair.add(objs[n]);
  const ds=info.decalScale||1,chest=bones.chest;
- const numberGeo=new THREE.PlaneGeometry(.3*ds,.3*ds),uv=numberGeo.attributes.uv;for(let k=0;k<uv.count;k++)uv.setX(k,.25+uv.getX(k)*.5);
- const number=new THREE.Mesh(numberGeo,new THREE.MeshStandardMaterial({map:kit.textTexture(String([0,2,3,11,20][i%5]),'#6832ab','#ffffff',128),roughness:.68,transparent:true,alphaTest:.02}));
- const nameplate=new THREE.Mesh(new THREE.PlaneGeometry(.4*ds,.17*ds),new THREE.MeshStandardMaterial({map:kit.textTexture('KANGS','#6832ab','#ffffff',256),roughness:.68}));nameplate.rotation.y=Math.PI;
+ const number=new THREE.Mesh(bentPlane(.3*ds,.3*ds,info.chestRadius||0),decalMaterial(letteringTexture(String([0,2,3,11,20][i%5]),'#ffffff','#2a1050')));
+ const nameplate=new THREE.Mesh(bentPlane(.42*ds,.11*ds,info.backRadius||0),decalMaterial(letteringTexture('KANGS','#ffffff','#2a1050',{w:512,h:128,weight:800})));nameplate.rotation.y=Math.PI;
  const capBadge=new THREE.Mesh(new THREE.PlaneGeometry(.09*ds,.09*ds),kit.capMat);capBadge.rotation.y=Math.PI;capBadge.visible=false;
+ for(const m of [number,nameplate,capBadge])m.castShadow=false;
+ // face: painted onto the head mesh by its own skin material (see materials.js), so it is lit like the skin and hides with the head
+ const tone=SKIN_TONES[i%SKIN_TONES.length],headMesh=objs.head_mesh;
+ if(headMesh&&info.face&&bones.head){root.updateMatrixWorld(true);const c=bones.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3().fromArray(info.face));const [fw,fh]=info.faceSize||[.15,.13];
+  const faceSkin=skinMaterial(tone,{map:faceTexture(tone,i),center:c,size:new THREE.Vector2(fw,fh)});headMesh.traverse(o=>{if(o.isMesh)o.material=faceSkin;});}
  for(const [m,at] of [[number,info.number],[nameplate,info.nameplate],[capBadge,info.capBadge]]){if(at)m.position.fromArray(at);chest?.add(m);}
  const legs=[bones.hip_R,bones.hip_L],arms=[bones.shoulder_R,bones.shoulder_L];
  legs.forEach((b,j)=>b&&(b.userData.knee=bones[j?'knee_L':'knee_R']));arms.forEach((b,j)=>b&&(b.userData.elbow=bones[j?'elbow_L':'elbow_R']));
- return {root,parts:{jersey,head:objs.head_mesh,hair,number,nameplate,capBadge,legs,arms},style:'athletes',variant,key:`${variant}|${lookKey(look)}`,look,sharedGeometry:true};
+ /* Real jersey lettering: the number in the text colour with an outline, the name across the back, both on the fabric. */
+ const shade=(hex,f)=>{const c=new THREE.Color(hex);return '#'+c.multiplyScalar(f).getHexString();},lum=hex=>{const c=new THREE.Color(hex);return .2126*c.r+.7152*c.g+.0722*c.b;};
+ const setLettering=(num,name,bg,fg)=>{const stroke=lum(fg)>.45?shade(bg,lum(bg)>.6?.55:.45):'#ffffff';
+  for(const [m,tex] of [[number,letteringTexture(num,fg,stroke)],[nameplate,letteringTexture(name,fg,stroke,{w:512,h:128,weight:800})]]){m.material.map?.dispose();m.material.map=tex;m.material.needsUpdate=true;}};
+ return {root,parts:{jersey,head:objs.head_mesh,hair,number,nameplate,capBadge,legs,arms},style:'athletes',variant,key:`${variant}|${lookKey(look)}`,look,sharedGeometry:true,setLettering};
 }
