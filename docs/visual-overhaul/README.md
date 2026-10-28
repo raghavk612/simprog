@@ -1,6 +1,6 @@
 # Visual overhaul: 2K-style players and arena
 
-Status: **Stages 0–3 done on the `visual-overhaul` branch** (not on the live site yet).
+Status: **Stages 0–4 done on the `visual-overhaul` branch** (not on the live site yet).
 
 Restore point: branch `backup/pre-2k-overhaul` (commit `c9342d1`, the version live on Oct 25, 2026). To roll back, run `git checkout backup/pre-2k-overhaul` or reset `main` to it. All overhaul work happens on the `visual-overhaul` branch and reaches `main` (and the live site) one approved stage at a time.
 
@@ -135,5 +135,28 @@ Each piece is a Volume Wrangle (`sdf_<piece>`) whose code is in `GARMENT_VEX` in
 - **Code:** `src/players.js` (classic and athlete bodies) and `src/arena.js` (`setPlayers`, `styleBody`).
 - **Budget:** about 13k visible triangles per player and 3 × 0.54 MB of models, loaded only when the setting is on. Stage 8 will trim this with lower-detail versions.
 
-### Spline scenes
-(to be added in Stage 4)
+### Spline (Stage 4: arena lighting and camera angles)
+- **Scene:** [Kangs Arena – Broadcast Lighting](https://app.spline.design/file/22b369ab-471f-43d1-8a65-6dc71fe2f9ee), in the raghavk612 Spline account. It is at real scale (1 m = 50 units, the court's long axis on x, centre at the origin, like the game). It holds:
+  - the court and the arena deck;
+  - two lighting trusses with 10 light banks;
+  - the overhead key light, 6 truss spotlights and 2 cool rim lights;
+  - 5 broadcast cameras (`Cam Broadcast Low`, `Cam Wide`, `Cam Baseline`, `Cam Replay Close`, `Cam Free Throw`), each with a `… Target` empty it looks at;
+  - player stand-ins for scale.
+- **How the game uses it:** `src/broadcastRig.js` holds the rig's values copied from that scene, plus the conversion to game units. To change the rig, edit it in Spline and ask Claude to read the scene back into that file. Spline's own reflections and depth of field can't be exported to three.js, so the game rebuilds them (below).
+- **Spline limits:** the Spline account is on the free plan (20 MCP actions a day). The screenshot tool returned blank frames over MCP, so open the link above to see the scene.
+
+### Broadcast look in the game (`src/broadcast.js`)
+- **When it's on:** with the 3D athletes on Medium or High graphics. On Low, or with Classic players, it is switched off completely, so the classic gym is untouched.
+- **Lighting:** the Spline rig, i.e. the overhead key with soft shadows, the truss spotlights (6 on High, 3 on Medium) and the cool rim lights from behind the baselines. The truss and its glowing light banks are visible.
+- **Image-based light:** a neutral room environment (PMREM) for believable highlights on skin, shoes and the ball.
+- **Court:** satin varnish (clearcoat) over the painted maple. On High it also gets real-time reflections of the players and lights (a planar mirror at half resolution), softly blurred and stronger at low angles.
+- **Contact shadows:** soft pools under every player and the ball, fading as they leave the floor.
+- **Post-processing:**
+  - High: ambient occlusion (GTAO).
+  - Medium and High: bloom on the brightest emissive parts only (threshold 2.2, so the lit floor never washes out), then a warm broadcast grade (warm white balance, a touch more saturation, soft vignette), then tone mapping.
+  - The post buffers use 32-bit depth.
+- **Tuning notes:**
+  - Bloom with a low threshold veiled the whole floor.
+  - A glossy clearcoat mirrored the key light as a glare blob, so the floor is satin.
+  - Contact shadows blend in linear light before tone mapping, so they are drawn wider and darker than they would be with plain rendering.
+- **Testing:** set `window.__kangsLook = {...}` before the page loads to switch parts off, e.g. `{noPost:true}`, `{f:{bloom:false}}`, `{spot:0}`, `{clearcoat:0}`.

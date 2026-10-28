@@ -11,6 +11,7 @@ import {gymColors} from './kits.js';
 import {classicBody,attachBody,disposeBody,validBody,athleteBody,variantFor,BODY_VARIANTS,lookFor,lookKey} from './players.js';
 import {effectivePlayers} from './graphics.js';
 import {ballMaterial} from './materials.js';
+import {BroadcastLook} from './broadcast.js';
 const purple=0x6832ab;
 export class Arena{
  constructor(host){
@@ -18,10 +19,10 @@ export class Arena{
   try{this.renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});}catch(e){host.innerHTML='<div class="fallback">3D graphics unavailable on this device. All coaching controls remain playable.</div>';this.failed=true;return;}
   /* Pixel ratio 2 keeps lines and signs sharp on hi-DPI screens; the old 1.7 cap upscaled a soft canvas. */this.renderer.setPixelRatio(Math.min(devicePixelRatio,2));this.renderer.shadowMap.enabled=true;this.renderer.shadowMap.type=THREE.PCFSoftShadowMap;this.renderer.outputColorSpace=THREE.SRGBColorSpace;this.renderer.toneMapping=THREE.ACESFilmicToneMapping;this.renderer.toneMappingExposure=.95;this.aniso=this.renderer.capabilities.getMaxAnisotropy();this.renderer.domElement.setAttribute('aria-hidden','true');host.append(this.renderer.domElement);
   this.camera=new THREE.PerspectiveCamera(43,16/9,.1,220);this.controls=new OrbitControls(this.camera,this.renderer.domElement);this.controls.minDistance=6;this.controls.maxDistance=85;this.controls.maxPolarAngle=Math.PI*.46;this.controls.enableDamping=true;this.controls.enablePan=false;this.controls.addEventListener('start',()=>{this.userMoved=true;if(this.mode==='follow'||this.mode==='auto'){this.mode='court';this.host.dispatchEvent(new CustomEvent('cameramode',{bubbles:true,detail:'court'}));}});
-  this.scene.add(new THREE.HemisphereLight(0xded5ff,0x2a1f3c,.95));const sun=new THREE.DirectionalLight(0xffeee2,2.2);sun.position.set(6,25,14);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-26,right:26,top:26,bottom:-26,near:1,far:75});sun.shadow.bias=-.0005;this.sun=sun;this.scene.add(sun);
+  this.hemi=new THREE.HemisphereLight(0xded5ff,0x2a1f3c,.95);this.scene.add(this.hemi);const sun=new THREE.DirectionalLight(0xffeee2,2.2);sun.position.set(6,25,14);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-26,right:26,top:26,bottom:-26,near:1,far:75});sun.shadow.bias=-.0005;this.sun=sun;this.scene.add(sun);
   const fill=new THREE.PointLight(0x9e61ff,80,60);fill.position.set(-15,9,-11);this.scene.add(fill);const desk=new THREE.PointLight(0xffe2c4,140,18);desk.position.set(16,6,-12);this.scene.add(desk);
-  for(const x of [-10,0,10]){const light=new THREE.SpotLight(0xf4edff,100,42,.65,.65,1.4);light.position.set(x,15,1);light.target.position.set(x,0,0);this.scene.add(light,light.target);}
-  this.build();this.importModels();this.setView('broadcast');
+  this.spots=[];for(const x of [-10,0,10]){const light=new THREE.SpotLight(0xf4edff,100,42,.65,.65,1.4);light.position.set(x,15,1);light.target.position.set(x,0,0);this.scene.add(light,light.target);this.spots.push(light);}
+  this.build();this.look=new BroadcastLook(this);this.importModels();this.setView('broadcast');
   /* Re-solve the camera preset whenever the canvas changes shape (title, HQ, game and phone layouts all differ). */new ResizeObserver(()=>{if(!this.userMoved&&this.mode!=='player'&&!((this.mode==='follow'||this.mode==='auto')&&this.event))this.setView(this.mode);}).observe(host);
   /* Barlow is a CSS webfont: redraw every canvas texture once it has loaded so no sign stays in the fallback face. */Promise.all(['900 64px "Barlow Condensed"','italic 900 64px "Barlow Condensed"','700 64px Barlow'].map(f=>document.fonts?.load(f))).then(()=>{this.fontsReady=true;this.texts.forEach(draw=>draw());this.texts.clear();}).catch(()=>{});
   this.clock=new THREE.Clock();this.renderer.setAnimationLoop(()=>this.frame());
@@ -49,7 +50,7 @@ export class Arena{
    if(logo.naturalWidth){const w=880,h=w*logo.naturalHeight/logo.naturalWidth;x.drawImage(logo,cx-w/2,cy-h/2,w,h);}else if(logo.failed){x.fillStyle='#6934a5';x.font='italic 900 420px "Barlow Condensed",Arial,sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('K',cx,cy);}
    x.fillStyle='#fff';x.textAlign='center';x.textBaseline='middle';x.font='italic 900 150px "Barlow Condensed","Arial Narrow",Arial,sans-serif';if('letterSpacing' in x)x.letterSpacing='12px';x.fillText('LAKE WASHINGTON',cx,cy-8.85*U+4);x.fillText('HOME OF THE KANGS',cx,cy+8.85*U+4);/* inside the 8.27-9.4 apron band so the scorer's table and bench chairs behind it never cover the lettering */if('letterSpacing' in x)x.letterSpacing='0px';t.needsUpdate=true;};
   logo.onload=draw;logo.onerror=()=>{logo.failed=true;draw();};logo.src=`${import.meta.env.BASE_URL}images/kangs-logo.png`;draw();t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=this.aniso||8;if(!this.fontsReady)this.texts.add(draw);return t;}
- build(){this.box(40,.6,33,0x221a35,0,-.3,0);/* ground slab top is y=0 so props off the wood rest on it instead of hovering */const edge=this.mat(0x5a3726),floor=new THREE.Mesh(new THREE.BoxGeometry(32,.16,20),[edge,edge,this.mat(0xffffff,{map:this.court(),roughness:.36}),edge,edge,edge]);floor.position.y=-.04;floor.receiveShadow=true;this.scene.add(floor);
+ build(){this.box(40,.6,33,0x221a35,0,-.3,0);/* ground slab top is y=0 so props off the wood rest on it instead of hovering */const edge=this.mat(0x5a3726),floor=new THREE.Mesh(new THREE.BoxGeometry(32,.16,20),[edge,edge,this.mat(0xffffff,{map:this.court(),roughness:.36}),edge,edge,edge]);floor.position.y=-.04;floor.receiveShadow=true;this.scene.add(floor);this.floor=floor;
  // Gym shell: cut-away room of four inward-facing one-sided walls (+ light bands). Walls between an orbiting camera and the court are back-face culled, so every angle sees in while the far walls still close the room.
  const panel=(w,h,c,x,y,z,ry)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),this.mat(c));m.position.set(x,y,z);m.rotation.y=ry;m.receiveShadow=true;this.scene.add(m);return m;};for(const [w,x,z,ry] of [[39,0,-16,0],[32,-19.5,0,Math.PI/2],[32,19.5,0,-Math.PI/2],[39,0,16,Math.PI]]){panel(w,9.3,0x2c1d3d,x,4.35,z,ry);this.glow(panel(w,.14,0xa76aff,x*.999,4.75,z*.999,ry),0x8e43ed);}this.sign('LAKE WASHINGTON KANGS',17,2,-19.45,6.5,0,{ry:Math.PI/2});
  this.stands();this.nets=[];for(const side of [-1,1]){
@@ -75,7 +76,7 @@ export class Arena{
  setPlayers(choice){if(this.failed)return;this.playersChoice=choice;this.applyPlayers();}
  applyPlayers(){const want=effectivePlayers(this.playersChoice,this.level);this.playerStyle=want;
   if(want==='athletes'&&!this.templates){(this.bodiesLoading??=Promise.all(BODY_VARIANTS.map(v=>new GLTFLoader().loadAsync(`${import.meta.env.BASE_URL}models/players/${v}.glb`).then(g=>[v,g])))).then(list=>{this.templates=Object.fromEntries(list);this.applyPlayers();}).catch(e=>{console.warn('Player models unavailable, keeping classic',e);this.bodiesLoading=null;this.playerStyle='classic';});return;}
-  this.people.forEach(p=>this.styleBody(p));this.styleBall(want==='athletes'&&!!this.templates);}
+  this.people.forEach(p=>this.styleBody(p));this.styleBall(want==='athletes'&&!!this.templates);this.look?.set(want==='athletes'&&!!this.templates,this.level);}
  /* With the athletes the ball is drawn at its real size (24 cm across) in pebbled leather; classic keeps the bigger toy ball. Presentation only. */
  styleBall(real){const sphere=this.ball?.children[0];if(!sphere)return;this.ballReal=real;sphere.userData.classic??=sphere.material;if(real){sphere.material=this.ballMat??=ballMaterial();this.ball.scale.setScalar(.13/.28);}else{sphere.material=sphere.userData.classic;this.ball.scale.setScalar(1);this.ball.children.forEach(c=>c.position.y=0);}}
  /* The plays place the ball for the classic 0.28 ball; near the floor the smaller real ball drops by the difference so its bounces still touch the wood. Drawing only: the ball's position is untouched. */
@@ -180,7 +181,7 @@ export class Arena{
   });
  }
  frame(){if(this.failed)return;const dt=Math.min(this.clock.getDelta(),.05),w=this.host.clientWidth,h=this.host.clientHeight;
-  if(w<1||h<1||this.host.hidden){this.lastT=0;return;}this.measure(performance.now());if(this.w!==w||this.h!==h){this.w=w;this.h=h;this.renderer.setSize(w,h,false);this.camera.aspect=w/h;this.camera.fov=w/h<.8?65:43;this.camera.updateProjectionMatrix();}
+  if(w<1||h<1||this.host.hidden){this.lastT=0;return;}this.measure(performance.now());if(this.w!==w||this.h!==h){this.w=w;this.h=h;this.renderer.setSize(w,h,false);this.look?.resize(w,h);this.camera.aspect=w/h;this.camera.fov=w/h<.8?65:43;this.camera.updateProjectionMatrix();}
   if(this.motion)this.time+=dt;
   // One continuous stride/dribble clock, so legs and arms never jump when a clip restarts.
   this.gait=(this.gait||0)+(this.motion&&!(this.event&&this.paused)?dt*(this.event?this.speed:1):0);
@@ -212,6 +213,6 @@ export class Arena{
   if(this.mode==='follow'&&this.event){const side=this.clipIndex===1?-1:1;const focus=this.people[side===1?0:5].position;const x=THREE.MathUtils.clamp(focus.x,-10,10);this.camera.position.lerp(new THREE.Vector3(x,8.5,14),.045);this.controls.target.lerp(new THREE.Vector3(x,1.2,0),.08);}const fp=this.mode==='player'||(this.mode==='auto'&&this.autoDirector());this.fpActive=!!fp;if(fp){this.firstPerson();}else{this.restoreHead();this.controls.update();}const fov=fp?74:(this.w/this.h<.8?65:43);if(this.camera.fov!==fov){this.camera.fov=fov;this.camera.updateProjectionMatrix();}
   // Impact shake: a short camera jitter on dunks and blocks. Off with reduced motion or the screen-shake setting.
   let jx=0,jy=0;if(this.shake>0){if(this.motion&&this.shakeOn){jx=(Math.random()-.5)*this.shake;jy=(Math.random()-.5)*this.shake;}this.shake*=Math.pow(.02,dt);if(this.shake<.004)this.shake=0;}
-  this.settleBall();this.camera.position.x+=jx;this.camera.position.y+=jy;this.renderer.render(this.scene,this.camera);this.camera.position.x-=jx;this.camera.position.y-=jy;
+  this.settleBall();this.camera.position.x+=jx;this.camera.position.y+=jy;this.look.render(this.camera);this.camera.position.x-=jx;this.camera.position.y-=jy;
  }
 }

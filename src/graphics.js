@@ -15,3 +15,9 @@ export function medianMs(times){const a=times.filter(Number.isFinite).sort((x,y)
 export const autoDowngrade=(frameTimes,{minFrames=PROBE.minFrames,slowMs=PROBE.slowMs}={})=>Array.isArray(frameTimes)&&frameTimes.length>=minFrames&&medianMs(frameTimes)>slowMs;
 // True once enough frames or time have been measured to decide.
 export const probeDone=(times,{seconds=PROBE.seconds,minFrames=PROBE.minFrames,maxFrames=PROBE.maxFrames}={})=>times.length>=maxFrames||(times.length>=minFrames&&times.reduce((a,b)=>a+b,0)>=seconds*1000);
+// Broadcast look (with the 3D athletes): what each level turns on. Low draws the classic gym.
+export function lookFeatures(level){
+ if(level==='high')return {reflections:true,ao:true,bloom:true,grade:true,spots:6,contact:true};
+ if(level==='medium')return {reflections:false,ao:false,bloom:true,grade:true,spots:3,contact:true};
+ return null;
+}

@@ -31,3 +31,17 @@ test('graphics is a validated, optional setting that defaults to auto',()=>{
  assert.equal(normalizeA11y({},{...A11Y_DEFAULTS,graphics:'low'}).graphics,'low');
  assert.equal(activeA11yCount({...A11Y_DEFAULTS,graphics:'low'}),0,'a performance choice is not counted as an accessibility option');
 });
+test('broadcast look: High has reflections and ambient occlusion, Medium only bloom and grade, Low is the classic gym',async()=>{
+ const {lookFeatures}=await import('../src/graphics.js');
+ assert.deepEqual(lookFeatures('high'),{reflections:true,ao:true,bloom:true,grade:true,spots:6,contact:true});
+ const m=lookFeatures('medium');assert.equal(m.reflections,false);assert.equal(m.ao,false);assert.equal(m.bloom,true);assert.equal(m.spots,3);
+ assert.equal(lookFeatures('low'),null);assert.equal(lookFeatures('auto'),null,'auto resolves to a level before it gets here');
+});
+test('broadcast rig: the Spline values convert to game units on the same court',async()=>{
+ const {RIG,toGame,SPLINE_FILE}=await import('../src/broadcastRig.js');
+ assert.match(SPLINE_FILE,/^https:\/\/app\.spline\.design\/file\//);
+ const [x]=toGame([640,0,0]);assert.ok(Math.abs(x-13.89)<.02,`half court ${x}`);   // 42 ft
+ assert.equal(RIG.spots.length,6);assert.equal(RIG.banks.length,10);
+ for(const c of Object.values(RIG.cameras)){assert.equal(c.position.length,3);assert.equal(c.target.length,3);}
+ const key=toGame(RIG.key.position);assert.ok(key[1]>20,'key light high over the court');
+});
