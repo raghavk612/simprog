@@ -13,6 +13,7 @@ import {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
 import {ShaderPass} from 'three/addons/postprocessing/ShaderPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {RIG,toGame} from './broadcastRig.js';
+import {DepthGrab,DofPass} from './dof.js';
 import {lookFeatures} from './graphics.js';
 
 // Spline light units to three.js (physically based) units, matched by eye against the classic gym's exposure.
@@ -95,13 +96,18 @@ export class BroadcastLook{
   const rt=new THREE.WebGLRenderTarget(size.x*pr,size.y*pr,{type:THREE.HalfFloatType,depthBuffer:true});rt.depthTexture=new THREE.DepthTexture(size.x*pr,size.y*pr,THREE.FloatType);
   const c=this.composer=new EffectComposer(r,rt);
   for(const t of [c.renderTarget1,c.renderTarget2])if(!t.depthTexture||t.depthTexture.type!==THREE.FloatType)t.depthTexture=new THREE.DepthTexture(t.width,t.height,THREE.FloatType);c.setPixelRatio(r.getPixelRatio());c.setSize(size.x,size.y);
-  c.addPass(new RenderPass(s,a.camera));
+  c.addPass(new RenderPass(s,a.camera));const grab=new DepthGrab();c.addPass(grab);
   if(f.ao){const ao=new GTAOPass(s,a.camera,size.x,size.y);ao.updateGtaoMaterial({radius:.55,distanceExponent:1.2,thickness:1,scale:1.1,samples:12});ao.blendIntensity=.85;c.addPass(ao);this.ao=ao;}
+  if(f.dof)c.addPass(this.dof=new DofPass(a.camera,grab));
   if(f.bloom)c.addPass(this.bloom=new UnrealBloomPass(new THREE.Vector2(size.x/2,size.y/2),dbg.bloomStrength??.3,.5,dbg.bloomThreshold??2.2));
   if(f.grade)c.addPass(new ShaderPass(GRADE));
   c.addPass(new OutputPass());
   this.resize(size.x,size.y);
  }
+ /* Depth of field (replays and close angles): focus on a world point with an aperture; eases in and out. 0 / null switches it off. */
+ setDof(point,aperture,dt){const d=this.dof;if(!d)return;const on=!!point&&aperture>0&&!globalThis.__kangsLook?.noDof;
+  d.amount+=((on?1:0)-d.amount)*(1-Math.exp(-(dt||0)*5));if(on){d.focus=Math.max(.5,this.a.camera.position.distanceTo(point));d.aperture=aperture;}
+  if(!on&&d.amount<.01)d.amount=0;d.enabled=d.amount>0;}
  /* Per frame: contact shadows follow their owners. */
  update(){if(!this.blobs)return;const a=this.a;
   a.people.forEach((p,i)=>{const b=this.blobs[i],y=p.position.y;b.position.set(p.position.x,FLOOR_Y+.004+(globalThis.__kangsLook?.blobLift||0),p.position.z);b.scale.setScalar(1.55+y*.5);b.material.opacity=.85*Math.max(0,1-y/1.4);b.visible=p.visible!==false;});
@@ -115,6 +121,6 @@ export class BroadcastLook{
   for(const o of this.added){o.parent?.remove(o);o.traverse?.(m=>{if(m.isMesh){m.geometry?.dispose();}});o.dispose?.();}
   if(this.reflector){this.reflector.getRenderTarget().dispose();this.reflector.material.dispose();}
   this.blobs?.forEach(b=>b.material.dispose());this.blobTex?.dispose();this.env?.dispose();this.composer?.dispose?.();
-  this.added=[];this.blobs=null;this.reflector=null;this.reflect=null;this.composer=null;this.ao=null;this.bloom=null;this.env=null;this.key='off';
+  this.added=[];this.blobs=null;this.reflector=null;this.reflect=null;this.composer=null;this.ao=null;this.bloom=null;this.dof?.dispose();this.dof=null;this.env=null;this.key='off';
  }
 }

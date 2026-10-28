@@ -13,6 +13,7 @@ import {effectivePlayers} from './graphics.js';
 import {ballMaterial} from './materials.js';
 import {BroadcastLook} from './broadcast.js';
 import {animateAthlete} from './motion.js';
+import {Director} from './director.js';
 const purple=0x6832ab;
 export class Arena{
  constructor(host){
@@ -23,7 +24,7 @@ export class Arena{
   this.hemi=new THREE.HemisphereLight(0xded5ff,0x2a1f3c,.95);this.scene.add(this.hemi);const sun=new THREE.DirectionalLight(0xffeee2,2.2);sun.position.set(6,25,14);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-26,right:26,top:26,bottom:-26,near:1,far:75});sun.shadow.bias=-.0005;this.sun=sun;this.scene.add(sun);
   const fill=new THREE.PointLight(0x9e61ff,80,60);fill.position.set(-15,9,-11);this.scene.add(fill);const desk=new THREE.PointLight(0xffe2c4,140,18);desk.position.set(16,6,-12);this.scene.add(desk);
   this.spots=[];for(const x of [-10,0,10]){const light=new THREE.SpotLight(0xf4edff,100,42,.65,.65,1.4);light.position.set(x,15,1);light.target.position.set(x,0,0);this.scene.add(light,light.target);this.spots.push(light);}
-  this.build();this.look=new BroadcastLook(this);this.importModels();this.setView('broadcast');
+  this.build();this.look=new BroadcastLook(this);this.director=new Director();this.importModels();this.setView('broadcast');
   /* Re-solve the camera preset whenever the canvas changes shape (title, HQ, game and phone layouts all differ). */new ResizeObserver(()=>{if(!this.userMoved&&this.mode!=='player'&&!((this.mode==='follow'||this.mode==='auto')&&this.event))this.setView(this.mode);}).observe(host);
   /* Barlow is a CSS webfont: redraw every canvas texture once it has loaded so no sign stays in the fallback face. */Promise.all(['900 64px "Barlow Condensed"','italic 900 64px "Barlow Condensed"','700 64px Barlow'].map(f=>document.fonts?.load(f))).then(()=>{this.fontsReady=true;this.texts.forEach(draw=>draw());this.texts.clear();}).catch(()=>{});
   this.clock=new THREE.Clock();this.renderer.setAnimationLoop(()=>this.frame());
@@ -150,12 +151,12 @@ export class Arena{
  update(s){if(this.failed)return;this.state=s;if(!this.event){const starters=s?.players.filter(p=>p.starter)||[];for(let i=0;i<5;i++)this.setIdentity(this.people[i],starters[i]||{id:i,number:[0,2,3,11,20][i],name:'Kangs'});this.castVisitors();}
   if(!this.event){const m=s?.match,r=s?.results.at(-1);this.score(m?.home??r?.home??0,m?.away??r?.away??0);}
  }
- play(event){
-  this.event=event;this.run++;this.playTime=0;this.paused=false;this.clipIndex=-1;this.presentKey='';
+ play(event,{replay=false}={}){
+  this.event=event;this.replaying=replay;this.director?.reset();this.run++;this.playTime=0;this.paused=false;this.clipIndex=-1;this.presentKey='';
   // Previous saves still replay; old events have no detailed action record.
   this.clips=event.plays?.length===2?event.plays:[{team:'home',kind:event.three?'catch':'pullup',player:event.player,id:event.id,jersey:event.jersey||11,lane:1,contest:'contested',outcome:event.points?'made':'miss',points:event.points,commentary:event.explanation},{team:'away',kind:'pullup',player:'Visitors',jersey:12,lane:-1,contest:'contested',outcome:event.away?'made':'miss',points:event.away||0,commentary:'Visitors complete their possession.'}];
  }
- clear(){this.event=null;this.clips=null;this.playTime=0;this.paused=false;this.clipIndex=-1;this.ballFrom=null;this.focusRing&&(this.focusRing.visible=false);if(this.people.length===10)this.cast(this.state?.players.filter(p=>p.starter)||[]);}
+ clear(){this.event=null;this.replaying=false;this.director?.reset();this.clips=null;this.playTime=0;this.paused=false;this.clipIndex=-1;this.ballFrom=null;this.focusRing&&(this.focusRing.visible=false);if(this.people.length===10)this.cast(this.state?.players.filter(p=>p.starter)||[]);}
  isPlaying(){return !!this.event&&this.playTime<CLIP_SECONDS*2;}
  presentation(){if(!this.event)return null;const index=Math.min(1,Math.floor(this.playTime/CLIP_SECONDS)),clip=this.clips[index],time=Math.min(CLIP_SECONDS,this.playTime-index*CLIP_SECONDS),pose=sampleClip(clip,time),e=this.event;return {index,clip,phase:pose.phase,done:!this.isPlaying(),home:e.home-e.points+(index>0||pose.resolved?e.points:0),away:e.visitor-e.away+(index===1&&pose.resolved?e.away:0),resolved:pose.resolved};}
  // Put the home bodies in pose order without moving them: a body that already wears a player's jersey keeps it.
@@ -212,7 +213,10 @@ export class Arena{
    const p=this.people[2].position,b=this.blendBall({x:p.x+.4,y:.3+Math.abs(Math.sin(this.gait*6))*.9,z:p.z+.25},this.idleClock);this.ball.position.set(b.x,b.y,b.z);this.trail.forEach(d=>d.visible=false);
   }
   this.posed=true;
-  if(this.mode==='follow'&&this.event){const side=this.clipIndex===1?-1:1;const focus=this.people[side===1?0:5].position;const x=THREE.MathUtils.clamp(focus.x,-10,10);this.camera.position.lerp(new THREE.Vector3(x,8.5,14),.045);this.controls.target.lerp(new THREE.Vector3(x,1.2,0),.08);}const fp=this.mode==='player'||(this.mode==='auto'&&this.autoDirector());this.fpActive=!!fp;if(fp){this.firstPerson();}else{this.restoreHead();this.controls.update();}const fov=fp?74:(this.w/this.h<.8?65:43);if(this.camera.fov!==fov){this.camera.fov=fov;this.camera.updateProjectionMatrix();}
+  // With the 3D athletes' broadcast look, Auto and Follow use the broadcast director (Spline camera angles, springs, cuts, depth of field).
+  const directed=this.look?.active&&this.motion&&this.event&&(this.mode==='auto'||this.mode==='follow')?this.director.update(this,dt*(this.paused?0:1),{follow:this.mode==='follow'}):null;
+  if(!directed&&this.mode==='follow'&&this.event){const side=this.clipIndex===1?-1:1;const focus=this.people[side===1?0:5].position;const x=THREE.MathUtils.clamp(focus.x,-10,10);this.camera.position.lerp(new THREE.Vector3(x,8.5,14),.045);this.controls.target.lerp(new THREE.Vector3(x,1.2,0),.08);}const fp=this.mode==='player'||(directed?directed==='player':this.mode==='auto'&&this.autoDirector());this.fpActive=!!fp;if(fp){this.firstPerson();}else{this.restoreHead();if(!directed)this.controls.update();}const fov=fp?74:directed?this.director.fov:(this.w/this.h<.8?65:43);
+  this.look?.setDof(directed&&directed!=='player'?this.director.focusPoint:null,this.director.dof,dt);if(this.camera.fov!==fov){this.camera.fov=fov;this.camera.updateProjectionMatrix();}
   // Impact shake: a short camera jitter on dunks and blocks. Off with reduced motion or the screen-shake setting.
   let jx=0,jy=0;if(this.shake>0){if(this.motion&&this.shakeOn){jx=(Math.random()-.5)*this.shake;jy=(Math.random()-.5)*this.shake;}this.shake*=Math.pow(.02,dt);if(this.shake<.004)this.shake=0;}
   this.settleBall();this.camera.position.x+=jx;this.camera.position.y+=jy;this.look.render(this.camera);this.camera.position.x-=jx;this.camera.position.y-=jy;

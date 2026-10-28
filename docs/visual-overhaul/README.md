@@ -180,3 +180,32 @@ Each piece is a Volume Wrangle (`sdf_<piece>`) whose code is in `GARMENT_VEX` in
 - **Easing:** every channel eases with exponential smoothing, so poses blend instead of snapping. Pausing a replay freezes it.
 - **Reduced motion:** players hold a still stance instead.
 - **Tests:** `tests/motion.test.js` checks that the IK places the ankle exactly on its target and never bends a knee backwards, and that planted feet move back exactly as far as the body moves forward.
+
+### Broadcast cameras and depth of field (Stage 6: `src/director.js`, `src/dof.js`)
+- **When it's on:** with the 3D athletes on Medium or High graphics, in the **Auto** and **Follow** camera modes during plays and replays. Wide, Courtside, Player view and the Classic look keep their old cameras. With reduced motion, the old camera stays.
+- **Angles:** taken from the Spline rig's cameras (`RIG.cameras` in `src/broadcastRig.js`). They are authored for the Kangs attacking the right-hand basket. The director mirrors them along the court for the visitors and keeps the sideline cameras on the broadcast side.
+
+  | Angle | Lens (16:9) | When | Depth of field |
+  |---|---|---|---|
+  | `wide` | 30° | start of every possession | none |
+  | `track` | 22°, long lens | the build-up, following the ball handler | replays only, gentle (far stands and front row) |
+  | `freeThrow` | 46° | jump shots (catch-and-shoot, pull-ups, step-backs and their variations), carried to wherever the shooter is | focus on the shooter |
+  | `replayClose` | 40° | the finish in replays | focus on the shooter, then the ball in flight |
+  | `baseline` | 22° | visitors' drives, hooks and dunks | none |
+  | `player` | — | Kangs' drives, hooks and dunks (the existing first-person view) | none |
+
+- **Changes from the Spline rig (made in code, not in Spline):**
+  - The sideline camera is moved in over the front row and aimed a little low, so it clears the courtside fans and the action stays above the camera buttons and caption.
+  - The shooter's camera sits a little further back and higher, aiming mostly at the shooter.
+- **Movement:**
+  - Cameras move on critically damped springs (SmoothDamp), so they are smooth at any frame rate.
+  - They look slightly ahead of the ball handler's motion.
+  - They *cut* between angles a director would cut between (to and from the close, baseline and first-person shots) and glide otherwise.
+  - The lens zooms smoothly between angles.
+- **Depth of field** (`src/dof.js`):
+  - It reuses the depth from the main render, so it needs no extra scene pass.
+  - A half-resolution, 32-tap golden-angle disc blur whose size follows each pixel's circle of confusion, then a full-resolution blend.
+  - Background samples are kept from bleeding over sharper foreground edges.
+  - It eases in and out, and is switched off (zero cost) whenever no close angle or replay needs it.
+  - To test without it: `window.__kangsLook = {noDof: true}`.
+- **Tests:** `tests/director.test.js` checks the angle choice, that the rig is the source, the mirroring and broadcast-side rule, that the shooter's camera stays behind the shooter, and spring smoothness at 30/60/144 fps.
