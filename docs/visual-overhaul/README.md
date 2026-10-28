@@ -209,3 +209,53 @@ Each piece is a Volume Wrangle (`sdf_<piece>`) whose code is in `GARMENT_VEX` in
   - It eases in and out, and is switched off (zero cost) whenever no close angle or replay needs it.
   - To test without it: `window.__kangsLook = {noDof: true}`.
 - **Tests:** `tests/director.test.js` checks the angle choice, that the rig is the source, the mirroring and broadcast-side rule, that the shooter's camera stays behind the shooter, and spring smoothness at 30/60/144 fps.
+
+### Performance pass (Stage 8)
+Measured in the game-day view with the same scene each time: every render pass counted, including shadows, the court mirror, the main view and post-processing. The frame times come from the test machine's software renderer, so only the draw-call and triangle columns compare to a real computer.
+
+| Graphics | Players | Draw calls before → after | Triangles per frame before → after |
+|---|---|---|---|
+| High | Classic | 588 (unchanged) | 159k (unchanged) |
+| Medium | Athletes | 415 → 415 | 323k → **151k** |
+| High | Athletes | 1,058 → **740** | 949k → **298k** |
+
+What changed:
+- **One skeleton per player:**
+  - The cloned models gave each of a player's 8 meshes its own copy of the skeleton.
+  - That meant 8 bone updates and 8 bone textures per player every frame (161 bone textures in all).
+  - Now each player has one. Textures in memory went from 233 to 92.
+- **Far-distance player meshes (LOD):**
+  - `npm run players:lods` (`scripts/player_lods.mjs`, using meshoptimizer) adds a simplified copy of every player mesh, about 33% of the triangles, to the `.glb` files. Run it again after `scripts/build_players.py`.
+  - It reuses the same vertices and skin, so each file grows by only about 37 KB.
+  - A player switches to it when he is less than about 22% of the screen height tall (back above 25%, so nobody flickers at the threshold). So the Wide and sideline cameras draw far players with about a third of the triangles, and close-ups use the full mesh.
+- **Shadows once per frame:** the shadow map used to be redrawn by every scene render (mirror, main view, AO normals). It is now drawn once per frame.
+- **The court mirror (High)** only draws what can show in the floor: players, ball, hoops and the light rig, not the stands, walls or crowd.
+- **Depth of field** costs nothing outside replays and the close angles (Stage 6).
+
+What each graphics level turns on with the 3D athletes:
+
+| | Low | Medium | High |
+|---|---|---|---|
+| Player models | Classic | Athletes (far LOD) | Athletes (far LOD) |
+| Pixel ratio cap | 1× | 1.5× | 2× |
+| Sun shadows | off | 1024 | 2048 |
+| Crowd | hidden | no shadows | shadows |
+| Spotlights | 3 (gym) | 3 | 6 |
+| Court reflections | — | — | yes (half resolution, filtered) |
+| Ambient occlusion (GTAO) | — | — | yes |
+| Bloom, grade, contact shadows | — | yes | yes |
+| Depth of field | — | replays and close angles | replays and close angles |
+
+**Auto** starts at High, times about two seconds of frames, and drops one level if the typical frame is slower than about 28 fps.
+
+**Real-GPU check:** open the game with `?perf` at the end of the address, for example `http://localhost:8000/?perf`. A small panel in the bottom-right corner shows:
+- frames per second, the typical frame time and the 95th-percentile frame time
+- draw calls and triangles per frame
+- the graphics level, player models, pixel ratio and canvas size
+- the current camera angle, and whether depth of field is on
+
+The same numbers are in `window.__kangsPerf`.
+
+Not done, because the gain looked small for the work:
+- The High-only AO pass still re-draws the stands.
+- The arena's crowd and bleachers were not merged into fewer meshes.

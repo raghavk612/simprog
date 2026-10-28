@@ -14,6 +14,7 @@ import {ballMaterial} from './materials.js';
 import {BroadcastLook} from './broadcast.js';
 import {animateAthlete} from './motion.js';
 import {Director} from './director.js';
+import {PerfHud,perfWanted} from './perfHud.js';
 const purple=0x6832ab;
 export class Arena{
  constructor(host){
@@ -27,7 +28,7 @@ export class Arena{
   this.build();this.look=new BroadcastLook(this);this.director=new Director();this.importModels();this.setView('broadcast');
   /* Re-solve the camera preset whenever the canvas changes shape (title, HQ, game and phone layouts all differ). */new ResizeObserver(()=>{if(!this.userMoved&&this.mode!=='player'&&!((this.mode==='follow'||this.mode==='auto')&&this.event))this.setView(this.mode);}).observe(host);
   /* Barlow is a CSS webfont: redraw every canvas texture once it has loaded so no sign stays in the fallback face. */Promise.all(['900 64px "Barlow Condensed"','italic 900 64px "Barlow Condensed"','700 64px Barlow'].map(f=>document.fonts?.load(f))).then(()=>{this.fontsReady=true;this.texts.forEach(draw=>draw());this.texts.clear();}).catch(()=>{});
-  this.clock=new THREE.Clock();this.renderer.setAnimationLoop(()=>this.frame());
+  this.clock=new THREE.Clock();this.renderer.setAnimationLoop(()=>{this.frame();this.perfHud?.frame();});if(perfWanted())this.perfHud=new PerfHud(this);
  }
  mat(c,extra={}){return new THREE.MeshStandardMaterial({color:c,roughness:.68,...extra});}
  box(w,h,d,c,x=0,y=0,z=0){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),this.mat(c));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;this.scene.add(m);return m;}
@@ -127,6 +128,11 @@ export class Arena{
   else{/* broadcast/courtside keep a fixed viewing angle and solve the distance so the court fills the frame at this aspect (zoom>1 lets the corners run off-frame; the tighter vertical bound leaves room for the score bug and controls) */const [az,el,ty,zx,zy]=mode==='court'?[tall?62:47,tall?21:19,1,tall?1.75:1.3,tall?1.75:1.3]:[tall?70:33,tall?40:32,0,tall?1.12:.97,tall?.9:.8],r=Math.PI/180,cam=this.fitCam||=new THREE.PerspectiveCamera(),dir=new THREE.Vector3(Math.sin(az*r)*Math.cos(el*r),Math.sin(el*r),Math.cos(az*r)*Math.cos(el*r)),t=new THREE.Vector3(0,ty,0),v=new THREE.Vector3(),pts=[[-14.2,0,-8.6],[14.2,0,-8.6],[-14.2,0,8.6],[14.2,0,8.6],[-12.75,4.5,0],[12.75,4.5,0]].map(p=>new THREE.Vector3(...p));cam.fov=tall?65:43;cam.aspect=a;cam.updateProjectionMatrix();
    const fits=d=>{cam.position.copy(dir).multiplyScalar(d).add(t);cam.lookAt(t);cam.updateMatrixWorld();return pts.every(p=>{v.copy(p).project(cam);return v.z<1&&Math.abs(v.x)<=zx&&Math.abs(v.y)<=zy;});};let lo=4,hi=120;for(let i=0;i<26;i++){const mid=(lo+hi)/2;if(fits(mid))hi=mid;else lo=mid;}this.camera.position.copy(dir).multiplyScalar(hi).add(t);this.controls.target.copy(t);}
   this.controls.update();}
+ /* Athletes far from the camera draw their simplified meshes (about a third of the triangles). Chosen by how tall the player
+    appears on screen, with a little hysteresis so nobody flickers between the two at the threshold. */
+ updateLods(){const cam=this.camera,k=2.2/(2*Math.tan(cam.fov*Math.PI/360));
+  for(const p of this.people){const b=p.userData.body;if(!b?.setLod)continue;const size=k/Math.max(.01,cam.position.distanceTo(p.position)),far=b.lodLevel?size<.25:size<.22;
+   if(far!==!!b.lodLevel){b.lodLevel=far?1:0;b.setLod(b.lodLevel);}}}
  restoreHead(){const o=this.fpHidden;if(!o)return;this.fpHidden=null;for(const k of ['head','hair'])if(o.userData[k])o.userData[k].visible=true;}
  firstPerson(){const clip=this.event?this.presentation()?.clip:null;const team=clip?.team||'home';const actor=this.people[clip?(team==='home'?0:5):2];if(!actor){this.fpSubject=null;this.restoreHead();return;}const who=actor.userData.person;this.fpSubject=who?{number:who.number,name:team==='away'&&clip&&clip.player?clip.player:who.name,position:who.position,id:who.id,home:team==='home'}:null;const dir=team==='home'?1:-1;const rim=new THREE.Vector3(dir*12.15,3.05,0);const a=actor.position;const look=rim.clone().lerp(this.ball.position,.35);const flat=new THREE.Vector3(look.x-a.x,0,look.z-a.z);if(flat.lengthSq()<.01)flat.set(dir,0,0);flat.normalize();const eye=new THREE.Vector3(a.x+flat.x*.4,1.74,a.z+flat.z*.4);/* never inside a neighbour's head: keep 0.6 from every other body, and hide the subject's own head */for(const o of this.people){if(o===actor)continue;const dx=eye.x-o.position.x,dz=eye.z-o.position.z,d=Math.hypot(dx,dz);if(d<.6){eye.x=o.position.x+(d>.001?dx/d:flat.x)*.6;eye.z=o.position.z+(d>.001?dz/d:flat.z)*.6;}}if(this.fpHidden!==actor){this.restoreHead();this.fpHidden=actor;for(const k of ['head','hair'])if(actor.userData[k])actor.userData[k].visible=false;}if(!this.fpLook){this.camera.position.copy(eye);this.fpLook=look.clone();}this.camera.position.lerp(eye,.25);this.fpLook.lerp(look,.12);this.camera.lookAt(this.fpLook);}
  /* TV director for Auto camera: wide for the setup, tracking for the drive, then a first-person look at the rim (Kangs) or a baseline angle (visitors) on the shot. Returns true when the first-person shot is active. */
@@ -219,6 +225,6 @@ export class Arena{
   this.look?.setDof(directed&&directed!=='player'?this.director.focusPoint:null,this.director.dof,dt);if(this.camera.fov!==fov){this.camera.fov=fov;this.camera.updateProjectionMatrix();}
   // Impact shake: a short camera jitter on dunks and blocks. Off with reduced motion or the screen-shake setting.
   let jx=0,jy=0;if(this.shake>0){if(this.motion&&this.shakeOn){jx=(Math.random()-.5)*this.shake;jy=(Math.random()-.5)*this.shake;}this.shake*=Math.pow(.02,dt);if(this.shake<.004)this.shake=0;}
-  this.settleBall();this.camera.position.x+=jx;this.camera.position.y+=jy;this.look.render(this.camera);this.camera.position.x-=jx;this.camera.position.y-=jy;
+  this.settleBall();this.updateLods();this.camera.position.x+=jx;this.camera.position.y+=jy;this.look.render(this.camera);this.camera.position.x-=jx;this.camera.position.y-=jy;
  }
 }

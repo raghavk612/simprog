@@ -87,6 +87,13 @@ export const lookKey=l=>l?`${l.hair}${l.headband?'+band':''}${l.armSleeve?'+arm'
 export function athleteBody(template,kit,i,color,variant,look=lookFor(i)){
  const root=cloneSkinned(template.scene),bones={},objs={};let info={},holder=null;
  root.traverse(o=>{if(o.isBone)bones[o.name]=o;else if(o.name)objs[o.name]??=o;if(o.userData&&o.userData.number){info=o.userData;holder=o;}});/* bones and meshes share names (head): parts take the mesh */
+ // one skeleton per body: cloning gives every skinned mesh its own copy of the same bones, which means 8 bone-matrix updates
+ // and 8 bone textures per player per frame instead of one
+ let skeleton=null;root.traverse(o=>{if(!o.isSkinnedMesh)return;if(!skeleton)skeleton=o.skeleton;else if(o.skeleton!==skeleton&&o.skeleton.bones.length===skeleton.bones.length&&o.skeleton.bones.every((b,k)=>b.name===skeleton.bones[k].name)){o.skeleton.dispose?.();o.bind(skeleton,o.bindMatrix);}});
+ // far-distance meshes (<name>_lod1, made by scripts/player_lods.mjs): kept as a second geometry on the full mesh and
+ // swapped in by setLod, so visibility (Player view hides the head) and materials are untouched
+ const lodMeshes=[];for(const [name,o] of Object.entries(objs)){const m=name.match(/^(.*)_lod1$/);if(!m)continue;const base=objs[m[1]];o.parent?.remove(o);delete objs[name];
+  if(base?.isMesh){base.userData.lods=[base.geometry,o.geometry];lodMeshes.push(base);}}
  const jersey=clothMaterial(color),skin=skinMaterial(SKIN_TONES[i%SKIN_TONES.length]),shoes=shoeMaterial(0xf4f4f4),sole=soleMaterial(0x1d1d22),
   hairMat=hairMaterial(look.hairColor??0x161210),band=fabricMaterial(0xffffff),sleeve=fabricMaterial(0x111114);
  const pick={kit:jersey,skin,shoes,sole,hair:hairMat,band,sleeve};
@@ -110,7 +117,8 @@ export function athleteBody(template,kit,i,color,variant,look=lookFor(i)){
  legs.forEach((b,j)=>b&&(b.userData.knee=bones[j?'knee_L':'knee_R']));arms.forEach((b,j)=>b&&(b.userData.elbow=bones[j?'elbow_L':'elbow_R']));
  /* Real jersey lettering: the number in the text colour with an outline, the name across the back, both on the fabric. */
  const shade=(hex,f)=>{const c=new THREE.Color(hex);return '#'+c.multiplyScalar(f).getHexString();},lum=hex=>{const c=new THREE.Color(hex);return .2126*c.r+.7152*c.g+.0722*c.b;};
+ const setLod=level=>{for(const m of lodMeshes)if(m.parent)m.geometry=m.userData.lods[level?1:0];};
  const setLettering=(num,name,bg,fg)=>{const stroke=lum(fg)>.45?shade(bg,lum(bg)>.6?.55:.45):'#ffffff';
   for(const [m,tex] of [[number,letteringTexture(num,fg,stroke)],[nameplate,letteringTexture(name,fg,stroke,{w:512,h:128,weight:800})]]){m.material.map?.dispose();m.material.map=tex;m.material.needsUpdate=true;}};
- return {root,bones,parts:{jersey,head:objs.head_mesh,hair,number,nameplate,capBadge,legs,arms},style:'athletes',variant,key:`${variant}|${lookKey(look)}`,look,sharedGeometry:true,setLettering};
+ return {root,bones,parts:{jersey,head:objs.head_mesh,hair,number,nameplate,capBadge,legs,arms},style:'athletes',variant,key:`${variant}|${lookKey(look)}`,look,sharedGeometry:true,setLettering,setLod,lodMeshes};
 }

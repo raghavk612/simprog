@@ -19,6 +19,7 @@ import {lookFeatures} from './graphics.js';
 // Spline light units to three.js (physically based) units, matched by eye against the classic gym's exposure.
 const K={key:1.6,spot:17,rim:1.6,ambient:1.1,distance:1/50*0.3306/0.3048};
 const FLOOR_Y=.042;   // just above the court's top face
+const REFLECTED=2;   // layer of what the court mirrors: players, ball, hoops, the light rig (not the stands, walls or crowd)
 
 /* The court reflection: the mirrored scene, softly blurred, shown more at grazing angles (Fresnel), over the wood. */
 const GLOSS={name:'GlossFloor',
@@ -85,7 +86,12 @@ export class BroadcastLook{
   // court reflections (High)
   if(f.reflections){const g=new Reflector(new THREE.PlaneGeometry(32,20),{shader:GLOSS,textureWidth:512,textureHeight:512,clipBias:.003,multisample:0});
    g.rotation.x=-Math.PI/2;g.position.y=FLOOR_Y;g.material.transparent=true;g.material.depthWrite=false;g.renderOrder=1;this.add(g);this.reflector=g;
-   this.reflect=g.onBeforeRender;g.onBeforeRender=()=>{};/* rendered once per frame in render(), not again by the AO pass */}
+   this.reflect=g.onBeforeRender;g.onBeforeRender=()=>{};/* rendered once per frame in render(), not again by the AO pass */
+   // the mirror only draws what can actually show in the floor: things over the court and every light (lights obey layers)
+   g.camera.layers.set(REFLECTED);const box=new THREE.Box3(),c=new THREE.Vector3(),skip=new Set([g,a.floor,...a.people]);s.updateMatrixWorld(true);
+   s.traverse(o=>{if(skip.has(o)||this.blobs?.includes(o))return;let on=false;
+    if(o.isLight)on=true;else if(o.isMesh||o.isLine){box.setFromObject(o).getCenter(c);on=Math.abs(c.x)<15.5&&Math.abs(c.z)<9&&c.y>.15&&!o.isInstancedMesh;}
+    if(on&&!o.layers.isEnabled(REFLECTED)){o.layers.enable(REFLECTED);this.keep(()=>o.layers.disable(REFLECTED));}});}
   // contact shadows: a soft dark pool under every player and the ball, fading as they leave the floor
   if(f.contact){const tex=this.blobTex=blobTexture();this.blobs=[];
    for(let i=0;i<=a.people.length;i++){const m=this.add(new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.MeshBasicMaterial({map:tex,color:dbg.blobColor??0xffffff,transparent:true,depthWrite:false,toneMapped:false})));m.rotation.x=-Math.PI/2;m.renderOrder=2;this.blobs.push(m);}}
@@ -109,15 +115,19 @@ export class BroadcastLook{
   d.amount+=((on?1:0)-d.amount)*(1-Math.exp(-(dt||0)*5));if(on){d.focus=Math.max(.5,this.a.camera.position.distanceTo(point));d.aperture=aperture;}
   if(!on&&d.amount<.01)d.amount=0;d.enabled=d.amount>0;}
  /* Per frame: contact shadows follow their owners. */
- update(){if(!this.blobs)return;const a=this.a;
+ update(){const a=this.a;
+  if(this.reflector)for(const o of [...a.people,a.ball]){if(!o||o.userData.reflected!==undefined&&o.userData.reflected===(o.userData.body??null))continue;o.userData.reflected=o.userData.body??null;o.traverse(m=>m.layers.enable(REFLECTED));}
+  if(!this.blobs)return;
   a.people.forEach((p,i)=>{const b=this.blobs[i],y=p.position.y;b.position.set(p.position.x,FLOOR_Y+.004+(globalThis.__kangsLook?.blobLift||0),p.position.z);b.scale.setScalar(1.55+y*.5);b.material.opacity=.85*Math.max(0,1-y/1.4);b.visible=p.visible!==false;});
   const ball=a.ball,b=this.blobs[a.people.length];if(ball&&b){const y=Math.max(0,ball.position.y-.13);b.position.set(ball.position.x,FLOOR_Y+.005,ball.position.z);b.scale.setScalar(.42+y*.14);b.material.opacity=.7*Math.max(0,1-y/2.2);b.visible=ball.visible!==false;}}
  render(camera){const a=this.a;if(!this.active){a.renderer.render(a.scene,camera);return;}
+  // shadows once per frame: otherwise every scene render (mirror, main, AO normals) redraws the shadow map
+  const sm=a.renderer.shadowMap;sm.autoUpdate=false;sm.needsUpdate=true;
   this.update();if(this.reflect)this.reflect.call(this.reflector,a.renderer,a.scene,camera);if(this.composer)this.composer.render();else a.renderer.render(a.scene,camera);}
  resize(w,h){if(!this.composer)return;const pr=this.a.renderer.getPixelRatio();this.composer.setPixelRatio(pr);this.composer.setSize(w,h);this.ao?.setSize(w*pr,h*pr);
   if(this.reflector){const rw=Math.max(256,Math.round(w*pr*.5)),rh=Math.max(256,Math.round(h*pr*.5));this.reflector.getRenderTarget().setSize(rw,rh);this.reflector.material.uniforms.texel.value.set(1/rw,1/rh);}}
  teardown(){
-  for(const fn of this.undo.reverse())fn();this.undo=[];
+  this.a.renderer.shadowMap.autoUpdate=true;  for(const fn of this.undo.reverse())fn();this.undo=[];for(const o of [...this.a.people,this.a.ball])if(o){delete o.userData.reflected;o.traverse(m=>m.layers.disable(REFLECTED));}
   for(const o of this.added){o.parent?.remove(o);o.traverse?.(m=>{if(m.isMesh){m.geometry?.dispose();}});o.dispose?.();}
   if(this.reflector){this.reflector.getRenderTarget().dispose();this.reflector.material.dispose();}
   this.blobs?.forEach(b=>b.material.dispose());this.blobTex?.dispose();this.env?.dispose();this.composer?.dispose?.();

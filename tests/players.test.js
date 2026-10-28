@@ -42,6 +42,13 @@ test('athlete bodies: every variant file loads as a rigged body the Arena can dr
   for(const bone of [...b.parts.legs,...b.parts.arms])assert.deepEqual(bone.quaternion.toArray(),[0,0,0,1],'bones rest unrotated');
   assert.ok(b.parts.legs[0].position.x<0&&b.parts.arms[0].getWorldPosition(new THREE.Vector3()).x<0,'x<0 side first, like the classic figure');
   let tris=0;b.root.traverse(o=>{if(o.isSkinnedMesh){tris+=o.geometry.index.count/3;assert.equal(o.frustumCulled,false);}});assert.ok(tris>10000&&tris<15000,`${v}: ${tris} triangles in budget`);
+  // one shared skeleton per body, and a far-distance version (about a third of the triangles) swapped in by setLod
+  const skels=new Set();b.root.traverse(o=>{if(o.isSkinnedMesh)skels.add(o.skeleton);});assert.equal(skels.size,1,'all meshes share one skeleton');
+  assert.ok(!names.some(n=>n.endsWith('_lod1')),'LOD meshes are not separate objects');
+  const count=()=>{let t=0;b.root.traverse(o=>{if(o.isSkinnedMesh)t+=o.geometry.index.count/3;});return t;};
+  b.setLod(1);const far=count();assert.ok(far>tris*.2&&far<tris*.45,`${v}: far ${far} of ${tris}`);
+  b.root.traverse(o=>{if(o.isSkinnedMesh&&o.userData.lods)assert.equal(o.geometry.attributes.position,o.userData.lods[0].attributes.position,'same vertices, only fewer triangles');});
+  b.setLod(0);assert.equal(count(),tris);
   const box=new THREE.Box3().setFromObject(b.root);const h=box.max.y;assert.ok(h>2.0&&h<2.4,`${v} height ${h}`);
  }
 });
