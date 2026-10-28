@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {CLIP_SECONDS, SHOTS, sampleClip, isDunk} from './basketball.js';
+import {CLIP_SECONDS, SHOTS, sampleClip, isDunk, family} from './basketball.js';
 import {drawScoreboard, scoreboardData, scoreboardKey, setScoreboardLogo, setScoreboardOpponentLogo, boardGame} from './scoreboard.js';
 import {oppRoster} from './engine.js';
 import {visitorCast} from './identities.js';
@@ -187,10 +187,13 @@ export class Arena{
    if(pose.arms==='dribble'){x=j?-.25+Math.sin(t*18)*.25:-.6;elbow=j?-.15:-.8;}
    const r=arm.rotation,e=arm.userData.elbow.rotation;r.set(r.x+(x-r.x)*ease,0,r.z+(z-r.z)*ease);e.x+=(elbow-e.x)*ease;
   });
-  if(u.body?.style==='athletes')animateAthlete(player,pose,{dt:this.frameDt||0,motion:this.motion&&!(this.event&&this.paused),gait:this.gait,ball:this.ball?.position});
+  if(u.body?.style==='athletes')animateAthlete(player,pose,{dt:this.frameDt||0,motion:this.motion&&!(this.event&&this.paused),gait:this.gait,ball:this.ball?.position,ballRadius:.13,holder:player===this.holder,family:this.clipFamily||''});
  }
  frame(){if(this.failed)return;const dt=Math.min(this.clock.getDelta(),.05),w=this.host.clientWidth,h=this.host.clientHeight;
   if(w<1||h<1||this.host.hidden){this.lastT=0;return;}this.measure(performance.now());if(this.w!==w||this.h!==h){this.w=w;this.h=h;this.renderer.setPixelRatio(qualityProfile(this.level,devicePixelRatio,{width:w,height:h}).pixelRatio);this.renderer.setSize(w,h,false);this.look?.resize(w,h);this.camera.aspect=w/h;this.camera.fov=w/h<.8?65:43;this.camera.updateProjectionMatrix();}
+  // who has the ball (for the athletes' hands): the nearest player within reach of where it was last frame
+  {const bp=this.ball?.position;this.holder=null;if(bp&&bp.y<2.9){let best=.85;for(const p of this.people){const d=Math.hypot(p.position.x-bp.x,p.position.z-bp.z);if(d<best){best=d;this.holder=p;}}}}
+  this.clipFamily=this.event&&this.clips?family(this.clips[Math.min(1,Math.floor(this.playTime/CLIP_SECONDS))]?.kind||''):'';
   if(this.motion)this.time+=dt;this.frameDt=this.event&&this.paused?0:dt*(this.event?this.speed||1:1);
   // One continuous stride/dribble clock, so legs and arms never jump when a clip restarts.
   this.gait=(this.gait||0)+(this.motion&&!(this.event&&this.paused)?dt*(this.event?this.speed:1):0);

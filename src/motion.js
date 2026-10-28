@@ -31,6 +31,36 @@ export function footAt(phase,stride,lift){
 }
 const damp=(cur,target,rate,dt)=>cur+(target-cur)*(1-Math.exp(-rate*dt));
 
+/* Two-bone arm IK in the chest's space. S = shoulder, T = wrist target, L1/L2 = upper arm and forearm, pole = where the elbow
+   should point. Returns the upper-arm direction u, the forearm bend direction b (both unit) and the elbow bend angle
+   (0 = straight), or null if the target sits on the shoulder. */
+export function solveArm(S,T,L1,L2,pole){
+ const d=T.clone().sub(S),len=d.length();if(len<1e-5)return null;
+ const D=Math.min(Math.max(len,Math.abs(L1-L2)+1e-3),L1+L2-1e-4),dn=d.multiplyScalar(1/len);
+ const p=pole.clone().sub(dn.clone().multiplyScalar(pole.dot(dn)));if(p.lengthSq()<1e-8)p.set(0,0,1).sub(dn.clone().multiplyScalar(dn.z));p.normalize();
+ const a=Math.acos(Math.max(-1,Math.min(1,(L1*L1+D*D-L2*L2)/(2*L1*D)))),u=dn.clone().multiplyScalar(Math.cos(a)).add(p.clone().multiplyScalar(Math.sin(a)));
+ const E=S.clone().add(u.clone().multiplyScalar(L1)),f=dn.clone().multiplyScalar(D).add(S).sub(E).normalize();
+ const b=f.clone().sub(u.clone().multiplyScalar(f.dot(u)));if(b.lengthSq()<1e-8)b.copy(p);b.normalize();
+ const bend=Math.PI-Math.acos(Math.max(-1,Math.min(1,(L1*L1+L2*L2-D*D)/(2*L1*L2))));
+ return {u,b,bend,elbow:E};
+}
+/* Arm poses for each play situation, per side (j: 0 = right, 1 = left): shoulder flex x (negative = forward/up), abduction z
+   (positive = away from the body) and elbow flex e (negative = bent). */
+const ARM={
+ relax:()=>[0,.1,-.25],
+ shoot:(j,m)=>j===0?[-2.75,.05,-.15]:[-2.15,.35,-.5],          // follow-through: shooting arm up and through, guide hand off the ball
+ hook:j=>j===0?[-2.9,.55,-.2]:[-1.2,.7,-.9],                    // hook over the top, off arm up to shield
+ block:(j,m)=>j===m.high?[-2.85,.15,-.12]:[-1.85,.45,-.45],      // one hand high on the ball, the other wide
+ rebound:()=>[-2.55,.3,-.45],                                    // both up, elbows soft
+ defend:(j,m,t)=>j===m.high?[-1.25+Math.sin(t*3.1)*.12,.75,-.8]:[-.45+Math.sin(t*2.3+1)*.1,.95,-.55],   // active hands, one high one low
+ pass:()=>[-1.35,-.08,-.35],                                     // chest pass: arms through, hands together
+ screen:()=>[-.6,-.38,-1.5],                                     // arms crossed in front, braced
+ dribble:()=>[-.7,.35,-1.0]                                      // off arm out front as a guard; the dribble hand is set by IK
+};
+const quatFrom=(()=>{const m0=new THREE.Matrix4(),m1=new THREE.Matrix4(),c=new THREE.Vector3(),c0=new THREE.Vector3();
+ return (u0,b0,u,b,out)=>{c0.crossVectors(u0,b0);c.crossVectors(u,b);m0.makeBasis(u0,b0,c0);m1.makeBasis(u,b,c);return out.setFromRotationMatrix(m1.multiply(m0.transpose()));};})();
+const _v=new THREE.Vector3(),_w=new THREE.Vector3(),_q=new THREE.Quaternion(),_e=new THREE.Euler();
+
 /* Rest measurements of an athlete body, taken once from its bone offsets (the skeleton's own units; the rest pose is
    unrotated, so heights are sums of the bones' local offsets and do not depend on the current pose). */
 function rest(body){
@@ -38,7 +68,10 @@ function rest(body){
  const b=body.bones,pelvis=b.pelvis.position.clone(),legs={};
  for(const s of ['L','R']){const hip=b['hip_'+s].position,knee=b['knee_'+s].position,ankle=b['ankle_'+s].position,hipY=pelvis.y+hip.y;
   legs[s]={thigh:knee.length(),shin:ankle.length(),hipY,ankleY:hipY+knee.y+ankle.y};}
- return body.motionRest={legs,pelvis};
+ const arms=[];for(const s of ['R','L']){const sh=b['shoulder_'+s],el=b['elbow_'+s],wr=b['wrist_'+s];if(!sh||!el||!wr){arms.push(null);continue;}
+  const u0=el.position.clone().normalize(),b0=new THREE.Vector3(0,0,1);b0.sub(u0.clone().multiplyScalar(b0.dot(u0))).normalize();
+  arms.push({L1:el.position.length(),L2:wr.position.length(),u0,b0});}
+ return body.motionRest={legs,pelvis,arms};
 }
 
 /* Called by the Arena after its own pose for an athlete. ctx = {dt, motion, ball (world position or null)}. */
@@ -71,18 +104,58 @@ export function animateAthlete(player,pose,ctx){
   const fwd=foot.forward*Math.cos(dir),side=foot.forward*Math.sin(dir);
   const hipWorldY=L.hipY-m.crouch*h+bob,drop=hipWorldY-L.ankleY-foot.up+(s==='L'?-1:1)*m.sway*.012;
   let sol=solveLeg(L.thigh,L.shin,fwd,Math.sqrt(Math.max(drop*drop-side*side,drop*drop*.5)));
-  if(airborne>0){const tuck={hip:-.5,knee:1.0};sol={hip:sol.hip+(tuck.hip-sol.hip)*airborne,knee:sol.knee+(tuck.knee-sol.knee)*airborne};}
+  if(airborne>0){const tuck=jumpLegs(arms,ctx.family,s);sol={hip:sol.hip+(tuck.hip-sol.hip)*airborne,knee:sol.knee+(tuck.knee-sol.knee)*airborne,toe:tuck.toe};}
   const abduct=(s==='L'?1:-1)*m.wide+Math.asin(Math.max(-.6,Math.min(.6,side/drop)));
   hipBone.rotation.set(sol.hip,0,abduct);knee.rotation.set(sol.knee,0,0);
-  ankle.rotation.set(-(sol.hip+sol.knee)*(1-airborne*.6),0,-abduct);   // foot stays flat on the floor
+  ankle.rotation.set(-(sol.hip+sol.knee)*(1-airborne)+(sol.toe||0)*airborne,0,-abduct*(1-airborne));   // flat on the floor; toes point in the air
  }
  // torso: lean into the run, shoulders counter-twist against the hips
  b.spine.rotation.set(m.lean*.55,ctx.motion?Math.sin(m.phase)*.12*run:0,m.sway*.025);
  b.chest.rotation.set(m.lean*.35,ctx.motion?Math.sin(m.phase)*.08*run:0,0);
- // arms: swing opposite the legs when relaxed; the dribble hand pumps with the ball (same clock as the ball's bounce)
- if(arms==='relax'){u.arms.forEach((a,j)=>{const sw=ctx.motion?-Math.sin(m.phase+(j?Math.PI:0))*.55*run:0,side=j?1:-1;a.rotation.x=damp(a.rotation.x,sw,10,dt);a.rotation.z=damp(a.rotation.z,side*(.1+.08*m.crouch*4),8,dt);a.userData.elbow.rotation.x=damp(a.userData.elbow.rotation.x,-.25-.6*run,8,dt);});}
- if(dribble&&ctx.motion){const bounce=Math.abs(Math.sin((ctx.gait||0)*6)),a=u.arms[1];a.rotation.x=-.35-.4*bounce;a.userData.elbow.rotation.x=-.75+.4*bounce;}
+ animateArms(player,pose,ctx,m,R,run,dt);
  // head: turn toward the ball (limited), eyes level against the torso lean
  if(b.head){let yaw=0;if(ctx.ball){const dx=ctx.ball.x-here.x,dz=ctx.ball.z-here.z;if(dx*dx+dz*dz>.04){yaw=Math.atan2(dx,dz)-player.rotation.y;yaw=Math.atan2(Math.sin(yaw),Math.cos(yaw));yaw=Math.max(-1,Math.min(1,yaw));}}
   m.headYaw=damp(m.headYaw,yaw,5,dt);b.head.rotation.set(-m.lean*.6,m.headYaw*.7,0);if(b.neck)b.neck.rotation.set(0,m.headYaw*.3,0);}
+}
+
+/* Leg shape in the air, by move: jump shooters keep the legs long with toes pointed; on drives and dunks the lead knee drives
+   up and the trail leg folds back; blocks and rebounds tuck both knees. */
+function jumpLegs(arms,family,side){
+ if(arms==='shoot'&&['drive','dunk','roll','floater'].includes(family))return side==='R'?{hip:-1.25,knee:1.5,toe:.35}:{hip:.12,knee:.6,toe:.6};
+ if(arms==='shoot'||arms==='hook')return {hip:-.12,knee:.28,toe:.65};
+ return {hip:-.42,knee:.8,toe:.45};
+}
+
+/* Arms for the athletes (the classic figure keeps the Arena's own arm poses). Each arm eases toward the pose for the play
+   situation; the ball handler's hands reach the ball with arm IK: one hand on top while dribbling, both hands while
+   holding, gathering and shooting. When the ball leaves (a shot or pass), the IK fades and the follow-through takes over. */
+function animateArms(player,pose,ctx,m,R,run,dt){
+ const u=player.userData,b=u.body.bones,chest=b.chest;if(!chest)return;
+ let arms=pose.arms||'relax';if(arms==='run')arms='relax';
+ m.high??=(u.slot??0)%2;m.arm??=[[0,.1,-.25],[0,.1,-.25]];m.ik??=[0,0];m.ikT??=[null,null];
+ const t=ctx.motion?m.t:0;
+ // where the ball is relative to this player, and which hands should be on it
+ const ball=ctx.ball,holder=!!ctx.holder&&!!ball,yaw=player.rotation.y,fw=_v.set(Math.sin(yaw),0,Math.cos(yaw)).clone(),left=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+ const r=ctx.ballRadius||.13,up=new THREE.Vector3(0,1,0);let normals=[null,null];
+ if(holder){
+  if(arms==='dribble'){const j=ball.clone().sub(player.position).dot(left)>0?1:0;normals[j]=up.clone();}
+  else if(arms==='shoot'||arms==='hook'){normals[0]=fw.clone().negate().multiplyScalar(.75).add(up.clone().multiplyScalar(-.35)).add(left.clone().multiplyScalar(-.3)).normalize();if(arms==='shoot')normals[1]=left.clone();}
+  else{normals[0]=left.clone().negate();normals[1]=left.clone();}
+ }
+ u.arms.forEach((a,j)=>{
+  const rest=R.arms[j],side=j?1:-1;
+  let [x,z,e]=(ARM[arms]||ARM.relax)(j,m,t);
+  if(arms==='relax'){x=ctx.motion?-Math.sin(m.phase+(j?Math.PI:0))*.55*run:0;z=.1+.08*m.crouch*4;e=-.25-.6*run;}
+  const st=m.arm[j];st[0]=damp(st[0],x,10,dt);st[1]=damp(st[1],z,9,dt);st[2]=damp(st[2],e,10,dt);
+  a.rotation.set(st[0],0,side*st[1]);a.userData.elbow.rotation.set(st[2],0,0);
+  // hand on the ball
+  const n=normals[j];let want=0,T=null;const S=a.position;
+  if(n&&rest){chest.updateWorldMatrix(true,false);T=chest.worldToLocal(ball.clone().add(n.clone().multiplyScalar(r+.07)));if(T.distanceTo(S)<(rest.L1+rest.L2)*1.2){want=1;m.ikT[j]=T.clone();}}
+  m.ik[j]=damp(m.ik[j],want,want?14:7,dt);
+  if(!want)T=m.ikT[j];   // the ball just left the hand: ease out from where it was
+  if(rest&&T&&m.ik[j]>.01){{const pole=T.y>S.y+.1?new THREE.Vector3(side*.45,-.1,1):new THREE.Vector3(side*.6,-.25,-1);
+    const sol=solveArm(S,T,rest.L1,rest.L2,pole.normalize());
+    if(sol){quatFrom(rest.u0,rest.b0,sol.u,sol.b,_q);a.quaternion.slerp(_q,m.ik[j]);const el=a.userData.elbow.rotation;el.x=el.x+(-sol.bend-el.x)*m.ik[j];}}
+  }
+ });
 }
