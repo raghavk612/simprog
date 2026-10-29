@@ -3,7 +3,8 @@
 // No game state lives here. The drill controllers are in drillscenes.js.
 import * as THREE from 'three';
 import {getA11y} from './settings.js';
-import {qualityProfile, lowerLevel, autoDowngrade, probeDone, PROBE} from './graphics.js';
+import {qualityProfile, lowerLevel, autoDowngrade, probeDone, PROBE, effectivePlayers} from './graphics.js';
+import {athleteBody, lookFor, loadAthletes, loadedAthletes} from './players.js';
 import {RIM_H, RIM_R, BALL_R, BOARD_Z, BOARD, BASELINE_Z} from './shotphysics.js';
 
 export const PURPLE = 0x6832ab, GOLD = 0xe9b858, CREAM = 0xf1e9df, WOOD_LINE = '#fff6e4';
@@ -68,7 +69,7 @@ export function createStage(host, { fov = 38, minAspect = 1.0 } = {}) {
     if (S.dead) return; S.dead = true; renderer.setAnimationLoop(null); ro?.disconnect(); document.removeEventListener('visibilitychange', vis);
     const seen = new Set(), free = t => { if (t && !seen.has(t)) { seen.add(t); t.dispose?.(); } };
     scene.traverse(o => {
-      free(o.geometry);
+      if (!o.userData.sharedGeometry) free(o.geometry);
       if (o.material) [].concat(o.material).forEach(m => { for (const v of Object.values(m)) if (v && v.isTexture) free(v); free(m); });
       if (o.isLight && o.shadow) { o.shadow.map?.dispose(); }
     });
@@ -397,9 +398,34 @@ export function makeRig(S, { jersey = PURPLE, trim = 0xffffff, skin = SKINS[0], 
   const rig = { root, inner, torso, head, hips, knees, shoulders, elbows, hands, scale, blob: shadow, base: new THREE.Vector3() };
   rig.place = (x, z, yaw) => { root.position.set(x, 0, z); root.rotation.y = yaw; shadow.position.set(x, 0.05, z); rig.base.set(x, 0, z); };
   rig.handMid = out => { const a = new THREE.Vector3(), b = new THREE.Vector3(); hands[0].getWorldPosition(a); hands[1].getWorldPosition(b); return out.copy(a).add(b).multiplyScalar(0.5); };
-  rig.pose = p => applyPose(rig, p);
+  rig.pose = p => { rig.last = p; applyPose(rig, p); };
   rig.pose(POSE.stand);
+  // With the 3D athletes (Settings > Player models, Medium or High graphics) the figure becomes a rigged athlete in the same
+  // kit, driven by the same poses. Until the models have loaded (or if they fail) the simple figure stays.
+  let wantAthletes = false; try { wantAthletes = effectivePlayers(getA11y().players, S.level || 'high') === 'athletes'; } catch { /* settings unavailable */ }
+  if (wantAthletes) {
+    const up = () => { if (!S.dead && !rig.athlete) toAthlete(S, rig, { jersey, skin, number, numberBg, numberFg, name, scale }); };
+    if (loadedAthletes()) up(); else loadAthletes().then(up).catch(() => { /* keep the simple figure */ });
+  }
   return rig;
+}
+
+/* Swaps a rig's simple figure for a 3D athlete: same root, place(), pose() and hands, so the drill scenes are unchanged. */
+function toAthlete(S, rig, { jersey, skin, number, numberBg, numberFg, name, scale }) {
+  const T = loadedAthletes(); if (!T) return;
+  const body = athleteBody(T.guard, { capMat: new THREE.MeshBasicMaterial({ color: GOLD }) }, Math.max(0, SKINS.indexOf(skin)), jersey, 'guard', lookFor(`${name}|${number}`));
+  body.setLod?.(0); body.setLettering(String(number), name, numberBg, numberFg, jersey === PURPLE ? 'home' : null);
+  body.root.traverse(o => { if (o.isMesh) { o.userData.sharedGeometry = !!o.isSkinnedMesh; o.castShadow = true; } });
+  const H = (() => { const b = body.bones.head; body.root.updateMatrixWorld(true); return b.getWorldPosition(new THREE.Vector3()).y + 0.12; })();
+  const inner = new THREE.Group(), s = scale * 1.98 / H; inner.scale.setScalar(s); inner.add(body.root);
+  rig.root.remove(rig.inner); rig.root.add(inner);
+  const b = body.bones, legs = ['R', 'L'].map(k => ({ hip: b['hip_' + k], knee: b['knee_' + k], thigh: b['knee_' + k].position.length(), shin: b['ankle_' + k].position.length() }));
+  rig.inner = inner; rig.athlete = { body, b, legs, s };
+  rig.hands = [b.wrist_R, b.wrist_L];
+  rig.handMid = out => { const v = new THREE.Vector3(), e = new THREE.Vector3(), acc = new THREE.Vector3();
+    for (const k of ['R', 'L']) { b['wrist_' + k].getWorldPosition(v); b['elbow_' + k].getWorldPosition(e); acc.add(v.clone().add(v.clone().sub(e).normalize().multiplyScalar(0.09 * s))); }
+    return out.copy(acc).multiplyScalar(0.5); };
+  if (rig.last) applyPose(rig, rig.last);
 }
 export const POSE = {
   stand: { y: 0, lean: 0, head: 0, hip: [0, 0], knee: [0, 0], sh: [-0.04, -0.04], sp: [0.06, 0.06], el: [-0.05, -0.05] },
@@ -417,6 +443,19 @@ export function mixPose(a, b, k) {
   const o = {}; for (const key of Object.keys(a)) o[key] = m(a[key], b[key]); return o;
 }
 export function applyPose(rig, p) {
+  const A = rig.athlete;
+  if (A) {   // the same pose on the athlete's bones (same joint conventions as the simple figure)
+    const b = A.b; b.spine.rotation.x = p.lean * 0.6; b.chest.rotation.x = p.lean * 0.4; b.head.rotation.x = p.head ?? 0;
+    let reach = 0;
+    for (let i = 0; i < 2; i++) {
+      const side = i ? 1 : -1, L = A.legs[i], k = i ? 'L' : 'R';
+      L.hip.rotation.set(p.hip[i], 0, 0); L.knee.rotation.set(p.knee[i], 0, 0);
+      b['shoulder_' + k].rotation.set(p.sh[i], 0, -side * p.sp[i]); b['elbow_' + k].rotation.set(p.el[i], 0, 0);
+      reach = Math.max(reach, L.thigh * Math.cos(p.hip[i]) + L.shin * Math.cos(p.hip[i] + p.knee[i]));
+    }
+    rig.inner.position.y = (reach - (A.legs[0].thigh + A.legs[0].shin)) * A.s + p.y;
+    return;
+  }
   rig.torso.rotation.x = p.lean; rig.head.rotation.x = p.head ?? 0;
   let reach = 0;
   for (let i = 0; i < 2; i++) {
