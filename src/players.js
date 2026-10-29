@@ -6,6 +6,7 @@
 // "classic" is the original primitive figure, unchanged. Imported (skinned glTF) bodies plug in through attachBody.
 import * as THREE from 'three';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
+import {KITS} from './kits.js';
 import {skinMaterial,clothMaterial,shoeMaterial,soleMaterial,hairMaterial,fabricMaterial,letteringTexture,bentPlane,decalMaterial,faceTexture,KIT_INFLATE} from './materials.js';
 
 export const PLAYER_STYLES=['classic','realistic'];
@@ -81,6 +82,32 @@ const hash=s=>{let h=2166136261;for(const c of String(s))h=Math.imul(h^c.charCod
 /* A player's look (hair style and colour, headband, arm and leg sleeves), the same every time for the same player. */
 export function lookFor(seed){const h=hash(seed);return {hair:HAIR_STYLES[h%4],hairColor:HAIR_COLORS[(h>>>4)%HAIR_COLORS.length],headband:(h>>>8)%5===0,armSleeve:(h>>>11)%4===0,legSleeve:(h>>>14)%6===0};}
 export const lookKey=l=>l?`${l.hair}${l.headband?'+band':''}${l.armSleeve?'+arm':''}${l.legSleeve?'+leg':''}`:'';
+/* The locker-room lettering for one side of the jersey, transparent round the letters, in the same layout and colours as
+   the 3D jerseys in the locker room (jerseys.js): front "Lake" in script, the number, "Washington" in script; back the name
+   and a big number. The canvas is the lettering band of the locker jersey (from 20% down its height). */
+const SCRIPT='"Yellowtail","Brush Script MT","Segoe Script",cursive',BLOCK='"Barlow Condensed","Arial Narrow",Arial,sans-serif';
+export const KIT_DECAL={w:512,h:460,top:128,face:640};
+export function kitLettering(kitKey,side,number,name){
+ if(typeof document==='undefined')return new THREE.Texture();   // tests run without a page
+ const kit=KITS[kitKey]||KITS.home,{w:W,h:H,top,face:F}=KIT_DECAL,c=document.createElement('canvas');c.width=W;c.height=H;
+ const x=c.getContext('2d'),t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;const num=String(number);
+ const draw=()=>{x.clearRect(0,0,W,H);x.save();x.translate(0,-top);x.textAlign='center';x.textBaseline='alphabetic';x.lineJoin='round';
+  const letter=(text,px,y)=>{if(kit.vintage){x.strokeStyle=kit.accent;x.lineWidth=Math.max(5,px/22);x.strokeText(text,W/2,y);}x.fillStyle=kit.ink;x.fillText(text,W/2,y);};
+  if(side==='front'){
+   const script=(text,size,y,maxW,rot)=>{x.save();x.translate(W/2,y);x.rotate(rot);if('letterSpacing' in x)x.letterSpacing='3px';let s=size;x.font=`400 ${s}px ${SCRIPT}`;while(x.measureText(text).width>maxW&&s>40){s-=4;x.font=`400 ${s}px ${SCRIPT}`;}
+    x.lineWidth=Math.max(6,s/9);x.strokeStyle=kit.scriptLine||kit.trim;x.strokeText(text,0,0);x.fillStyle=kit.script||kit.ink;x.fillText(text,0,0);x.restore();};
+   script('Lake',112,F*.35,W*.4,-.06);
+   x.font=`800 188px ${BLOCK}`;x.lineWidth=22;x.strokeStyle=kit.numLine||kit.trim;x.strokeText(num,W/2,F*.635);x.fillStyle=kit.num||kit.ink;x.fillText(num,W/2,F*.635);
+   script('Washington',92,F*.81,W*.62,-.045);
+  }else{
+   const plate=String(name||'').toUpperCase();let size=92;do{x.font=`italic 800 ${size}px ${BLOCK}`;size-=2;}while(x.measureText(plate).width>W*.5&&size>34);
+   letter(plate,72,F*.33);x.font=`italic 900 300px ${BLOCK}`;letter(num,300,F*.8);
+  }
+  x.restore();t.needsUpdate=true;};
+ draw();document.fonts?.load(`400 100px ${SCRIPT}`).then(draw).catch(()=>{});   // repaint once the script font has loaded
+ return t;
+}
+
 /* template = a loaded glTF (public/models/players/<variant>.glb). Bones rest unrotated, so the Arena's hip/knee/shoulder/elbow
    swings work exactly as on the classic figure; legs and arms are listed in the same order (x<0 side first).
    Geometry stays shared with the template (only materials and decals belong to the body). */
@@ -118,7 +145,18 @@ export function athleteBody(template,kit,i,color,variant,look=lookFor(i)){
  /* Real jersey lettering: the number in the text colour with an outline, the name across the back, both on the fabric. */
  const shade=(hex,f)=>{const c=new THREE.Color(hex);return '#'+c.multiplyScalar(f).getHexString();},lum=hex=>{const c=new THREE.Color(hex);return .2126*c.r+.7152*c.g+.0722*c.b;};
  const setLod=level=>{for(const m of lodMeshes)if(m.parent)m.geometry=m.userData.lods[level?1:0];};
- const setLettering=(num,name,bg,fg)=>{trim.color.set(fg);const stroke=lum(fg)>.45?shade(bg,lum(bg)>.6?.55:.45):'#ffffff';
+ // the team's locker-room design (kit lettering front and back), made on first use; visitors keep the plain number and name
+ let kitFront=null,kitBack=null;
+ const kitDecal=(back)=>{const w=.55*ds,h=w*KIT_DECAL.h/KIT_DECAL.w,m=new THREE.Mesh(bentPlane(w,h,(back?(info.backRadius||0)*1.6:info.chestRadius)||0),decalMaterial(null));   // the back is flatter than the chestm.castShadow=false;
+  const at=back?info.nameplate:info.number;if(at)m.position.fromArray(at);
+  // line the number up with where the plain number sat (front), the name with the old nameplate (back)
+  m.position.y+=back?-.32*h-.035*ds:.104*h-.015*ds;m.position.z+=(back?-1:1)*(KIT_INFLATE+(back?.012:.004));if(back)m.rotation.y=Math.PI;chest?.add(m);return m;};
+ const setLettering=(num,name,bg,fg,kitKey=null)=>{
+  if(kitKey){const kit=KITS[kitKey]||KITS.home;trim.color.set(kit.trim);kitFront??=kitDecal(false);kitBack??=kitDecal(true);
+   for(const [m,side] of [[kitFront,'front'],[kitBack,'back']]){m.material.map?.dispose();m.material.map=kitLettering(kitKey,side,num,name);m.material.needsUpdate=true;m.visible=true;}
+   number.visible=nameplate.visible=false;return;}
+  if(kitFront)kitFront.visible=kitBack.visible=false;number.visible=nameplate.visible=true;
+  trim.color.set(fg);const stroke=lum(fg)>.45?shade(bg,lum(bg)>.6?.55:.45):'#ffffff';
   for(const [m,tex] of [[number,letteringTexture(num,fg,stroke)],[nameplate,letteringTexture(name,fg,stroke,{w:512,h:128,weight:800})]]){m.material.map?.dispose();m.material.map=tex;m.material.needsUpdate=true;}};
  return {root,bones,parts:{jersey,head:objs.head_mesh,hair,number,nameplate,capBadge,legs,arms},style:'athletes',variant,key:`${variant}|${lookKey(look)}`,look,sharedGeometry:true,setLettering,setLod,lodMeshes};
 }

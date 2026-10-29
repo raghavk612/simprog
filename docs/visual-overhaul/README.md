@@ -273,6 +273,13 @@ Not done, because the gain looked small for the work:
   - adds a **trim** band round every opening (`add_trim`), drawn in the team's lettering colour
 - In the shader, clothing is pushed about 1 cm off the skin (`inflate` in `src/materials.js`), and the decals move out with it.
 
+**Jersey design:** the Kangs' 3D players wear the locker-room design of whichever kit is chosen (`kitLettering` in `src/players.js`, same layout and colours as `src/jerseys.js`):
+- front: "Lake" in script, the number, then "Washington" in script
+- back: the player's name and a big number
+- trim: round the neck, armholes and hems in the kit's trim colour
+
+Visitors keep a plain number and name, with white trim.
+
 **Hands and face:**
 - The rig script builds modelled hands (`hand_parts`: palm, four fingers curled together, thumb) to replace the thin paddle.
 - Faces are repainted at real proportions (`faceTexture`): eyes with iris and highlight, brows, nose shading, lips, cheek and jaw shading, and stubble on some players.

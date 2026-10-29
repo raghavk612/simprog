@@ -148,7 +148,7 @@ export class Arena{
   const cap=home&&person?.id!=null&&person.id===this.state?.captain,key=[person?.id,person?.number,person?.name,bg,fg,cap?'C':'',person?.plate||''].join('|');if(p.userData.identity===key)return;p.userData.identity=key;
   p.userData.jersey.color.set(bg);
   const num=String(person?.number??11),plate=(person?.plate||(person?.name||'VISITORS').split(' ').at(-1)).toUpperCase();
-  if(p.userData.body?.setLettering)p.userData.body.setLettering(num,plate,bg,fg);
+  if(p.userData.body?.setLettering)p.userData.body.setLettering(num,plate,bg,fg,home?(this.state?.kit||'home'):null);   // the Kangs wear the locker-room design
   else{const n=p.userData.number.material;n.map.dispose();n.map=this.textTexture(num,bg,fg,128);const back=p.userData.nameplate.material;back.map.dispose();back.map=this.textTexture(plate,bg,fg,256);}p.userData.capBadge&&(p.userData.capBadge.visible=cap);
  }
  /* Opponent bodies wear real names and numbers: the clip's shooter and helper first, then the rest of the roster (fictional rosters read as the school name). */
