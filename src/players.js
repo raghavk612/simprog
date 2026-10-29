@@ -89,11 +89,12 @@ const SCRIPT='"Yellowtail","Brush Script MT","Segoe Script",cursive',BLOCK='"Bar
 export const KIT_DECAL={w:512,h:460,top:128,face:640};
 export function kitLettering(kitKey,side,number,name){
  if(typeof document==='undefined')return new THREE.Texture();   // tests run without a page
- const kit=KITS[kitKey]||KITS.home,{w:W,h:H,top,face:F}=KIT_DECAL,c=document.createElement('canvas');c.width=W;c.height=H;
+ const kit=typeof kitKey==='object'&&kitKey?kitKey:KITS[kitKey]||KITS.home,{w:W,h:H,top,face:F}=KIT_DECAL,c=document.createElement('canvas');c.width=W;c.height=H;
  const x=c.getContext('2d'),t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;const num=String(number);
  const draw=()=>{x.clearRect(0,0,W,H);x.save();x.translate(0,-top);x.textAlign='center';x.textBaseline='alphabetic';x.lineJoin='round';
   const letter=(text,px,y)=>{if(kit.vintage){x.strokeStyle=kit.accent;x.lineWidth=Math.max(5,px/22);x.strokeText(text,W/2,y);}x.fillStyle=kit.ink;x.fillText(text,W/2,y);};
-  if(side==='front'){
+  if(side==='front'&&kit.plain){x.font=`italic 900 250px ${BLOCK}`;x.lineWidth=20;x.strokeStyle=kit.numLine;x.strokeText(num,W/2,F*.66);x.fillStyle=kit.ink;x.fillText(num,W/2,F*.66);}
+  else if(side==='front'){
    const script=(text,size,y,maxW,rot)=>{x.save();x.translate(W/2,y);x.rotate(rot);if('letterSpacing' in x)x.letterSpacing='3px';let s=size;x.font=`400 ${s}px ${SCRIPT}`;while(x.measureText(text).width>maxW&&s>40){s-=4;x.font=`400 ${s}px ${SCRIPT}`;}
     x.lineWidth=Math.max(6,s/9);x.strokeStyle=kit.scriptLine||kit.trim;x.strokeText(text,0,0);x.fillStyle=kit.script||kit.ink;x.fillText(text,0,0);x.restore();};
    script('Lake',112,F*.35,W*.4,-.06);
@@ -146,17 +147,17 @@ export function athleteBody(template,kit,i,color,variant,look=lookFor(i)){
  const shade=(hex,f)=>{const c=new THREE.Color(hex);return '#'+c.multiplyScalar(f).getHexString();},lum=hex=>{const c=new THREE.Color(hex);return .2126*c.r+.7152*c.g+.0722*c.b;};
  const setLod=level=>{for(const m of lodMeshes)if(m.parent)m.geometry=m.userData.lods[level?1:0];};
  // the team's locker-room design (kit lettering front and back), made on first use; visitors keep the plain number and name
- let kitFront=null,kitBack=null;
- const kitDecal=(back)=>{const w=.55*ds,h=w*KIT_DECAL.h/KIT_DECAL.w,m=new THREE.Mesh(bentPlane(w,h,(back?(info.backRadius||0)*1.6:info.chestRadius)||0),decalMaterial(null));   // the back is flatter than the chestm.castShadow=false;
-  const at=back?info.nameplate:info.number;if(at)m.position.fromArray(at);
-  // line the number up with where the plain number sat (front), the name with the old nameplate (back)
-  m.position.y+=back?-.32*h-.035*ds:.104*h-.015*ds;m.position.z+=(back?-1:1)*(KIT_INFLATE+(back?.012:.004));if(back)m.rotation.y=Math.PI;chest?.add(m);return m;};
+ // Lettering is printed into the jersey fabric (projected in the rest pose by the jersey's shader), so it moves and folds
+ // with the jersey and never sinks into the chest. The Kangs wear their locker-room design; visitors a plain number and name.
+ root.updateMatrixWorld(true);const C=chest?chest.getWorldPosition(new THREE.Vector3()):new THREE.Vector3(),pw=.5*ds,ph=pw*KIT_DECAL.h/KIT_DECAL.w,U=jersey.userData.print,HT=info.height||2;
+ if(U){const f=info.number||[0,0,0],bk=info.nameplate||[0,0,0];
+  // front: lowered so "Lake" sits below the V-neck; back: the name where the old nameplate sat
+  U.kPrintFC.value.set(C.x+f[0],C.y+f[1]+.104*ph-.015*ds-.05*HT);U.kPrintBC.value.set(C.x+bk[0],C.y+bk[1]-.32*ph-.035*ds);U.kPrintSize.value.set(pw,ph);
+  U.kPrintMinY.value=HT*.588;}   // above the shorts' waistband (jersey and shorts share the kit material)
+ for(const m of [number,nameplate])m.visible=false;
  const setLettering=(num,name,bg,fg,kitKey=null)=>{
-  if(kitKey){const kit=KITS[kitKey]||KITS.home;trim.color.set(kit.trim);kitFront??=kitDecal(false);kitBack??=kitDecal(true);
-   for(const [m,side] of [[kitFront,'front'],[kitBack,'back']]){m.material.map?.dispose();m.material.map=kitLettering(kitKey,side,num,name);m.material.needsUpdate=true;m.visible=true;}
-   number.visible=nameplate.visible=false;return;}
-  if(kitFront)kitFront.visible=kitBack.visible=false;number.visible=nameplate.visible=true;
-  trim.color.set(fg);const stroke=lum(fg)>.45?shade(bg,lum(bg)>.6?.55:.45):'#ffffff';
-  for(const [m,tex] of [[number,letteringTexture(num,fg,stroke)],[nameplate,letteringTexture(name,fg,stroke,{w:512,h:128,weight:800})]]){m.material.map?.dispose();m.material.map=tex;m.material.needsUpdate=true;}};
+  let kit;if(kitKey){kit=KITS[kitKey]||KITS.home;trim.color.set(kit.trim);}
+  else{const stroke=lum(fg)>.45?shade(bg,lum(bg)>.6?.55:.45):'#ffffff';kit={ink:fg,trim:stroke,numLine:stroke,plain:true};trim.color.set(fg);}
+  if(!U)return;for(const [k,side] of [['kPrintF','front'],['kPrintB','back']]){U[k].value?.dispose();U[k].value=kitLettering(kit,side,num,name);}U.kPrintOn.value=1;};
  return {root,bones,parts:{jersey,head:objs.head_mesh,hair,number,nameplate,capBadge,legs,arms},style:'athletes',variant,key:`${variant}|${lookKey(look)}`,look,sharedGeometry:true,setLettering,setLod,lodMeshes};
 }

@@ -167,7 +167,7 @@ def smooth_openings(P, tris, groups=('jersey', 'shorts'), iterations=10):
             for i in members[w]: P[i] = pos[w]
     return P
 
-def add_trim(P, N, UV, JI, JW, G, tris, H, groups=('jersey', 'shorts'), radius=.0042, sides=5, step=.025):
+def add_trim(P, N, UV, JI, JW, G, tris, H, groups=('jersey', 'shorts'), radius=.0042, sides=5, step=.028):
     """Binding round every opening of the jersey (neck, armholes) and shorts (legs, waist): a thin tube swept along each
     open edge loop, smoothed and resampled, skinned like the fabric under it. Covers the uneven cut edge and adds the trim
     real jerseys have; it is drawn in the team's lettering colour (material 'trim')."""

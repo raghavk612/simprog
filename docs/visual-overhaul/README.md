@@ -280,6 +280,8 @@ Not done, because the gain looked small for the work:
 
 Visitors keep a plain number and name, with white trim.
 
+The lettering is **printed into the jersey fabric**: the jersey shader projects two textures, front and back, in the rest pose. So it bends and stretches with the jersey and can't sink into the chest the way a separate decal sheet did. The Houdini jersey no longer has modelled fold ripples; they made it look dented.
+
 **Hands and face:**
 - The rig script builds modelled hands (`hand_parts`: palm, four fingers curled together, thumb) to replace the thin paddle.
 - Faces are repainted at real proportions (`faceTexture`): eyes with iris and highlight, brows, nose shading, lips, cheek and jaw shading, and stubble on some players.

@@ -108,8 +108,7 @@ vector q = P - set(0, .55 * H, .004 * H); q.z /= .64;
 float drape = roundcone(q, .084 * H, .095 * H * pow(SH, .25), .2 * H);   // hangs straight from the chest, not tight at the waist
 float d = smin(body - .007, drape, .02);
 float ang = atan2(P.z, P.x);
-d -= .0028 * sin(ang * 15.0 + P.y * 35.0) * (1.0 - smooth(.565 * H, .64 * H, P.y));   // folds where it tucks into the shorts
-d -= .0015 * sin(ang * 9.0 + P.y * 60.0) * smooth(.77 * H, .83 * H, P.y);           // light folds at the straps
+// (no modelled fold ripples: they read as a dented, deformed jersey in the game; the fabric shader adds the texture)
 d = smax(d, .545 * H - P.y, .004);
 d = smax(d, P.y - .875 * H, .004);
 foreach (float sd; SIDES)

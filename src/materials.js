@@ -46,17 +46,21 @@ vec3 kPerturb(vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDir){
 }`;
 /* inflate (game units): clothing is pushed out along its normals after skinning starts, so the skin under it never pokes
    through when joints bend (the rest-pose gap is only about a centimetre). */
-function patch(material,{map,scale,bump,fadeFar=9,wrap=0,scatter=[1,.42,.28],face=null,inflate=0}={}){
+/* print: lettering printed into the fabric. Two textures (front and back) projected in the rest pose, so the print moves
+   and folds with the jersey and can never sink into the body. material.userData.print holds the uniforms to update. */
+function patch(material,{map,scale,bump,fadeFar=9,wrap=0,scatter=[1,.42,.28],face=null,inflate=0,print=false}={}){
+ if(print)material.userData.print={kPrintF:{value:null},kPrintB:{value:null},kPrintFC:{value:new THREE.Vector2()},kPrintBC:{value:new THREE.Vector2()},kPrintSize:{value:new THREE.Vector2(1,1)},kPrintMinY:{value:0},kPrintOn:{value:0}};
  material.userData.kDetail={map,scale,bump,wrap};
  material.onBeforeCompile=shader=>{
   Object.assign(shader.uniforms,{kDetailMap:{value:map},kDetailScale:{value:scale},kDetailBump:{value:bump},kFadeFar:{value:fadeFar}});
   if(face)Object.assign(shader.uniforms,{kFaceMap:{value:face.map},kFaceCenter:{value:face.center},kFaceSize:{value:face.size}});
+  if(print)Object.assign(shader.uniforms,material.userData.print);
   shader.vertexShader=shader.vertexShader
    .replace('#include <common>','#include <common>\nvarying vec3 vKRest; varying vec3 vKRestN;')
    .replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\nvKRestN = objectNormal;')
    .replace('#include <begin_vertex>','#include <begin_vertex>\nvKRest = transformed;'+(inflate>0?`\ntransformed += objectNormal * ${inflate.toFixed(4)};`:''));
   let frag=shader.fragmentShader
-   .replace('#include <common>','#include <common>\n'+PARS+(face?'\nuniform sampler2D kFaceMap; uniform vec3 kFaceCenter; uniform vec2 kFaceSize;':''))
+   .replace('#include <common>','#include <common>\n'+PARS+(face?'\nuniform sampler2D kFaceMap; uniform vec3 kFaceCenter; uniform vec2 kFaceSize;':'')+(print?'\nuniform sampler2D kPrintF; uniform sampler2D kPrintB; uniform vec2 kPrintFC; uniform vec2 kPrintBC; uniform vec2 kPrintSize; uniform float kPrintMinY; uniform float kPrintOn;':''))
    .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
  {
   float kFade = 1.0 - smoothstep(kFadeFar * 0.35, kFadeFar, length(vViewPosition));
@@ -75,6 +79,16 @@ function patch(material,{map,scale,bump,fadeFar=9,wrap=0,scatter=[1,.42,.28],fac
    diffuseColor.rgb = mix(diffuseColor.rgb, f.rgb, f.a * front);
   }
  }`);
+  if(print)frag=frag.replace('#include <map_fragment>',`#include <map_fragment>
+ if (kPrintOn > 0.5 && vKRest.y > kPrintMinY) {
+  vec3 rn = normalize(vKRestN);
+  vec2 fu = vec2((vKRest.x - kPrintFC.x) / kPrintSize.x + 0.5, (vKRest.y - kPrintFC.y) / kPrintSize.y + 0.5);
+  float fm = smoothstep(0.05, 0.35, rn.z) * step(0.0, fu.x) * step(fu.x, 1.0) * step(0.0, fu.y) * step(fu.y, 1.0);
+  if (fm > 0.0) { vec4 f = texture2D(kPrintF, fu); diffuseColor.rgb = mix(diffuseColor.rgb, f.rgb, f.a * fm); }
+  vec2 bu = vec2(-(vKRest.x - kPrintBC.x) / kPrintSize.x + 0.5, (vKRest.y - kPrintBC.y) / kPrintSize.y + 0.5);
+  float bm = smoothstep(0.05, 0.35, -rn.z) * step(0.0, bu.x) * step(bu.x, 1.0) * step(0.0, bu.y) * step(bu.y, 1.0);
+  if (bm > 0.0) { vec4 f = texture2D(kPrintB, bu); diffuseColor.rgb = mix(diffuseColor.rgb, f.rgb, f.a * bm); }
+ }`);
   if(wrap>0)frag=frag.replace('#include <lights_fragment_end>',`#include <lights_fragment_end>
  #if NUM_DIR_LIGHTS > 0
  for (int i = 0; i < NUM_DIR_LIGHTS; i++) {
@@ -85,7 +99,7 @@ function patch(material,{map,scale,bump,fadeFar=9,wrap=0,scatter=[1,.42,.28],fac
  #endif`);
   shader.fragmentShader=frag;
  };
- material.customProgramCacheKey=()=>`kangs-${map.uuid}-${wrap}-${face?1:0}-${inflate}`;
+ material.customProgramCacheKey=()=>`kangs-${map.uuid}-${wrap}-${face?1:0}-${inflate}-${print?1:0}`;
  return material;
 }
 
@@ -97,7 +111,7 @@ export function skinMaterial(color,face=null){
 export const KIT_INFLATE=.012;   // how far the jersey and shorts are pushed off the skin (decals sit on top of it)
 // Jersey and shorts: soft cloth sheen and the perforated athletic mesh.
 export function clothMaterial(color){
- return patch(new THREE.MeshPhysicalMaterial({color,roughness:.74,sheen:.28,sheenRoughness:.45,sheenColor:new THREE.Color(.75,.75,.8),specularIntensity:.3,name:'kit'}),{map:MAPS.mesh(),scale:22,bump:.18,fadeFar:3.2,inflate:KIT_INFLATE});
+ return patch(new THREE.MeshPhysicalMaterial({color,roughness:.74,sheen:.28,sheenRoughness:.45,sheenColor:new THREE.Color(.75,.75,.8),specularIntensity:.3,name:'kit'}),{map:MAPS.mesh(),scale:22,bump:.18,fadeFar:3.2,inflate:KIT_INFLATE,print:true});
 }
 // Shoes: smooth leather-like upper with a little gloss; matte rubber sole.
 export const shoeMaterial=color=>new THREE.MeshPhysicalMaterial({color,roughness:.36,clearcoat:.55,clearcoatRoughness:.22,name:'shoes'});
