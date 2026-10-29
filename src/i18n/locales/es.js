@@ -378,13 +378,32 @@ export default {
  cm:{
   join:' ',
   side:{right:'derecha',left:'izquierda'},
-  lead:{catch:['{{helper}} se la pasa a {{name}} en el ala {{side}}.','{{name}} se desmarca sin balón; {{helper}} encuentra la ventana libre.'],pullup:['{{name}} frena en seco en el codo de la zona.','{{name}} usa un bote de duda y se eleva desde la media distancia.'],stepback:['{{name}} cruza el balón y luego retrocede un paso más allá del arco.','{{name}} vende la penetración y se crea espacio con un paso atrás.'],drive:['{{name}} cambia de mano y deja atrás a {{def}}.','{{name}} ataca el hueco con un cruce.'],floater:['{{name}} serpentea hacia la zona y lanza un pañuelo.','{{name}} esquiva a la ayuda defensiva con un lanzamiento alto en carrera.'],hook:['{{name}} se apoya de espaldas en el poste y gira sobre el hombro.','{{name}} sella al defensor en el poste bajo.'],dunk:['{{name}} se escapa por delante de la defensa que retrocede.','{{helper}} saca el balón rápido hacia {{name}} en transición.'],roll:['{{helper}} pone el bloqueo; {{name}} dobla la esquina.','{{name}} usa el bloqueo de {{helper}} y corta con fuerza hacia el aro.'],euro:['{{name}} hace un paso europeo para superar a {{def}}.','{{name}} da dos pasos largos para esquivar la ayuda.'],fadeaway:['{{name}} se echa hacia atrás ante {{def}} en la línea de fondo.','{{name}} gira y se inclina hacia atrás para un tiro en caída.'],alley:['{{helper}} lanza el balón alto hacia el aro para {{name}}.','{{name}} corta por la espalda y el alley-oop está en el aire.'],corner:['{{helper}} pasa el balón a {{name}} en la esquina.','{{name}} se abre a la esquina y espera el pase.'],spin:['{{name}} gira sobre {{def}} en el poste bajo.','{{name}} finta, gira y sube.'],},
-  steal:['{{def}} calcula el momento y le arranca el balón a {{name}}. Pérdida.','{{def}} saca el balón de las manos de {{name}} y se hace con la posesión.'],
-  block:['{{def}} sale al encuentro del tiro justo al soltarlo… ¡taponado!','{{def}} rota a tiempo y lo manda lejos.'],
-  loose:'{{rebounder}} recoge el balón suelto.',
-  finish:{three:['Triple… sin tocar aro.','Entra el triple.','Lo clava desde lejos.'],dunk:['Con las dos manos sobre el aro… ¡mate!','Termina con un mate.'],two:['Toque suave, dos puntos.','Cae por la red.','Consigue que entre.'],miss:['Sale rechazado del aro.','El tiro no quiere entrar.','El balón da una vuelta y sale.']},
-  assist:'Asistencia: {{helper}}.',
-  rebound:'{{rebounder}} se queda con el rebote.'
+  lead:{
+   catch:['{{helper}} la mueve para {{name}}, ala {{side}}…','{{name}} se abre al ala {{side}}… y {{helper}} lo encuentra.','Circula el balón… {{helper}} para {{name}}, recibe y tira…','{{name}}, solo en el lado {{side}}… se levanta…'],
+   pullup:['{{name}} frena en seco en el codo… tiro en suspensión…','{{name}}, amago de arrancada… se eleva desde la media…','{{name}} entra en la zona, se para… arriba el tiro…','{{name}} da el paso adelante… y se levanta…'],
+   stepback:['{{name}} cruza… paso atrás… ¡desde lejos!','{{name}} amaga la entrada… paso atrás y triple…','{{name}} en el uno contra uno ante {{def}}… paso atrás, ¡tira!','{{name}} se gana el espacio frente a {{def}}… ¡la suelta!'],
+   drive:['{{name}}, cambio de mano… y supera a {{def}}…','{{name}} ataca el hueco… cruce, ¡y va para dentro!','{{name}} deja clavado a {{def}}… ¡hacia el aro!','{{name}}, primer paso… ¡ya está en la pintura!'],
+   floater:['{{name}} se cuela en la zona… bombita…','{{name}} por encima de la ayuda… tiro a una mano en carrera…','{{name}} se mete entre los grandes… ¡la deja suave!','{{name}} le saca un paso a {{def}}… ¡y la cuelga en globo!'],
+   hook:['{{name}} trabaja de espaldas ante {{def}}… gira por encima del hombro…','{{name}} fija la posición en el poste… ¡gancho!','{{name}} en el poste bajo izquierdo… pivota… gancho…','Balón al poste para {{name}}… un bote… ¡el gancho!'],
+   dunk:['Robo, y {{name}} se va… ¡no hay nadie atrás!','Saque rápido de {{helper}}… {{name}} al contraataque…','{{name}} con toda la pista por delante… ¡completamente solo!','Rebote largo… ¡{{name}} sale disparado!'],
+   roll:['{{helper}} pone el bloqueo… {{name}} continúa fuerte…','Bloqueo y continuación… {{name}} dobla la esquina…','{{name}} sale del bloqueo de {{helper}}… ¡cuesta abajo!','{{helper}} se escapa del bloqueo… pase picado para {{name}}…'],
+   euro:['{{name}}, paso europeo para esquivar a {{def}}…','{{name}} con dos zancadas largas… ¡paso europeo!','{{name}} amaga a la izquierda… sale por la derecha… ¡el europeo!','{{name}} parte la defensa… recoge… ¡paso europeo!'],
+   fadeaway:['{{name}} en la línea de fondo… tiro a la media vuelta, cayéndose…','{{name}} gira ante {{def}}… se echa hacia atrás…','{{name}} lanza por encima de {{def}}… ¡en caída!','{{name}} encara… amago… y tira cayéndose hacia atrás…'],
+   alley:['{{name}} corta por la puerta de atrás… ¡arriba el pase!','{{helper}} levanta la cabeza… ¡globo para {{name}}!','Busca el alley-oop… {{helper}} para {{name}}…','{{name}} se escapa a la espalda de {{def}}… ¡ahí va el globo!'],
+   corner:['{{helper}} la saca para {{name}} en la esquina…','{{name}} esperando en la esquina {{side}}…','Penetra y dobla… {{name}}, ¡triple desde la esquina!','{{name}} se abre a la esquina… recibe… ¡tira!'],
+   spin:['{{name}} gira sobre {{def}} en el poste bajo…','{{name}}, el giro… ¡y sube con fuerza!','{{name}} amaga a la izquierda, gira a la derecha…','{{name}}, reverso… ¡y bandeja por debajo del aro!']
+  },
+  steal:['¡Interceptado! {{def}} le roba la cartera a {{name}}… pérdida.','{{def}} lee la jugada… ¡y le toca el balón a {{name}}!','A {{name}} se le escapa el bote… {{def}} la recoge.','¡Robo! {{def}} se la quita de las manos a {{name}}.'],
+  block:['Sube el tiro… ¡y {{def}} lo manda a la grada!','¡Tapón! ¡{{def}} lo espera arriba!','{{def}} llega en la ayuda… ¡taponazo!','¡Fuera de aquí! ¡Gorro de {{def}}!'],
+  loose:['{{rebounder}} persigue el balón suelto y lo atrapa.','Balón suelto… y {{rebounder}} se queda con él.','¡{{rebounder}} se tira al suelo por él!'],
+  finish:{
+   three:['¡Adentro! ¡Triple!','¡Bang! ¡Desde el más allá!','¡Limpio, sin tocar aro… triple!','¡Chof! ¡La clava desde lejos!','¡Vale tres! ¡Triplazo!'],
+   dunk:['¡La machaca! ¡Mate!','¡A dos manos… mate tremendo!','¡Uf, la revienta contra el aro!','Se eleva… ¡y la hunde!'],
+   two:['¡Dentro! Dos.','Toque suave… adentro.','Cae. Dos puntos.','La deja con tablero.','Rueda por el aro… ¡y entra!'],
+   miss:['No entra… escupe el aro.','Corto… se queda en el aro.','¡Dentro y fuera!','Rebota en el hierro de atrás.','No quiere entrar.']
+  },
+  assist:['Buen pase de {{helper}}.','Asistencia de {{helper}}.','Qué servicio de {{helper}}.'],
+  rebound:['{{rebounder}} captura el rebote.','Rebote… {{rebounder}}.','{{rebounder}} limpia el tablero.']
  },
  // Decision-trail and result lines written by the simulation.
  log:{gearBuy:"Compraste {{item}} por {{cost}} fichas.",gearEquip:"Equipaste {{item}} a {{name}}.",gearRemove:"Devolviste {{item}} al inventario.",

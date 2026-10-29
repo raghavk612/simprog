@@ -114,5 +114,8 @@ test('the new optional save fields are validated; unknown or hostile values are 
 test('structured text does not change any simulation result',()=>{
  // Same seed, same outcomes as before the records were added: totals are fixed by the seed alone.
  const a=season(57,()=>{}),b=season(57,()=>{});assert.deepEqual(a,b);
- assert.equal(COMMENTARY.lead.catch.length,2);
+ // the commentary bank only chooses words: adding variants draws the same random numbers, so every score stays the same
+ const scores=x=>x.results.map(r=>[r.home,r.away]);const extra='{{name}} (test variant).';
+ COMMENTARY.lead.catch.push(extra);const c=season(57,()=>{});COMMENTARY.lead.catch.pop();
+ assert.deepEqual(scores(c),scores(a));
 });

@@ -69,6 +69,16 @@ test('spoken commentary: picks a voice for the language, and stays silent withou
  assert.equal(speechAvailable(),false,'no speech engine in Node');assert.equal(speak('Three-pointer'),false);configureSpeech({enabled:false,volume:.5});assert.equal(speak('x',{muted:true}),false);
  configureSpeech({enabled:true});
 });
+test('spoken commentary: natural voices first, novelty voices never, and the call is delivered higher than the build-up',async()=>{
+ const {phrases}=await import('../src/speech.js');
+ const V=[{name:'Albert',lang:'en-US',localService:true},{name:'Samantha',lang:'en-US',localService:true},{name:'Microsoft Aria Online (Natural) - English (United States)',lang:'en-US',localService:false},{name:'Daniel',lang:'en-GB'}];
+ assert.equal(pickVoice(V,'en-US').name,'Microsoft Aria Online (Natural) - English (United States)');
+ assert.equal(pickVoice(V.slice(0,2),'en-US').name,'Samantha','a good system voice beats a novelty one');
+ assert.equal(pickVoice([{name:'Zarvox',lang:'en-US'},{name:'Bad News',lang:'en-US'}],'en-US'),null,'novelty voices are never used');
+ const p=phrases('Pawar drifts to the left wing… Darwazeh finds him. Got it! Three!');
+ assert.deepEqual(p.map(x=>x.text),['Pawar drifts to the left wing…','Darwazeh finds him.','Got it!','Three!']);
+ assert.ok(p[2].pitch>p[0].pitch&&p[2].rate>p[0].rate,'the call lifts');
+});
 test('crowd ambience never throws without an audio device and follows the mute',()=>{
  configureAudio({muted:false});startCrowd();assert.equal(crowdRunning(),false,'nothing to run in Node');stopCrowd();configureAudio({muted:true});startCrowd();assert.equal(crowdRunning(),false);
 });

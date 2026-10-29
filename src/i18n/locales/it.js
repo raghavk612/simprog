@@ -378,13 +378,32 @@ export default {
  cm:{
   join:' ',
   side:{right:'destra',left:'sinistra'},
-  lead:{catch:['{{helper}} la scarica a {{name}} sull’ala {{side}}.','{{name}} si smarca senza palla; {{helper}} trova la finestra libera.'],pullup:['{{name}} si ferma di colpo al gomito dell’area.','{{name}} usa un palleggio di finta e si alza dalla media distanza.'],stepback:['{{name}} incrocia, poi arretra oltre l’arco.','{{name}} vende la penetrazione e si crea spazio con un passo indietro.'],drive:['{{name}} cambia mano e supera {{def}}.','{{name}} attacca lo spazio con un crossover.'],floater:['{{name}} si infila in area e lancia un floater.','{{name}} evita l’aiuto difensivo con un tiro alto in corsa.'],hook:['{{name}} si appoggia di spalle in post e si gira sopra la spalla.','{{name}} sigilla il difensore sul post basso.'],dunk:['{{name}} scappa davanti alla difesa che rientra.','{{helper}} lancia il passaggio lungo a {{name}} in transizione.'],roll:['{{helper}} porta il blocco; {{name}} gira l’angolo.','{{name}} usa il blocco di {{helper}} e taglia forte verso il ferro.'],euro:['{{name}} fa un passo europeo per superare {{def}}.','{{name}} compie due lunghi passi per evitare l’aiuto.'],fadeaway:['{{name}} si allontana da {{def}} sulla linea di fondo.','{{name}} si gira e si inclina all’indietro per un fadeaway.'],alley:['{{helper}} alza il pallone verso il ferro per {{name}}.','{{name}} taglia alle spalle e l’alley-oop è in aria.'],corner:['{{helper}} serve {{name}} nell’angolo.','{{name}} si apre nell’angolo e aspetta il passaggio.'],spin:['{{name}} gira su {{def}} nel post basso.','{{name}} finta, gira e salta.'],},
-  steal:['{{def}} legge i tempi e strappa la palla a {{name}}. Palla persa.','{{def}} fa uscire la palla dalle mani di {{name}} e conquista il possesso.'],
-  block:['{{def}} incontra il tiro al rilascio… stoppato!','{{def}} ruota in aiuto e lo respinge.'],
-  loose:'{{rebounder}} raccoglie la palla vagante.',
-  finish:{three:['Tripla… solo retina.','La tripla entra.','La infila da lontano.'],dunk:['Con due mani sopra il ferro… schiacciata!','Conclude con una schiacciata.'],two:['Tocco morbido, due punti.','Scende nella retina.','Riesce a farla entrare.'],miss:['Sul ferro.','Il tiro non vuole entrare.','La palla gira ed esce.']},
-  assist:'Assist: {{helper}}.',
-  rebound:'{{rebounder}} prende il rimbalzo.'
+  lead:{
+   catch:['{{helper}} la gira per {{name}}, ala {{side}}…','{{name}} scivola sull’ala {{side}}… {{helper}} lo trova.','Gira bene la palla… {{helper}} per {{name}}, ricezione e tiro…','{{name}}, tutto solo sulla {{side}}… la lascia andare…'],
+   pullup:['{{name}} inchioda il palleggio al gomito… arresto e tiro…','{{name}}, l’esitazione… si alza dai cinque metri…','{{name}} entra in area, si ferma di colpo… si alza in sospensione…','{{name}}, passo in avanti… e si alza…'],
+   stepback:['{{name}} incrocia… passo indietro… da lontanissimo…','{{name}} finta la penetrazione… step-back da tre…','{{name}} isola {{def}}… passo indietro, spara…','{{name}} si crea lo spazio su {{def}}… e la lascia volare…'],
+   drive:['{{name}}, destra, sinistra… salta {{def}}…','{{name}} attacca il buco… crossover, va dritto al ferro…','{{name}} brucia {{def}}… verso il canestro…','{{name}}, primo passo… è già in area…'],
+   floater:['{{name}} si infila in area… floater…','{{name}} sopra l’aiuto… tiro in corsa…','{{name}} nel cuore della difesa… la alza morbida…','{{name}} guadagna un passo su {{def}}… la parabola…'],
+   hook:['{{name}} spalle a canestro su {{def}}… si gira sopra la spalla…','{{name}} prende posizione in post basso… gancio in sospensione…','{{name}} in post basso a sinistra… drop step, gancio…','Palla dentro per {{name}}… un palleggio, il gancio…'],
+   dunk:['Palla rubata, e {{name}} se ne va… nessuno dietro…','{{helper}} con l’apertura… {{name}} in contropiede…','{{name}} a campo aperto… tutto solo…','Rimbalzo lungo… {{name}} decolla…'],
+   roll:['{{helper}} porta il blocco… {{name}} rolla forte verso il ferro…','Pick and roll… {{name}} supera il blocco…','{{name}} esce dal blocco di {{helper}}… attacca il ferro…','{{helper}} sguscia via dal blocco… scarico rapido per {{name}}…'],
+   euro:['{{name}}, euro step attorno a {{def}}…','{{name}}, due lunghe falcate… euro step…','{{name}} va a sinistra… poi a destra… l’euro step…','{{name}} spacca la difesa… raccoglie, terzo tempo in euro step…'],
+   fadeaway:['{{name}} sulla linea di fondo… in allontanamento…','{{name}} si gira su {{def}}… fadeaway in caduta…','{{name}} sopra la testa di {{def}}… il fadeaway…','{{name}} fronte a canestro… finta di partenza, cadendo all’indietro…'],
+   alley:['Taglio backdoor di {{name}}… parte il lob…','{{helper}} guarda… alza il lob per {{name}}…','Cercano l’alley-oop… {{helper}} per {{name}}…','{{name}} si infila alle spalle di {{def}}… ecco il lob…'],
+   corner:['{{helper}} scarica per {{name}} in angolo…','{{name}} piazzato nell’angolo sulla {{side}}…','Penetra e scarica… {{name}}, tripla dall’angolo…','{{name}} si apre in angolo… riceve… tira…'],
+   spin:['{{name}} gira attorno a {{def}} in post basso…','{{name}}, il giro in palleggio… sale con forza…','{{name}} finta a sinistra, gira a destra…','{{name}} con il perno inverso… finta e sottomano…']
+  },
+  steal:['Intercettata! {{def}} la toglie a {{name}}… palla persa.','{{def}} legge tutto… la sporca a {{name}}!','{{name}} perde il controllo… {{def}} raccoglie.','Palla rubata! {{def}} la porta via a {{name}}.'],
+  block:['Parte il tiro… e {{def}} lo rimanda indietro!','Stoppata! {{def}} la prende in cima!','{{def}} arriva in rotazione… stoppato!','Fuori di qui! Stoppata di {{def}}!'],
+  loose:['{{rebounder}} insegue la palla vagante.','Palla vagante… la recupera {{rebounder}}.','{{rebounder}} si tuffa sul pallone.'],
+  finish:{
+   three:['Dentro! Tripla!','Bum! Da tre punti!','Solo retina… tripla!','Splash! La mette da lontanissimo!','Vale tre! Che tripla!'],
+   dunk:['La inchioda! Schiacciata!','A due mani… dentro!','Oh, che martellata al ferro!','Si alza… e schiaccia!'],
+   two:['Buona! Due punti.','Tocco morbido… dentro.','Scende! Canestro da due.','Al tabellone… e dentro.','Rotola sul ferro… entra!'],
+   miss:['Niente… sul ferro.','Corto… primo ferro.','Dentro e fuori!','Sul ferro posteriore.','Non vuole entrare.']
+  },
+  assist:['Bel passaggio di {{helper}}.','Assist di {{helper}}.','Grande servizio di {{helper}}.'],
+  rebound:['{{rebounder}} cattura il rimbalzo.','Rimbalzo… {{rebounder}}.','{{rebounder}} fa pulizia sotto.']
  },
  // Decision-trail and result lines written by the simulation.
  log:{gearBuy:"Acquistato {{item}} per {{cost}} gettoni.",gearEquip:"{{item}} equipaggiato a {{name}}.",gearRemove:"{{item}} restituito all’inventario.",

@@ -378,13 +378,32 @@ export default {
  cm:{
   join:' ',
   side:{right:'droite',left:'gauche'},
-  lead:{catch:['{{helper}} la passe à {{name}} sur l’aile {{side}}.','{{name}} se démarque sans le ballon ; {{helper}} trouve la fenêtre.'],pullup:['{{name}} s’arrête net au coude de la raquette.','{{name}} feinte d’un dribble et s’élève à mi-distance.'],stepback:['{{name}} change de main, puis recule d’un pas derrière l’arc.','{{name}} vend la pénétration et se crée de l’espace avec un pas de retrait.'],drive:['{{name}} change de main et dépasse {{def}}.','{{name}} attaque l’intervalle avec un crossover.'],floater:['{{name}} se faufile dans la raquette et lance un flotteur.','{{name}} évite l’aide défensive avec un tir en cloche.'],hook:['{{name}} s’appuie dos au panier au poste et pivote par-dessus l’épaule.','{{name}} scelle le défenseur sur le poste bas.'],dunk:['{{name}} file devant la défense qui se replie.','{{helper}} lance la relance vers {{name}} en transition.'],roll:['{{helper}} pose l’écran ; {{name}} tourne le coin.','{{name}} utilise l’écran de {{helper}} et coupe fort vers le cercle.'],euro:['{{name}} fait un pas d’Euro pour passer {{def}}.','{{name}} enchaîne deux grands pas pour éviter l’aide.'],fadeaway:['{{name}} part en fadeaway devant {{def}} sur la ligne de fond.','{{name}} pivote et se penche en arrière pour un tir en retrait.'],alley:['{{helper}} lance le ballon vers le cercle pour {{name}}.','{{name}} coupe dans le dos et l’alley-oop est dans les airs.'],corner:['{{helper}} sert {{name}} dans le corner.','{{name}} s’ouvre dans le corner et attend la passe.'],spin:['{{name}} pivote sur {{def}} dans la raquette.','{{name}} feinte, tourne et monte.'],},
-  steal:['{{def}} anticipe le geste et arrache le ballon à {{name}}. Balle perdue.','{{def}} fait sauter le ballon des mains de {{name}} et prend la possession.'],
-  block:['{{def}} rencontre le tir au moment du lâcher… contré !','{{def}} tourne en couverture et le repousse.'],
-  loose:'{{rebounder}} ramasse le ballon libre.',
-  finish:{three:['Trois points… rien que du filet.','Le tir à trois points rentre.','Il l’enfonce de loin.'],dunk:['Les deux mains au-dessus du cercle… dunk !','Il termine par un dunk.'],two:['Toucher de balle délicat, deux points.','Ça passe dans le filet.','Il arrive à le faire rentrer.'],miss:['Sur le cercle.','Le tir ne veut pas rentrer.','Le ballon tourne et ressort.']},
-  assist:'Passe décisive : {{helper}}.',
-  rebound:'{{rebounder}} prend le rebond.'
+  lead:{
+   catch:['{{helper}} écarte pour {{name}}, aile {{side}}…','{{name}} glisse sur l’aile {{side}}… {{helper}} le trouve.','Ça circule bien… {{helper}} pour {{name}}, réception, tir…','{{name}}, tout seul côté {{side}}… il déclenche…'],
+   pullup:['{{name}} s’arrête net au coude… tir en suspension…','{{name}}, l’hésitation… il s’élève à mi-distance…','{{name}} dans la raquette, coup d’arrêt… et le shoot…','{{name}}, le pas en avant… il prend son tir…'],
+   stepback:['{{name}} croise… pas en arrière… de très loin…','{{name}} vend la pénétration… step-back à trois points…','{{name}} en isolation face à {{def}}… pas en arrière, il tire…','{{name}} se crée de l’espace sur {{def}}… il arme…'],
+   drive:['{{name}}, main droite, main gauche… il passe {{def}}…','{{name}} attaque l’intervalle… crossover, il fonce vers le cercle…','{{name}} efface {{def}}… direction le panier…','{{name}}, le premier pas… le voilà dans la raquette…'],
+   floater:['{{name}} se faufile dans la raquette… le floater…','{{name}} par-dessus l’aide… en bout de course…','{{name}} au cœur de la défense… il la dépose en cloche…','{{name}} grille {{def}} d’un pas… le tir en cloche…'],
+   hook:['{{name}} recule dos à {{def}}… se retourne par-dessus l’épaule…','{{name}} se cale au poste bas… bras roulé en suspension…','{{name}} au poste bas gauche… drop step, bras roulé…','Ballon au poste pour {{name}}… un dribble, le bras roulé…'],
+   dunk:['Interception, et {{name}} s’envole… personne derrière…','{{helper}} lance la contre-attaque… {{name}} en transition…','{{name}} en plein champ… tout seul…','Long rebond… {{name}} s’échappe…'],
+   roll:['{{helper}} pose l’écran… {{name}} plonge fort…','Pick-and-roll… {{name}} passe le coin…','{{name}} sort de l’écran de {{helper}}… vers le cercle…','{{helper}} glisse l’écran… petite passe pour {{name}}…'],
+   euro:['{{name}}, l’euro step autour de {{def}}…','{{name}}, deux grandes enjambées… euro step…','{{name}} part à gauche… revient à droite… l’euro step…','{{name}} coupe la défense en deux… double-pas, euro step…'],
+   fadeaway:['{{name}} sur la ligne de fond… tir en fadeaway…','{{name}} pivote face à {{def}}… il se penche en arrière…','{{name}} par-dessus {{def}}… le fadeaway…','{{name}} face au panier… une feinte, il part en arrière…'],
+   alley:['{{name}} coupe dans le dos… le lob est en l’air…','{{helper}} regarde… lob pour {{name}}…','Alley-oop dans l’air… {{helper}} pour {{name}}…','{{name}} se glisse derrière {{def}}… voilà le lob…'],
+   corner:['{{helper}} ressort pour {{name}} dans le corner…','{{name}} attend dans le corner {{side}}…','Pénétration, ressortie… {{name}}, à trois points depuis le corner…','{{name}} se décale dans le corner… réception… tir…'],
+   spin:['{{name}} tourne autour de {{def}} au poste bas…','{{name}}, le spin… il monte avec autorité…','{{name}} feinte à gauche, pivote à droite…','{{name}}, pivot arrière… et il passe en dessous…']
+  },
+  steal:['Interceptée ! {{def}} dépouille {{name}}… balle perdue.','{{def}} a tout lu… il chipe le ballon à {{name}} !','{{name}} perd le contrôle… {{def}} récupère.','Volé ! {{def}} le prend directement des mains de {{name}}.'],
+  block:['Le tir part… et {{def}} le renvoie !','Contré ! {{def}} le cueille tout en haut !','{{def}} vient en aide… contre !','Dehors ! Énorme contre de {{def}} !'],
+  loose:['{{rebounder}} court après le ballon perdu.','Ballon qui traîne… {{rebounder}} le récupère.','{{rebounder}} plonge dessus !'],
+  finish:{
+   three:['Dedans ! Trois points !','Bang ! De loin !','Ficelle… trois points !','Splash ! Il la plante de très loin !','Comptez-les ! Panier à trois points !'],
+   dunk:['Il l’écrase ! Quel dunk !','À deux mains… dunk !','Oh, il l’a martelé au fond !','Il s’élève… et smashe !'],
+   two:['Dedans ! Deux points.','Toucher de soie… ça rentre.','Ça tombe ! Deux points.','Il la dépose contre la planche.','Ça roule sur le cercle… dedans !'],
+   miss:['Raté… sur le cercle.','Trop court… l’avant du cercle.','Dedans, dehors !','Sur l’arrière du cercle.','Ça ne veut pas rentrer.']
+  },
+  assist:['Belle passe de {{helper}}.','Passe décisive de {{helper}}.','Superbe caviar signé {{helper}}.'],
+  rebound:['{{rebounder}} prend le rebond.','Rebond… {{rebounder}}.','{{rebounder}} nettoie le panneau.']
  },
  // Decision-trail and result lines written by the simulation.
  log:{gearBuy:"Achat de {{item}} pour {{cost}} jetons.",gearEquip:"{{name}} porte {{item}}.",gearRemove:"{{item}} remis dans l’inventaire.",

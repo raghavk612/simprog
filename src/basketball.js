@@ -28,42 +28,53 @@ export function choosePlay(rng,tactic,pace,last){
  let kind=bag[Math.floor(rng()*bag.length)];if(kind===last)kind=bag[(bag.indexOf(kind)+1+Math.floor(rng()*(bag.length-1)))%bag.length];return kind;
 }
 // English commentary templates. Other languages provide the same structure under "cm" in their locale file; {{name}}-style slots are filled from the play.
+// Announcer-style lines (after how play-by-play is really called: short phrases, present tense, where on the floor, the
+// shooter's name up front, inversions like "up goes the shot", and calls that rise on the finish). The ellipses and dashes are
+// pauses for the spoken commentary. Every language has the same number of variants (tests/i18n.test.js).
 export const COMMENTARY={
  join:' ',
  side:{right:'right',left:'left'},
  lead:{
-  catch:['{{helper}} swings it to {{name}} on the {{side}} wing.','{{name}} relocates off the ball; {{helper}} finds the open window.'],
-  pullup:['{{name}} stops on a dime at the elbow.','{{name}} uses a hesitation dribble and rises from midrange.'],
-  stepback:['{{name}} crosses over, then steps back beyond the arc.','{{name}} sells the drive and creates space with a step-back.'],
-  drive:['{{name}} changes hands and slips past {{def}}.','{{name}} attacks the gap with a crossover.'],
-  floater:['{{name}} snakes into the lane and lofts a floater.','{{name}} avoids the help defender with a high runner.'],
-  hook:['{{name}} backs into the post and turns over the shoulder.','{{name}} seals the defender on the low block.'],
-  dunk:['{{name}} sprints ahead of the retreating defense.','{{helper}} pushes the outlet to {{name}} in transition.'],
-  roll:['{{helper}} sets the screen; {{name}} turns the corner.','{{name}} uses {{helper}}’s screen and cuts hard to the rim.'],
-  euro:['{{name}} euro-steps around {{def}} toward the rim.','{{name}} takes two long steps to dodge the help.'],
-  fadeaway:['{{name}} fades away from {{def}} on the baseline.','{{name}} turns and leans back for a fadeaway.'],
-  alley:['{{helper}} lobs it toward the rim for {{name}}.','{{name}} cuts backdoor and the lob is up!'],
-  corner:['{{helper}} kicks it to {{name}} in the corner.','{{name}} lifts into the corner and waits for the pass.'],
-  spin:['{{name}} spins off {{def}} on the low block.','{{name}} fakes, spins and goes up.']
+  catch:['{{helper}} swings it to {{name}}, {{side}} wing…','{{name}} drifts to the {{side}} wing… {{helper}} finds him.','Ball movement… {{helper}} to {{name}}, catch and shoot…','{{name}}, wide open on the {{side}} side… lets it go…'],
+  pullup:['{{name}} stops on a dime at the elbow… pull-up…','{{name}}, the hesitation… rises from fifteen…','{{name}} into the lane, stops short… up goes the jumper…','{{name}} with the step-in, pulls up…'],
+  stepback:['{{name}} crosses… steps back… from deep…','{{name}} sells the drive… step-back three…','{{name}} isolates on {{def}}… step-back, fires…','{{name}} creates space on {{def}}… lets it fly…'],
+  drive:['{{name}}, right hand, left hand… past {{def}}…','{{name}} attacks the gap… crossover, gets downhill…','{{name}} blows by {{def}}… to the rim…','{{name}}, first step… he’s in the lane…'],
+  floater:['{{name}} snakes into the lane… floater…','{{name}} over the help… the runner…','{{name}} into the teeth of the defense… lofts it…','{{name}} gets a step on {{def}}… throws up the teardrop…'],
+  hook:['{{name}} backs down {{def}}… turns over the shoulder…','{{name}} seals on the block… jump hook…','{{name}} on the left block… drop step, hook shot…','Post feed to {{name}}… one dribble, the hook…'],
+  dunk:['Steal, and {{name}} is gone… nobody back…','{{helper}} with the outlet… {{name}} in transition…','{{name}} out in the open floor… all alone…','Long rebound… {{name}} takes off…'],
+  roll:['{{helper}} sets the pick… {{name}} rolls hard…','Pick-and-roll… {{name}} turns the corner…','{{name}} comes off {{helper}}’s screen… downhill…','{{helper}} slips the screen… pocket pass to {{name}}…'],
+  euro:['{{name}}, the euro step around {{def}}…','{{name}} with two long strides… euro step…','{{name}} goes left… back right… the euro…','{{name}} splits the defense… gather, euro step…'],
+  fadeaway:['{{name}} on the baseline… fades away…','{{name}} turns on {{def}}… leaning fadeaway…','{{name}} over the top of {{def}}… the fadeaway…','{{name}} faces up… a jab, falling away…'],
+  alley:['{{name}} cuts backdoor… the lob is up…','{{helper}} looks… lobs it for {{name}}…','Alley-oop look… {{helper}} to {{name}}…','{{name}} sneaks behind {{def}}… here comes the lob…'],
+  corner:['{{helper}} kicks it to {{name}} in the corner…','{{name}} spotting up in the {{side}} corner…','Drive and kick… {{name}}, corner three…','{{name}} lifts to the corner… catch… shot…'],
+  spin:['{{name}} spins off {{def}} on the block…','{{name}}, the spin move… goes up strong…','{{name}} fakes left, spins right…','{{name}} with the reverse pivot… up and under…']
  },
- steal:['{{def}} times the reach and strips {{name}}. Turnover.','{{def}} pokes the ball loose from {{name}} and takes possession.'],
- block:['{{def}} meets the shot at its release—blocked!','{{def}} rotates across and swats it away.'],
- loose:'{{rebounder}} collects the loose ball.',
- finish:{three:['Three-pointer—nothing but net.','The three drops.','Buries it from deep.'],dunk:['Two hands above the rim—slam!','Finishes with a dunk.'],two:['Soft touch, two points.','Drops through the net.','Gets it to fall.'],miss:['Off the rim.','The shot will not fall.','The shot rolls out.']},
- assist:'Assist: {{helper}}.',
- rebound:'{{rebounder}} secures the rebound.'
+ steal:['Picked off! {{def}} strips {{name}}… turnover.','{{def}} reads it… pokes it away from {{name}}!','{{name}} loses the handle… {{def}} scoops it up.','Swiped! {{def}} takes it right from {{name}}.'],
+ block:['Up goes the shot… and {{def}} sends it back!','Rejected! {{def}} meets it at the top!','{{def}} rotates over… blocked!','Get that out of here! {{def}} with the swat!'],
+ loose:['{{rebounder}} chases down the loose ball.','Loose ball… {{rebounder}} comes up with it.','{{rebounder}} dives on it.'],
+ finish:{
+  three:['Got it! Three!','Bang! From downtown!','Nothing but net… three!','Splash! Knocks it down from deep!','Count it! Three-pointer!'],
+  dunk:['Throws it down! Slam!','Two hands… flush!','Oh, he hammered that one home!','Rises… and slams it!'],
+  two:['Good! Two.','Soft touch… in.','Drops! Two points.','Puts it in off the glass.','Gets the roll… good!'],
+  miss:['No good… off the rim.','Short… front rim.','In and out!','Off the back iron.','Won’t fall.']
+ },
+ assist:['Nice dish from {{helper}}.','{{helper}} with the assist.','Great feed by {{helper}}.'],
+ rebound:['{{rebounder}} pulls down the board.','Rebound… {{rebounder}}.','{{rebounder}} cleans it up.']
 };
 const fill=(text,p)=>text.replace(/\{\{(\w+)\}\}/g,(m,k)=>p[k]??m);
 // Builds the commentary for a play from template choices (cm). Returns null if a choice does not exist in the template set, so callers can fall back to the stored English text.
 export function renderCommentary(c,cm,T=COMMENTARY){
  if(!Array.isArray(cm)||!T?.lead)return null;
  const p={name:c.player,def:c.defender,helper:c.helper,rebounder:c.rebounder,side:c.lane>0?T.side?.right:T.side?.left},f=t=>typeof t==='string'?fill(t,p):null,join=T.join??' ';
+ // one-line tags (assist, loose ball, rebound) vary by the play itself, without extra random draws
+ const at=(list,i)=>Array.isArray(list)?list[i]:undefined;   // out of range (an old save): null, so callers show the stored text
+ const h=[...String(c.player)+String(c.kind)+String(c.lane)].reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,7),tag=x=>Array.isArray(x)?x[h%x.length]:x;
  let parts;
- if(c.outcome==='steal')parts=[f(T.steal?.[cm[0]])];
- else if(c.outcome==='block')parts=[f(T.lead[c.kind]?.[cm[0]]),f(T.block?.[cm[1]]),f(T.loose)];
+ if(c.outcome==='steal')parts=[f(at(T.steal,cm[0]))];
+ else if(c.outcome==='block')parts=[f(at(T.lead[c.kind],cm[0])),f(at(T.block,cm[1])),f(tag(T.loose))];
  else{
   const group=c.points?(c.three?'three':isDunk(c.kind)?'dunk':'two'):'miss';
-  parts=[f(T.lead[c.kind]?.[cm[1]]),f(T.finish?.[group]?.[cm[0]]),c.points?(c.assisted?f(T.assist):''):f(T.rebound)];
+  parts=[f(at(T.lead[c.kind],cm[1])),f(at(T.finish?.[group],cm[0])),c.points?(c.assisted?f(tag(T.assist)):''):f(tag(T.rebound))];
  }
  return parts.some(x=>x===null)?null:parts.filter(Boolean).join(join);
 }
