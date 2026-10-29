@@ -138,17 +138,33 @@ export function faceTexture(skinHex,seed=0){
  const W=256,c=document.createElement('canvas');c.width=c.height=W;const x=c.getContext('2d');
  const base=new THREE.Color(skinHex),tone=f=>'#'+base.clone().multiplyScalar(f).getHexString(),r=n=>{const v=Math.sin(seed*91.7+n*13.1)*43758.5;return v-Math.floor(v);};
  const blob=(cx,cy,rx,ry,color,alpha,soft=.6)=>{const g=x.createRadialGradient(cx,cy,0,cx,cy,1);g.addColorStop(0,color);g.addColorStop(soft,color);g.addColorStop(1,'rgba(0,0,0,0)');x.save();x.translate(cx,cy);x.scale(rx,ry);x.translate(-cx,-cy);x.globalAlpha=alpha;x.fillStyle=g;x.beginPath();x.arc(cx,cy,1,0,Math.PI*2);x.fill();x.restore();};
- const browY=W*(.16+r(1)*.03),eyeY=W*.34,eyeDX=W*(.2+r(2)*.015),mouthY=W*(.8+r(3)*.02);
+ // proportions of a real face across the painted area (eyes about a fifth of the face wide, one eye-width apart)
+ const browY=W*(.17+r(1)*.025),eyeY=W*.35,eyeDX=W*(.215+r(2)*.012),mouthY=W*(.79+r(3)*.02),ew=W*(.085+r(5)*.008),iris=['#3b2416','#2a1a10','#4a3020','#1e140d'][Math.floor(r(6)*4)];
+ // planes of the face: cheekbone light, hollow under the cheek, jaw and temple shadow
+ for(const s of [-1,1]){blob(W/2+s*W*.27,W*.5,W*.13,W*.1,tone(1.12),.35,.2);blob(W/2+s*W*.3,W*.68,W*.12,W*.15,tone(.78),.35,.25);blob(W/2+s*W*.42,W*.3,W*.08,W*.16,tone(.8),.4,.2);}
  for(const s of [-1,1]){
-  blob(W/2+s*eyeDX,eyeY,W*.13,W*.08,tone(.62),.55,.2);                                   // eye socket shadow
-  x.save();x.globalAlpha=.92;x.fillStyle='#ece6de';x.beginPath();x.ellipse(W/2+s*eyeDX,eyeY,W*.062,W*.026,0,0,Math.PI*2);x.fill();   // eye
-  x.fillStyle='#2b1c14';x.beginPath();x.arc(W/2+s*eyeDX,eyeY,W*.024,0,Math.PI*2);x.fill();x.fillStyle='#0b0706';x.beginPath();x.arc(W/2+s*eyeDX,eyeY,W*.011,0,Math.PI*2);x.fill();
-  x.strokeStyle=tone(.38);x.lineWidth=W*.012;x.beginPath();x.ellipse(W/2+s*eyeDX,eyeY-W*.004,W*.064,W*.03,0,Math.PI*1.05,Math.PI*1.95);x.stroke();x.restore();   // upper lid
-  x.save();x.globalAlpha=.85;x.strokeStyle='#17100c';x.lineCap='round';x.lineWidth=W*(.03+r(4)*.012);x.beginPath();x.moveTo(W/2+s*eyeDX*.45,browY+W*.02);x.quadraticCurveTo(W/2+s*eyeDX,browY-W*.02,W/2+s*eyeDX*1.6,browY+W*.025);x.stroke();x.restore();   // brow
+  const ex=W/2+s*eyeDX;
+  blob(ex,eyeY-W*.01,W*.14,W*.085,tone(.6),.6,.25);                                                   // eye socket shadow
+  x.save();x.globalAlpha=.95;x.fillStyle='#efe9e1';x.beginPath();x.ellipse(ex,eyeY,ew,W*.034,0,0,Math.PI*2);x.fill();   // white of the eye
+  x.save();x.clip();x.fillStyle=iris;x.beginPath();x.arc(ex+s*W*.004,eyeY+W*.004,W*.034,0,Math.PI*2);x.fill();x.fillStyle='#070504';x.beginPath();x.arc(ex+s*W*.004,eyeY+W*.004,W*.015,0,Math.PI*2);x.fill();
+  x.fillStyle='rgba(255,255,255,.85)';x.beginPath();x.arc(ex-W*.01,eyeY-W*.01,W*.007,0,Math.PI*2);x.fill();x.restore();   // iris, pupil, catchlight
+  x.strokeStyle='#120c09';x.lineWidth=W*.016;x.lineCap='round';x.beginPath();x.ellipse(ex,eyeY+W*.002,ew*1.04,W*.04,0,Math.PI*1.04,Math.PI*1.96);x.stroke();   // upper lid and lashes
+  x.strokeStyle=tone(.55);x.lineWidth=W*.008;x.beginPath();x.ellipse(ex,eyeY-W*.002,ew,W*.036,0,Math.PI*.1,Math.PI*.9);x.stroke();x.restore();   // lower lid
+  x.save();x.globalAlpha=.9;x.strokeStyle='#140d0a';x.lineCap='round';x.lineWidth=W*(.04+r(4)*.014);x.beginPath();x.moveTo(W/2+s*W*.07,browY+W*.03);x.quadraticCurveTo(ex,browY-W*.025,W/2+s*eyeDX*1.62,browY+W*.03);x.stroke();x.restore();   // brow
  }
- blob(W/2,W*.6,W*.1,W*.06,tone(.6),.45,.3);                                                  // shadow under the nose
- for(const s of [-1,1])blob(W/2+s*W*.045,W*.6,W*.016,W*.011,tone(.35),.8,.5);                    // nostrils
- x.save();x.globalAlpha=.85;x.fillStyle=tone(.68);x.beginPath();x.ellipse(W/2,mouthY,W*.13,W*.045,0,0,Math.PI*2);x.fill();   // lips
- x.strokeStyle=tone(.4);x.lineWidth=W*.012;x.beginPath();x.moveTo(W/2-W*.12,mouthY);x.quadraticCurveTo(W/2,mouthY+W*.012,W/2+W*.12,mouthY);x.stroke();x.restore();
+ // nose: lit bridge between shaded sides, a shadow under the tip, nostrils
+ x.save();x.globalAlpha=.4;x.fillStyle=tone(1.15);x.beginPath();x.ellipse(W/2,W*.5,W*.022,W*.11,0,0,Math.PI*2);x.fill();x.restore();
+ for(const s of [-1,1])blob(W/2+s*W*.06,W*.5,W*.03,W*.11,tone(.7),.45,.3);
+ blob(W/2,W*.635,W*.11,W*.05,tone(.55),.6,.3);
+ for(const s of [-1,1])blob(W/2+s*W*.05,W*.625,W*.022,W*.014,tone(.3),.85,.5);
+ // lips: darker upper lip, fuller lower lip with a soft highlight, a crisp line between
+ x.save();x.globalAlpha=.9;x.fillStyle=tone(.62);x.beginPath();x.moveTo(W/2-W*.13,mouthY);x.quadraticCurveTo(W/2-W*.05,mouthY-W*.05,W/2,mouthY-W*.03);x.quadraticCurveTo(W/2+W*.05,mouthY-W*.05,W/2+W*.13,mouthY);x.closePath();x.fill();
+ x.fillStyle=tone(.74);x.beginPath();x.moveTo(W/2-W*.12,mouthY);x.quadraticCurveTo(W/2,mouthY+W*.075,W/2+W*.12,mouthY);x.closePath();x.fill();
+ x.globalAlpha=.5;x.fillStyle=tone(1.05);x.beginPath();x.ellipse(W/2,mouthY+W*.03,W*.05,W*.012,0,0,Math.PI*2);x.fill();
+ x.globalAlpha=.95;x.strokeStyle=tone(.32);x.lineWidth=W*.012;x.lineCap='round';x.beginPath();x.moveTo(W/2-W*.13,mouthY);x.quadraticCurveTo(W/2,mouthY+W*.012,W/2+W*.13,mouthY);x.stroke();x.restore();
+ blob(W/2,mouthY+W*.12,W*.09,W*.04,tone(.75),.4,.3);                                           // shadow under the lower lip
+ // some players keep a little stubble or a goatee
+ if(r(7)<.4){x.save();x.globalAlpha=.28+r(8)*.2;x.fillStyle='#1a120d';x.beginPath();x.ellipse(W/2,mouthY+W*.11,W*.14,W*.08,0,0,Math.PI*2);x.fill();x.beginPath();x.ellipse(W/2,mouthY-W*.055,W*.12,W*.022,0,0,Math.PI*2);x.fill();x.restore();}
  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t;
 }
+

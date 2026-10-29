@@ -19,3 +19,15 @@ test('stride: planted feet move back exactly as far as the body moves forward, s
  const swing=footAt(Math.PI*1.5,L,.1);assert.ok(swing.up>.09,'the swing foot lifts');
  assert.ok(near(footAt(Math.PI-1e-9,L,.1).forward,-L/2,1e-6)&&near(footAt(Math.PI*2-1e-9,L,.1).forward,L/2,1e-6),'the swing ends where the next stance starts');
 });
+test('arm IK: the wrist lands on the target, the elbow bends toward the pole, out-of-reach targets give a straight arm',async()=>{
+ const THREE=await import('three');const {solveArm}=await import('../src/motion.js');
+ const S=new THREE.Vector3(.2,1.5,0),L1=.32,L2=.3;
+ for(const [T,pole] of [[new THREE.Vector3(.3,1.9,.35),new THREE.Vector3(.4,-.1,1)],[new THREE.Vector3(.35,1.1,.25),new THREE.Vector3(.5,-.3,-1)],[new THREE.Vector3(.2,2.05,.1),new THREE.Vector3(0,0,1)]]){
+  const r=solveArm(S,T,L1,L2,pole.clone().normalize());
+  const wrist=r.elbow.clone().add(r.b.clone().multiplyScalar(Math.sin(r.bend)*L2)).add(r.u.clone().multiplyScalar(Math.cos(r.bend)*L2));
+  assert.ok(wrist.distanceTo(T)<1e-4,`wrist ${wrist.toArray()} vs ${T.toArray()}`);
+  const mid=S.clone().lerp(T,.5),toElbow=r.elbow.clone().sub(mid);assert.ok(toElbow.dot(pole)>0||r.bend<.05,'elbow on the pole side');
+ }
+ const far=solveArm(S,new THREE.Vector3(.2,3,0),L1,L2,new THREE.Vector3(0,0,1));assert.ok(far.bend<.02&&Number.isFinite(far.u.x),'straight, no NaN');
+ assert.equal(solveArm(S,S.clone(),L1,L2,new THREE.Vector3(0,0,1)),null);
+});

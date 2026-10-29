@@ -36,7 +36,7 @@ const damp=(cur,target,rate,dt)=>cur+(target-cur)*(1-Math.exp(-rate*dt));
    (0 = straight), or null if the target sits on the shoulder. */
 export function solveArm(S,T,L1,L2,pole){
  const d=T.clone().sub(S),len=d.length();if(len<1e-5)return null;
- const D=Math.min(Math.max(len,Math.abs(L1-L2)+1e-3),L1+L2-1e-4),dn=d.multiplyScalar(1/len);
+ const D=Math.min(Math.max(len,Math.abs(L1-L2)+1e-3),L1+L2-1e-6),dn=d.multiplyScalar(1/len);
  const p=pole.clone().sub(dn.clone().multiplyScalar(pole.dot(dn)));if(p.lengthSq()<1e-8)p.set(0,0,1).sub(dn.clone().multiplyScalar(dn.z));p.normalize();
  const a=Math.acos(Math.max(-1,Math.min(1,(L1*L1+D*D-L2*L2)/(2*L1*D)))),u=dn.clone().multiplyScalar(Math.cos(a)).add(p.clone().multiplyScalar(Math.sin(a)));
  const E=S.clone().add(u.clone().multiplyScalar(L1)),f=dn.clone().multiplyScalar(D).add(S).sub(E).normalize();

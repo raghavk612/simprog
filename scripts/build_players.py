@@ -98,14 +98,15 @@ def hand_parts(J, side, H):
     inward = np.array([-1.0 if side == 'L' else 1.0, 0, 0]); inward -= down * (inward @ down); inward /= np.linalg.norm(inward)
     fwd = np.cross(down, inward); fwd *= np.sign(fwd[2]) if fwd[2] else 1
     unit = lambda v: v / np.linalg.norm(v)
-    parts = [blob(W + down * .036 * H, down, fwd, inward, .037 * H, .0215 * H, .0088 * H, 10, 8, .55)]
-    for k, (off, length) in enumerate(((.0145, .042), (.0048, .046), (-.0048, .043), (-.0142, .035))):
-        curl = .32 + .08 * k                      # the little finger curls a bit more
+    # palm: starts inside the end of the forearm so the wrist blends, a little thicker at the heel of the hand
+    parts = [blob(W + down * .032 * H, down, fwd, inward, .042 * H, .0215 * H, .0122 * H, 10, 8, .6)]
+    for k, (off, length) in enumerate(((.0126, .038), (.0042, .042), (-.0042, .04), (-.0124, .032))):
+        curl = .36 + .025 * k                     # fingers side by side, curling gently toward the palm
         axis = unit(down * np.cos(curl) + inward * np.sin(curl))
-        base = W + down * .068 * H + fwd * off * H + inward * .002 * H
-        parts.append(blob(base + axis * length * H * .5, axis, fwd, np.cross(axis, fwd), length * H * .5, .0051 * H, .0056 * H, 8, 6, .8))
-    taxis = unit(down * .72 + fwd * .5 + inward * .48)
-    parts.append(blob(W + down * .026 * H + fwd * .019 * H + inward * .005 * H + taxis * .022 * H, taxis, fwd, np.cross(taxis, fwd), .024 * H, .0062 * H, .0066 * H, 8, 6, .8))
+        base = W + down * .064 * H + fwd * off * H + inward * .003 * H
+        parts.append(blob(base + axis * length * H * .5, axis, fwd, np.cross(axis, fwd), length * H * .5, .0047 * H, .0056 * H, 8, 6, .85))
+    taxis = unit(down * .8 + fwd * .35 + inward * .5)   # thumb along the front of the palm, tip toward the fingers
+    parts.append(blob(W + down * .024 * H + fwd * .017 * H + inward * .006 * H + taxis * .02 * H, taxis, fwd, np.cross(taxis, fwd), .022 * H, .006 * H, .0064 * H, 8, 6, .8))
     return parts
 
 def covered_body(P, N, G, tris, H, neck_y, gone=()):
@@ -374,7 +375,7 @@ def build_variant(name, spec, objpath):
     drop = set()
     for side in ('L', 'R'):
         wr = J['wrist_' + side]; ax = J['hand_end_' + side] - wr; ax /= np.linalg.norm(ax)
-        beyond = ((P - wr) @ ax > .012 * H) & (G == 'arm_' + side)
+        beyond = ((P - wr) @ ax > .02 * H) & (G == 'arm_' + side)   # keep the end of the forearm; the palm covers it
         for ti, (tri, g) in enumerate(tris):
             if g == 'arm_' + side and beyond[tri].all(): drop.add(ti)
         for pts, nrms, ptris in hand_parts(J, side, H):
