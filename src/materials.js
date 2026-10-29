@@ -44,7 +44,9 @@ vec3 kPerturb(vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDir){
  vec3 vGrad = sign(fDet) * (dHdxy.x * R1 + dHdxy.y * R2);
  return normalize(abs(fDet) * surf_norm - vGrad);
 }`;
-function patch(material,{map,scale,bump,fadeFar=9,wrap=0,scatter=[1,.42,.28],face=null}={}){
+/* inflate (game units): clothing is pushed out along its normals after skinning starts, so the skin under it never pokes
+   through when joints bend (the rest-pose gap is only about a centimetre). */
+function patch(material,{map,scale,bump,fadeFar=9,wrap=0,scatter=[1,.42,.28],face=null,inflate=0}={}){
  material.userData.kDetail={map,scale,bump,wrap};
  material.onBeforeCompile=shader=>{
   Object.assign(shader.uniforms,{kDetailMap:{value:map},kDetailScale:{value:scale},kDetailBump:{value:bump},kFadeFar:{value:fadeFar}});
@@ -52,7 +54,7 @@ function patch(material,{map,scale,bump,fadeFar=9,wrap=0,scatter=[1,.42,.28],fac
   shader.vertexShader=shader.vertexShader
    .replace('#include <common>','#include <common>\nvarying vec3 vKRest; varying vec3 vKRestN;')
    .replace('#include <beginnormal_vertex>','#include <beginnormal_vertex>\nvKRestN = objectNormal;')
-   .replace('#include <begin_vertex>','#include <begin_vertex>\nvKRest = transformed;');
+   .replace('#include <begin_vertex>','#include <begin_vertex>\nvKRest = transformed;'+(inflate>0?`\ntransformed += objectNormal * ${inflate.toFixed(4)};`:''));
   let frag=shader.fragmentShader
    .replace('#include <common>','#include <common>\n'+PARS+(face?'\nuniform sampler2D kFaceMap; uniform vec3 kFaceCenter; uniform vec2 kFaceSize;':''))
    .replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
@@ -83,7 +85,7 @@ function patch(material,{map,scale,bump,fadeFar=9,wrap=0,scatter=[1,.42,.28],fac
  #endif`);
   shader.fragmentShader=frag;
  };
- material.customProgramCacheKey=()=>`kangs-${map.uuid}-${wrap}-${face?1:0}`;
+ material.customProgramCacheKey=()=>`kangs-${map.uuid}-${wrap}-${face?1:0}-${inflate}`;
  return material;
 }
 
@@ -92,9 +94,10 @@ function patch(material,{map,scale,bump,fadeFar=9,wrap=0,scatter=[1,.42,.28],fac
 export function skinMaterial(color,face=null){
  return patch(new THREE.MeshPhysicalMaterial({color,roughness:.5,clearcoat:.14,clearcoatRoughness:.32,specularIntensity:.55,name:'skin'}),{map:MAPS.skin(),scale:9,bump:.35,fadeFar:7,wrap:.35,scatter:[.75,.32,.22],face});
 }
+export const KIT_INFLATE=.012;   // how far the jersey and shorts are pushed off the skin (decals sit on top of it)
 // Jersey and shorts: soft cloth sheen and the perforated athletic mesh.
 export function clothMaterial(color){
- return patch(new THREE.MeshPhysicalMaterial({color,roughness:.74,sheen:.28,sheenRoughness:.45,sheenColor:new THREE.Color(.75,.75,.8),specularIntensity:.3,name:'kit'}),{map:MAPS.mesh(),scale:22,bump:.18,fadeFar:3.2});
+ return patch(new THREE.MeshPhysicalMaterial({color,roughness:.74,sheen:.28,sheenRoughness:.45,sheenColor:new THREE.Color(.75,.75,.8),specularIntensity:.3,name:'kit'}),{map:MAPS.mesh(),scale:22,bump:.18,fadeFar:3.2,inflate:KIT_INFLATE});
 }
 // Shoes: smooth leather-like upper with a little gloss; matte rubber sole.
 export const shoeMaterial=color=>new THREE.MeshPhysicalMaterial({color,roughness:.36,clearcoat:.55,clearcoatRoughness:.22,name:'shoes'});
@@ -104,7 +107,7 @@ export function hairMaterial(color){
  return patch(new THREE.MeshPhysicalMaterial({color,roughness:.48,anisotropy:.65,anisotropyRotation:Math.PI/2,sheen:.3,sheenColor:new THREE.Color(.35,.3,.28),name:'hair'}),{map:MAPS.strands(),scale:14,bump:.8,fadeFar:6});
 }
 // Sleeves and headband: compression fabric, smoother and a touch shinier than the jersey.
-export const fabricMaterial=color=>patch(new THREE.MeshPhysicalMaterial({color,roughness:.55,sheen:.4,sheenRoughness:.35,name:'sleeve'}),{map:MAPS.mesh(),scale:30,bump:.15,fadeFar:3});
+export const fabricMaterial=color=>patch(new THREE.MeshPhysicalMaterial({color,roughness:.55,sheen:.4,sheenRoughness:.35,name:'sleeve'}),{map:MAPS.mesh(),scale:30,bump:.15,fadeFar:3,inflate:.01});
 // Ball: pebbled orange leather.
 export function ballMaterial(){
  return patch(new THREE.MeshPhysicalMaterial({color:0xd9661e,roughness:.62,clearcoat:.12,clearcoatRoughness:.5,name:'ball'}),{map:MAPS.pebble(),scale:6,bump:.55,fadeFar:6});

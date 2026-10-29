@@ -6,7 +6,7 @@
 // "classic" is the original primitive figure, unchanged. Imported (skinned glTF) bodies plug in through attachBody.
 import * as THREE from 'three';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
-import {skinMaterial,clothMaterial,shoeMaterial,soleMaterial,hairMaterial,fabricMaterial,letteringTexture,bentPlane,decalMaterial,faceTexture} from './materials.js';
+import {skinMaterial,clothMaterial,shoeMaterial,soleMaterial,hairMaterial,fabricMaterial,letteringTexture,bentPlane,decalMaterial,faceTexture,KIT_INFLATE} from './materials.js';
 
 export const PLAYER_STYLES=['classic','realistic'];
 export const BODY_PARTS=['jersey','head','hair','number','nameplate','capBadge','legs','arms'];
@@ -95,8 +95,8 @@ export function athleteBody(template,kit,i,color,variant,look=lookFor(i)){
  const lodMeshes=[];for(const [name,o] of Object.entries(objs)){const m=name.match(/^(.*)_lod1$/);if(!m)continue;const base=objs[m[1]];o.parent?.remove(o);delete objs[name];
   if(base?.isMesh){base.userData.lods=[base.geometry,o.geometry];lodMeshes.push(base);}}
  const jersey=clothMaterial(color),skin=skinMaterial(SKIN_TONES[i%SKIN_TONES.length]),shoes=shoeMaterial(0xf4f4f4),sole=soleMaterial(0x1d1d22),
-  hairMat=hairMaterial(look.hairColor??0x161210),band=fabricMaterial(0xffffff),sleeve=fabricMaterial(0x111114);
- const pick={kit:jersey,skin,shoes,sole,hair:hairMat,band,sleeve};
+  hairMat=hairMaterial(look.hairColor??0x161210),band=fabricMaterial(0xffffff),sleeve=fabricMaterial(0x111114),trim=fabricMaterial(0xe9b858);
+ const pick={kit:jersey,skin,shoes,sole,hair:hairMat,band,sleeve,trim};   // trim: the binding round the neck, armholes and hems
  // keep one hair style and the chosen options; drop the rest
  const keep=new Set([`hair_${look.hair}_mesh`,look.headband&&'headband_mesh',look.armSleeve&&'sleeve_arm_mesh',look.legSleeve&&'sleeve_leg_mesh'].filter(Boolean));
  for(const [name,o] of Object.entries(objs))if(/^(hair_|headband_|sleeve_)/.test(name)&&!keep.has(name))o.parent?.remove(o);
@@ -112,13 +112,13 @@ export function athleteBody(template,kit,i,color,variant,look=lookFor(i)){
  const tone=SKIN_TONES[i%SKIN_TONES.length],headMesh=objs.head_mesh;
  if(headMesh&&info.face&&bones.head){root.updateMatrixWorld(true);const c=bones.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3().fromArray(info.face));const [fw,fh]=info.faceSize||[.15,.13];
   const faceSkin=skinMaterial(tone,{map:faceTexture(tone,i),center:c,size:new THREE.Vector2(fw,fh)});headMesh.traverse(o=>{if(o.isMesh)o.material=faceSkin;});}
- for(const [m,at] of [[number,info.number],[nameplate,info.nameplate],[capBadge,info.capBadge]]){if(at)m.position.fromArray(at);chest?.add(m);}
+ for(const [m,at,dir] of [[number,info.number,1],[nameplate,info.nameplate,-1],[capBadge,info.capBadge,-1]]){if(at)m.position.fromArray(at);m.position.z+=dir*KIT_INFLATE;chest?.add(m);}
  const legs=[bones.hip_R,bones.hip_L],arms=[bones.shoulder_R,bones.shoulder_L];
  legs.forEach((b,j)=>b&&(b.userData.knee=bones[j?'knee_L':'knee_R']));arms.forEach((b,j)=>b&&(b.userData.elbow=bones[j?'elbow_L':'elbow_R']));
  /* Real jersey lettering: the number in the text colour with an outline, the name across the back, both on the fabric. */
  const shade=(hex,f)=>{const c=new THREE.Color(hex);return '#'+c.multiplyScalar(f).getHexString();},lum=hex=>{const c=new THREE.Color(hex);return .2126*c.r+.7152*c.g+.0722*c.b;};
  const setLod=level=>{for(const m of lodMeshes)if(m.parent)m.geometry=m.userData.lods[level?1:0];};
- const setLettering=(num,name,bg,fg)=>{const stroke=lum(fg)>.45?shade(bg,lum(bg)>.6?.55:.45):'#ffffff';
+ const setLettering=(num,name,bg,fg)=>{trim.color.set(fg);const stroke=lum(fg)>.45?shade(bg,lum(bg)>.6?.55:.45):'#ffffff';
   for(const [m,tex] of [[number,letteringTexture(num,fg,stroke)],[nameplate,letteringTexture(name,fg,stroke,{w:512,h:128,weight:800})]]){m.material.map?.dispose();m.material.map=tex;m.material.needsUpdate=true;}};
  return {root,bones,parts:{jersey,head:objs.head_mesh,hair,number,nameplate,capBadge,legs,arms},style:'athletes',variant,key:`${variant}|${lookKey(look)}`,look,sharedGeometry:true,setLettering,setLod,lodMeshes};
 }

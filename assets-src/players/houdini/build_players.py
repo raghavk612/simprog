@@ -116,10 +116,12 @@ foreach (float sd; SIDES)
     d = smax(d, -sdell(P, set(sd * .118 * H * SH, .762 * H, -.006 * H), set(.05 * H, .072 * H, .075 * H)), .006);   // deep arm holes
 d = smax(d, -sdell(P, set(0, .835 * H, .03 * H), set(.048 * H, .06 * H, .06 * H)), .005);    // front neck scoop
 d = smax(d, -sdell(P, set(0, .85 * H, -.035 * H), set(.045 * H, .035 * H, .05 * H)), .005);  // back neck
+d = smax(d, -(body + .004), .002);   // hollow: a layer of fabric whose inner wall sits just inside the skin, so the openings cut cleanly
 f@surface = -d;
 """,
 'shorts': r"""
-float d = part_sdf("core", P, B) - .012;
+float body = part_sdf("core", P, B);
+float d = body - .012;
 foreach (float sd; SIDES) {
     vector q = P - set(sd * .057 * H, .33 * H, .004 * H);
     d = smin(d, roundcone(q, .061 * H, .058 * H, .2 * H), .015);   // baggy legs, a touch wider at the hem
@@ -130,6 +132,7 @@ d = smax(d, -sdell(P, set(0, .325 * H, .004 * H), set(.011 * H, .13 * H, .2 * H)
 d = smax(d, .325 * H - P.y, .004);
 d = smax(d, P.y - .578 * H, .004);
 d -= .0018 * sin(atan2(P.z, P.x) * 18.0) * smooth(.53 * H, .57 * H, P.y);            // gathered waistband
+d = smax(d, -(body + .004), .002);   // hollow, like the jersey: clean leg openings
 f@surface = -d;
 """,
 'shoes': r"""
@@ -198,8 +201,8 @@ f@surface = -d;
 BOX = {'core': ((0, .5, .02), (.34, 1.04, .26), False, 1.0, 'target_core'),
        'arm_L': ((.123, .61, .005), (.11, .5, .12), True, 1.0, 'target_arm'),
        'arm_R': ((-.123, .61, .005), (.11, .5, .12), True, 1.0, 'target_arm'),
-       'jersey': ((0, .71, .005), (.32, .36, .26), True, 1.0, 1500),
-       'shorts': ((0, .45, .005), (.3, .28, .24), False, 1.0, 1300),
+       'jersey': ((0, .71, .005), (.32, .36, .26), True, .75, 3000),   # hollow: half of it is the hidden inner wall
+       'shorts': ((0, .45, .005), (.3, .28, .24), False, .75, 2600),
        'shoes': ((0, .05, .045), (.2, .11, .25), False, .8, 900),
        'hair_buzz': ((0, .945, -.005), (.17, .14, .19), False, .7, 600),
        'hair_crop': ((0, .95, -.005), (.17, .15, .19), False, .7, 700),
