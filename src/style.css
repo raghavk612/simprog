@@ -855,5 +855,8 @@ dialog:has(.unlock-pop){width:min(470px,calc(100vw - 24px))}
    Actions that are simply unavailable (signing, scouting, buying, office actions) keep their normal disabled look. */
 .kit.locked{position:relative}
 .kit.locked::after{content:'';position:absolute;right:4px;top:8px;width:72px;height:38px;background:url('/images/locked-stamp.png') center/contain no-repeat;pointer-events:none}
-.ach-list li.locked .ach-state{font-size:0;width:78px;height:42px;background:url('/images/locked-stamp.png') center/contain no-repeat;flex-shrink:0}
+.ach-list li.locked{position:relative}
+.ach-list li.locked .ach-state{visibility:hidden}
+/* the LOCKED stamp sits across the whole locked achievement, centred, without hiding its text */
+.ach-list li.locked::after{content:'';position:absolute;inset:0;background:url('/images/locked-stamp.png') center/auto 50px no-repeat;opacity:.9;pointer-events:none}
 .unlock-pop .up-lock{width:110px;height:60px;background:url('/images/locked-stamp.png') center/contain no-repeat;border:0;box-shadow:none;border-radius:0}.unlock-pop .up-lock svg{display:none}
