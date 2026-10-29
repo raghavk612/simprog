@@ -8,7 +8,7 @@ import {visitorCast} from './identities.js';
 import {qualityProfile, lowerLevel, autoDowngrade, probeDone, PROBE} from './graphics.js';
 import {loadOpponentLogo} from './logos.js';
 import {gymColors} from './kits.js';
-import {classicBody,attachBody,disposeBody,validBody,athleteBody,variantFor,BODY_VARIANTS,lookFor,lookKey} from './players.js';
+import {classicBody,attachBody,disposeBody,validBody,athleteBody,variantFor,BODY_VARIANTS,lookFor,lookKey,loadAthletes} from './players.js';
 import {effectivePlayers} from './graphics.js';
 import {ballMaterial} from './materials.js';
 import {BroadcastLook} from './broadcast.js';
@@ -78,7 +78,7 @@ export class Arena{
  /* Player models setting. 'athletes' loads the three rigged bodies once (about 1 MB) and keeps classic figures until they arrive or if they fail. */
  setPlayers(choice){if(this.failed)return;this.playersChoice=choice;this.applyPlayers();}
  applyPlayers(){const want=effectivePlayers(this.playersChoice,this.level);this.playerStyle=want;
-  if(want==='athletes'&&!this.templates){(this.bodiesLoading??=Promise.all(BODY_VARIANTS.map(v=>new GLTFLoader().loadAsync(`${import.meta.env.BASE_URL}models/players/${v}.glb`).then(g=>[v,g])))).then(list=>{this.templates=Object.fromEntries(list);this.applyPlayers();}).catch(e=>{console.warn('Player models unavailable, keeping classic',e);this.bodiesLoading=null;this.playerStyle='classic';});return;}
+  if(want==='athletes'&&!this.templates){(this.bodiesLoading??=loadAthletes()).then(t=>{this.templates=t;this.applyPlayers();}).catch(e=>{console.warn('Player models unavailable, keeping classic',e);this.bodiesLoading=null;this.playerStyle='classic';});return;}
   this.people.forEach(p=>this.styleBody(p));this.styleBall(want==='athletes'&&!!this.templates);this.look?.set(want==='athletes'&&!!this.templates,this.level);}
  /* With the athletes the ball is drawn at its real size (24 cm across) in pebbled leather; classic keeps the bigger toy ball. Presentation only. */
  styleBall(real){const sphere=this.ball?.children[0];if(!sphere)return;this.ballReal=real;sphere.userData.classic??=sphere.material;if(real){sphere.material=this.ballMat??=ballMaterial();this.ball.scale.setScalar(.13/.28);}else{sphere.material=sphere.userData.classic;this.ball.scale.setScalar(1);this.ball.children.forEach(c=>c.position.y=0);}}

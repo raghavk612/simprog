@@ -6,6 +6,7 @@
 // "classic" is the original primitive figure, unchanged. Imported (skinned glTF) bodies plug in through attachBody.
 import * as THREE from 'three';
 import {clone as cloneSkinned} from 'three/addons/utils/SkeletonUtils.js';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {KITS} from './kits.js';
 import {skinMaterial,clothMaterial,shoeMaterial,soleMaterial,hairMaterial,fabricMaterial,letteringTexture,bentPlane,decalMaterial,faceTexture,KIT_INFLATE} from './materials.js';
 
@@ -82,6 +83,15 @@ const hash=s=>{let h=2166136261;for(const c of String(s))h=Math.imul(h^c.charCod
 /* A player's look (hair style and colour, headband, arm and leg sleeves), the same every time for the same player. */
 export function lookFor(seed){const h=hash(seed);return {hair:HAIR_STYLES[h%4],hairColor:HAIR_COLORS[(h>>>4)%HAIR_COLORS.length],headband:(h>>>8)%5===0,armSleeve:(h>>>11)%4===0,legSleeve:(h>>>14)%6===0};}
 export const lookKey=l=>l?`${l.hair}${l.headband?'+band':''}${l.armSleeve?'+arm':''}${l.legSleeve?'+leg':''}`:'';
+/* The three rigged bodies, loaded once and shared by the gym and the practice drills (about 1 MB). */
+let athleteTemplates=null,athleteLoading=null;
+export const loadedAthletes=()=>athleteTemplates;
+export function loadAthletes(){
+ if(athleteTemplates)return Promise.resolve(athleteTemplates);
+ return athleteLoading??=Promise.all(BODY_VARIANTS.map(v=>new GLTFLoader().loadAsync(`${import.meta.env?.BASE_URL??'/'}models/players/${v}.glb`).then(g=>[v,g])))
+  .then(list=>athleteTemplates=Object.fromEntries(list)).catch(e=>{athleteLoading=null;throw e;});
+}
+
 /* The locker-room lettering for one side of the jersey, transparent round the letters, in the same layout and colours as
    the 3D jerseys in the locker room (jerseys.js): front "Lake" in script, the number, "Washington" in script; back the name
    and a big number. The canvas is the lettering band of the locker jersey (from 20% down its height). */
