@@ -48,7 +48,7 @@ export function solveArm(S,T,L1,L2,pole){
    (positive = away from the body) and elbow flex e (negative = bent). */
 const ARM={
  relax:()=>[0,.1,-.25],
- shoot:(j,m)=>j===0?[-2.75,.05,-.15]:[-2.15,.35,-.5],          // follow-through: shooting arm up and through, guide hand off the ball
+ shoot:(j,m)=>j===0?[-2.75,.05,-.15]:[-1.75,.45,-.6],          // follow-through: shooting arm up and through, guide hand falls away
  hook:j=>j===0?[-2.9,.55,-.2]:[-1.2,.7,-.9],                    // hook over the top, off arm up to shield
  block:(j,m)=>j===m.high?[-2.85,.15,-.12]:[-1.85,.45,-.45],      // one hand high on the ball, the other wide
  rebound:()=>[-2.55,.3,-.45],                                    // both up, elbows soft

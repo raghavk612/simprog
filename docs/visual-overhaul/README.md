@@ -263,3 +263,38 @@ The same numbers are in `window.__kangsPerf`.
 Not done, because the gain looked small for the work:
 - The High-only AO pass still re-draws the stands.
 - The arena's crowd and bleachers were not merged into fewer meshes.
+
+### Refinement pass (after launch)
+**Clothing:**
+- The Houdini recipe (`assets-src/players/houdini/build_players.py`, saved scene `kangs_players.hipnc`) now builds the jersey and shorts as **hollow layers**. Their inner wall sits about 4 mm inside the skin, instead of a solid block containing the body.
+- The rig script (`scripts/build_players.py`) then:
+  - cuts the neckline, armholes, hems and waistband exactly along smooth shapes (`opening_shapes`, `clip_openings`)
+  - drops the hidden inner wall (`inside_body`) and the skin under the kit (`covered_body`), so nothing pokes through
+  - adds a **trim** band round every opening (`add_trim`), drawn in the team's lettering colour
+- In the shader, clothing is pushed about 1 cm off the skin (`inflate` in `src/materials.js`), and the decals move out with it.
+
+**Hands and face:**
+- The rig script builds modelled hands (`hand_parts`: palm, four fingers curled together, thumb) to replace the thin paddle.
+- Faces are repainted at real proportions (`faceTexture`): eyes with iris and highlight, brows, nose shading, lips, cheek and jaw shading, and stubble on some players.
+
+**Arms in play** (`src/motion.js`, athletes only):
+- Every play situation has its own eased arm pose:
+  - jump shot: set point and follow-through
+  - hook: the off arm shields
+  - block: one hand high
+  - rebound: elbows soft
+  - defence: active hands, one high and one low
+  - chest pass
+  - screen: arms crossed
+  - dribble: off arm guarding
+- The ball handler's hands reach the ball with two-bone arm IK (`solveArm`): one hand on top while dribbling, both while holding and shooting. When the ball leaves, they ease off into the follow-through.
+
+**Jumps:**
+- Jump shooters keep their legs long, with the toes pointed.
+- On drives and dunks, the lead knee drives up.
+- Blocks and rebounds tuck both knees.
+
+**Rebuilding:**
+1. Run the Houdini script (or open the saved scene and render the three `export_obj` nodes).
+2. Copy the OBJs into `assets-src/players/houdini/export/`.
+3. Run `python3 scripts/build_players.py`, then `npm run players:lods`.
