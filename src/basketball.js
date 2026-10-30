@@ -1,5 +1,5 @@
 // Shared, deterministic basketball presentation. No rendering or wall-clock RNG here.
-export const CLIP_SECONDS=3.6;
+export const CLIP_SECONDS=4.4;   // one side's play; the run between plays happens before it (Arena.startTransit)
 export const SHOTS={
  catch:{label:'Catch-and-shoot three',three:true,base:-.035,finish:[4.2,5.5],arc:3.8},
  pullup:{label:'Pull-up jumper',three:false,base:.015,finish:[7,2.7],arc:3},
@@ -22,7 +22,13 @@ export const isDunk=kind=>family(kind)==='dunk';
 const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
 const lerp=(a,b,t)=>a+(b-a)*clamp(t);
 const smooth=t=>{t=clamp(t);return t*t*(3-2*t);};
-function path(points,t){const n=points.length-1,p=clamp(t)*n,i=Math.min(n-1,Math.floor(p)),u=smooth(p-i);return [lerp(points[i][0],points[i+1][0],u),lerp(points[i][1],points[i+1][1],u)];}
+/* A point along a route at fraction t of its length: an even speed through the waypoints (no stop at each corner), so the
+   overall run curve alone decides how a player speeds up and slows down. */
+function path(points,t){
+ const seg=points.slice(1).map((q,i)=>Math.hypot(q[0]-points[i][0],q[1]-points[i][1])),total=seg.reduce((a,b)=>a+b,0)||1;let d=clamp(t)*total,i=0;
+ while(i<seg.length-1&&d>seg[i]){d-=seg[i];i++;}const u=seg[i]?Math.min(1,d/seg[i]):1;
+ return [lerp(points[i][0],points[i+1][0],u),lerp(points[i][1],points[i+1][1],u)];
+}
 export function choosePlay(rng,tactic,pace,last){
  const bag=tactic==='perimeter'?['catch','catch','corner','stepback','pullup','fadeaway','drive','euro','roll']:pace==='fast'?['dunk','alley','drive','euro','roll','catch','floater','pullup']:['catch','pullup','stepback','corner','drive','euro','floater','hook','spin','fadeaway','roll'];
  let kind=bag[Math.floor(rng()*bag.length)];if(kind===last)kind=bag[(bag.indexOf(kind)+1+Math.floor(rng()*(bag.length-1)))%bag.length];return kind;
@@ -90,10 +96,11 @@ export function describePlay(c,rng){
 // Coordinates are mirrored for the visitors, so both baskets are used.
 export function sampleClip(c,time){
  const fam=family(c.kind),t=clamp(time/CLIP_SECONDS),side=c.team==='home'?1:-1,lane=c.lane||1,spec=SHOTS[c.kind]||SHOTS.pullup;
- const end=[spec.finish[0],spec.finish[1]*lane],start=[fam==='dunk'?-8:2.2,4.7*lane];
- const route=fam==='stepback'?[start,[6,2.5*lane],[7,2*lane],end]:fam==='hook'?[[8,3*lane],[9.8,2.8*lane],[10.5,1.5*lane],end]:fam==='catch'?[[4,6.5*lane],[2,6*lane],end]:fam==='dunk'?[start,[-2,2.5*lane],[6,1.4*lane],end]:[start,[5,4.6*lane],[6.6,1.5*lane],[8.2,3*lane],end];
+ const end=[spec.finish[0],spec.finish[1]*lane],start=[fam==='dunk'?-1.5:2.2,4.7*lane];   // the fast break starts at half court: the transition run brings him there
+ const route=fam==='stepback'?[start,[6,2.5*lane],[7,2*lane],end]:fam==='hook'?[[8,3*lane],[9.8,2.8*lane],[10.5,1.5*lane],end]:fam==='catch'?[[4,6.5*lane],[2,6*lane],end]:fam==='dunk'?[start,[1,2.5*lane],[6,1.4*lane],end]:[start,[5,4.6*lane],[6.6,1.5*lane],[8.2,3*lane],end];
  const hop=u=>(u>=.48&&u<=.78)?Math.sin((u-.48)/.30*Math.PI)*(fam==='dunk'?1.2:fam==='drive'||fam==='roll'?.65:.8):0;
- const movement=smooth(t/.5),at=path(route,movement),gather=clamp((t-.43)/.14),jump=hop(t);
+ const m0=clamp(t/.5),movement=.35*m0+.65*smooth(m0),at=path(route,movement),   // an even run with a gentle start and finish (peak speed 1.3x the average)
+ gather=clamp((t-.43)/.14),jump=hop(t);
  const offense=c.team==='home'?0:5,defense=c.team==='home'?5:0;
  const actors=Array.from({length:10},(_,i)=>{const k=i%5;const off=i>=offense&&i<offense+5;const base=[[2,4.7],[3,-5.5],[8,5.7],[9,-4.4],[6,0]][k];return {x:(base[0]+(off?Math.sin(t*3+k)*.7:.9))*side,y:0,z:base[1]+(off?0:.8),yaw:side*Math.PI/2,run:off?.35:.25,arms:off?'run':'defend',jump:0};});
  // Every value below is continuous in t: actors and ball ease between beats instead of snapping.
@@ -106,7 +113,7 @@ export function sampleClip(c,time){
  const help=actors[defense+2];help.x=lerp(9,11,t)*side;help.z=lerp(-4*lane,-.9*lane,smooth(t/.6));help.arms=t>.48&&t<.8?'block':'defend';help.y=defenseJump*.6;
  const screen=actors[offense+1];if(fam==='roll'){screen.x=5.8*side;screen.z=3*lane;screen.run=0;screen.arms='screen';}
  // The dunk outlet comes from deep in the backcourt; the passer then trails the play up the floor.
- if(fam==='dunk'){const q=smooth((t-.12)/.45);screen.x=lerp(-10*side,screen.x,q);screen.z=lerp(3*lane,screen.z,q);screen.run=.35+.65*Math.sin(q*Math.PI);if(t<.2)screen.arms='pass';}
+ if(fam==='dunk'){const q=smooth((t-.12)/.5);screen.x=lerp(-4.5*side,screen.x,q);screen.z=lerp(3*lane,screen.z,q);screen.run=.35+.65*Math.sin(q*Math.PI);if(t<.2)screen.arms='pass';}
  // Off-ball cuts and closeouts: players do not just oscillate in place.
  actors[offense+2].x=lerp(4,10,smooth(t))*side;actors[offense+2].z=lerp(-5,3,smooth(t))*lane;
  actors[defense+3].x=lerp(9,5,t)*side;actors[defense+3].z=-5*lane;

@@ -158,16 +158,29 @@ export class Arena{
   if(!this.event){const m=s?.match,r=s?.results.at(-1);this.score(m?.home??r?.home??0,m?.away??r?.away??0);}
  }
  play(event,{replay=false}={}){
-  this.event=event;this.replaying=replay;this.director?.reset();this.run++;this.playTime=0;this.paused=false;this.clipIndex=-1;this.presentKey='';
+  this.event=event;this.replaying=replay;this.director?.reset();this.run++;this.playTime=0;this.paused=false;this.clipIndex=-1;this.presentKey='';this.transit=null;
   // Previous saves still replay; old events have no detailed action record.
   this.clips=event.plays?.length===2?event.plays:[{team:'home',kind:event.three?'catch':'pullup',player:event.player,id:event.id,jersey:event.jersey||11,lane:1,contest:'contested',outcome:event.points?'made':'miss',points:event.points,commentary:event.explanation},{team:'away',kind:'pullup',player:'Visitors',jersey:12,lane:-1,contest:'contested',outcome:event.away?'made':'miss',points:event.away||0,commentary:'Visitors complete their possession.'}];
  }
- clear(){this.event=null;this.replaying=false;this.director?.reset();this.clips=null;this.playTime=0;this.paused=false;this.clipIndex=-1;this.ballFrom=null;this.focusRing&&(this.focusRing.visible=false);if(this.people.length===10)this.cast(this.state?.players.filter(p=>p.starter)||[]);}
+ clear(){this.transit=null;this.event=null;this.replaying=false;this.director?.reset();this.clips=null;this.playTime=0;this.paused=false;this.clipIndex=-1;this.ballFrom=null;this.focusRing&&(this.focusRing.visible=false);if(this.people.length===10)this.cast(this.state?.players.filter(p=>p.starter)||[]);}
  isPlaying(){return !!this.event&&this.playTime<CLIP_SECONDS*2;}
  presentation(){if(!this.event)return null;const index=Math.min(1,Math.floor(this.playTime/CLIP_SECONDS)),clip=this.clips[index],time=Math.min(CLIP_SECONDS,this.playTime-index*CLIP_SECONDS),pose=sampleClip(clip,time),e=this.event;return {index,clip,phase:pose.phase,done:!this.isPlaying(),home:e.home-e.points+(index>0||pose.resolved?e.points:0),away:e.visitor-e.away+(index===1&&pose.resolved?e.away:0),resolved:pose.resolved};}
  // Put the home bodies in pose order without moving them: a body that already wears a player's jersey keeps it.
  cast(list,identify){const pool=this.people.slice(0,5),id=m=>m.userData.identity?.split('|')[0],own=list.slice(0,5).map(person=>{const j=person?.id==null?-1:pool.findIndex(m=>id(m)===String(person.id));return j<0?null:pool.splice(j,1)[0];});
   for(let i=0;i<5;i++){this.people[i]=own[i]||pool.shift();if(identify)this.setIdentity(this.people[i],list[i]||{number:i+1,name:'Kangs'},true);}}
+ /* Before a play, if anyone is far from his starting spot (the other end after a basket or a rebound), the play clock waits
+    while everyone runs there at a game pace: about 5.5 units a second on average (a run, quicker in the middle of the trip),
+    each player at his own distance, the new ball handler dribbling it up. Presentation only: the play itself is unchanged. */
+ startTransit(clip,index){
+  if(!this.motion||!this.posed)return false;
+  const start=sampleClip(clip,0).actors,RUN=5.5,MAX=4.2;let longest=0;
+  this.people.forEach((p,i)=>{if(start[i])longest=Math.max(longest,Math.hypot(start[i].x-p.position.x,start[i].z-p.position.z));});
+  if(longest<1.5)return false;   // close enough: the usual quick ease
+  const dur=Math.min(MAX,longest/RUN)+.2;
+  this.people.forEach((p,i)=>{const a=start[i],d=a?Math.hypot(a.x-p.position.x,a.z-p.position.z):0;p.userData.from={x:p.position.x,y:p.position.y,z:p.position.z,yaw:p.rotation.y,t0:0,dur:Math.min(dur-.2,Math.max(.35,d/RUN))};});
+  const b=this.ball.position;this.ballFrom={x:b.x,y:b.y,z:b.z,t0:0};
+  this.transit={t:0,dur};return true;
+ }
  // Remember where everything is drawn right now; the next poses ease out of it instead of jumping.
  snapshot(t0){if(!this.posed)return;this.people.forEach(p=>p.userData.from={x:p.position.x,y:p.position.y,z:p.position.z,yaw:p.rotation.y,t0});const b=this.ball.position;this.ballFrom={x:b.x,y:b.y,z:b.z,t0};}
  blend(from,pose,t){if(!from||!this.motion)return pose;const dx=pose.x-from.x,dz=pose.z-from.z,d=Math.hypot(dx,dz,pose.y-from.y);from.dur??=Math.min(1.35,Math.max(.3,d/8));const w=Math.max(0,(t-from.t0)/from.dur);if(w>=1||d<1e-4)return pose;
@@ -198,15 +211,20 @@ export class Arena{
   // One continuous stride/dribble clock, so legs and arms never jump when a clip restarts.
   this.gait=(this.gait||0)+(this.motion&&!(this.event&&this.paused)?dt*(this.event?this.speed:1):0);
   if(this.event){
-   if(!this.paused)this.playTime=Math.min(CLIP_SECONDS*2,this.playTime+dt*this.speed);
-   const presentation=this.presentation(),clip=presentation.clip,index=presentation.index,clipTime=Math.min(CLIP_SECONDS,this.playTime-index*CLIP_SECONDS);
+   // Between clips the play clock waits while everyone runs to the next play at a game pace (see startTransit).
+   if(!this.paused){if(this.transit){this.transit.t+=dt*this.speed;if(this.transit.t>=this.transit.dur){this.transit=null;this.people.forEach(p=>p.userData.from=null);const b=this.ball.position;this.ballFrom={x:b.x,y:b.y,z:b.z,t0:0};}}else this.playTime=Math.min(CLIP_SECONDS*2,this.playTime+dt*this.speed);}
+   let presentation=this.presentation(),clip=presentation.clip,index=presentation.index,clipTime=Math.min(CLIP_SECONDS,this.playTime-index*CLIP_SECONDS);
    // New clip: re-order bodies (never re-dress them) so the clip's defender is people[0], then ease everyone from where they stand.
-   if(index!==this.clipIndex){this.clipIndex=index;const lineup=this.event.lineup||this.state?.players.filter(p=>p.starter)||[];let home=[...lineup];if(index===1&&clip.defenderId!==undefined)home.sort((a,b)=>(a.id===clip.defenderId?-1:b.id===clip.defenderId?1:0));this.cast(home,true);this.castVisitors();this.trail.forEach(d=>d.visible=false);this.snapshot(clipTime);}else if(this.motion!==this.blendMotion)this.snapshot(clipTime);this.blendMotion=this.motion;
+   if(index!==this.clipIndex){this.clipIndex=index;const lineup=this.event.lineup||this.state?.players.filter(p=>p.starter)||[];let home=[...lineup];if(index===1&&clip.defenderId!==undefined)home.sort((a,b)=>(a.id===clip.defenderId?-1:b.id===clip.defenderId?1:0));this.cast(home,true);this.castVisitors();this.trail.forEach(d=>d.visible=false);
+    if(this.startTransit(clip,index)){this.playTime=index*CLIP_SECONDS;clipTime=0;presentation=this.presentation();}else this.snapshot(clipTime);}else if(this.motion!==this.blendMotion)this.snapshot(clipTime);this.blendMotion=this.motion;
    const pose=sampleClip(clip,this.motion?clipTime:(presentation.resolved?CLIP_SECONDS:0)),u=clipTime/CLIP_SECONDS,o=clip.team==='home'?0:5,ease=!this.motion?1:this.paused?0:1-Math.exp(-dt*this.speed*22);
-   pose.actors.forEach((p,i)=>this.posePlayer(this.people[i],this.blend(this.people[i].userData.from,p,clipTime),this.gait,ease));
+   const tr=this.transit;
+   pose.actors.forEach((p,i)=>this.posePlayer(this.people[i],this.blend(this.people[i].userData.from,tr?{...p,arms:i===o?'dribble':'run'}:p,tr?tr.t:clipTime),this.gait,ease));
    // While a player is still easing into place the ball stays in his hands (the handler, or the defender after a steal).
    const sm=x=>(x=Math.max(0,Math.min(1,x)),x*x*(3-2*x)),off=j=>[this.people[j].position.x-pose.actors[j].x,this.people[j].position.z-pose.actors[j].z],a=off(o),b=off(5-o),st=clip.outcome==='steal'?sm((u-.27)/.09):0,hold=1-sm((u-.55)/.06);
-   const ball=this.blendBall({x:pose.ball.x+(a[0]+(b[0]-a[0])*st)*hold,y:pose.ball.y,z:pose.ball.z+(a[1]+(b[1]-a[1])*st)*hold},clipTime);this.ball.position.set(ball.x,ball.y,ball.z);this.ball.rotation.set(this.gait*6,0,this.gait*2);
+   // in transition the new ball handler dribbles it up the floor (after a short pass to him if it is elsewhere)
+   const h=this.people[o],hy=h.rotation.y,dribbleAt={x:h.position.x-Math.cos(hy)*.38+Math.sin(hy)*.3,y:.3+Math.abs(Math.sin(this.gait*6))*.9,z:h.position.z+Math.sin(hy)*.38+Math.cos(hy)*.3};
+   const ball=this.blendBall(tr?dribbleAt:{x:pose.ball.x+(a[0]+(b[0]-a[0])*st)*hold,y:pose.ball.y,z:pose.ball.z+(a[1]+(b[1]-a[1])*st)*hold},tr?tr.t:clipTime);this.ball.position.set(ball.x,ball.y,ball.z);this.ball.rotation.set(this.gait*6,0,this.gait*2);
    this.focusRing.visible=true;this.focusRing.position.x=this.people[o].position.x;this.focusRing.position.z=this.people[o].position.z;
    this.nets.forEach(n=>n.mesh.rotation.y=n.side===(clip.team==='home'?1:-1)?pose.net:0);
    this.trail.forEach((d,i)=>{d.visible=this.motion&&clipTime>CLIP_SECONDS*.61&&clipTime<CLIP_SECONDS*.9&&clip.outcome!=='steal';if(d.visible){const previous=sampleClip(clip,Math.max(0,clipTime-i*.025)).ball;d.position.set(previous.x,previous.y,previous.z);}});
