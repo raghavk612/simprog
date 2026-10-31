@@ -87,13 +87,15 @@ export function scoreboardData(s, home = 0, away = 0, event = null) {
   // Team rebounds tracked by the engine (m.stats.{home,away}.rebounds); older saves have none.
   const st = game?.stats;
   const reb = st ? [String(st.home?.rebounds ?? 0), String(st.away?.rebounds ?? 0)] : ['–', '–'];
+  // Before tip-off there are no rebounds yet: show the two teams' real records instead (the opponent's comes from the standings, a dash when it has none).
+  const opp = s?.standings?.[opponent], rec = pre ? [`${s.wins ?? 0}-${s.losses ?? 0}`, opp ? `${opp.w ?? 0}-${opp.l ?? 0}` : '–'] : reb;
 
   return {
     home: 'KANGS', away: boardName(opponent), opponent: String(opponent), crest: initials(opponent), awayLogo: OPP_LOGOS.has(String(opponent)),
     homeScore: String(home ?? 0), awayScore: String(away ?? 0),
     period, clock, final, pre, live: live || !!event,
     tolHome: live ? String(Math.max(0, Math.min(3, m.timeouts ?? 0))) : final ? '–' : '3', tolAway: '–',
-    plyr, statLabel: 'TEAM REB', statHome: reb[0], statAway: reb[1]
+    plyr, statLabel: pre ? 'RECORD' : 'TEAM REB', statHome: rec[0], statAway: rec[1]
   };
 }
 
