@@ -15,7 +15,7 @@ import {BroadcastLook} from './broadcast.js';
 import {animateAthlete} from './motion.js';
 import {Director} from './director.js';
 import {PerfHud,perfWanted} from './perfHud.js';
-import {titleCamera,flyIn,heroYaw,titleFov,HERO} from './title.js';
+import {titleCamera,flyIn,heroYaw,titleFov,HERO,STILL} from './title.js';
 const purple=0x6832ab;
 export class Arena{
  constructor(host){
@@ -132,7 +132,7 @@ export class Arena{
  /* Title screen (mode 'title', shots in src/title.js): a slow jib sweep on its own clock (held while paused; one fixed shot with reduced motion), or the fly-in to the broadcast shot,
     which holds there once it lands. The fly-in runs on wall time and resolves when it lands, when the view changes or the arena is cleared or remounted, or at the latest shortly after
     it should have landed (a hidden tab draws no frames). */
- aimTitle(){if(this.fly&&!this.motion)this.endFly();/* reduced motion switched on mid-flight: no fly-in, straight to the fixed shot */const f=this.fly,u=f?(performance.now()-f.t0)/f.ms:0,s=f?flyIn(u,f.from):titleCamera(this.motion?this.titleClock||0:12);this.titleU=f?u:0;/* fly-in progress, for the lens (titleFov) */this.camera.position.set(...s.position);this.controls.target.set(...s.target);this.camera.lookAt(this.controls.target);if(f&&u>=1)f.done();}
+ aimTitle(){if(this.fly&&!this.motion)this.endFly();/* reduced motion switched on mid-flight: no fly-in, straight to the fixed shot */const f=this.fly,u=f?(performance.now()-f.t0)/f.ms:0,s=f?flyIn(u,f.from):titleCamera(this.motion?this.titleClock||0:STILL);this.titleU=f?u:0;/* fly-in progress, for the lens (titleFov) */this.camera.position.set(...s.position);this.controls.target.set(...s.target);this.camera.lookAt(this.controls.target);if(f&&u>=1)f.done();}
  setTitlePaused(paused){this.titlePaused=!!paused;}
  flyIn(ms=900){this.endFly();if(this.failed||!this.motion||this.mode!=='title'||this.host.hidden)return Promise.resolve();
   return new Promise(resolve=>{const f=this.fly={t0:performance.now(),ms:Math.max(1,ms),from:{position:this.camera.position.toArray(),target:this.controls.target.toArray()}},timer=setTimeout(()=>f.done(),f.ms+500);f.done=()=>{clearTimeout(timer);resolve();};});}
