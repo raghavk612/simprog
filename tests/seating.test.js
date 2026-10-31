@@ -6,14 +6,15 @@ import {titlePath,titleCamera,flyIn,SWEEP} from '../src/title.js';
 const L=seatLayout(),box=([w,h,d,x,y,z])=>new THREE.Box3(new THREE.Vector3(x-w/2,y-h/2,z-d/2),new THREE.Vector3(x+w/2,y+h/2,z+d/2));
 const solids=l=>[...l.risers.map(box),...l.rails.map(box),...l.seats.flatMap(s=>fanBoxes(s).map(box))],ends=l=>solids(l).filter(b=>Math.abs(b.min.x+b.max.x)/2>16); // ends: the baseline stands' pieces
 // Footprints [x0,x1,z0,z1] of what already stands around the court, read off src/arena.js build()/addDetails()/importModels().
-const PROPS={'+x stanchion pad':[14.45,15.45,-.75,.75],'-x stanchion pad':[-15.45,-14.45,-.75,.75],'ball rack':[-17.05,-14.95,5.62,6.38],'cones':[-17.18,-16.82,-3.18,.78],'wall bars':[-19.47,-19.37,-5.85,-4.15],
+const PROPS={'+x stanchion pad':[14.45,15.45,-.75,.75],'-x stanchion pad':[-15.45,-14.45,-.75,.75],'ball rack':[-19.13,-18.37,10.43,12.97],'cones':[-17.58,-13.62,10.72,11.08],'wall bars':[-19.47,-19.37,13.75,15.45],
  'office carpet + furniture':[13.7,18.9,-15.7,-11.1],'locker door + cabinets':[-19.3,-13.6,-16,-15],'scorer\'s table':[-2.5,2.5,9.4,10.1],'home bench':[-10.1,-4.1,9.2,10.1],'visitor bench':[3.9,9.9,9.2,10.1],'court floor':[-16,16,-10,10]};
 test('seating: about 5% of sideline seats are empty, the two aisles stay clear',()=>{
  const side=L.slots.filter(s=>s.axis==='z'),aisle=side.filter(s=>s.aisle),rest=side.filter(s=>!s.aisle),empty=rest.filter(s=>!s.taken).length/rest.length;
  assert.equal(side.length,2*6*40);assert.ok(aisle.length===2*6*2&&aisle.every(s=>!s.taken),'aisles stay empty');assert.ok(empty>.02&&empty<.08,`empty share ${empty.toFixed(3)}`);
 });
 test('seating: rows of fans behind both baselines, rising away from the court and facing it',()=>{
- for(const side of [1,-1]){const end=L.seats.filter(s=>s.x*side>16);assert.ok(end.length>=40,`${end.length} fans behind the ${side>0?'+':'-'}x baseline`);
+ const count=side=>L.seats.filter(s=>s.x*side>16).length;assert.ok(Math.abs(count(1)-count(-1))<=8,`both ends about as full (${count(1)} / ${count(-1)})`);
+ for(const side of [1,-1]){const end=L.seats.filter(s=>s.x*side>16);assert.ok(end.length>=70,`${end.length} fans behind the ${side>0?'+':'-'}x baseline`);
   for(const s of end){assert.ok(Math.abs(s.x)>=16.1&&Math.abs(s.x)<19.5&&Math.abs(s.z)<10);const k=(Math.abs(s.x)-16.1)/.85|0;assert.ok(Math.abs(s.y-(k+1)*.5)<1e-9,'row height rises with distance');}}
  for(const s of L.seats){const f=[Math.sin(s.ry),Math.cos(s.ry)],toCourt=[-s.x,-s.z],len=Math.hypot(...toCourt);assert.ok((f[0]*toCourt[0]+f[1]*toCourt[1])/len>.5,`fan at ${s.x.toFixed(1)},${s.z.toFixed(1)} faces the court`);}
 });

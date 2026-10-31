@@ -95,12 +95,12 @@ export class Arena{
  addDetails(){
   // Physical sideline details, rather than extra floating UI.
   for(const side of [-1,1])this.box(1,.8,1.5,0x673a9b,side*14.95,.4,0); // padded stanchion bases, behind the baselines
-  for(let i=0;i<5;i++)this.box(.1,.08,1.7,0xa186bf,-19.42,.5+i*.6,-5);for(const z of [-5.8,-4.2])this.box(.1,3.2,.1,0xa186bf,-19.42,1.6,z); // wall bars fixed to the end wall
+  for(let i=0;i<5;i++)this.box(.1,.08,1.7,0xa186bf,-19.42,.5+i*.6,14.6);for(const z of [13.8,15.4])this.box(.1,3.2,.1,0xa186bf,-19.42,1.6,z); // wall bars on the end wall; they, the ball rack and the cones share the -x near corner, clear of the baseline stand (src/seating.js)
   this.box(5,1,.7,0x211332,0,.5,9.75);this.sign('KANGS SCORER’S TABLE',4.8,.6,0,.65,9.38);
   for(let i=0;i<5;i++){const bottle=new THREE.Mesh(new THREE.CylinderGeometry(.065,.08,.35,8),this.mat(0xb7dff2));bottle.position.set(-2+i*.7,1.18,9.75);this.scene.add(bottle);}
-  this.box(2.1,.12,.75,0x4d4555,-16,.35,6);for(let i=0;i<3;i++){const ball=new THREE.Mesh(new THREE.SphereGeometry(.27,16,12),this.mat(0xdd7d2b));ball.position.set(-16.7+i*.7,.7,6);this.scene.add(ball);}
-  for(const z of [5.65,6.35])for(const x of [-17,-15])this.box(.06,1.1,.06,0xa3a1ae,x,.55,z);
-  for(let i=0;i<4;i++){const cone=new THREE.Mesh(new THREE.ConeGeometry(.18,.5,12),this.mat(0xe67a24));cone.position.set(-17,.25,-3+i*1.2);this.scene.add(cone);}
+  this.box(.75,.12,2.1,0x4d4555,-18.75,.35,11.7);for(let i=0;i<3;i++){const ball=new THREE.Mesh(new THREE.SphereGeometry(.27,16,12),this.mat(0xdd7d2b));ball.position.set(-18.75,.7,11+i*.7);this.scene.add(ball);} // ball rack along the end wall
+  for(const z of [10.7,12.7])for(const x of [-19.1,-18.4])this.box(.06,1.1,.06,0xa3a1ae,x,.55,z);
+  for(let i=0;i<4;i++){const cone=new THREE.Mesh(new THREE.ConeGeometry(.18,.5,12),this.mat(0xe67a24));cone.position.set(-17.4+i*1.2,.25,10.9);this.scene.add(cone);}
   const ring=new THREE.Mesh(new THREE.RingGeometry(.48,.57,48),new THREE.MeshBasicMaterial({color:0xe3bd69,transparent:true,opacity:.75,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.07;this.focusRing=ring;this.scene.add(ring);
   this.trail=[];for(let i=0;i<8;i++){const dot=new THREE.Mesh(new THREE.SphereGeometry(.07,6,4),new THREE.MeshBasicMaterial({color:0xf6c078,transparent:true,opacity:(8-i)/16}));dot.visible=false;this.scene.add(dot);this.trail.push(dot);}
  }
