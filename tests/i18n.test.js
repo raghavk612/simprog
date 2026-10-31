@@ -47,7 +47,7 @@ for(const l of GRAPHICS_LEVELS)need.push(`settings.accessibility.graphicsOptions
  for(const v of ['rookie','standard','elite'])need.push(`level.${v}`,`difficulty.${v}`);
  for(const n of [1,2,3,4])need.push(`tutorial.step${n}.title`,`tutorial.step${n}.body`);
  for(const v of ['made','miss','block','steal'])need.push(`outcome.${v}`);
- for(const v of ['skill','energy','morale','chemistry','shotType','space','tactics'])need.push(`impact.${v}`);
+ for(const v of ['skill','energy','morale','chemistry','shotType','space','tactics','repertoire'])need.push(`impact.${v}`);
  for(const v of ['open','tight','contested'])need.push(`contest.${v}`);
  for(const v of ['pass','attack','gather','blocked','turnover','flight','basket','rebound'])need.push(`phase.${v}`);
  for(const v of ['assists','blocks','steals','rebounds'])need.push(`stats.${v}`);

@@ -190,7 +190,7 @@ export default {
  phase:{pass:'Passe et démarquage',attack:'Attaque et dribble',gather:'Préparation et défense',blocked:'Tir contré',turnover:'Perte de balle',flight:'Tir en l’air',basket:'Panier',rebound:'Rebond'},
  contest:{open:'tir ouvert',tight:'tir très défendu',contested:'tir défendu'},
  outcome:{made:'réussi',miss:'raté',block:'contre',steal:'interception'},
- impact:{skill:'Compétence',energy:'Énergie',morale:'Moral',chemistry:'Cohésion',shotType:'Type de tir',space:'Espace',tactics:'Tactique'},
+ impact:{repertoire:'Répertoire de gestes',skill:'Compétence',energy:'Énergie',morale:'Moral',chemistry:'Cohésion',shotType:'Type de tir',space:'Espace',tactics:'Tactique'},
  stats:{assists:'Passes décisives',blocks:'Contres',steals:'Interceptions',rebounds:'Rebonds',title:'Statistiques d’équipe'},
  replay:{kicker:'La salle vidéo',title:'Regardez l’action se développer.',intro:'Actions et résultats enregistrés. Revoir une action ne change jamais votre saison.',recorded:'Action enregistrée',again:'Revoir l’action',pause:'Mettre la rediffusion en pause',resume:'Reprendre la rediffusion',back:'Retour au journal de la saison'},
  lk:{

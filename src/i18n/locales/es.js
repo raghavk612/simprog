@@ -190,7 +190,7 @@ export default {
  phase:{pass:'Pase y desmarque',attack:'Ataque y bote',gather:'Preparación y defensa',blocked:'Tiro taponado',turnover:'Pérdida de balón',flight:'Tiro en el aire',basket:'Canasta',rebound:'Rebote'},
  contest:{open:'tiro abierto',tight:'tiro muy defendido',contested:'tiro defendido'},
  outcome:{made:'anotado',miss:'fallo',block:'tapón',steal:'robo'},
- impact:{skill:'Habilidad',energy:'Energía',morale:'Moral',chemistry:'Química',shotType:'Tipo de tiro',space:'Espacio',tactics:'Táctica'},
+ impact:{repertoire:'Repertorio de movimientos',skill:'Habilidad',energy:'Energía',morale:'Moral',chemistry:'Química',shotType:'Tipo de tiro',space:'Espacio',tactics:'Táctica'},
  stats:{assists:'Asistencias',blocks:'Tapones',steals:'Robos',rebounds:'Rebotes',title:'Estadísticas del equipo'},
  replay:{kicker:'La sala de vídeo',title:'Mira cómo se desarrolla la jugada.',intro:'Acciones y resultados grabados. Repetir una jugada nunca cambia tu temporada.',recorded:'Jugada grabada',again:'Repetir otra vez',pause:'Pausar repetición',resume:'Reanudar repetición',back:'Volver al diario de la temporada'},
  lk:{

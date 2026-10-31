@@ -157,7 +157,7 @@ export default {
  phase:{pass:'パスと動き直し',attack:'攻撃とドリブル',gather:'ジャンプ準備とコンテスト',blocked:'シュートをブロック',turnover:'ターンオーバー',flight:'シュートが空中へ',basket:'ゴール',rebound:'リバウンド'},
  contest:{open:'フリーでシュート',tight:'厳しいマークでシュート',contested:'マークされたシュート'},
  outcome:{made:'成功',miss:'失敗',block:'ブロック',steal:'スティール'},
- impact:{skill:'スキル',energy:'体力',morale:'士気',chemistry:'チームワーク',shotType:'シュートの種類',space:'スペース',tactics:'戦術'},
+ impact:{repertoire:'技のレパートリー',skill:'スキル',energy:'体力',morale:'士気',chemistry:'チームワーク',shotType:'シュートの種類',space:'スペース',tactics:'戦術'},
  stats:{assists:'アシスト',blocks:'ブロック',steals:'スティール',rebounds:'リバウンド',title:'チーム統計'},
  replay:{kicker:'フィルムルーム',title:'プレーの展開を見よう。',intro:'記録されたアクションと結果です。リプレイしてもシーズンには影響しません。',recorded:'記録されたプレー',again:'もう一度リプレイ',pause:'リプレイを一時停止',resume:'リプレイを再開',back:'シーズン日誌に戻る'},
  lk:{

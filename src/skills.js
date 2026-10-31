@@ -19,3 +19,5 @@ export function skillBag(s,tactic,pace){
 }
 /* Saves: optional; otherwise an array of distinct tree keys, each with its prerequisite present. */
 export const validSkills=s=>s.skills===undefined||(Array.isArray(s.skills)&&s.skills.length<=NODES.length&&new Set(s.skills).size===s.skills.length&&s.skills.every(k=>{const n=skillNode(k);return !!n&&(n.requires===null||s.skills.includes(n.requires));}));
+/* Share of the tree still locked (0 to 1): a team with few moves is predictable, and the engine lowers its shot chance by TUNING.repertoire times this share. */
+export const lockedShare=s=>1-new Set(unlockedMoves(s).filter(skillNode)).size/NODES.length;

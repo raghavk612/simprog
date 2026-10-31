@@ -178,7 +178,7 @@ export default {
  phase:{pass:'Pass & relocate',attack:'Attack & dribble',gather:'Gather & contest',blocked:'Shot blocked',turnover:'Turnover',flight:'Shot in flight',basket:'Basket',rebound:'Rebound'},
  contest:{open:'open look',tight:'tight look',contested:'contested look'},
  outcome:{made:'made',miss:'miss',block:'block',steal:'steal'},
- impact:{skill:'Skill',energy:'Energy',morale:'Morale',chemistry:'Chemistry',shotType:'Shot type',space:'Space',tactics:'Tactics'},
+ impact:{repertoire:'Move repertoire',skill:'Skill',energy:'Energy',morale:'Morale',chemistry:'Chemistry',shotType:'Shot type',space:'Space',tactics:'Tactics'},
  stats:{assists:'Assists',blocks:'Blocks',steals:'Steals',rebounds:'Rebounds',title:'Team stats'},
  replay:{kicker:'The film room',title:'Watch the play develop.',intro:'Recorded actions and outcomes. Replaying never changes your season.',recorded:'Recorded play',again:'Replay again',pause:'Pause replay',resume:'Resume replay',back:'Back to season journal'},
  lk:{

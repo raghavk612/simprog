@@ -176,7 +176,7 @@ export default {
  phase:{pass:'पास और जगह बदलना',attack:'हमला और ड्रिबल',gather:'तैयारी और बचाव',blocked:'शॉट ब्लॉक हुआ',turnover:'गेंद गँवाई',flight:'शॉट हवा में',basket:'बास्केट',rebound:'रिबाउंड'},
  contest:{open:'खुला शॉट',tight:'कड़े बचाव में शॉट',contested:'बचाव के बीच शॉट'},
  outcome:{made:'सफल',miss:'चूका',block:'ब्लॉक',steal:'स्टील'},
- impact:{skill:'कौशल',energy:'ऊर्जा',morale:'मनोबल',chemistry:'तालमेल',shotType:'शॉट का प्रकार',space:'जगह',tactics:'रणनीति'},
+ impact:{repertoire:'मूव्स की विविधता',skill:'कौशल',energy:'ऊर्जा',morale:'मनोबल',chemistry:'तालमेल',shotType:'शॉट का प्रकार',space:'जगह',tactics:'रणनीति'},
  stats:{assists:'असिस्ट',blocks:'ब्लॉक',steals:'स्टील',rebounds:'रिबाउंड',title:'टीम के आँकड़े'},
  replay:{kicker:'फ़िल्म रूम',title:'देखें कि प्ले कैसे आगे बढ़ता है।',intro:'रिकॉर्ड की गई क्रियाएँ और नतीजे। रीप्ले करने से आपका सीज़न कभी नहीं बदलता।',recorded:'रिकॉर्ड किया गया प्ले',again:'फिर से रीप्ले करें',pause:'रीप्ले रोकें',resume:'रीप्ले फिर शुरू करें',back:'सीज़न डायरी पर लौटें'},
  lk:{

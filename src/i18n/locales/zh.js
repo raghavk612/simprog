@@ -157,7 +157,7 @@ export default {
  phase:{pass:'传球与跑位',attack:'进攻与运球',gather:'起跳准备与封盖',blocked:'投篮被盖帽',turnover:'失误',flight:'球在空中',basket:'得分',rebound:'篮板'},
  contest:{open:'空位出手',tight:'贴身防守下出手',contested:'有人防守下出手'},
  outcome:{made:'命中',miss:'未中',block:'盖帽',steal:'抢断'},
- impact:{skill:'技能',energy:'体能',morale:'士气',chemistry:'默契',shotType:'投篮类型',space:'空间',tactics:'战术'},
+ impact:{repertoire:'招式储备',skill:'技能',energy:'体能',morale:'士气',chemistry:'默契',shotType:'投篮类型',space:'空间',tactics:'战术'},
  stats:{assists:'助攻',blocks:'盖帽',steals:'抢断',rebounds:'篮板',title:'球队统计'},
  replay:{kicker:'录像室',title:'观看这次进攻如何展开。',intro:'已记录的动作与结果。回放不会改变你的赛季。',recorded:'已记录的进攻',again:'再次回放',pause:'暂停回放',resume:'继续回放',back:'返回赛季日志'},
  lk:{

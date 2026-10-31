@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import * as E from '../src/engine.js';
-import {BASIC_MOVES,SKILL_TREE,skillNode,unlockedMoves,canUnlock,validSkills} from '../src/skills.js';import {SHOTS,isDunk} from '../src/basketball.js';import {setLanguage,LANGUAGES,has} from '../src/i18n/index.js';import {logText} from '../src/narrative.js';
+import {BASIC_MOVES,SKILL_TREE,skillNode,unlockedMoves,canUnlock,validSkills,lockedShare} from '../src/skills.js';import {SHOTS,isDunk} from '../src/basketball.js';import {setLanguage,LANGUAGES,has} from '../src/i18n/index.js';import {logText} from '../src/narrative.js';
 const data=JSON.parse(fs.readFileSync(new URL('../public/data/kangs.json',import.meta.url)));
 const game=(seed=42)=>{const s=E.createGame(data,'Skills','standard',seed);E.autoLineup(s);return s;};
 const prepare=s=>{if(E.mean(s.players,'energy')<70&&s.actions>0)E.train(s,'recovery');if(E.mean(s.players,'gpa')<2.7&&s.actions>0)E.train(s,'study');while(s.actions>0)E.train(s,s.chemistry<85?'bond':'shooting');};
@@ -63,4 +63,16 @@ test('the unlock log line is translated in every language with the move name',as
  const s=game();E.unlockSkill(s,'corner');const entry=s.log[0];
  for(const {code} of LANGUAGES){await setLanguage(code,{persist:false});assert.ok(has('log.skillUnlock'),code);const text=logText(entry);assert.ok(!text.includes('{{')&&text.includes('150'),`${code}: ${text}`);if(code==='en')assert.equal(text,entry.text);else assert.notEqual(text,entry.text,code);}
  await setLanguage('en',{persist:false});
+});
+// Predictable offense: a team that knows few moves is easier to defend, so every locked node costs the Kangs some shot chance.
+test('the repertoire penalty scales with the share of the tree still locked',()=>{
+ const s=game();assert.equal(lockedShare(s),1);s.skills=['corner'];assert.equal(lockedShare(s),7/8);s.skills=['corner','stepback','euro','bogus'];assert.equal(lockedShare(s),5/8);s.skills=ALL;assert.equal(lockedShare(s),0);
+ assert.ok(E.TUNING.repertoire>0);
+ const b=game(3);E.startMatch(b);for(let i=0;i<10;i++){const [home,away]=E.possession(b).plays;assert.ok(Math.abs(home.impacts.repertoire+E.TUNING.repertoire*100)<1e-9,'basic-only: full penalty');assert.equal(away.impacts.repertoire,undefined,'visitors are not affected');}
+ const f=game(3);f.skills=ALL;E.startMatch(f);assert.equal(E.possession(f).plays[0].impacts.repertoire,0);
+ assert.ok(Math.abs(E.modelSnapshot(game()).pp.repertoire+E.TUNING.repertoire*100)<1e-9);assert.equal(E.modelSnapshot(Object.assign(game(),{skills:ALL})).pp.repertoire,0);
+});
+test('a team with the whole tree makes a higher share of its shots than a basic-only team',()=>{
+ const rate=skills=>{let made=0,shots=0;for(let seed=1;seed<=40;seed++){const s=game(seed);if(skills)s.skills=skills;E.startMatch(s);while(s.match){const p=E.possession(s).plays[0];if(p.outcome==='steal')continue;shots++;if(p.outcome==='made')made++;}}return made/shots;};
+ const basic=rate(null),full=rate(ALL);assert.ok(full>basic+.01,`full ${full.toFixed(3)} vs basic ${basic.toFixed(3)}`);
 });

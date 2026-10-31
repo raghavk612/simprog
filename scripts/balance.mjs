@@ -3,11 +3,12 @@ import fs from 'node:fs';
 import * as E from '../src/engine.js';
 const data=JSON.parse(fs.readFileSync(new URL('../public/data/kangs.json',import.meta.url)));
 const N=+process.argv[2]||200;
-// none: no practice. mix: recover when tired, study when grades slip, otherwise a team dinner or a shooting session. perfect: the same, with a perfect drill each time. focus: one-on-one shooting sessions with the weakest starters. scout: the mix strategy plus one scouting session each game (50 tokens, or free with the Film room). buyer: the mix strategy plus the useful purchases (a development assistant, then the Training facility, Nutrition plan, Tutor center and Film room as soon as the tokens allow, and one scouting session each game).
+// none: no practice. mix: recover when tired, study when grades slip, otherwise a team dinner or a shooting session. perfect: the same, with a perfect drill each time. focus: one-on-one shooting sessions with the weakest starters. scout: the mix strategy plus one scouting session each game (50 tokens, or free with the Film room). buyer: the mix strategy plus the useful purchases (a development assistant, then the Training facility, Nutrition plan, Tutor center and Film room as soon as the tokens allow, then the cheapest move it can learn from the skill tree, and one scouting session each game).
 function season(diff,seed,strat){
  const s=E.createGame(data,'Balance',diff,seed),skill=[],tokens=[];let guard=0;
  while(!s.finished&&guard++<s.schedule.length+1){
-  if(strat==='buyer'){if(!s.assistant&&s.tokens>=300)E.hire(s,'development');for(const k of ['facility','nutrition','tutor','film']){const u=E.UPGRADES.find(u=>u.key===k);if(!E.hasUpgrade(s,k)&&s.tokens>=u.cost)E.buyUpgrade(s,k);}}
+  if(strat==='buyer'){if(!s.assistant&&s.tokens>=300)E.hire(s,'development');for(const k of ['facility','nutrition','tutor','film']){const u=E.UPGRADES.find(u=>u.key===k);if(!E.hasUpgrade(s,k)&&s.tokens>=u.cost)E.buyUpgrade(s,k);}
+   if(E.UPGRADES.every(u=>E.hasUpgrade(s,u.key)))for(let n;(n=Object.values(E.SKILL_TREE).flat().filter(n=>E.canUnlock(s,n.key).ok).sort((a,b)=>a.cost-b.cost)[0]);)E.unlockSkill(s,n.key);}
   if((strat==='buyer'||strat==='scout')&&!s.scouted&&s.actions>0&&s.tokens>=50)E.scout(s);
   if(strat!=='none'){
    const perfect=strat==='perfect'||strat==='focus';

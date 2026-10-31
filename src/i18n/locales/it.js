@@ -190,7 +190,7 @@ export default {
  phase:{pass:'Passaggio e smarcamento',attack:'Attacco e palleggio',gather:'Preparazione e contesto',blocked:'Tiro stoppato',turnover:'Palla persa',flight:'Tiro in volo',basket:'Canestro',rebound:'Rimbalzo'},
  contest:{open:'tiro libero',tight:'tiro molto contrastato',contested:'tiro contrastato'},
  outcome:{made:'a segno',miss:'sbagliato',block:'stoppata',steal:'palla rubata'},
- impact:{skill:'Abilità',energy:'Energia',morale:'Morale',chemistry:'Intesa',shotType:'Tipo di tiro',space:'Spazio',tactics:'Tattica'},
+ impact:{repertoire:'Repertorio di mosse',skill:'Abilità',energy:'Energia',morale:'Morale',chemistry:'Intesa',shotType:'Tipo di tiro',space:'Spazio',tactics:'Tattica'},
  stats:{assists:'Assist',blocks:'Stoppate',steals:'Palle rubate',rebounds:'Rimbalzi',title:'Statistiche di squadra'},
  replay:{kicker:'La sala video',title:'Guarda come si sviluppa l’azione.',intro:'Azioni ed esiti registrati. Rivedere un’azione non cambia mai la tua stagione.',recorded:'Azione registrata',again:'Rivedi di nuovo',pause:'Metti in pausa la replica',resume:'Riprendi la replica',back:'Torna al diario della stagione'},
  lk:{

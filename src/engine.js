@@ -1,6 +1,6 @@
 import {GEAR,GEAR_SLOTS,gearItem,gearOwner,gearBonus,effectiveStat,validGear} from './gear.js';
 export {GEAR,GEAR_SLOTS,gearItem,gearOwner,gearBonus,effectiveStat};
-import {BASIC_MOVES,SKILL_TREE,skillNode,unlockedMoves,canUnlock,skillBag,validSkills} from './skills.js';
+import {BASIC_MOVES,SKILL_TREE,skillNode,unlockedMoves,canUnlock,skillBag,validSkills,lockedShare} from './skills.js';
 export {BASIC_MOVES,SKILL_TREE,skillNode,unlockedMoves,canUnlock};
 import {SHOTS,choosePlay,describePlay,family,isDunk} from './basketball.js';
 import {CORE_KITS,SPECIAL_KITS,KIT_NAMES} from './kits.js';
@@ -161,8 +161,11 @@ export function highlights(events,n=3){
  });
  const seen=new Set();return found.sort((a,b)=>b.score-a.score||b.i-a.i).filter(h=>!seen.has(h.i)&&seen.add(h.i)).slice(0,n);
 }
-/* Shot tuning: every shot is a little harder (miss), threes harder still (threeMiss), and blocks are more common. Measured with scripts/balance.mjs and the shooting-line check in the tests. */
-export const TUNING={miss:-.04,threeMiss:-.07,block3:.035,blockTight:.15,block:.06};
+/* Shot tuning: every shot is a little harder (miss), threes harder still (threeMiss), and blocks are more common. Measured with scripts/balance.mjs and the shooting-line check in the tests.
+   repertoire: a predictable offense is easier to defend, so the Kangs lose this much shot chance with the whole skill tree locked (less as moves are learned, none with all of them). */
+export const TUNING={miss:-.04,threeMiss:-.07,block3:.035,blockTight:.15,block:.06,repertoire:.025};
+/* The repertoire factor in percentage points for the Kangs (||0 keeps a complete tree at 0, not −0). */
+const repertoirePP=s=>-TUNING.repertoire*lockedShare(s)*100||0;
 function makePlay(s,team,shooter,helper,defender,opp,m){
  const home=team==='home',rng=()=>random(s),last=m.events.at(-1)?.plays?.find(p=>p.team===team)?.kind;
  // The Kangs draw only from the moves they have learned (skills.js); visitors use the whole bag.
@@ -171,7 +174,7 @@ function makePlay(s,team,shooter,helper,defender,opp,m){
  const mods=m.mods||{},orating=opp.rating+(mods.oppRating||0),skill=home?effectiveStat(s,shooter,'skill'):orating,energy=home?effectiveStat(s,shooter,'energy'):78,chemistry=home?s.chemistry:65;
  const counter={perimeter:'zone',paint:'pressure',transition:'balanced'}[opp.style];
  const tactical=(home?(s.scouted?.025:0)+(mods.offense||0)*.01:(m.tactic===counter?-.035:0)-(mods.defense||0)*.01);
- const impacts={skill:(skill-(home?orating:74))*.55,energy:(energy-65)*.15,morale:home?(effectiveStat(s,shooter,'morale')-65)*.1:0,chemistry:(chemistry-60)*.1,shotType:spec.base*100,space:(separation-.5)*17,tactics:tactical*100};
+ const impacts={skill:(skill-(home?orating:74))*.55,energy:(energy-65)*.15,morale:home?(effectiveStat(s,shooter,'morale')-65)*.1:0,chemistry:(chemistry-60)*.1,shotType:spec.base*100,space:(separation-.5)*17,tactics:tactical*100,...(home?{repertoire:repertoirePP(s)}:{})};
  const chance=cap(.43+TUNING.miss+(spec.three?TUNING.threeMiss:0)+Object.values(impacts).reduce((a,b)=>a+b,0)/100+(home&&m.boost>0?.04:0)+(home?(s.difficulty==='rookie'?.075:s.difficulty==='elite'?-.04:0):0),.16,.86);
  const stealChance=home?.035+(contest==='tight'?.04:0)+(100-energy)*.0004:(m.tactic==='pressure'?.10:.035);
  const blockChance=spec.three?TUNING.block3:(contest==='tight'?TUNING.blockTight:TUNING.block)+(isDunk(kind)?.02:0);
@@ -358,7 +361,7 @@ export function modelChance(impacts,{three=false,boost=false,difficulty='standar
 export function modelSnapshot(s){
  const o=s.finished?null:opponent(s),nm=s.nextMods||{},act=s.players.filter(p=>p.minutes>0),use=act.length?act:s.players.filter(p=>p.starter),pool=use.length?use:s.players;
  const buffed=pool.map(p=>({...p,skill:effectiveStat(s,p,'skill'),energy:effectiveStat(s,p,'energy'),morale:effectiveStat(s,p,'morale')})),skill=mean(buffed,'skill'),energy=cap(mean(buffed,'energy')+(nm.energy||0)),morale=cap(mean(buffed,'morale')+(nm.morale||0)),chem=cap(s.chemistry+(nm.chem||0)),rating=(o?o.rating:MODEL.oppDefault)+(nm.oppRating||0);
- const pp={skill:(skill-rating)*MODEL.skillW,energy:(energy-MODEL.energyMid)*MODEL.energyW,morale:(morale-MODEL.moraleMid)*MODEL.moraleW,chemistry:(chem-MODEL.chemMid)*MODEL.chemW,tactics:((s.scouted?MODEL.scout:0)+(nm.offense||0)*.01)*100};
+ const pp={skill:(skill-rating)*MODEL.skillW,energy:(energy-MODEL.energyMid)*MODEL.energyW,morale:(morale-MODEL.moraleMid)*MODEL.moraleW,chemistry:(chem-MODEL.chemMid)*MODEL.chemW,tactics:((s.scouted?MODEL.scout:0)+(nm.offense||0)*.01)*100,repertoire:repertoirePP(s)};
  const R=n=>Math.round(n*10)/10,diff=R((MODEL.diff[s.difficulty]??0)*100),types=Object.values(SHOTS).map(x=>x.base*100);
  return {skill,energy,morale,chem,rating,pp,diff,level:s.difficulty,before:Math.round(cap(MODEL.base+TUNING.miss+Object.values(pp).reduce((a,b)=>a+b,0)/100+diff/100,MODEL.min,MODEL.max)*100),shotLo:R(Math.min(...types)),shotHi:R(Math.max(...types)),space:R(MODEL.spaceW/2),scout:R(MODEL.scout*100),boost:R(MODEL.boost*100),base:R(MODEL.base*100),miss:R(TUNING.miss*100),threeMiss:R(TUNING.threeMiss*100),min:R(MODEL.min*100),max:R(MODEL.max*100)};
 }
