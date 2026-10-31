@@ -39,7 +39,6 @@ export default {
   namePlaceholder:'Inserisci il tuo nome',
   challenge:'Scegli la tua sfida',
   start:'Prendi in mano i Kangs',
-  continue:'Continua la stagione salvata →',
   howTo:'Come si gioca',
   import:'Importa stagione',
   ticketSeason:'{{season}} / Reinventata',
@@ -49,7 +48,14 @@ export default {
   footerNote:'Progetto studentesco indipendente · Non approvato dalla scuola',
   ticketReal:'3 vere squadre dei Kangs · {{players}} giocatori · {{games}} partite in calendario',
   ticketFallback:'Vere rose e partite dei Kangs',
-  ticketTail:'Le tue decisioni. I tuoi risultati.',demo:'Demo per i giudici',},
+  ticketTail:'Le tue decisioni. I tuoi risultati.',demo:'Demo per i giudici',
+  pauseBg:'Metti in pausa lo sfondo',
+  playBg:'Riprendi lo sfondo',
+  newSeason:'Nuova stagione',
+  continueSeason:'Continua la stagione',
+  nextGame:'Partita {{n}} di {{total}}',
+  vs:'contro {{team}}',
+  record:'Bilancio {{w}}–{{l}}',},
  home:{
   kicker:'Il programma',
   welcome:'Bentornato, coach {{name}}.',
@@ -516,4 +522,4 @@ export default {
  nudge:{kicker:'Cosa devo fare adesso?',finished:'La stagione è finita. Leggi il racconto della stagione e la pagella.',live:'Una partita è in corso. Torna in campo.',inbox:'Nella tua casella c’è una novità. Rispondi prima di tutto.',press:'La sala stampa ti aspetta dopo l’ultima partita.',issues:'Alcuni giocatori della rotazione non possono giocare ({{n}}). Sistema la formazione.',practice:'Slot di preparazione liberi: {{n}}. Pianifica l’allenamento prima della palla a due.',scout:'Scouta {{opp}} prima della palla a due per affinare le letture tattiche.',lineup:'La rotazione non è pronta. Servono cinque titolari e 160 minuti.',tipoff:'Tutto è pronto. Affronta {{opp}}.',btn:{finished:'Apri il diario della stagione',live:'Vai al giorno di gara',inbox:'Apri la casella',press:'Apri la sala stampa',issues:'Sistema la formazione',practice:'Pianifica l’allenamento',scout:'Vai a scoutare',lineup:'Imposta la rotazione',tipoff:'Vai al giorno di gara'},},
  tipoff:{kicker:'Anteprima della palla a due',effective:'Forza {{n}} con i modificatori della settimana',energy:'Energia della rotazione',morale:'Morale della rotazione',timeouts:'Timeout',mods:'Modificatori attivi',none:'Nessun modificatore da stampa o casella attivo.',travel:'Trasferta: il viaggio costa {{n}} gettoni.',homeGame:'Partita in casa: nessun costo di trasferta.',model:'Come funziona il modello',},
  model:{visual:{"typical":"Probabilità di tiro tipica","context":"La rotazione attuale, prima del tipo di tiro e dello spazio difensivo.","adjustments":"Modifiche della squadra","factors":"Cosa cambia le probabilità","pp":"Ogni punto aggiunge o sottrae 1 punto percentuale.","details":"Esplora formule e limiti"},title:'Come funziona il modello di tiro',intro:'Ogni tiro parte da una probabilità di base. Ogni fattore aggiunge o toglie punti percentuali (pp) e il totale resta tra {{min}}% e {{max}}%. Sono i numeri che il gioco usa davvero, con i valori del tuo programma per la prossima partita.',base:'Probabilità iniziale: {{base}}%. Ogni tiro riceve {{miss}} pp e i tiri da tre altri {{three}} pp.',skill:'Abilità del tiratore meno forza dell’avversario, per 0,55. La tua rotazione ha media {{a}} contro {{b}}: {{pp}} pp.',energy:'Energia sopra o sotto 65, per 0,15. La tua rotazione ha media {{v}}: {{pp}} pp.',morale:'Morale sopra o sotto 65, per 0,1. La tua rotazione ha media {{v}}: {{pp}} pp.',chemistry:'Intesa di squadra sopra o sotto 60, per 0,1. Ora è {{v}}: {{pp}} pp.',shotType:'Tipo di tiro: una schiacciata parte fino a {{hi}} pp meglio, una tripla in step-back {{lo}} pp.',space:'Spazio: un tiro libero aggiunge fino a {{n}} pp, uno marcato ne toglie fino a {{n}} pp.',tactics:'Tattica: {{scout}} pp dopo lo scouting, più fino a 4 pp dalle risposte a stampa o casella. Adesso: {{pp}} pp.',diff:'Difficoltà: {{level}} modifica ogni tiro dei Kangs di {{pp}} pp.',boost:'Un timeout aggiunge {{n}} pp per i possessi successivi.',total:'Con le medie di oggi, prima di tipo di tiro e spazio, un tiro tipico dei Kangs è circa {{n}}%.',note:'Rubate e stoppate si decidono prima della probabilità di tiro. È un modello di gioco, non una previsione del basket reale.',l:{base:'Probabilità iniziale',diff:'Difficoltà',boost:'Timeout',total:'Tiro tipico'},},
- code:{kicker:'Codice stagione',body:'Condividi questo codice e un’altra persona potrà iniziare la stessa stagione: stessa squadra, calendario e dadi. Le tue decisioni la renderanno comunque tua.',copy:'Copia il codice stagione',copied:'Codice stagione {{code}} copiato.',failed:'Impossibile copiare in automatico. Seleziona il codice e copialo.',field:'Codice stagione (facoltativo)',placeholder:'KNG-J-1A2B3C',hint:'Inizia la stessa stagione di un amico. Lascia vuoto per una nuova.',invalid:'Questo non è un codice stagione valido. I codici sono come KNG-J-1A2B3C.',unavailable:'Questa stagione è iniziata prima dei codici stagione.',},};
+ code:{kicker:'Codice stagione',body:'Condividi questo codice e un’altra persona potrà iniziare la stessa stagione: stessa squadra, calendario e dadi. Le tue decisioni la renderanno comunque tua.',copy:'Copia il codice stagione',copied:'Codice stagione {{code}} copiato.',failed:'Impossibile copiare in automatico. Seleziona il codice e copialo.',field:'Codice stagione (facoltativo)',placeholder:'KNG-J-1A2B3C',hint:'Inizia la stessa stagione di un amico. Lascia vuoto per una nuova.',invalid:'Questo non è un codice stagione valido. I codici sono come KNG-J-1A2B3C.',unavailable:'Questa stagione è iniziata prima dei codici stagione.',toggle:'Hai un codice stagione?',},};

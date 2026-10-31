@@ -25,7 +25,6 @@ export default {
   namePlaceholder:'输入你的名字',
   challenge:'选择你的挑战',
   start:'执掌 Kangs',
-  continue:'继续已保存的赛季 →',
   howTo:'玩法说明',
   import:'导入赛季',
   ticketSeason:'{{season}} / 重新演绎',
@@ -35,7 +34,14 @@ export default {
   footerNote:'独立学生项目 · 未获学校认可',
   ticketReal:'3 支真实的 Kangs 球队 · {{players}} 名球员 · {{games}} 场已排定的比赛',
   ticketFallback:'真实的 Kangs 名单与比赛',
-  ticketTail:'你的决策，你的结果。',demo:'评委演示',},
+  ticketTail:'你的决策，你的结果。',demo:'评委演示',
+  pauseBg:'暂停背景',
+  playBg:'播放背景',
+  newSeason:'新赛季',
+  continueSeason:'继续赛季',
+  nextGame:'第{{n}}场，共{{total}}场',
+  vs:'对阵 {{team}}',
+  record:'战绩 {{w}}–{{l}}',},
  home:{
   kicker:'球队项目',
   welcome:'欢迎回来，{{name}} 教练。',
@@ -404,4 +410,4 @@ export default {
  nudge:{kicker:'我现在该做什么？',finished:'赛季已结束。去看看你的赛季故事和成绩单。',live:'比赛正在进行。回到球场吧。',inbox:'你的收件箱有待处理的消息，请先处理。',press:'上一场比赛后，新闻发布会在等你。',issues:'轮换阵容中有 {{n}} 名球员无法上场，请调整阵容。',practice:'剩余备战名额：{{n}}。开球前先安排训练。',scout:'开球前先侦察 {{opp}}，让战术判断更准。',lineup:'轮换尚未设置，需要五名首发和 160 分钟。',tipoff:'一切就绪，迎战 {{opp}}。',btn:{finished:'打开赛季日志',live:'前往比赛日',inbox:'打开收件箱',press:'打开新闻发布室',issues:'调整阵容',practice:'安排训练',scout:'去侦察',lineup:'设置轮换',tipoff:'前往比赛日'},},
  tipoff:{kicker:'开球前预览',effective:'计入本周修正后强度 {{n}}',energy:'轮换阵容体能',morale:'轮换阵容士气',timeouts:'暂停',mods:'当前修正',none:'目前没有来自发布会或收件箱的修正。',travel:'客场比赛：出行花费 {{n}} 代币。',homeGame:'主场比赛：无出行费用。',model:'模型如何运作',},
  model:{visual:{"typical":"典型投篮命中率","context":"当前轮换阵容，尚未计入投篮类型和防守空间。","adjustments":"球队调整","factors":"影响命中率的因素","pp":"每点增加或减少 1 个百分点。","details":"查看公式和上下限"},title:'投篮模型如何运作',intro:'每次投篮都从一个基础概率开始。每个因素加减若干百分点（pp），最终结果限制在 {{min}}% 到 {{max}}% 之间。这些就是游戏实际使用的数字，下面显示的是你的球队在下一场比赛的数值。',base:'初始概率：{{base}}%。每次投篮 {{miss}} pp，三分再 {{three}} pp。',skill:'投篮者技能减去对手强度，再乘 0.55。你的轮换平均 {{a}}，对手 {{b}}：{{pp}} pp。',energy:'体能高于或低于 65 的部分乘 0.15。你的轮换平均 {{v}}：{{pp}} pp。',morale:'士气高于或低于 65 的部分乘 0.1。你的轮换平均 {{v}}：{{pp}} pp。',chemistry:'球队化学反应高于或低于 60 的部分乘 0.1。现在是 {{v}}：{{pp}} pp。',shotType:'出手类型：扣篮起点最多好 {{hi}} pp，后撤步三分则为 {{lo}} pp。',space:'空间：空位出手最多加 {{n}} pp，被紧逼则最多减 {{n}} pp。',tactics:'战术：侦察后 {{scout}} pp，另有发布会或收件箱选择带来的最多 4 pp。现在：{{pp}} pp。',diff:'难度：{{level}} 使 Kangs 的每次投篮变化 {{pp}} pp。',boost:'暂停会在接下来几个回合增加 {{n}} pp。',total:'按目前的平均值，在不计出手类型和空间之前，Kangs 的典型投篮约为 {{n}}%。',note:'抢断和盖帽在投篮概率之前决定。这是游戏模型，不是对真实篮球的预测。',l:{base:'初始概率',diff:'难度',boost:'暂停',total:'典型投篮'},},
- code:{kicker:'赛季代码',body:'分享这个代码，别人就能开始同一个赛季：相同的球队、赛程和随机数。你的决策仍会让它独一无二。',copy:'复制赛季代码',copied:'已复制赛季代码 {{code}}。',failed:'无法自动复制。请选中代码后手动复制。',field:'赛季代码（可选）',placeholder:'KNG-J-1A2B3C',hint:'与朋友开始同一个赛季。留空则开始新赛季。',invalid:'这不是有效的赛季代码。代码格式如 KNG-J-1A2B3C。',unavailable:'这个赛季开始于赛季代码功能出现之前。',},};
+ code:{kicker:'赛季代码',body:'分享这个代码，别人就能开始同一个赛季：相同的球队、赛程和随机数。你的决策仍会让它独一无二。',copy:'复制赛季代码',copied:'已复制赛季代码 {{code}}。',failed:'无法自动复制。请选中代码后手动复制。',field:'赛季代码（可选）',placeholder:'KNG-J-1A2B3C',hint:'与朋友开始同一个赛季。留空则开始新赛季。',invalid:'这不是有效的赛季代码。代码格式如 KNG-J-1A2B3C。',unavailable:'这个赛季开始于赛季代码功能出现之前。',toggle:'有赛季代码吗？',},};

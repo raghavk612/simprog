@@ -25,7 +25,6 @@ export default {
   namePlaceholder:'Enter your name',
   challenge:'Choose your challenge',
   start:'Take over the Kangs',
-  continue:'Continue saved season →',
   howTo:'How to play',
   import:'Import season',
   ticketSeason:'{{season}} / Reimagined',
@@ -35,7 +34,14 @@ export default {
   footerNote:'Independent student project · Not school-endorsed',
   ticketReal:'3 real Kangs teams · {{players}} players · {{games}} scheduled matchups',
   ticketFallback:'Real Kangs rosters and matchups',
-  ticketTail:'Your decisions. Your results.',demo:'Judge demo',},
+  ticketTail:'Your decisions. Your results.',demo:'Judge demo',
+  pauseBg:'Pause background',
+  playBg:'Play background',
+  newSeason:'New season',
+  continueSeason:'Continue season',
+  nextGame:'Game {{n}} of {{total}}',
+  vs:'vs {{team}}',
+  record:'Record {{w}}–{{l}}',},
  home:{
   kicker:'The program',
   welcome:'Welcome back, Coach {{name}}.',
@@ -445,4 +451,4 @@ export default {
  nudge:{kicker:'What should I do now?',finished:'The season is over. Read your season story and report card.',live:'A game is in progress. Head back to the court.',inbox:'Your inbox has news waiting. Answer it before anything else.',press:'The press room is waiting after your last game.',issues:'Some players in your rotation cannot play ({{n}}). Fix the lineup.',practice:'Preparation slots free: {{n}}. Plan practice before tip-off.',scout:'Scout {{opp}} before tip-off to sharpen your tactical reads.',lineup:'Your rotation is not set. You need five starters and 160 minutes.',tipoff:'Everything is ready. Take on {{opp}}.',btn:{finished:'Open the season journal',live:'Go to game day',inbox:'Open the inbox',press:'Open the press room',issues:'Fix the lineup',practice:'Plan practice',scout:'Go scout',lineup:'Set the rotation',tipoff:'Go to game day'},},
  tipoff:{kicker:'Tip-off preview',effective:'Strength {{n}} with this week’s modifiers',energy:'Rotation energy',morale:'Rotation morale',timeouts:'Timeouts',mods:'Active modifiers',none:'No press or inbox modifiers are active.',travel:'Away game: travel costs {{n}} tokens.',homeGame:'Home game: no travel cost.',model:'How the model works',},
  model:{visual:{typical:'Typical shot chance',context:'Your current rotation, before shot type and defensive space.',adjustments:'Team adjustments',factors:'What moves your chances',pp:'Each point adds or subtracts 1 percentage point.',details:'Explore the formulas and limits'},title:'How the shot model works',intro:'Every shot starts from a base chance. Each factor adds or subtracts percentage points (pp), then the total is kept between {{min}}% and {{max}}%. These are the numbers the game really uses, with your program’s values for the next game.',base:'Starting chance: {{base}}%. Every shot gets {{miss}} pp, and threes a further {{three}} pp.',skill:'Shooter skill minus opponent strength, times 0.55. Your rotation averages {{a}} against {{b}}: {{pp}} pp.',energy:'Energy above or below 65, times 0.15. Your rotation averages {{v}}: {{pp}} pp.',morale:'Morale above or below 65, times 0.1. Your rotation averages {{v}}: {{pp}} pp.',chemistry:'Team chemistry above or below 60, times 0.1. It is {{v}} now: {{pp}} pp.',shotType:'Shot type: a dunk starts as much as {{hi}} pp better, a step-back three {{lo}} pp.',space:'Space: an open look adds up to {{n}} pp, a tight look takes away up to {{n}} pp.',tactics:'Tactics: {{scout}} pp once you have scouted, plus up to 4 pp from press or inbox answers. Right now: {{pp}} pp.',diff:'Difficulty: {{level}} changes every Kangs shot by {{pp}} pp.',boost:'A timeout adds {{n}} pp for the next few possessions.',total:'With today’s averages and before shot type and space, a typical Kangs shot is about {{n}}%.',note:'Steals and blocks are decided before the shot chance. This is a game model, not a prediction of real basketball.',l:{base:'Starting chance',diff:'Difficulty',boost:'Timeout',total:'Typical shot'},},
- code:{kicker:'Season code',body:'Share this code and someone else can start the same season: same team, schedule and dice. Your decisions still make it yours.',copy:'Copy season code',copied:'Season code {{code}} copied.',failed:'Could not copy automatically. Select the code and copy it.',field:'Season code (optional)',placeholder:'KNG-J-1A2B3C',hint:'Start the same season as a friend. Leave blank for a new one.',invalid:'That is not a valid season code. Codes look like KNG-J-1A2B3C.',unavailable:'This season was started before season codes existed.',},};
+ code:{kicker:'Season code',body:'Share this code and someone else can start the same season: same team, schedule and dice. Your decisions still make it yours.',copy:'Copy season code',copied:'Season code {{code}} copied.',failed:'Could not copy automatically. Select the code and copy it.',field:'Season code (optional)',placeholder:'KNG-J-1A2B3C',hint:'Start the same season as a friend. Leave blank for a new one.',invalid:'That is not a valid season code. Codes look like KNG-J-1A2B3C.',unavailable:'This season was started before season codes existed.',toggle:'Have a season code?',},};

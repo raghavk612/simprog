@@ -39,7 +39,6 @@ export default {
   namePlaceholder:'Saisissez votre nom',
   challenge:'Choisissez votre défi',
   start:'Prendre la tête des Kangs',
-  continue:'Reprendre la saison sauvegardée →',
   howTo:'Comment jouer',
   import:'Importer une saison',
   ticketSeason:'{{season}} / Revisitée',
@@ -49,7 +48,14 @@ export default {
   footerNote:'Projet étudiant indépendant · Non approuvé par l’école',
   ticketReal:'3 vraies équipes des Kangs · {{players}} joueurs · {{games}} matchs au calendrier',
   ticketFallback:'Vrais effectifs et matchs des Kangs',
-  ticketTail:'Vos décisions. Vos résultats.',demo:'Démo pour les juges',},
+  ticketTail:'Vos décisions. Vos résultats.',demo:'Démo pour les juges',
+  pauseBg:'Mettre l’arrière-plan en pause',
+  playBg:'Relancer l’arrière-plan',
+  newSeason:'Nouvelle saison',
+  continueSeason:'Reprendre la saison',
+  nextGame:'Match {{n}} sur {{total}}',
+  vs:'contre {{team}}',
+  record:'Bilan {{w}}–{{l}}',},
  home:{
   kicker:'Le programme',
   welcome:'Bon retour, coach {{name}}.',
@@ -516,4 +522,4 @@ export default {
  nudge:{kicker:'Que dois-je faire maintenant ?',finished:'La saison est terminée. Lisez le récit de votre saison et votre bulletin.',live:'Un match est en cours. Retournez sur le terrain.',inbox:'Votre boîte de réception contient des nouvelles. Répondez-y avant tout.',press:'La salle de presse vous attend après votre dernier match.',issues:'Des joueurs de votre rotation ne peuvent pas jouer ({{n}}). Corrigez la composition.',practice:'Créneaux de préparation libres : {{n}}. Planifiez l’entraînement avant l’entre-deux.',scout:'Repérez {{opp}} avant l’entre-deux pour affiner vos lectures tactiques.',lineup:'Votre rotation n’est pas prête. Il faut cinq titulaires et 160 minutes.',tipoff:'Tout est prêt. Affrontez {{opp}}.',btn:{finished:'Ouvrir le journal de saison',live:'Aller au jour de match',inbox:'Ouvrir la boîte de réception',press:'Ouvrir la salle de presse',issues:'Corriger la composition',practice:'Planifier l’entraînement',scout:'Aller repérer',lineup:'Définir la rotation',tipoff:'Aller au jour de match'},},
  tipoff:{kicker:'Aperçu avant l’entre-deux',effective:'Force {{n}} avec les modificateurs de la semaine',energy:'Énergie de la rotation',morale:'Moral de la rotation',timeouts:'Temps morts',mods:'Modificateurs actifs',none:'Aucun modificateur de presse ou de boîte de réception n’est actif.',travel:'Match à l’extérieur : le déplacement coûte {{n}} jetons.',homeGame:'Match à domicile : pas de frais de déplacement.',model:'Comment fonctionne le modèle',},
  model:{visual:{"typical":"Probabilité de tir typique","context":"Votre rotation actuelle, avant le type de tir et l’espace défensif.","adjustments":"Ajustements de l’équipe","factors":"Ce qui change vos chances","pp":"Chaque point ajoute ou retire 1 point de pourcentage.","details":"Voir les formules et limites"},title:'Comment fonctionne le modèle de tir',intro:'Chaque tir part d’une probabilité de base. Chaque facteur ajoute ou retire des points de pourcentage (pp), puis le total est borné entre {{min}} % et {{max}} %. Ce sont les nombres réellement utilisés par le jeu, avec les valeurs de votre programme pour le prochain match.',base:'Probabilité de départ : {{base}} %. Chaque tir reçoit {{miss}} pp, et les tirs à trois points {{three}} pp de plus.',skill:'Talent du tireur moins force de l’adversaire, fois 0,55. Votre rotation fait {{a}} en moyenne contre {{b}} : {{pp}} pp.',energy:'Énergie au-dessus ou en dessous de 65, fois 0,15. Votre rotation fait {{v}} en moyenne : {{pp}} pp.',morale:'Moral au-dessus ou en dessous de 65, fois 0,1. Votre rotation fait {{v}} en moyenne : {{pp}} pp.',chemistry:'Cohésion d’équipe au-dessus ou en dessous de 60, fois 0,1. Elle est à {{v}} : {{pp}} pp.',shotType:'Type de tir : un dunk part jusqu’à {{hi}} pp mieux, un tir à trois points en retrait {{lo}} pp.',space:'Espace : un tir ouvert ajoute jusqu’à {{n}} pp, un tir serré en retire jusqu’à {{n}} pp.',tactics:'Tactique : {{scout}} pp une fois l’adversaire repéré, plus jusqu’à 4 pp selon vos réponses à la presse ou à la boîte de réception. Maintenant : {{pp}} pp.',diff:'Difficulté : {{level}} modifie chaque tir des Kangs de {{pp}} pp.',boost:'Un temps mort ajoute {{n}} pp pour les possessions suivantes.',total:'Avec les moyennes actuelles, avant le type de tir et l’espace, un tir typique des Kangs est à environ {{n}} %.',note:'Les interceptions et les contres sont décidés avant la probabilité de tir. C’est un modèle de jeu, pas une prédiction du vrai basket.',l:{base:'Probabilité de départ',diff:'Difficulté',boost:'Temps mort',total:'Tir typique'},},
- code:{kicker:'Code de saison',body:'Partagez ce code et quelqu’un d’autre pourra démarrer la même saison : même équipe, même calendrier, mêmes dés. Vos décisions la rendent quand même unique.',copy:'Copier le code de saison',copied:'Code de saison {{code}} copié.',failed:'Copie automatique impossible. Sélectionnez le code et copiez-le.',field:'Code de saison (facultatif)',placeholder:'KNG-J-1A2B3C',hint:'Démarrez la même saison qu’un ami. Laissez vide pour une nouvelle.',invalid:'Ce n’est pas un code de saison valide. Les codes ressemblent à KNG-J-1A2B3C.',unavailable:'Cette saison a commencé avant l’existence des codes de saison.',},};
+ code:{kicker:'Code de saison',body:'Partagez ce code et quelqu’un d’autre pourra démarrer la même saison : même équipe, même calendrier, mêmes dés. Vos décisions la rendent quand même unique.',copy:'Copier le code de saison',copied:'Code de saison {{code}} copié.',failed:'Copie automatique impossible. Sélectionnez le code et copiez-le.',field:'Code de saison (facultatif)',placeholder:'KNG-J-1A2B3C',hint:'Démarrez la même saison qu’un ami. Laissez vide pour une nouvelle.',invalid:'Ce n’est pas un code de saison valide. Les codes ressemblent à KNG-J-1A2B3C.',unavailable:'Cette saison a commencé avant l’existence des codes de saison.',toggle:'Vous avez un code de saison ?',},};
