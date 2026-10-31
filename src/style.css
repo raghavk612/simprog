@@ -861,3 +861,85 @@ dialog:has(.unlock-pop){width:min(470px,calc(100vw - 24px))}
 /* the LOCKED stamp sits across the whole locked achievement, centred, without hiding its text */
 .ach-list li.locked::after{content:'';position:absolute;inset:0;background:url('/images/locked-stamp.png') center/auto 76px no-repeat;opacity:.95;pointer-events:none}
 .unlock-pop .up-lock{width:110px;height:60px;background:url('/images/locked-stamp.png') center/contain no-repeat;border:0;box-shadow:none;border-radius:0}.unlock-pop .up-lock svg{display:none}
+
+/* Title screen (2026-10 rebuild): the live gym fills the screen behind a broadcast letterbox, a game-menu column sits on the left, and the menu slides in once (transform/opacity only).
+   On phones the gym becomes a picture at the top. Comes last so it wins over the older layered .landing rules above. */
+.landing{--tl-gold:#f0c15e;--tl-ink:#07050d;--tl-col:420px;--tl-bar:4vh;display:flex;flex-direction:column;position:relative;overflow:hidden;min-height:100svh;min-height:100dvh;padding:calc(var(--tl-bar) + 18px + env(safe-area-inset-top,0px)) calc(4vw + env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) calc(4vw + env(safe-area-inset-left,0px));background:var(--tl-ink)}
+.landing-content{position:static;flex:1 0 auto;display:flex;align-items:center;min-height:0}
+.landing-copy{position:relative;z-index:2;width:100%;max-width:var(--tl-col);padding:28px 0 36px}
+.landing-visual{position:absolute;inset:0;z-index:0;height:auto;margin:0;opacity:1;pointer-events:none}
+.landing-visual #arena{position:absolute;inset:0;height:100%;border-radius:0;box-shadow:none}
+.landing-visual:before{content:'';position:absolute;inset:0;z-index:2;background:linear-gradient(var(--tl-ink),var(--tl-ink)) top/100% var(--tl-bar) no-repeat,linear-gradient(var(--tl-ink),var(--tl-ink)) bottom/100% var(--tl-bar) no-repeat}
+.landing-visual:after{z-index:1;background:linear-gradient(90deg,#07050df2 0,#07050de0 calc(4vw + 300px),#07050d99 calc(4vw + 430px),#07050d33 calc(4vw + 540px),#07050d00 calc(4vw + 660px)),radial-gradient(125% 95% at 62% 45%,#07050d00 58%,#07050dc0 100%),linear-gradient(0deg,#07050d99,#07050d00 20%)}
+.landing-visual:before,.landing-visual:after{transition:opacity .4s}
+.landing-brand,.landing>footer{position:relative;z-index:3}
+.landing-brand>.pill{margin-left:18px;background:#0d0a16b3;color:#e6dbf5;border:1px solid #ffffff24}/* beside the name, so the scoreboard at the top right stays clear */
+.landing>footer{min-height:var(--tl-bar);padding:4px 0;border:0;align-items:center;font-size:calc(11px*var(--ts,1)*var(--ls,1));letter-spacing:1.4px;color:#a99cb9}
+.landing-copy .eyebrow{margin:0 0 14px;color:var(--tl-gold);font:800 italic calc(17px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:4px}
+.landing-copy .eyebrow .line{width:30px;height:3px;background:var(--tl-gold);transform:skewX(-24deg)}
+.landing h1{margin:0;font:italic 800 calc(clamp(52px,5.2vw,80px)*var(--ts,1)*var(--ls,1))/.9 var(--display);letter-spacing:-.4px;text-transform:uppercase;text-shadow:0 4px 28px #000c;overflow-wrap:normal}/* a long word may run past the column into the picture rather than break */
+.landing h1 em{font-style:italic;color:#c9a4ff}
+.landing-copy>p{max-width:380px;margin:16px 0 22px;font-size:calc(15px*var(--ts,1)*var(--ls,1));line-height:1.6;color:#d6cbe4}
+.title-next{margin:0 0 14px;padding:12px 16px 13px 18px;background:#0d0a16bf;border:1px solid #ffffff1f;border-left:3px solid var(--tl-gold);border-radius:4px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.title-next p{margin:0;max-width:none}
+.title-next-game{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:10px}
+.title-next-game>span:first-child{flex-basis:100%;margin-bottom:3px;font:700 calc(12px*var(--ts,1)*var(--ls,1)) var(--body);letter-spacing:2px;color:var(--tl-gold)}
+.title-next-game>span[aria-hidden]{display:none}
+.title-next-game strong{font:italic 800 calc(27px*var(--ts,1)*var(--ls,1))/1.05 var(--display);letter-spacing:.3px;text-transform:uppercase;color:#fff}
+.title-next p+p{margin-top:3px}
+.title-next-record{font:600 calc(14px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:1.5px;text-transform:uppercase;color:#cfc3de}
+.landing .launch{position:relative;overflow:hidden;width:100%;min-height:60px;margin:0 0 10px;padding:12px 22px 12px 28px;justify-content:space-between;background:linear-gradient(100deg,#8a55ea,#6531c6);color:#fff;border-radius:4px;font:italic 800 calc(23px*var(--ts,1)*var(--ls,1))/1.05 var(--display);letter-spacing:.8px;text-transform:uppercase;text-align:left;box-shadow:0 10px 30px #5b2bb459,inset 0 1px #ffffff2e;transition:transform .18s cubic-bezier(.2,.7,.2,1),box-shadow .18s}
+.landing .launch:before{content:'';position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--tl-gold)}
+.landing .launch span{font-size:calc(24px*var(--ts,1)*var(--ls,1));font-style:normal}
+.landing .launch:hover,.landing .launch:focus-visible{transform:scale(1.02);box-shadow:0 0 0 2px var(--tl-gold),0 0 34px #a06cffa6,inset 0 1px #ffffff2e}
+.landing button:focus-visible,.landing input:focus-visible,.landing select:focus-visible,.landing summary:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.landing-copy>.secondary{width:100%;max-width:none;min-height:48px;margin:0;background:#0d0a16b3;border:1px solid #ffffff3d;border-radius:4px;color:#f3edfb;font:italic 700 calc(17px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:1.2px;text-transform:uppercase;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.landing-copy>.secondary:hover,.landing-copy>.secondary[aria-expanded=true]{background:#1d1530d9;border-color:var(--tl-gold)}
+.landing-copy>.secondary+#start-form{margin-top:16px}
+.landing form{max-width:none}
+.landing form label{display:block;font:700 calc(12px*var(--ts,1)*var(--ls,1)) var(--body);letter-spacing:1.6px;text-transform:uppercase;color:#ddd2ea}
+.landing form input,.landing form select{min-height:48px;margin:6px 0 12px;background:#0d0a16cc;border:1px solid #ffffff38;border-radius:4px;color:#fff}
+.landing form input::placeholder{color:#a497b6;opacity:1}
+.landing .code-toggle summary{width:max-content;max-width:100%;padding:4px 0 14px;font-size:calc(13px*var(--ts,1)*var(--ls,1));color:#ddd2ea}
+.landing .code-toggle .code-hint{color:#cfc3de}
+.landing #start-form .launch{margin:2px 0 0}
+.landing-links{display:flex;flex-wrap:wrap;align-items:center;gap:2px 18px;margin-top:16px}
+.landing-links button{min-height:40px;padding:6px 0;font:700 calc(13px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:1.3px;text-transform:uppercase;color:#d4c7e4}
+.landing-links button:hover{color:#fff}
+.landing-links [data-action=title-pause]{min-height:30px;padding:4px 10px;border:1px solid #ffffff38;border-radius:3px;background:#0d0a1699}
+/* Entrance: brand, eyebrow, title, intro, next game, buttons or form, links; 70ms apart, finished by ~1.05s. */
+@keyframes tl-in{from{opacity:0;transform:translateX(-24px)}}
+@keyframes tl-out{to{opacity:0;transform:translateX(-24px)}}
+.landing :is(.landing-brand,.landing-copy>*,.landing>footer){animation:tl-in 540ms cubic-bezier(.2,.7,.2,1) var(--tl-delay,0ms) both}
+.landing-copy>.eyebrow{--tl-delay:70ms}.landing-copy>h1{--tl-delay:140ms}.landing-copy>p{--tl-delay:210ms}.title-next,.landing-copy>p+#start-form{--tl-delay:280ms}.landing-copy>.launch,#start-form{--tl-delay:350ms}.landing-copy>.secondary{--tl-delay:420ms}.landing-links,.landing>footer{--tl-delay:490ms}
+.landing.entered :is(.landing-brand,.landing-copy>*,.landing>footer){animation:none}
+.landing.leaving :is(.landing-brand,.landing-copy>*,.landing>footer){animation:tl-out .4s cubic-bezier(.4,0,.6,1) forwards}
+.landing.leaving .landing-visual:before,.landing.leaving .landing-visual:after{opacity:0}
+.a11y-reduced-motion .landing :is(.landing-brand,.landing-copy>*,.landing>footer),.a11y-reduced-motion .landing-visual:before,.a11y-reduced-motion .landing-visual:after{animation:none!important;transition:none!important}
+.a11y-reduced-motion .landing .launch:hover,.a11y-reduced-motion .landing .launch:focus-visible{transform:none}
+@media(prefers-reduced-motion:reduce){.landing :is(.landing-brand,.landing-copy>*,.landing>footer),.landing-visual:before,.landing-visual:after{animation:none!important;transition:none!important}.landing .launch:hover,.landing .launch:focus-visible{transform:none}}
+/* High contrast: a solid black menu column and white text on it. (The light theme inverts this whole page, so the dark wash turns light and the text dark.) */
+.a11y-high-contrast .landing-visual:after{background:linear-gradient(90deg,#000 0,#000 calc(4vw + 450px),#000000b3 calc(4vw + 560px),#0000 calc(4vw + 720px))}
+.a11y-high-contrast .title-next{background:#000!important;border:2px solid #fff!important}
+.a11y-high-contrast .title-next *,.a11y-high-contrast .landing-links button,.a11y-high-contrast .landing>footer{color:#fff!important}
+.a11y-high-contrast .landing-links button{text-decoration:underline}
+.a11y-high-contrast .landing-links [data-action=title-pause]{background:#000;border:2px solid #fff}
+/* Phone: the gym is a picture at the top (pointer-events none, nothing focusable inside), then the title, the menu and one row of links. */
+@media(max-width:620px){
+ .landing{padding:calc(14px + env(safe-area-inset-top,0px)) calc(20px + env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) calc(20px + env(safe-area-inset-left,0px))}
+ .landing-content{flex-direction:column;align-items:stretch}
+ .landing-visual{order:-1;position:relative;inset:auto;flex:none;aspect-ratio:16/10;height:auto;margin:12px calc(-20px - env(safe-area-inset-right,0px)) 0 calc(-20px - env(safe-area-inset-left,0px))}
+ .landing-visual:before{display:none}
+ .landing-visual:after,.a11y-high-contrast .landing-visual:after{background:linear-gradient(0deg,var(--tl-ink),#07050d00 24%)}
+ .landing-copy{max-width:none;padding:0 0 20px;margin-top:-10px}
+ .landing-copy .eyebrow{margin-bottom:10px;font-size:calc(14px*var(--ts,1)*var(--ls,1));letter-spacing:3px}
+ .landing h1{font-size:calc(clamp(36px,10.6vw,52px)*var(--ts,1)*var(--ls,1));overflow-wrap:break-word}
+ .landing-copy>p{max-width:none;margin:12px 0 16px;font-size:calc(14px*var(--ts,1)*var(--ls,1));line-height:1.55}
+ .title-next{padding:10px 14px 11px 16px}
+ .title-next-game strong{font-size:calc(23px*var(--ts,1)*var(--ls,1))}
+ .landing .launch{min-height:56px;font-size:calc(21px*var(--ts,1)*var(--ls,1))}
+ .landing-links{flex-wrap:nowrap;justify-content:space-between;gap:14px;margin:12px calc(-20px - env(safe-area-inset-right,0px)) 0 0;padding-right:calc(20px + env(safe-area-inset-right,0px));overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+ .landing-links::-webkit-scrollbar{display:none}
+ .landing-links button{flex:none;white-space:nowrap;font-size:calc(12px*var(--ts,1)*var(--ls,1));letter-spacing:.9px}
+ .landing>footer{padding:12px 0;font-size:calc(10px*var(--ts,1)*var(--ls,1))}
+}
