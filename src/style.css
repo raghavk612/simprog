@@ -942,7 +942,7 @@ dialog:has(.unlock-pop){width:min(470px,calc(100vw - 24px))}
  .landing-links{justify-content:space-between;gap:0 8px;margin-top:12px}
  .landing-links button{flex:none;white-space:nowrap;font-size:calc(clamp(10px,2.9vw,12px)*var(--ts,1)*var(--ls,1));letter-spacing:.3px}
  .landing-links .title-pause-link{display:none}
- .title-pause-over{display:block;position:absolute;z-index:3;top:8px;right:calc(8px + env(safe-area-inset-right,0px));min-width:24px;min-height:28px;padding:4px 9px;pointer-events:auto;background:#0d0a16b8;border:1px solid #ffffff42;border-radius:3px;color:#f3edfb;font:700 calc(11px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:1px;text-transform:uppercase;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+ .title-pause-over{display:block;position:absolute;z-index:3;top:8px;left:calc(8px + env(safe-area-inset-left,0px));min-width:24px;min-height:28px;padding:4px 9px;pointer-events:auto;background:#0d0a16b8;border:1px solid #ffffff42;border-radius:3px;color:#f3edfb;font:700 calc(11px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:1px;text-transform:uppercase;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
  .title-pause-over:hover{border-color:var(--tl-gold)}
  .landing>footer{padding:12px 0;font-size:calc(10px*var(--ts,1)*var(--ls,1))}
 }
