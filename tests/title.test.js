@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {titleMatchup,titleCamera,flyIn,SWEEP,HERO,END} from '../src/title.js';
+import {titleMatchup,titleCamera,flyIn,heroYaw,SWEEP,HERO,END} from '../src/title.js';
 
 const games=[{opponent:'Bothell',date:'12/1/2026'},{opponent:'Skyline',date:'12/4/2026'},{opponent:'Liberty',date:'12/8/2026'}];
 const data={levels:{jv:{games},c:{games:[{opponent:'Redmond',date:'12/5/2026'}]},varsity:{games:[]}}};
@@ -43,4 +43,11 @@ test('flyIn eases from the title shot to the broadcast end shot and clamps',()=>
  assert.deepEqual(END,{position:[0,7.5,15.5],target:[0,1,0]});
  const mid=flyIn(.5,from);mid.position.forEach((v,i)=>assert.ok(Math.abs(v-(from.position[i]+END.position[i])/2)<1e-9));
  const q=flyIn(.25,from);assert.ok(q.position[1]!==from.position[1]+(END.position[1]-from.position[1])*.25,'smoothstep, not linear');
+});
+
+test('the title hero faces the middle of the camera sweep',()=>{
+ const yaw=heroYaw(),[cx,,cz]=titleCamera(0).position,fx=Math.sin(yaw),fz=Math.cos(yaw),tx=cx-HERO.x,tz=cz-HERO.z;
+ assert.ok(Math.abs(yaw)<Math.PI/2,'faces the near (+z) sideline');
+ assert.ok(Math.abs(fx*tz-fz*tx)<1e-9&&fx*tx+fz*tz>0,'facing points at the camera');
+ assert.equal(heroYaw(),yaw,'a constant: he never swivels with the sweep');
 });

@@ -15,6 +15,7 @@ import {BroadcastLook} from './broadcast.js';
 import {animateAthlete} from './motion.js';
 import {Director} from './director.js';
 import {PerfHud,perfWanted} from './perfHud.js';
+import {titleCamera,flyIn,heroYaw,HERO} from './title.js';
 const purple=0x6832ab;
 export class Arena{
  constructor(host){
@@ -114,7 +115,7 @@ export class Arena{
  async importModels(){const loader=new GLTFLoader();/* [model,[[x,y,z,rotY]],scale]: team chairs line each bench on the scorer's side, office set in the +x/-z corner, cabinets beside the locker-room door */for(const [name,positions,scale] of [['bench',[0,1,2,3,4,5].flatMap(k=>[[-9.6+k,0,9.65,Math.PI],[4.4+k,0,9.65,Math.PI]]),2],['chair',[[16.05,0,-13.66,0],[16.4,0,-12.25,Math.PI]],1.7],['table',[[15.3,0,-12.4,0]],2.2],['bookcaseClosedDoors',[[-16.66,0,-15.5,0],[-15.46,0,-15.5,0],[-14.26,0,-15.5,0]],2.1],['plantSmall1',[[18.9,0,-15.5,0]],4.5]]){
   try{const gltf=await loader.loadAsync(`${import.meta.env.BASE_URL}models/${name}.glb`);for(const [px,py,pz,ry] of positions){const obj=gltf.scene.clone(true);obj.position.set(px,py,pz);obj.rotation.y=ry;obj.scale.setScalar(scale);obj.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;}});this.scene.add(obj);}this.models++;}catch(error){console.warn('Asset unavailable',name,error);}
  }}
- mount(target){target.append(this.host);}
+ mount(target){this.endFly();target.append(this.host);}
  /* Graphics quality (see graphics.js). 'auto' starts at High and measures ~2 s of frames once; setting the same level again is a no-op, so applyArena can call this freely. */
  setQuality(q){if(this.failed||q===this.quality)return;this.quality=q;this.level=q==='auto'?'high':q;this.probe=q==='auto'?{times:[],frames:0,done:false}:{done:true};this.applyLevel();}
  applyLevel(){const p=qualityProfile(this.level,devicePixelRatio,{width:this.host.clientWidth,height:this.host.clientHeight}),sun=this.sun;if(this.renderer.getPixelRatio()!==p.pixelRatio){this.renderer.setPixelRatio(p.pixelRatio);if(this.w)this.look?.resize(this.w,this.h);}
@@ -123,11 +124,19 @@ export class Arena{
   if(this.playersChoice)this.applyPlayers();}
  /* Auto mode: after a short warm-up, time about two seconds of rendered frames; if the typical frame is slower than ~28 fps drop one level, once. Nothing is remembered. */
  measure(now){const pr=this.probe;if(pr.done)return;const raw=this.lastT?now-this.lastT:0;this.lastT=now;if(raw<=0||++pr.frames<=PROBE.warmup)return;pr.times.push(raw);if(probeDone(pr.times)){pr.done=true;if(autoDowngrade(pr.times)){this.level=lowerLevel(this.level);this.applyLevel();}}}
- setView(mode){if(this.failed)return;this.mode=mode;this.userMoved=false;this.controls.enabled=mode!=='player';if(mode==='player'){this.fpLook=null;return;}const w=this.host.clientWidth,h=this.host.clientHeight,a=w>1&&h>1?w/h:16/9,tall=a<.8,fixed={locker:[[-9,5.5,-6],[-15.5,1.4,-15]],office:[[18.6,4.4,-6],[15.6,1,-13.2]],follow:[[7,tall?11:9,tall?17:16],[7,1,0]]};
+ setView(mode){if(this.failed)return;if(mode!=='title')this.endFly();this.mode=mode;this.userMoved=false;this.controls.enabled=mode!=='player'&&mode!=='title';if(mode==='player'){this.fpLook=null;return;}if(mode==='title'){this.aimTitle();return;}const w=this.host.clientWidth,h=this.host.clientHeight,a=w>1&&h>1?w/h:16/9,tall=a<.8,fixed={locker:[[-9,5.5,-6],[-15.5,1.4,-15]],office:[[18.6,4.4,-6],[15.6,1,-13.2]],follow:[[7,tall?11:9,tall?17:16],[7,1,0]]};
   if(fixed[mode]){const [p,t]=fixed[mode];this.camera.position.set(...p);this.controls.target.set(...t);}
   else{/* broadcast/courtside keep a fixed viewing angle and solve the distance so the court fills the frame at this aspect (zoom>1 lets the corners run off-frame; the tighter vertical bound leaves room for the score bug and controls) */const [az,el,ty,zx,zy]=mode==='court'?[tall?62:47,tall?21:19,1,tall?1.75:1.3,tall?1.75:1.3]:[tall?70:33,tall?40:32,0,tall?1.12:.97,tall?.9:.8],r=Math.PI/180,cam=this.fitCam||=new THREE.PerspectiveCamera(),dir=new THREE.Vector3(Math.sin(az*r)*Math.cos(el*r),Math.sin(el*r),Math.cos(az*r)*Math.cos(el*r)),t=new THREE.Vector3(0,ty,0),v=new THREE.Vector3(),pts=[[-14.2,0,-8.6],[14.2,0,-8.6],[-14.2,0,8.6],[14.2,0,8.6],[-12.75,4.5,0],[12.75,4.5,0]].map(p=>new THREE.Vector3(...p));cam.fov=tall?65:43;cam.aspect=a;cam.updateProjectionMatrix();
    const fits=d=>{cam.position.copy(dir).multiplyScalar(d).add(t);cam.lookAt(t);cam.updateMatrixWorld();return pts.every(p=>{v.copy(p).project(cam);return v.z<1&&Math.abs(v.x)<=zx&&Math.abs(v.y)<=zy;});};let lo=4,hi=120;for(let i=0;i<26;i++){const mid=(lo+hi)/2;if(fits(mid))hi=mid;else lo=mid;}this.camera.position.copy(dir).multiplyScalar(hi).add(t);this.controls.target.copy(t);}
   this.controls.update();}
+ /* Title screen (mode 'title', shots in src/title.js): a slow jib sweep on its own clock (held while paused; one fixed shot with reduced motion), or the fly-in to the broadcast shot,
+    which holds there once it lands. The fly-in runs on wall time and resolves when it lands, when the view changes or the arena is cleared or remounted, or at the latest shortly after
+    it should have landed (a hidden tab draws no frames). */
+ aimTitle(){const f=this.fly,u=f?(performance.now()-f.t0)/f.ms:0,s=f?flyIn(u,f.from):titleCamera(this.motion?this.titleClock||0:12);this.camera.position.set(...s.position);this.controls.target.set(...s.target);this.camera.lookAt(this.controls.target);if(f&&u>=1)f.done();}
+ setTitlePaused(paused){this.titlePaused=!!paused;}
+ flyIn(ms=900){this.endFly();if(this.failed||!this.motion||this.mode!=='title'||this.host.hidden)return Promise.resolve();
+  return new Promise(resolve=>{const f=this.fly={t0:performance.now(),ms:Math.max(1,ms),from:{position:this.camera.position.toArray(),target:this.controls.target.toArray()}},timer=setTimeout(()=>f.done(),f.ms+500);f.done=()=>{clearTimeout(timer);resolve();};});}
+ endFly(){const f=this.fly;this.fly=null;f?.done();}
  /* Athletes far from the camera draw their simplified meshes (about a third of the triangles). Chosen by how tall the player
     appears on screen, with a little hysteresis so nobody flickers between the two at the threshold. */
  updateLods(){const cam=this.camera,k=2.2/(2*Math.tan(cam.fov*Math.PI/360));
@@ -162,7 +171,7 @@ export class Arena{
   // Previous saves still replay; old events have no detailed action record.
   this.clips=event.plays?.length===2?event.plays:[{team:'home',kind:event.three?'catch':'pullup',player:event.player,id:event.id,jersey:event.jersey||11,lane:1,contest:'contested',outcome:event.points?'made':'miss',points:event.points,commentary:event.explanation},{team:'away',kind:'pullup',player:'Visitors',jersey:12,lane:-1,contest:'contested',outcome:event.away?'made':'miss',points:event.away||0,commentary:'Visitors complete their possession.'}];
  }
- clear(){this.transit=null;this.event=null;this.replaying=false;this.director?.reset();this.clips=null;this.playTime=0;this.paused=false;this.clipIndex=-1;this.ballFrom=null;this.focusRing&&(this.focusRing.visible=false);if(this.people.length===10)this.cast(this.state?.players.filter(p=>p.starter)||[]);}
+ clear(){this.endFly();this.transit=null;this.event=null;this.replaying=false;this.director?.reset();this.clips=null;this.playTime=0;this.paused=false;this.clipIndex=-1;this.ballFrom=null;this.focusRing&&(this.focusRing.visible=false);if(this.people.length===10)this.cast(this.state?.players.filter(p=>p.starter)||[]);}
  isPlaying(){return !!this.event&&this.playTime<CLIP_SECONDS*2;}
  presentation(){if(!this.event)return null;const index=Math.min(1,Math.floor(this.playTime/CLIP_SECONDS)),clip=this.clips[index],time=Math.min(CLIP_SECONDS,this.playTime-index*CLIP_SECONDS),pose=sampleClip(clip,time),e=this.event;return {index,clip,phase:pose.phase,done:!this.isPlaying(),home:e.home-e.points+(index>0||pose.resolved?e.points:0),away:e.visitor-e.away+(index===1&&pose.resolved?e.away:0),resolved:pose.resolved};}
  // Put the home bodies in pose order without moving them: a body that already wears a player's jersey keeps it.
@@ -207,9 +216,10 @@ export class Arena{
   // who has the ball (for the athletes' hands): the nearest player within reach of where it was last frame
   {const bp=this.ball?.position;this.holder=null;if(bp&&bp.y<2.9){let best=.85;for(const p of this.people){const d=Math.hypot(p.position.x-bp.x,p.position.z-bp.z);if(d<best){best=d;this.holder=p;}}}}
   this.clipFamily=this.event&&this.clips?family(this.clips[Math.min(1,Math.floor(this.playTime/CLIP_SECONDS))]?.kind||''):'';
-  if(this.motion)this.time+=dt;this.frameDt=this.event&&this.paused?0:dt*(this.event?this.speed||1:1);
+  // The title screen's pause (WCAG 2.2.2) holds its camera sweep and the warm-up exactly where they are; nothing else uses it.
+  const titled=this.mode==='title'&&!this.event,still=titled&&!!this.titlePaused;if(this.motion){this.time+=dt;if(titled&&!still)this.titleClock=(this.titleClock||0)+dt;}this.frameDt=this.event&&this.paused||still?0:dt*(this.event?this.speed||1:1);
   // One continuous stride/dribble clock, so legs and arms never jump when a clip restarts.
-  this.gait=(this.gait||0)+(this.motion&&!(this.event&&this.paused)?dt*(this.event?this.speed:1):0);
+  this.gait=(this.gait||0)+(this.motion&&!(this.event&&this.paused)&&!still?dt*(this.event?this.speed:1):0);
   if(this.event){
    // Between clips the play clock waits while everyone runs to the next play at a game pace (see startTransit).
    if(!this.paused){if(this.transit){this.transit.t+=dt*this.speed;if(this.transit.t>=this.transit.dur){this.transit=null;this.people.forEach(p=>p.userData.from=null);const b=this.ball.position;this.ballFrom={x:b.x,y:b.y,z:b.z,t0:0};}}else this.playTime=Math.min(CLIP_SECONDS*2,this.playTime+dt*this.speed);}
@@ -234,16 +244,19 @@ export class Arena{
   }else{
    // Idle gym: dribbling and movement only. No invisible automatic shot loop.
    // Players jog back to their spots and the ball is passed to the dribbler; nothing snaps unless motion is off.
-   const live=this.motion&&this.posed,ease=live?1-Math.exp(-dt*22):1,turn=(a,b,k)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*k;this.idleClock=(this.idleClock||0)+dt;if(!this.ballFrom||this.blendMotion!==this.motion){this.blendMotion=this.motion;this.snapshot(this.idleClock);}
-   this.people.forEach((p,i)=>{const k=i%5,tx=[-6,-2,4,8,1][k]+(i>=5?1:0),tz=[-4,4,-3,3,0][k],rest=i<5?Math.PI/2:-Math.PI/2,dx=tx-p.position.x,dz=tz-p.position.z,d=Math.hypot(dx,dz),v=Math.min(5,d*2.2),step=!live||d<.02?d:Math.min(d,v*dt);
-    this.posePlayer(p,{x:p.position.x+(d?dx/d*step:0),y:live?p.position.y*Math.exp(-dt*12):0,z:p.position.z+(d?dz/d*step:0),yaw:live?turn(p.rotation.y,d>.6?Math.atan2(dx,dz):rest,1-Math.exp(-dt*7)):rest,run:live&&d>.02?Math.min(1,v/5):0,arms:i===2?'dribble':'relax'},this.gait,ease);});
+   // On the title screen the dribbler (people[2]) plays to the camera at HERO instead of his usual spot.
+   const live=this.motion&&this.posed,idt=still?0:dt,ease=live?1-Math.exp(-idt*22):1,turn=(a,b,k)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*k;this.idleClock=(this.idleClock||0)+idt;if(!this.ballFrom||this.blendMotion!==this.motion){this.blendMotion=this.motion;this.snapshot(this.idleClock);}
+   this.people.forEach((p,i)=>{const k=i%5,hero=titled&&i===2,tx=hero?HERO.x:[-6,-2,4,8,1][k]+(i>=5?1:0),tz=hero?HERO.z:[-4,4,-3,3,0][k],rest=hero?heroYaw():i<5?Math.PI/2:-Math.PI/2,dx=tx-p.position.x,dz=tz-p.position.z,d=Math.hypot(dx,dz),v=Math.min(5,d*2.2),step=!live||d<.02?d:Math.min(d,v*idt);
+    this.posePlayer(p,{x:p.position.x+(d?dx/d*step:0),y:live?p.position.y*Math.exp(-idt*12):0,z:p.position.z+(d?dz/d*step:0),yaw:live?turn(p.rotation.y,d>.6?Math.atan2(dx,dz):rest,1-Math.exp(-idt*7)):rest,run:live&&d>.02?Math.min(1,v/5):0,arms:i===2?'dribble':'relax'},this.gait,ease);});
    const p=this.people[2].position,b=this.blendBall({x:p.x+.4,y:.3+Math.abs(Math.sin(this.gait*6))*.9,z:p.z+.25},this.idleClock);this.ball.position.set(b.x,b.y,b.z);this.trail.forEach(d=>d.visible=false);
   }
   this.posed=true;
   // With the 3D athletes' broadcast look, Auto and Follow use the broadcast director (Spline camera angles, springs, cuts, depth of field).
   const directed=this.look?.active&&this.motion&&this.event&&(this.mode==='auto'||this.mode==='follow')?this.director.update(this,dt*(this.paused?0:1),{follow:this.mode==='follow'}):null;
-  if(!directed&&this.mode==='follow'&&this.event){const side=this.clipIndex===1?-1:1;const focus=this.people[side===1?0:5].position;const x=THREE.MathUtils.clamp(focus.x,-10,10);this.camera.position.lerp(new THREE.Vector3(x,8.5,14),.045);this.controls.target.lerp(new THREE.Vector3(x,1.2,0),.08);}const fp=this.mode==='player'||(directed?directed==='player':this.mode==='auto'&&this.autoDirector());this.fpActive=!!fp;if(fp){this.firstPerson();}else{this.restoreHead();if(!directed)this.controls.update();}const fov=fp?74:directed?this.director.fov:(this.w/this.h<.8?65:43);
-  this.look?.setDof(directed&&directed!=='player'?this.director.focusPoint:null,this.director.dof,dt);if(this.camera.fov!==fov){this.camera.fov=fov;this.camera.updateProjectionMatrix();}
+  if(!directed&&this.mode==='follow'&&this.event){const side=this.clipIndex===1?-1:1;const focus=this.people[side===1?0:5].position;const x=THREE.MathUtils.clamp(focus.x,-10,10);this.camera.position.lerp(new THREE.Vector3(x,8.5,14),.045);this.controls.target.lerp(new THREE.Vector3(x,1.2,0),.08);}const fp=this.mode==='player'||(directed?directed==='player':this.mode==='auto'&&this.autoDirector());this.fpActive=!!fp;if(fp){this.firstPerson();}else{this.restoreHead();if(titled)this.aimTitle();else if(!directed)this.controls.update();}const fov=fp?74:directed?this.director.fov:(this.w/this.h<.8?65:43);
+  // the title shot holds the dribbler in gentle focus (chest height) with the broadcast look on
+  const heroFocus=titled&&this.look?.active?(this.heroPoint||=new THREE.Vector3()).copy(this.people[2].position).setY(1.2):null;
+  this.look?.setDof(heroFocus||(directed&&directed!=='player'?this.director.focusPoint:null),heroFocus?1.4:this.director.dof,dt);if(this.camera.fov!==fov){this.camera.fov=fov;this.camera.updateProjectionMatrix();}
   // Impact shake: a short camera jitter on dunks and blocks. Off with reduced motion or the screen-shake setting.
   let jx=0,jy=0;if(this.shake>0){if(this.motion&&this.shakeOn){jx=(Math.random()-.5)*this.shake;jy=(Math.random()-.5)*this.shake;}this.shake*=Math.pow(.02,dt);if(this.shake<.004)this.shake=0;}
   this.settleBall();this.updateLods();this.camera.position.x+=jx;this.camera.position.y+=jy;this.look.render(this.camera);this.camera.position.x-=jx;this.camera.position.y-=jy;

@@ -26,3 +26,9 @@ export function flyIn(u, from) {
   const k = Math.min(1, Math.max(0, +u || 0)), e = k * k * (3 - 2 * k), mix = (a, b) => a.map((v, i) => v + (b[i] - v) * e);
   return { position: mix(from.position, END.position), target: mix(from.target, END.target) };
 }
+
+/** Yaw (0 = facing +z) that turns the title dribbler toward the middle of the sweep, so he plays to the camera without swivelling as it moves. */
+export function heroYaw() {
+  const [x, , z] = titleCamera(0).position;
+  return Math.atan2(x - HERO.x, z - HERO.z);
+}
