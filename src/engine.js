@@ -113,7 +113,8 @@ export function playTo(s,week){s.pendingEvent=null;if(s.press)s.press.done=true;
 /* The season shown in the judge demo: a Junior Varsity campaign played to the middle of the schedule. It uses the first seed whose story suits a demonstration (4–5 wins by mid-season, then qualifying for the final run and winning it with the same sensible preparation), so it stays repeatable even after the schedule data is refreshed. */
 export const DEMO={difficulty:'standard',week:7,seeds:400};
 export function demoSeason(data){
- const start=seed=>playTo(createGame(data,'Judge',DEMO.difficulty,seed),DEMO.week);
+ // the demo coach has already learned the slasher branch through the dunk, so judges see the skill tree and dunks in the games
+ const start=seed=>{const g=createGame(data,'Judge',DEMO.difficulty,seed);g.skills=['euro','dunk'];return playTo(g,DEMO.week);};
  for(let seed=1;seed<=DEMO.seeds;seed++){const s=start(seed),P=seasonPlan(s);if(s.wins<4||s.wins>5)continue;const t=playTo(structuredClone(s),P.cut);if(t.wins<P.need)continue;if(playTo(t,t.schedule.length).champion)return s;}
  return start(1);
 }

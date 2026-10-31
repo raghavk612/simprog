@@ -8,7 +8,7 @@ const why=(s,n,reason)=>reason==='locked'?t('skills.needs',{move:move(n.requires
 function node(s,n){
  const c=canUnlock(s,n.key),state=c.ok?'open':c.reason==='owned'?'owned':c.reason==='locked'?'locked':'blocked',id=`skill-${n.key}`;
  const body=state==='owned'?`<p class="skill-state"><span aria-hidden="true">✓</span> ${t('skills.owned')}</p>`:state==='locked'?`<p class="skill-state"><b>${t('skills.locked')}</b> · ${why(s,n,c.reason)}</p><small>${t('skills.cost',{cost:n.cost})}</small>`:`<button class="primary small wide${state==='blocked'?' locked-action':''}" data-action="skill-unlock" data-key="${n.key}" aria-describedby="${id}-name${state==='blocked'?` ${id}-why`:''}" ${state==='blocked'?'disabled':''}>${t('skills.unlock',{cost:n.cost})}</button>${state==='blocked'?`<small id="${id}-why">${why(s,n,c.reason)}</small>`:''}`;
- return `<li class="skill-node ${state}" id="${id}" tabindex="-1"><h4 id="${id}-name">${move(n.key)}</h4><p class="skill-hint">${t(`skills.hint.${n.key}`)}</p>${body}</li>`;
+ return `<li class="skill-node ${state}" id="${id}" tabindex="-1"><h4 id="${id}-name">${move(n.key)}</h4><p class="skill-hint">${t(`skills.hint.${n.key}`,{tactic:t('tactic.perimeter')})}</p>${body}</li>`;
 }
 export function skillTreeCard(s){
  return `<section class="card skill-tree" aria-labelledby="skill-tree-title"><div class="office-heading"><div><span class="eyebrow">${tu('skills.kicker')}</span><h2 id="skill-tree-title">${t('skills.title')}</h2></div><span class="pill">${t('skills.progress',{n:unlockedMoves(s).length,total:TOTAL})}</span></div><p class="skill-intro">${t('skills.intro')}</p>

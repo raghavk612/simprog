@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import * as E from '../src/engine.js';
 const data=JSON.parse(fs.readFileSync(new URL('../public/data/kangs.json',import.meta.url)));
 const N=+process.argv[2]||200;
-// none: no practice. mix: recover when tired, study when grades slip, otherwise a team dinner or a shooting session. perfect: the same, with a perfect drill each time. focus: one-on-one shooting sessions with the weakest starters. scout: the mix strategy plus one scouting session each game (50 tokens, or free with the Film room). buyer: the mix strategy plus the useful purchases (a development assistant, then the Training facility, Nutrition plan, Tutor center and Film room as soon as the tokens allow, then the cheapest move it can learn from the skill tree, and one scouting session each game).
+// none: no practice. mix: recover when tired, study when grades slip, otherwise a team dinner or a shooting session. perfect: the same, with a perfect drill each time. focus: one-on-one shooting sessions with the weakest starters. scout: the mix strategy plus one scouting session each game (50 tokens, or free with the Film room). buyer: the mix strategy plus the useful purchases (a development assistant, then the Training facility, Nutrition plan, Tutor center and Film room as soon as the tokens allow, then, once those are owned, every skill-tree move it can afford each week (cheapest first), and one scouting session each game).
 function season(diff,seed,strat){
  const s=E.createGame(data,'Balance',diff,seed),skill=[],tokens=[];let guard=0;
  while(!s.finished&&guard++<s.schedule.length+1){

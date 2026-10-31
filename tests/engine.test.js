@@ -48,6 +48,10 @@ test('the judge demo is a repeatable mid-season save that can still be won',()=>
  const u=E.playTo(structuredClone(t),t.schedule.length);assert.ok(u.finished);
  const v=E.playTo(structuredClone(a),0);assert.equal(v.week,a.week,'playing to an earlier week changes nothing');
 });
+test('the judge demo shows the skill tree: the slasher branch through the dunk is already learned',()=>{
+ const a=E.demoSeason(data);assert.deepEqual(a.skills,['euro','dunk']);assert.ok(E.unlockedMoves(a).includes('dunk'));
+ assert.ok(a.results.some(r=>(r.events||[]).some(e=>(e.plays||[]).some(p=>p.team==='home'&&p.kind==='dunk'))),'the Kangs have already dunked in the demo games');
+});
 test('skill growth slows near the top, and one-on-one sessions are worth more than team sessions',()=>{
  assert.equal(E.growthRoom(40),1);assert.equal(E.growthRoom(98),E.GROWTH.min);assert.ok(E.growthRoom(70)>E.growthRoom(80)&&E.growthRoom(80)>E.growthRoom(90));
  const gainOf=(skill,id)=>{const s=game();s.players.forEach(p=>{p.skill=skill;});const before=s.players[0].skill;E.train(s,'shooting',id);return s.players[0].skill-before;};

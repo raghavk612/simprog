@@ -18,7 +18,7 @@ test('a new season shows the five basic moves and three branches in order, roots
   assert.equal(stateOf(html,root.key),'open');assert.match(nodeHtml(html,root.key),new RegExp(`<button class="primary small wide" data-action="skill-unlock" data-key="${root.key}"[^>]*>${t('skills.unlock',{cost:root.cost})}</button>`));
   for(const n of rest){const h=nodeHtml(html,n.key);assert.equal(stateOf(html,n.key),'locked');assert.doesNotMatch(h,/<button/);assert.ok(h.includes(t('skills.needs',{move:t(`shot.${n.requires}`)})),n.key);assert.ok(h.includes(t('skills.locked')));}
  }
- for(const k of Object.values(SKILL_TREE).flat().map(n=>n.key))assert.ok(nodeHtml(html,k).includes(t(`skills.hint.${k}`)),k);
+ for(const k of Object.values(SKILL_TREE).flat().map(n=>n.key))assert.ok(nodeHtml(html,k).includes(t(`skills.hint.${k}`,{tactic:t('tactic.perimeter')})),k);
  assert.ok(html.includes(t('skills.progress',{n:5,total:13})));
 });
 test('an unlocked move shows as learned and opens the next move in its branch',()=>{
@@ -40,4 +40,8 @@ test('the skill tree renders in every language without missing keys',async()=>{
  const s=game();E.unlockSkill(s,'corner');const english=skillTreeCard(s);
  for(const {code} of LANGUAGES){await setLanguage(code,{persist:false});const html=skillTreeCard(s);assert.doesNotMatch(html,/skills\.|shot\.|office\.|\{\{/,code);if(code!=='en')assert.ok(!html.includes(english.match(/<p class="skill-intro">([^<]*)/)[1]),`${code} intro is translated`);}
  await setLanguage('en',{persist:false});
+});
+test('the dunk hint names the tactic that turns dunks off, using the tactic label itself in every language',async()=>{
+ for(const {code} of LANGUAGES){await setLanguage(code,{persist:false});const html=nodeHtml(skillTreeCard(game()),'dunk');
+  assert.ok(html.includes(t('tactic.perimeter').replace(/&/g,'&amp;')),`${code}: dunk hint shows "${t('tactic.perimeter')}"`);assert.ok(!html.includes('{{'),`${code}: no raw placeholder`);}
 });
