@@ -135,7 +135,7 @@ export class Arena{
  aimTitle(){if(this.fly&&!this.motion)this.endFly();/* reduced motion switched on mid-flight: no fly-in, straight to the fixed shot */const f=this.fly,u=f?(performance.now()-f.t0)/f.ms:0,s=f?flyIn(u,f.from):titleCamera(this.motion?this.titleClock||0:STILL);this.titleU=f?u:0;/* fly-in progress, for the lens (titleFov) */this.camera.position.set(...s.position);this.controls.target.set(...s.target);this.camera.lookAt(this.controls.target);if(f&&u>=1)f.done();}
  setTitlePaused(paused){this.titlePaused=!!paused;}
  flyIn(ms=900){this.endFly();if(this.failed||!this.motion||this.mode!=='title'||this.host.hidden)return Promise.resolve();
-  return new Promise(resolve=>{const f=this.fly={t0:performance.now(),ms:Math.max(1,ms),from:{position:this.camera.position.toArray(),target:this.controls.target.toArray()}},timer=setTimeout(()=>f.done(),f.ms+500);f.done=()=>{clearTimeout(timer);resolve();};});}
+  return new Promise(resolve=>{const f=this.fly={t0:performance.now(),ms:Math.max(1,ms),from:{position:this.camera.position.toArray(),target:this.controls.target.toArray()}},timer=setTimeout(()=>f.done(),f.ms+500);f.done=()=>{if(f.over)return;f.over=true;clearTimeout(timer);resolve();};});}/* done is a no-op after the first call (aimTitle reports the landing every frame while the shot holds) */
  endFly(){const f=this.fly;this.fly=null;f?.done();}
  /* Athletes far from the camera draw their simplified meshes (about a third of the triangles). Chosen by how tall the player
     appears on screen, with a little hysteresis so nobody flickers between the two at the threshold. */
@@ -209,15 +209,15 @@ export class Arena{
    if(pose.arms==='dribble'){x=j?-.25+Math.sin(t*18)*.25:-.6;elbow=j?-.15:-.8;}
    const r=arm.rotation,e=arm.userData.elbow.rotation;r.set(r.x+(x-r.x)*ease,0,r.z+(z-r.z)*ease);e.x+=(elbow-e.x)*ease;
   });
-  if(u.body?.style==='athletes')animateAthlete(player,pose,{dt:this.frameDt||0,motion:this.motion&&!(this.event&&this.paused),gait:this.gait,ball:this.ball?.position,ballRadius:.13,holder:player===this.holder,family:this.clipFamily||''});
+  if(u.body?.style==='athletes')animateAthlete(player,pose,{dt:this.frameDt||0,motion:this.motion&&!(this.event&&this.paused)&&!this.titleStill,gait:this.gait,ball:this.ball?.position,ballRadius:.13,holder:player===this.holder,family:this.clipFamily||''});
  }
  frame(){if(this.failed)return;const dt=Math.min(this.clock.getDelta(),.05),w=this.host.clientWidth,h=this.host.clientHeight;
-  if(w<1||h<1||this.host.hidden){this.lastT=0;return;}this.measure(performance.now());if(this.w!==w||this.h!==h){this.w=w;this.h=h;this.renderer.setPixelRatio(qualityProfile(this.level,devicePixelRatio,{width:w,height:h}).pixelRatio);this.renderer.setSize(w,h,false);this.look?.resize(w,h);this.camera.aspect=w/h;this.camera.fov=w/h<.8?65:43;this.camera.updateProjectionMatrix();}
+  if(w<1||h<1||this.host.hidden){this.lastT=0;return;}/* the auto-quality probe never times the title gym (it always shows the athletes and the broadcast look); it runs on the first other view */if(this.mode==='title')this.lastT=0;else this.measure(performance.now());if(this.w!==w||this.h!==h){this.w=w;this.h=h;this.renderer.setPixelRatio(qualityProfile(this.level,devicePixelRatio,{width:w,height:h}).pixelRatio);this.renderer.setSize(w,h,false);this.look?.resize(w,h);this.camera.aspect=w/h;this.camera.fov=w/h<.8?65:43;this.camera.updateProjectionMatrix();}
   // who has the ball (for the athletes' hands): the nearest player within reach of where it was last frame
   {const bp=this.ball?.position;this.holder=null;if(bp&&bp.y<2.9){let best=.85;for(const p of this.people){const d=Math.hypot(p.position.x-bp.x,p.position.z-bp.z);if(d<best){best=d;this.holder=p;}}}}
   this.clipFamily=this.event&&this.clips?family(this.clips[Math.min(1,Math.floor(this.playTime/CLIP_SECONDS))]?.kind||''):'';
-  // The title screen's pause (WCAG 2.2.2) holds its camera sweep and the warm-up exactly where they are; nothing else uses it.
-  const titled=this.mode==='title'&&!this.event,still=titled&&!!this.titlePaused;if(this.motion){this.time+=dt;if(titled&&!still)this.titleClock=(this.titleClock||0)+dt;}this.frameDt=this.event&&this.paused||still?0:dt*(this.event?this.speed||1:1);
+  // The title screen's pause (WCAG 2.2.2) holds its camera sweep where it is and poses the gym as with reduced motion: everyone on his title spot in a still stance, gait frozen; nothing else uses it.
+  const titled=this.mode==='title'&&!this.event,still=titled&&!!this.titlePaused;this.titleStill=still;if(this.motion){this.time+=dt;if(titled&&!still)this.titleClock=(this.titleClock||0)+dt;}this.frameDt=this.event&&this.paused?0:dt*(this.event?this.speed||1:1);
   // One continuous stride/dribble clock, so legs and arms never jump when a clip restarts.
   this.gait=(this.gait||0)+(this.motion&&!(this.event&&this.paused)&&!still?dt*(this.event?this.speed:1):0);
   if(this.event){
@@ -245,10 +245,11 @@ export class Arena{
    // Idle gym: dribbling and movement only. No invisible automatic shot loop.
    // Players jog back to their spots and the ball is passed to the dribbler; nothing snaps unless motion is off.
    // On the title screen the dribbler (people[2]) plays to the camera at HERO instead of his usual spot.
-   const live=this.motion&&this.posed,idt=still?0:dt,ease=live?1-Math.exp(-idt*22):1,turn=(a,b,k)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*k;this.idleClock=(this.idleClock||0)+idt;if(!this.ballFrom||this.blendMotion!==this.motion){this.blendMotion=this.motion;this.snapshot(this.idleClock);}
+   const live=this.motion&&this.posed&&!still,idt=still?0:dt,ease=live?1-Math.exp(-idt*22):1,turn=(a,b,k)=>a+Math.atan2(Math.sin(b-a),Math.cos(b-a))*k;this.idleClock=(this.idleClock||0)+idt;if(!this.ballFrom||this.blendMotion!==this.motion){this.blendMotion=this.motion;this.snapshot(this.idleClock);}
    this.people.forEach((p,i)=>{const k=i%5,hero=titled&&i===2,tx=hero?HERO.x:[-6,-2,4,8,1][k]+(i>=5?1:0),tz=hero?HERO.z:[-4,4,-3,3,0][k],rest=hero?heroYaw():i<5?Math.PI/2:-Math.PI/2,dx=tx-p.position.x,dz=tz-p.position.z,d=Math.hypot(dx,dz),v=Math.min(5,d*2.2),step=!live||d<.02?d:Math.min(d,v*idt);
     this.posePlayer(p,{x:p.position.x+(d?dx/d*step:0),y:live?p.position.y*Math.exp(-idt*12):0,z:p.position.z+(d?dz/d*step:0),yaw:live?turn(p.rotation.y,d>.6?Math.atan2(dx,dz):rest,1-Math.exp(-idt*7)):rest,run:live&&d>.02?Math.min(1,v/5):0,arms:i===2?'dribble':'relax'},this.gait,ease);});
-   const p=this.people[2].position,b=this.blendBall({x:p.x+.4,y:.3+Math.abs(Math.sin(this.gait*6))*.9,z:p.z+.25},this.idleClock);this.ball.position.set(b.x,b.y,b.z);this.trail.forEach(d=>d.visible=false);
+   // paused title: the ball holds in the hero's dribble (and the next blend starts from there)
+   const p=this.people[2].position,at={x:p.x+.4,y:.3+Math.abs(Math.sin(this.gait*6))*.9,z:p.z+.25},b=still?(this.ballFrom={...at,t0:this.idleClock},at):this.blendBall(at,this.idleClock);this.ball.position.set(b.x,b.y,b.z);this.trail.forEach(d=>d.visible=false);
   }
   this.posed=true;
   // With the 3D athletes' broadcast look, Auto and Follow use the broadcast director (Spline camera angles, springs, cuts, depth of field).

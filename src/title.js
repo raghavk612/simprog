@@ -40,8 +40,8 @@ export function flyIn(u, from) {
   return { position: mix(from.position, END.position), target: mix(from.target, END.target) };
 }
 
-/** Yaw (0 = facing +z) that turns the title dribbler toward the middle of the sweep, so he plays to the camera without swivelling as it moves. */
+/** Yaw (0 = facing +z) that turns the title dribbler toward the middle of the sweep, so he plays to the camera without swivelling as it moves (a constant, worked out once). */
+const HERO_YAW = (([x, , z]) => Math.atan2(x - HERO.x, z - HERO.z))(titleCamera(0).position);
 export function heroYaw() {
-  const [x, , z] = titleCamera(0).position;
-  return Math.atan2(x - HERO.x, z - HERO.z);
+  return HERO_YAW;
 }

@@ -29,11 +29,11 @@ test('boardGame names the opponent for the visitors on the court',()=>{
  assert.equal(boardGame(null).opponent,'Guest');
 });
 
-test('before tip-off the bottom row shows the real records, a dash when the opponent has no standings row',()=>{
+test('before tip-off the bottom row shows the real records (en dash, as on the title card), a dash when the opponent has no standings row',()=>{
  const d=scoreboardData(state({week:1,wins:5,losses:2,standings:{Skyline:{name:'Skyline',w:3,l:4}}}));
- assert.equal(d.pre,true);assert.equal(d.away,'SKYLINE');assert.equal(d.statLabel,'RECORD');assert.equal(d.statHome,'5-2');assert.equal(d.statAway,'3-4');
- const n=scoreboardData(state({week:1,wins:5,losses:2,standings:{}}));assert.equal(n.statLabel,'RECORD');assert.equal(n.statHome,'5-2');assert.equal(n.statAway,'–');
- assert.equal(scoreboardData(state({week:0,results:[]})).statHome,'0-0');
+ assert.equal(d.pre,true);assert.equal(d.away,'SKYLINE');assert.equal(d.statLabel,'RECORD');assert.equal(d.statHome,'5–2');assert.equal(d.statAway,'3–4');
+ const n=scoreboardData(state({week:1,wins:5,losses:2,standings:{}}));assert.equal(n.statLabel,'RECORD');assert.equal(n.statHome,'5–2');assert.equal(n.statAway,'–');
+ assert.equal(scoreboardData(state({week:0,results:[]})).statHome,'0–0');
 });
 test('live and final boards keep TEAM REB',()=>{
  const f=scoreboardData(state({finished:true,week:2,wins:5,losses:2}),60,50);assert.equal(f.statLabel,'TEAM REB');assert.equal(f.statHome,'30');assert.equal(f.statAway,'20');

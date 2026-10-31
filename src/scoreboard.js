@@ -88,7 +88,7 @@ export function scoreboardData(s, home = 0, away = 0, event = null) {
   const st = game?.stats;
   const reb = st ? [String(st.home?.rebounds ?? 0), String(st.away?.rebounds ?? 0)] : ['–', '–'];
   // Before tip-off there are no rebounds yet: show the two teams' real records instead (the opponent's comes from the standings, a dash when it has none).
-  const opp = s?.standings?.[opponent], rec = pre ? [`${s.wins ?? 0}-${s.losses ?? 0}`, opp ? `${opp.w ?? 0}-${opp.l ?? 0}` : '–'] : reb;
+  const opp = s?.standings?.[opponent], rec = pre ? [`${s.wins ?? 0}–${s.losses ?? 0}`, opp ? `${opp.w ?? 0}–${opp.l ?? 0}` : '–'] : reb;
 
   return {
     home: 'KANGS', away: boardName(opponent), opponent: String(opponent), crest: initials(opponent), awayLogo: OPP_LOGOS.has(String(opponent)),

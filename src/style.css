@@ -908,6 +908,7 @@ dialog:has(.unlock-pop){width:min(470px,calc(100vw - 24px))}
 .landing-links button:hover{color:#fff}
 .landing-links [data-action=title-pause]{min-height:30px;padding:4px 10px;border:1px solid #ffffff38;border-radius:3px;background:#0d0a1699}
 .title-pause-over{display:none}/* the phone layout's copy of the pause button, on the gym picture */
+.landing [data-action=title-pause][hidden]{display:none}/* both copies are hidden with reduced motion (the phone copy's display:block would otherwise win) */
 /* Entrance: brand, eyebrow, title, intro, next game, buttons or form, links; 70ms apart, finished by ~1.05s. */
 @keyframes tl-in{from{opacity:0;transform:translateX(-24px)}}
 @keyframes tl-out{to{opacity:0;transform:translateX(-24px)}}
