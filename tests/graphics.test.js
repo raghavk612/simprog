@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {GRAPHICS_LEVELS,qualityProfile,lowerLevel,autoDowngrade,probeDone,medianMs,PROBE} from '../src/graphics.js';
+import {GRAPHICS_LEVELS,qualityProfile,lowerLevel,autoDowngrade,probeDone,medianMs,PROBE,arenaPlayers} from '../src/graphics.js';
 import {normalizeA11y,A11Y_DEFAULTS,activeA11yCount} from '../src/settings.js';
 
 test('quality levels map to renderer profiles; High keeps the current look',()=>{
@@ -47,4 +47,10 @@ test('broadcast rig: the Spline values convert to game units on the same court',
  assert.equal(RIG.spots.length,6);assert.equal(RIG.banks.length,10);
  for(const c of Object.values(RIG.cameras)){assert.equal(c.position.length,3);assert.equal(c.target.length,3);}
  const key=toGame(RIG.key.position);assert.ok(key[1]>20,'key light high over the court');
+});
+
+test('the title gym shows the 3D athletes whatever the players setting, except on Low; other views follow the setting',()=>{
+  for(const level of ['medium','high'])for(const choice of ['classic','athletes',undefined,'bogus'])assert.equal(arenaPlayers(choice,level,'title'),'athletes');
+  for(const choice of ['classic','athletes'])assert.equal(arenaPlayers(choice,'low','title'),'classic');
+  for(const mode of ['broadcast','court','office','auto',undefined]){assert.equal(arenaPlayers('classic','high',mode),'classic');assert.equal(arenaPlayers('athletes','medium',mode),'athletes');assert.equal(arenaPlayers('athletes','low',mode),'classic');}
 });

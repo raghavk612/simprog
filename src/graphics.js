@@ -3,6 +3,8 @@ export const GRAPHICS_LEVELS=['auto','low','medium','high'];
 // Player models: 'classic' (the original figures) or 'athletes' (the rigged Houdini bodies). Low quality always draws classic.
 export const PLAYER_MODELS=['classic','athletes'];
 export const effectivePlayers=(choice,level)=>level==='low'||!PLAYER_MODELS.includes(choice)?'classic':choice;
+// What the Arena draws: the title gym always shows off the athletes (still classic on Low); every other view follows the coach's setting, which is never changed.
+export const arenaPlayers=(choice,level,mode)=>effectivePlayers(mode==='title'?'athletes':choice,level);
 // pixelRatio is a ceiling for devicePixelRatio; shadowSize 0 turns the sun's shadow off; crowd is 'full' | 'noshadow' | 'hidden'.
 const PROFILES={low:{pixelRatio:1,shadowSize:0,crowd:'hidden'},medium:{pixelRatio:1.5,shadowSize:1024,crowd:'noshadow'},high:{pixelRatio:2,shadowSize:2048,crowd:'full'}};
 // Pixel budget per level: on very large canvases (e.g. a full-screen Retina window, 5.7 million pixels at 2x) the ratio is

@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {titleMatchup,titleCamera,flyIn,heroYaw,SWEEP,HERO,END} from '../src/title.js';
+import {titleMatchup,titleCamera,flyIn,heroYaw,titleFov,SWEEP,HERO,END} from '../src/title.js';
 
 const games=[{opponent:'Bothell',date:'12/1/2026'},{opponent:'Skyline',date:'12/4/2026'},{opponent:'Liberty',date:'12/8/2026'}];
 const data={levels:{jv:{games},c:{games:[{opponent:'Redmond',date:'12/5/2026'}]},varsity:{games:[]}}};
@@ -18,13 +18,13 @@ test('no save uses the first real game of the chosen difficulty at 0-0',()=>{
  assert.equal(titleMatchup(null,data,'elite').opponent,null);
 });
 
-test('the title camera sweeps along the near sideline and never leaves the gym',()=>{
+test('the title camera sweeps along the near sideline, aimed 3 m left of the hero so he stands right of the menu, and never leaves the gym',()=>{
  assert.equal(SWEEP,60);
  let minAz=Infinity,maxAz=-Infinity;
  for(let t=0;t<=SWEEP;t+=.25){
   const {position:[x,y,z],target:[tx,ty,tz]}=titleCamera(t);
   assert.ok(z>9.6&&z<15,`z ${z} at ${t}`);assert.ok(Math.abs(x)<18,`x ${x} at ${t}`);assert.ok(y>2.5&&y<5,`y ${y} at ${t}`);
-  assert.deepEqual([tx,ty,tz],[HERO.x*.5,1.2,HERO.z*.5]);
+  assert.deepEqual([tx,ty,tz],[HERO.x*.5-3,1.2,HERO.z*.5]);
   const az=Math.atan2(x-tx,z-tz)*180/Math.PI;minAz=Math.min(minAz,az);maxAz=Math.max(maxAz,az);
   assert.ok(Math.abs(Math.hypot(x-tx,z-tz)-13)<1e-9,'horizontal distance 13');
  }
@@ -34,6 +34,12 @@ test('the title camera is periodic',()=>{
  const a=titleCamera(0),b=titleCamera(SWEEP);
  a.position.forEach((v,i)=>assert.ok(Math.abs(v-b.position[i])<1e-9));a.target.forEach((v,i)=>assert.ok(Math.abs(v-b.target[i])<1e-9));
  const c=titleCamera(7),d=titleCamera(7+SWEEP);c.position.forEach((v,i)=>assert.ok(Math.abs(v-d.position[i])<1e-9));
+});
+
+test('the title lens is long (30deg) on wide screens, 65deg on tall ones, and eases to the broadcast 43deg during the fly-in',()=>{
+ assert.equal(titleFov(16/10),30);assert.equal(titleFov(16/9,0),30);assert.equal(titleFov(.79),65);assert.equal(titleFov(.5,.6),65);
+ assert.equal(titleFov(1.6,1),43);assert.equal(titleFov(1.6,7),43);assert.equal(titleFov(1.6,-1),30);
+ assert.ok(Math.abs(titleFov(1.6,.5)-36.5)<1e-9,'halfway');assert.ok(titleFov(1.6,.25)<30+13*.25,'smoothstep, like the camera move');
 });
 
 test('flyIn eases from the title shot to the broadcast end shot and clamps',()=>{

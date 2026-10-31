@@ -9,13 +9,13 @@ import {qualityProfile, lowerLevel, autoDowngrade, probeDone, PROBE} from './gra
 import {loadOpponentLogo} from './logos.js';
 import {gymColors} from './kits.js';
 import {classicBody,attachBody,disposeBody,validBody,athleteBody,variantFor,BODY_VARIANTS,lookFor,lookKey,loadAthletes} from './players.js';
-import {effectivePlayers} from './graphics.js';
+import {arenaPlayers} from './graphics.js';
 import {ballMaterial} from './materials.js';
 import {BroadcastLook} from './broadcast.js';
 import {animateAthlete} from './motion.js';
 import {Director} from './director.js';
 import {PerfHud,perfWanted} from './perfHud.js';
-import {titleCamera,flyIn,heroYaw,HERO} from './title.js';
+import {titleCamera,flyIn,heroYaw,titleFov,HERO} from './title.js';
 const purple=0x6832ab;
 export class Arena{
  constructor(host){
@@ -76,9 +76,9 @@ export class Arena{
  /* What a body builder needs from the Arena: the shared material style, crisp canvas text and the captain badge. */
  bodyKit(){return this.kit??={mat:(c,extra)=>this.mat(c,extra),textTexture:(...a)=>this.textTexture(...a),capMat:(this.capMat??=new THREE.MeshBasicMaterial({map:this.textTexture('C','#e9b858','#2a1450',128,{aspect:1}),toneMapped:false}))};}
  /* Swaps one player's body (see src/players.js) and re-applies his name, number and kit colours to the new one. */
- /* Player models setting. 'athletes' loads the three rigged bodies once (about 1 MB) and keeps classic figures until they arrive or if they fail. */
+ /* Player models setting. 'athletes' loads the three rigged bodies once (about 1 MB) and keeps classic figures until they arrive or if they fail. The title gym always shows the athletes (not on Low) without touching the setting; setView re-applies on entering or leaving it. */
  setPlayers(choice){if(this.failed)return;this.playersChoice=choice;this.applyPlayers();}
- applyPlayers(){const want=effectivePlayers(this.playersChoice,this.level);this.playerStyle=want;
+ applyPlayers(){const want=arenaPlayers(this.playersChoice,this.level,this.mode);this.playerStyle=want;
   if(want==='athletes'&&!this.templates){(this.bodiesLoading??=loadAthletes()).then(t=>{this.templates=t;this.applyPlayers();}).catch(e=>{console.warn('Player models unavailable, keeping classic',e);this.bodiesLoading=null;this.playerStyle='classic';});return;}
   this.people.forEach(p=>this.styleBody(p));this.styleBall(want==='athletes'&&!!this.templates);this.look?.set(want==='athletes'&&!!this.templates,this.level);}
  /* With the athletes the ball is drawn at its real size (24 cm across) in pebbled leather; classic keeps the bigger toy ball. Presentation only. */
@@ -124,7 +124,7 @@ export class Arena{
   if(this.playersChoice)this.applyPlayers();}
  /* Auto mode: after a short warm-up, time about two seconds of rendered frames; if the typical frame is slower than ~28 fps drop one level, once. Nothing is remembered. */
  measure(now){const pr=this.probe;if(pr.done)return;const raw=this.lastT?now-this.lastT:0;this.lastT=now;if(raw<=0||++pr.frames<=PROBE.warmup)return;pr.times.push(raw);if(probeDone(pr.times)){pr.done=true;if(autoDowngrade(pr.times)){this.level=lowerLevel(this.level);this.applyLevel();}}}
- setView(mode){if(this.failed)return;if(mode!=='title')this.endFly();this.mode=mode;this.userMoved=false;this.controls.enabled=mode!=='player'&&mode!=='title';if(mode==='player'){this.fpLook=null;return;}if(mode==='title'){this.aimTitle();return;}const w=this.host.clientWidth,h=this.host.clientHeight,a=w>1&&h>1?w/h:16/9,tall=a<.8,fixed={locker:[[-9,5.5,-6],[-15.5,1.4,-15]],office:[[18.6,4.4,-6],[15.6,1,-13.2]],follow:[[7,tall?11:9,tall?17:16],[7,1,0]]};
+ setView(mode){if(this.failed)return;if(mode!=='title')this.endFly();const wasTitle=this.mode==='title';this.mode=mode;if(wasTitle!==(mode==='title')&&this.playersChoice)this.applyPlayers();this.userMoved=false;this.controls.enabled=mode!=='player'&&mode!=='title';if(mode==='player'){this.fpLook=null;return;}if(mode==='title'){this.aimTitle();return;}const w=this.host.clientWidth,h=this.host.clientHeight,a=w>1&&h>1?w/h:16/9,tall=a<.8,fixed={locker:[[-9,5.5,-6],[-15.5,1.4,-15]],office:[[18.6,4.4,-6],[15.6,1,-13.2]],follow:[[7,tall?11:9,tall?17:16],[7,1,0]]};
   if(fixed[mode]){const [p,t]=fixed[mode];this.camera.position.set(...p);this.controls.target.set(...t);}
   else{/* broadcast/courtside keep a fixed viewing angle and solve the distance so the court fills the frame at this aspect (zoom>1 lets the corners run off-frame; the tighter vertical bound leaves room for the score bug and controls) */const [az,el,ty,zx,zy]=mode==='court'?[tall?62:47,tall?21:19,1,tall?1.75:1.3,tall?1.75:1.3]:[tall?70:33,tall?40:32,0,tall?1.12:.97,tall?.9:.8],r=Math.PI/180,cam=this.fitCam||=new THREE.PerspectiveCamera(),dir=new THREE.Vector3(Math.sin(az*r)*Math.cos(el*r),Math.sin(el*r),Math.cos(az*r)*Math.cos(el*r)),t=new THREE.Vector3(0,ty,0),v=new THREE.Vector3(),pts=[[-14.2,0,-8.6],[14.2,0,-8.6],[-14.2,0,8.6],[14.2,0,8.6],[-12.75,4.5,0],[12.75,4.5,0]].map(p=>new THREE.Vector3(...p));cam.fov=tall?65:43;cam.aspect=a;cam.updateProjectionMatrix();
    const fits=d=>{cam.position.copy(dir).multiplyScalar(d).add(t);cam.lookAt(t);cam.updateMatrixWorld();return pts.every(p=>{v.copy(p).project(cam);return v.z<1&&Math.abs(v.x)<=zx&&Math.abs(v.y)<=zy;});};let lo=4,hi=120;for(let i=0;i<26;i++){const mid=(lo+hi)/2;if(fits(mid))hi=mid;else lo=mid;}this.camera.position.copy(dir).multiplyScalar(hi).add(t);this.controls.target.copy(t);}
@@ -132,7 +132,7 @@ export class Arena{
  /* Title screen (mode 'title', shots in src/title.js): a slow jib sweep on its own clock (held while paused; one fixed shot with reduced motion), or the fly-in to the broadcast shot,
     which holds there once it lands. The fly-in runs on wall time and resolves when it lands, when the view changes or the arena is cleared or remounted, or at the latest shortly after
     it should have landed (a hidden tab draws no frames). */
- aimTitle(){if(this.fly&&!this.motion)this.endFly();/* reduced motion switched on mid-flight: no fly-in, straight to the fixed shot */const f=this.fly,u=f?(performance.now()-f.t0)/f.ms:0,s=f?flyIn(u,f.from):titleCamera(this.motion?this.titleClock||0:12);this.camera.position.set(...s.position);this.controls.target.set(...s.target);this.camera.lookAt(this.controls.target);if(f&&u>=1)f.done();}
+ aimTitle(){if(this.fly&&!this.motion)this.endFly();/* reduced motion switched on mid-flight: no fly-in, straight to the fixed shot */const f=this.fly,u=f?(performance.now()-f.t0)/f.ms:0,s=f?flyIn(u,f.from):titleCamera(this.motion?this.titleClock||0:12);this.titleU=f?u:0;/* fly-in progress, for the lens (titleFov) */this.camera.position.set(...s.position);this.controls.target.set(...s.target);this.camera.lookAt(this.controls.target);if(f&&u>=1)f.done();}
  setTitlePaused(paused){this.titlePaused=!!paused;}
  flyIn(ms=900){this.endFly();if(this.failed||!this.motion||this.mode!=='title'||this.host.hidden)return Promise.resolve();
   return new Promise(resolve=>{const f=this.fly={t0:performance.now(),ms:Math.max(1,ms),from:{position:this.camera.position.toArray(),target:this.controls.target.toArray()}},timer=setTimeout(()=>f.done(),f.ms+500);f.done=()=>{clearTimeout(timer);resolve();};});}
@@ -253,7 +253,7 @@ export class Arena{
   this.posed=true;
   // With the 3D athletes' broadcast look, Auto and Follow use the broadcast director (Spline camera angles, springs, cuts, depth of field).
   const directed=this.look?.active&&this.motion&&this.event&&(this.mode==='auto'||this.mode==='follow')?this.director.update(this,dt*(this.paused?0:1),{follow:this.mode==='follow'}):null;
-  if(!directed&&this.mode==='follow'&&this.event){const side=this.clipIndex===1?-1:1;const focus=this.people[side===1?0:5].position;const x=THREE.MathUtils.clamp(focus.x,-10,10);this.camera.position.lerp(new THREE.Vector3(x,8.5,14),.045);this.controls.target.lerp(new THREE.Vector3(x,1.2,0),.08);}const fp=this.mode==='player'||(directed?directed==='player':this.mode==='auto'&&this.autoDirector());this.fpActive=!!fp;if(fp){this.firstPerson();}else{this.restoreHead();if(titled)this.aimTitle();else if(!directed)this.controls.update();}const fov=fp?74:directed?this.director.fov:(this.w/this.h<.8?65:43);
+  if(!directed&&this.mode==='follow'&&this.event){const side=this.clipIndex===1?-1:1;const focus=this.people[side===1?0:5].position;const x=THREE.MathUtils.clamp(focus.x,-10,10);this.camera.position.lerp(new THREE.Vector3(x,8.5,14),.045);this.controls.target.lerp(new THREE.Vector3(x,1.2,0),.08);}const fp=this.mode==='player'||(directed?directed==='player':this.mode==='auto'&&this.autoDirector());this.fpActive=!!fp;if(fp){this.firstPerson();}else{this.restoreHead();if(titled)this.aimTitle();else if(!directed)this.controls.update();}const fov=fp?74:directed?this.director.fov:titled?titleFov(this.w/this.h,this.titleU):(this.w/this.h<.8?65:43);
   // the title shot holds the dribbler in gentle focus (chest height) with the broadcast look on
   const heroFocus=titled&&this.look?.active?(this.heroPoint||=new THREE.Vector3()).copy(this.people[2].position).setY(1.2):null;
   this.look?.setDof(heroFocus||(directed&&directed!=='player'?this.director.focusPoint:null),heroFocus?1.4:this.director.dof,dt);if(this.camera.fov!==fov){this.camera.fov=fov;this.camera.updateProjectionMatrix();}

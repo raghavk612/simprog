@@ -907,6 +907,7 @@ dialog:has(.unlock-pop){width:min(470px,calc(100vw - 24px))}
 .landing-links button{min-height:40px;padding:6px 0;font:700 calc(13px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:1.3px;text-transform:uppercase;color:#d4c7e4}
 .landing-links button:hover{color:#fff}
 .landing-links [data-action=title-pause]{min-height:30px;padding:4px 10px;border:1px solid #ffffff38;border-radius:3px;background:#0d0a1699}
+.title-pause-over{display:none}/* the phone layout's copy of the pause button, on the gym picture */
 /* Entrance: brand, eyebrow, title, intro, next game, buttons or form, links; 70ms apart, finished by ~1.05s. */
 @keyframes tl-in{from{opacity:0;transform:translateX(-24px)}}
 @keyframes tl-out{to{opacity:0;transform:translateX(-24px)}}
@@ -923,12 +924,12 @@ dialog:has(.unlock-pop){width:min(470px,calc(100vw - 24px))}
 .a11y-high-contrast .title-next{background:#000!important;border:2px solid #fff!important}
 .a11y-high-contrast .title-next *,.a11y-high-contrast .landing-links button,.a11y-high-contrast .landing>footer{color:#fff!important}
 .a11y-high-contrast .landing-links button{text-decoration:underline}
-.a11y-high-contrast .landing-links [data-action=title-pause]{background:#000;border:2px solid #fff}
-/* Phone: the gym is a picture at the top (pointer-events none, nothing focusable inside), then the title, the menu and one row of links. */
+.a11y-high-contrast .landing [data-action=title-pause]{background:#000;border:2px solid #fff;color:#fff}
+/* Phone: the gym is a picture at the top (first in the markup too; pointer-events none except its pause button, top right), then the title, the menu and one row of links that fits without scrolling (it wraps rather than hides if the text is enlarged). */
 @media(max-width:620px){
  .landing{padding:calc(14px + env(safe-area-inset-top,0px)) calc(20px + env(safe-area-inset-right,0px)) env(safe-area-inset-bottom,0px) calc(20px + env(safe-area-inset-left,0px))}
  .landing-content{flex-direction:column;align-items:stretch}
- .landing-visual{order:-1;position:relative;inset:auto;flex:none;aspect-ratio:16/10;height:auto;margin:12px calc(-20px - env(safe-area-inset-right,0px)) 0 calc(-20px - env(safe-area-inset-left,0px))}
+ .landing-visual{position:relative;inset:auto;flex:none;aspect-ratio:16/10;height:auto;margin:12px calc(-20px - env(safe-area-inset-right,0px)) 0 calc(-20px - env(safe-area-inset-left,0px))}
  .landing-visual:before{display:none}
  .landing-visual:after,.a11y-high-contrast .landing-visual:after{background:linear-gradient(0deg,var(--tl-ink),#07050d00 24%)}
  .landing-copy{max-width:none;padding:0 0 20px;margin-top:-10px}
@@ -938,8 +939,10 @@ dialog:has(.unlock-pop){width:min(470px,calc(100vw - 24px))}
  .title-next{padding:10px 14px 11px 16px}
  .title-next-game strong{font-size:calc(23px*var(--ts,1)*var(--ls,1))}
  .landing .launch{min-height:56px;font-size:calc(21px*var(--ts,1)*var(--ls,1))}
- .landing-links{flex-wrap:nowrap;justify-content:space-between;gap:14px;margin:12px calc(-20px - env(safe-area-inset-right,0px)) 0 0;padding-right:calc(20px + env(safe-area-inset-right,0px));overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
- .landing-links::-webkit-scrollbar{display:none}
- .landing-links button{flex:none;white-space:nowrap;font-size:calc(12px*var(--ts,1)*var(--ls,1));letter-spacing:.9px}
+ .landing-links{justify-content:space-between;gap:0 8px;margin-top:12px}
+ .landing-links button{flex:none;white-space:nowrap;font-size:calc(clamp(10px,2.9vw,12px)*var(--ts,1)*var(--ls,1));letter-spacing:.3px}
+ .landing-links .title-pause-link{display:none}
+ .title-pause-over{display:block;position:absolute;z-index:3;top:8px;right:calc(8px + env(safe-area-inset-right,0px));min-width:24px;min-height:28px;padding:4px 9px;pointer-events:auto;background:#0d0a16b8;border:1px solid #ffffff42;border-radius:3px;color:#f3edfb;font:700 calc(11px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:1px;text-transform:uppercase;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+ .title-pause-over:hover{border-color:var(--tl-gold)}
  .landing>footer{padding:12px 0;font-size:calc(10px*var(--ts,1)*var(--ls,1))}
 }
