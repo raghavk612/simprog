@@ -40,6 +40,12 @@ export function flyIn(u, from) {
   return { position: mix(from.position, END.position), target: mix(from.target, END.target) };
 }
 
+/** Every camera position the title screen can pass through: the jib sweep (every half second) and the fly-in from twelve points along it. The stands keep these clear. */
+export function titlePath() {
+  const sweep = Array.from({ length: 121 }, (_, i) => titleCamera(i * SWEEP / 120).position);
+  return [...sweep, ...Array.from({ length: 12 }, (_, k) => titleCamera(k * SWEEP / 12)).flatMap(from => Array.from({ length: 41 }, (_, i) => flyIn(i / 40, from).position))];
+}
+
 /** Yaw (0 = facing +z) that turns the title dribbler toward the middle of the sweep, so he plays to the camera without swivelling as it moves (a constant, worked out once). */
 const HERO_YAW = (([x, , z]) => Math.atan2(x - HERO.x, z - HERO.z))(titleCamera(0).position);
 export function heroYaw() {

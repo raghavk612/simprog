@@ -15,7 +15,8 @@ import {BroadcastLook} from './broadcast.js';
 import {animateAthlete} from './motion.js';
 import {Director} from './director.js';
 import {PerfHud,perfWanted} from './perfHud.js';
-import {titleCamera,flyIn,heroYaw,titleFov,HERO,STILL} from './title.js';
+import {titleCamera,flyIn,heroYaw,titleFov,HERO,STILL,titlePath} from './title.js';
+import {seatLayout,hash} from './seating.js';
 const purple=0x6832ab;
 export class Arena{
  constructor(host){
@@ -103,13 +104,12 @@ export class Arena{
   const ring=new THREE.Mesh(new THREE.RingGeometry(.48,.57,48),new THREE.MeshBasicMaterial({color:0xe3bd69,transparent:true,opacity:.75,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.07;this.focusRing=ring;this.scene.add(ring);
   this.trail=[];for(let i=0;i<8;i++){const dot=new THREE.Mesh(new THREE.SphereGeometry(.07,6,4),new THREE.MeshBasicMaterial({color:0xf6c078,transparent:true,opacity:(8-i)/16}));dot.visible=false;this.scene.add(dot);this.trail.push(dot);}
  }
- /* Six-row bleachers on both sidelines: solid risers (no hollow gaps), a lit ribbon on the front rail, aisles, and an instanced seated crowd sized to the players. */
- stands(){const rows=6,rise=.5,deep=.85,z0=10.2,len=26,seats=[],R=n=>{const s=Math.sin(n*91.7)*43758.5453;return s-Math.floor(s);};
-  for(const side of [-1,1]){this.glow(this.box(len,.26,.05,0xa76aff,0,.32,side*(z0-.03)),0x8e43ed,2.4);
-   for(let r=0;r<rows;r++){const d=r===rows-1?16-z0-r*deep:deep;this.box(len,(r+1)*rise,d,r%2?0x7e51b1:0x4e2b78,0,(r+1)*rise/2,side*(z0+r*deep+d/2));
-    for(let i=0;i<40;i++){const n=side*1000+r*50+i;if(i===13||i===26||R(n)<.2)continue;seats.push([-len/2+.45+i*.64+(R(n+.5)-.5)*.1,(r+1)*rise,side*(z0+r*deep+deep*.55),n]);}}}
+ /* Bleachers (layout in src/seating.js): six rows on both sidelines, four behind each baseline cut around the props there; solid risers (no hollow gaps), a lit ribbon on each front rail, aisles,
+    and one instanced seated crowd sized to the players, turned to face the court. Seats on the title jib's path stay empty so no fan fills its lens. */
+ stands(){const {risers,rails,seats}=seatLayout(titlePath());
+  for(const [w,h,d,x,y,z] of rails)this.glow(this.box(w,h,d,0xa76aff,x,y,z),0x8e43ed,2.4);for(const [w,h,d,x,y,z,odd] of risers)this.box(w,h,d,odd?0x7e51b1:0x4e2b78,x,y,z);
   const torso=new THREE.InstancedMesh(new THREE.BoxGeometry(.42,.56,.28),this.mat(0xffffff),seats.length),head=new THREE.InstancedMesh(new THREE.SphereGeometry(.17,10,8),this.mat(0xffffff),seats.length),m=new THREE.Matrix4(),col=new THREE.Color();
-  seats.forEach(([x,y,z,n],i)=>{const h=(R(n+.3)-.5)*.08;torso.setMatrixAt(i,m.makeTranslation(x,y+.28+h,z));torso.setColorAt(i,col.set([0x6832ab,0xf3ecff,0xe9b858,0x3d1d66,0x7541b0,0x6832ab][Math.floor(R(n+.7)*6)]));head.setMatrixAt(i,m.makeTranslation(x,y+.75+h,z));head.setColorAt(i,col.set([0xca9e79,0x8c5f41,0xf2cbab,0x6b4430,0xe0b48c][Math.floor(R(n+.9)*5)]));});
+  seats.forEach(({x,y,z,ry,h,n},i)=>{torso.setMatrixAt(i,m.makeRotationY(ry).setPosition(x,y+.28+h,z));torso.setColorAt(i,col.set([0x6832ab,0xf3ecff,0xe9b858,0x3d1d66,0x7541b0,0x6832ab][Math.floor(hash(n+.7)*6)]));head.setMatrixAt(i,m.makeTranslation(x,y+.75+h,z));head.setColorAt(i,col.set([0xca9e79,0x8c5f41,0xf2cbab,0x6b4430,0xe0b48c][Math.floor(hash(n+.9)*5)]));});
   for(const o of [torso,head]){o.castShadow=true;o.receiveShadow=true;this.scene.add(o);}this.crowd=[torso,head];}
 
  async importModels(){const loader=new GLTFLoader();/* [model,[[x,y,z,rotY]],scale]: team chairs line each bench on the scorer's side, office set in the +x/-z corner, cabinets beside the locker-room door */for(const [name,positions,scale] of [['bench',[0,1,2,3,4,5].flatMap(k=>[[-9.6+k,0,9.65,Math.PI],[4.4+k,0,9.65,Math.PI]]),2],['chair',[[16.05,0,-13.66,0],[16.4,0,-12.25,Math.PI]],1.7],['table',[[15.3,0,-12.4,0]],2.2],['bookcaseClosedDoors',[[-16.66,0,-15.5,0],[-15.46,0,-15.5,0],[-14.26,0,-15.5,0]],2.1],['plantSmall1',[[18.9,0,-15.5,0]],4.5]]){
