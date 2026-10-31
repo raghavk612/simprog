@@ -947,3 +947,23 @@ dialog:has(.unlock-pop){width:min(470px,calc(100vw - 24px))}
  .title-pause-over:hover{border-color:var(--tl-gold)}
  .landing>footer{padding:12px 0;font-size:calc(10px*var(--ts,1)*var(--ls,1))}
 }
+/* Skill tree (Team Gear): basic moves as chips, then three branches whose moves run top to bottom joined by a line that turns solid once the move above is learned. Locked moves get the LOCKED stamp used by kits; their state is also written out. */
+.skill-tree{margin-bottom:28px}.skill-intro{max-width:780px;color:var(--muted);line-height:1.6;margin:-8px 0 20px}
+.skill-sub{font-size:calc(13px*var(--ts,1)*var(--ls,1));letter-spacing:1.4px;text-transform:uppercase;margin:0 0 10px}
+.skill-chips{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:0 0 26px}
+.skill-chip{padding:7px 13px;border:1px solid #9d5cf280;border-radius:999px;background:#9d5cf218;font-size:calc(14px*var(--ts,1)*var(--ls,1));font-weight:600}.skill-chip>[aria-hidden]{color:var(--purple)}
+.skill-branches{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.skill-branch h3{font:700 calc(21px*var(--ts,1)*var(--ls,1)) var(--display);letter-spacing:.5px;margin:0 0 14px;padding-bottom:8px;border-bottom:2px solid var(--purple)}
+.skill-path{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:24px}
+.skill-node{position:relative;display:flex;flex-direction:column;gap:8px;padding:16px;border:1px solid var(--border);border-radius:10px;background:linear-gradient(140deg,#9d5cf215,transparent);min-width:0}
+.skill-node+.skill-node::before{content:'';position:absolute;left:calc(50% - 1.5px);top:-25px;height:24px;border-left:3px dashed var(--border);pointer-events:none}
+.skill-node.owned+.skill-node::before{border-left:3px solid var(--purple)}
+.skill-node.owned{border-color:#9d5cf280;background:#9d5cf224}.skill-node.open{border-color:var(--purple)}
+.skill-node h4{margin:0;font-size:calc(17px*var(--ts,1)*var(--ls,1));overflow-wrap:anywhere}
+.skill-hint{margin:0;font-size:calc(14px*var(--ts,1)*var(--ls,1));color:var(--muted);line-height:1.45}
+.skill-state{margin:2px 0 0;font-size:calc(14px*var(--ts,1)*var(--ls,1));font-weight:600}.skill-node.owned .skill-state{color:var(--purple);font-weight:700}
+.skill-node small{color:var(--muted);font-size:calc(13px*var(--ts,1)*var(--ls,1))}.skill-node>.wide{margin-top:4px;white-space:normal}
+.skill-node:focus-visible{outline:3px solid #a879e5;outline-offset:3px}
+.skill-node.locked{border-style:dashed;background:#ffffff05}.skill-node.locked h4{padding-right:76px}.skill-node.locked :is(h4,.skill-hint){opacity:.75}
+.skill-node.locked::after{content:'';position:absolute;right:6px;top:8px;width:72px;height:38px;background:url('/images/locked-stamp.png') center/contain no-repeat;pointer-events:none}
+@media(max-width:980px){.skill-branches{grid-template-columns:minmax(0,1fr)}}

@@ -3,7 +3,7 @@ import en from '../src/i18n/locales/en.js';
 import {GRAPHICS_LEVELS} from '../src/graphics.js';
 import {THREE_SPOTS,FT_SPOT} from '../src/shotphysics.js';
 import {LANGUAGES,t,tu,list,has,translateError,setLanguage,getLanguage,detectLanguage,formatDate,supported} from '../src/i18n/index.js';
-import {plans,staff,DIFFICULTIES,UPGRADES} from '../src/engine.js';import {VALUES} from '../src/narrative.js';import {SHOTS} from '../src/basketball.js';import {SOUND_KEYS} from '../src/audio.js';import {ACTIONS} from '../src/keys.js';
+import {plans,staff,DIFFICULTIES,UPGRADES} from '../src/engine.js';import {VALUES} from '../src/narrative.js';import {SHOTS} from '../src/basketball.js';import {SOUND_KEYS} from '../src/audio.js';import {SKILL_TREE} from '../src/skills.js';import {ACTIONS} from '../src/keys.js';
 const read=f=>fs.readFileSync(new URL(f,import.meta.url),'utf8');
 // Every string leaf, keyed by its path. Arrays are indexed.
 function flatten(value,prefix='',out={}){
@@ -22,7 +22,7 @@ test('every language is listed, supported and has a locale file',()=>{
 });
 test('every static translation key used by the code exists in English',()=>{
  const missing=[];
- for(const file of ['../src/main.js','../src/settingsDialog.js','../src/narrative.js','../src/drills.js','../src/locker.js','../src/drillscenes.js','../src/drills3d.js','../src/i18n/index.js']){
+ for(const file of ['../src/main.js','../src/settingsDialog.js','../src/narrative.js','../src/drills.js','../src/locker.js','../src/drillscenes.js','../src/drills3d.js','../src/skillsView.js','../src/i18n/index.js']){
   for(const m of read(file).matchAll(/\b(?:t|tu|tb|list|has)\('([a-zA-Z0-9_.]+)'/g)){
    const key=m[1];if(!Object.keys(flat).some(k=>k===key||k.startsWith(`${key}.`)))missing.push(`${file}: ${key}`);
   }
@@ -97,6 +97,7 @@ for(const l of GRAPHICS_LEVELS)need.push(`settings.accessibility.graphicsOptions
 for(const v of ['high','some','low'])need.push(`arc.level.${v}`);
 for(const v of ['breakout','slump'])need.push(`arc.${v}`,`arc.${v}Note`);
 for(const v of ['rose','fell','flat'])need.push(`arc.${v}`);need.push('log.scoutP');
+for(const [b,nodes] of Object.entries(SKILL_TREE)){need.push(`skills.branch.${b}`);for(const n of nodes)need.push(`skills.hint.${n.key}`);}
 for(const k of need)assert.equal(typeof flat[k],'string',k);
  assert.ok(Array.isArray(en.drill.quiz)&&en.drill.quiz.length>=6&&en.drill.quiz.every(q=>q.length===4));
  assert.equal(en.hb.cr.list.length,5);
