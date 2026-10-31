@@ -318,7 +318,7 @@ export default {
   rebound:['{{rebounder}}がリバウンドをもぎ取る。','リバウンド…{{rebounder}}。','{{rebounder}}がしっかり拾う。']
  },
  // Decision-trail and result lines written by the simulation.
- log:{gearBuy:"{{item}} を {{cost}} トークンで購入。",gearEquip:"{{name}} に {{item}} を装備。",gearRemove:"{{item}} を所持品に戻しました。",
+ log:{skillUnlock:'{{move}} を {{cost}} トークンで解放。',gearBuy:"{{item}} を {{cost}} トークンで購入。",gearEquip:"{{name}} に {{item}} を装備。",gearRemove:"{{item}} を所持品に戻しました。",
   kitUnlocked:'ユニフォーム解放：{{kit}}。',
   wholeTeam:'チーム全員',
   train:'{{plan}}：{{who}} · スキル {{skill}}、体力 {{energy}}、GPA {{gpa}}',
@@ -342,7 +342,7 @@ export default {
   seasonComplete:'シーズン終了。',perfectBonus:'パーフェクトドリルボーナス',captain:'{{name}}がチームキャプテンになりました。',event:'受信箱：{{title}} → {{choice}}',press:'記者会見：{{n}}件の回答が次の試合に影響します。',pressSkip:'記者会見を省略しました。ファン −10。',pregame:'試合前の記者会見：{{n}}つの回答が流れを決める。',pregameSkip:'試合前の記者会見をスキップ。ファン −5。',scoutP:'{{name}}をスカウト：{{cost}}トークンで潜在能力と勤勉さが判明。',adjustTactic:'第{{q}}クォーター終了：{{tactic}}に切り替え。',adjustPace:'第{{q}}クォーター終了：テンポを{{pace}}に設定。',upgrade:'{{item}}を{{cost}}トークンで購入しました。',budget:'予算：収入 +{{inc}}、アシスタント −{{upkeep}}、遠征 −{{travel}}（差引 {{net}}）。',},
  error:{title:'プログラムを読み込めませんでした。',body:'接続が回復したら再読み込みしてください。',reload:'再読み込み'},
  // Messages thrown by the simulation engine. The English text is the lookup key.
- errors:{...en.errors,
+ errors:{'Move unavailable.':'この技は利用できません。','You already know this move.':'この技はすでに習得しています。','Learn the previous move in this branch first.':'先にこの系統の前の技を習得してください。',...en.errors,
   'This season is complete. Start a new season to play again.':'このシーズンは終了しました。もう一度遊ぶには新しいシーズンを始めてください。',
   'Finish the current game first.':'先に現在の試合を終えてください。',
   'Not enough program tokens.':'プログラムトークンが足りません。',

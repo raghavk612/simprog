@@ -1,5 +1,7 @@
 import {GEAR,GEAR_SLOTS,gearItem,gearOwner,gearBonus,effectiveStat,validGear} from './gear.js';
 export {GEAR,GEAR_SLOTS,gearItem,gearOwner,gearBonus,effectiveStat};
+import {BASIC_MOVES,SKILL_TREE,skillNode,unlockedMoves,canUnlock,skillBag,validSkills} from './skills.js';
+export {BASIC_MOVES,SKILL_TREE,skillNode,unlockedMoves,canUnlock};
 import {SHOTS,choosePlay,describePlay,family,isDunk} from './basketball.js';
 import {CORE_KITS,SPECIAL_KITS,KIT_NAMES} from './kits.js';
 export const VERSION=3;
@@ -66,6 +68,8 @@ export const hasUpgrade=(s,k)=>!!s.upgrades?.includes(k);
 export function gameIncome(s,won,g){const base=ECON.base,fans=Math.min(ECON.fansCap,Math.floor((s.fans||0)/ECON.fansPer)),bonus=won?ECON.win:0,upkeep=s.assistant?ECON.upkeep:0,travel=g&&g.home===false?ECON.travel:0,income=base+fans+bonus;return {base,fans,bonus,income,upkeep,travel,net:income-upkeep-travel};}
 export function buyUpgrade(s,key){const u=UPGRADES.find(u=>u.key===key);if(!u)throw Error('Upgrade unavailable');if(hasUpgrade(s,key))throw Error('You already own that upgrade.');spend(s,u.cost,false);(s.upgrades??=[]).push(key);log(s,`Bought ${u.name} for ${u.cost} tokens.`,'upgrade',{item:key,cost:u.cost});}
 export function buyGear(s,key){const item=gearItem(key);if(!item)throw Error('Gear unavailable.');if(s.gear?.owned?.includes(key))throw Error('You already own this gear.');spend(s,item.cost,false);s.gear??={owned:[],equipped:{}};s.gear.owned.push(key);log(s,`Bought ${key} for ${item.cost} tokens.`,'gearBuy',{item:key,cost:item.cost});}
+/* Learning a move: costs tokens but no preparation slot, and is blocked like any purchase (see canUnlock). */
+export function unlockSkill(s,key){const n=skillNode(key);if(!n)throw Error('Move unavailable.');const c=canUnlock(s,key);if(c.reason==='owned')throw Error('You already know this move.');if(c.reason==='locked')throw Error('Learn the previous move in this branch first.');spend(s,n.cost,false);(s.skills??=[]).push(key);log(s,`Unlocked ${SHOTS[key].label} for ${n.cost} tokens.`,'skillUnlock',{move:key,cost:n.cost});}
 export function equipGear(s,id,key){open(s);const p=s.players.find(p=>p.id===+id),item=gearItem(key);if(!p)throw Error('Choose a player');if(!item||!s.gear?.owned?.includes(key))throw Error('Buy this gear first.');for(const slots of Object.values(s.gear.equipped))if(slots[item.slot]===key)delete slots[item.slot];(s.gear.equipped[p.id]??={})[item.slot]=key;log(s,`Equipped ${key} on ${p.name}.`,'gearEquip',{item:key,name:p.name});}
 export function unequipGear(s,id,slot){open(s);if(!s.players.some(p=>p.id===+id)||!GEAR_SLOTS.includes(slot))throw Error('Choose a player');const key=s.gear?.equipped?.[id]?.[slot];if(!key)return;delete s.gear.equipped[id][slot];log(s,`Returned ${key} to team inventory.`,'gearRemove',{item:key});}
 export function autoLineup(s){open(s);const list=s.players.filter(eligible).sort((a,b)=>(b.skill+b.energy*.2)-(a.skill+a.energy*.2));s.players.forEach(p=>{p.starter=false;p.minutes=0;});list.slice(0,5).forEach(p=>{p.starter=true;p.minutes=32;});}
@@ -160,8 +164,9 @@ export function highlights(events,n=3){
 /* Shot tuning: every shot is a little harder (miss), threes harder still (threeMiss), and blocks are more common. Measured with scripts/balance.mjs and the shooting-line check in the tests. */
 export const TUNING={miss:-.04,threeMiss:-.07,block3:.035,blockTight:.15,block:.06};
 function makePlay(s,team,shooter,helper,defender,opp,m){
- const home=team==='home',rng=()=>random(s);
- const kind=choosePlay(rng,home?m.tactic:opp.style==='perimeter'?'perimeter':'balanced',home?m.pace:opp.style==='transition'?'fast':'steady',m.events.at(-1)?.plays?.find(p=>p.team===team)?.kind);
+ const home=team==='home',rng=()=>random(s),last=m.events.at(-1)?.plays?.find(p=>p.team===team)?.kind;
+ // The Kangs draw only from the moves they have learned (skills.js); visitors use the whole bag.
+ const kind=home?choosePlay(rng,m.tactic,m.pace,last,skillBag(s,m.tactic,m.pace)):choosePlay(rng,opp.style==='perimeter'?'perimeter':'balanced',opp.style==='transition'?'fast':'steady',last);
  const spec=SHOTS[kind],separation=rng(),contest=separation>.68?'open':separation<.3?'tight':'contested';
  const mods=m.mods||{},orating=opp.rating+(mods.oppRating||0),skill=home?effectiveStat(s,shooter,'skill'):orating,energy=home?effectiveStat(s,shooter,'energy'):78,chemistry=home?s.chemistry:65;
  const counter={perimeter:'zone',paint:'pressure',transition:'balanced'}[opp.style];
@@ -277,7 +282,7 @@ function progressOk(s){
  return [...(Array.isArray(s.players)?s.players:[]),...(Array.isArray(s.pool)?s.pool:[])].every(p=>!obj(p)||(series(p.hist,0,100)&&series(p.form,0,100)&&(p.ceil===undefined||(Number.isFinite(p.ceil)&&p.ceil>=35&&p.ceil<=100))&&(p.work===undefined||int(p.work,1,5))));
 }
 export function validSave(s){
- if(s&&typeof s==='object'&&(!progressOk(s)||!validGear(s)))return false;
+ if(s&&typeof s==='object'&&(!progressOk(s)||!validGear(s)||!validSkills(s)))return false;
  const extras=x=>{
   const id=v=>typeof v==='string'&&/^[a-z0-9]{1,24}$/.test(v),obj=o=>!!o&&typeof o==='object'&&!Array.isArray(o),only=(o,keys)=>obj(o)&&Object.keys(o).every(k=>keys.includes(k));
   // Parameters are short plain values: no markup characters, so nothing in a save can become HTML.

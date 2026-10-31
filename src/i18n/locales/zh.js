@@ -318,7 +318,7 @@ export default {
   rebound:['{{rebounder}}抢下篮板。','篮板球……{{rebounder}}。','{{rebounder}}收下篮板。']
  },
  // Decision-trail and result lines written by the simulation.
- log:{gearBuy:"花费 {{cost}} 代币购买 {{item}}。",gearEquip:"{{name}} 装备了 {{item}}。",gearRemove:"{{item}} 已归还库存。",
+ log:{skillUnlock:'花费 {{cost}} 代币解锁了{{move}}。',gearBuy:"花费 {{cost}} 代币购买 {{item}}。",gearEquip:"{{name}} 装备了 {{item}}。",gearRemove:"{{item}} 已归还库存。",
   kitUnlocked:'球衣已解锁：{{kit}}。',
   wholeTeam:'全队',
   train:'{{plan}}：{{who}} · 技能 {{skill}}，体能 {{energy}}，绩点 {{gpa}}',
@@ -342,7 +342,7 @@ export default {
   seasonComplete:'赛季结束。',perfectBonus:'满分训练奖励',captain:'{{name}} 现在是球队队长。',event:'信箱：{{title}} → {{choice}}',press:'新闻发布会：{{n}} 个回答将影响下一场比赛。',pressSkip:'跳过了新闻发布会。球迷 −10。',pregame:'赛前新闻发布会：{{n}}个回答定下基调。',pregameSkip:'跳过了赛前新闻发布会。球迷 −5。',scoutP:'侦察了 {{name}}：花费 {{cost}} 代币，揭示了潜力与职业道德。',adjustTactic:'第{{q}}节休息：改为{{tactic}}。',adjustPace:'第{{q}}节休息：节奏改为{{pace}}。',upgrade:'花费 {{cost}} 代币购买了{{item}}。',budget:'预算：收入 +{{inc}}，助理 −{{upkeep}}，出行 −{{travel}}（净 {{net}}）。',},
  error:{title:'无法加载球队项目。',body:'网络恢复后请重新加载。',reload:'重新加载'},
  // Messages thrown by the simulation engine. The English text is the lookup key.
- errors:{...en.errors,
+ errors:{'Move unavailable.':'该招式不可用。','You already know this move.':'你已经掌握了这个招式。','Learn the previous move in this branch first.':'请先学会这一分支中的上一个招式。',...en.errors,
   'This season is complete. Start a new season to play again.':'本赛季已结束。开始新赛季即可再次游玩。',
   'Finish the current game first.':'请先结束当前比赛。',
   'Not enough program tokens.':'项目代币不足。',

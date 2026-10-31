@@ -29,8 +29,9 @@ function path(points,t){
  while(i<seg.length-1&&d>seg[i]){d-=seg[i];i++;}const u=seg[i]?Math.min(1,d/seg[i]):1;
  return [lerp(points[i][0],points[i+1][0],u),lerp(points[i][1],points[i+1][1],u)];
 }
-export function choosePlay(rng,tactic,pace,last){
- const bag=tactic==='perimeter'?['catch','catch','corner','stepback','pullup','fadeaway','drive','euro','roll']:pace==='fast'?['dunk','alley','drive','euro','roll','catch','floater','pullup']:['catch','pullup','stepback','corner','drive','euro','floater','hook','spin','fadeaway','roll'];
+/* The moves a tactic and pace call for: the perimeter bag, the fast bag, or the steady bag. choosePlay draws from it unless the caller passes a narrower bag (the Kangs' bag is limited to the moves they have learned, see skills.js). */
+export const moveBag=(tactic,pace)=>tactic==='perimeter'?['catch','catch','corner','stepback','pullup','fadeaway','drive','euro','roll']:pace==='fast'?['dunk','alley','drive','euro','roll','catch','floater','pullup']:['catch','pullup','stepback','corner','drive','euro','floater','hook','spin','fadeaway','roll'];
+export function choosePlay(rng,tactic,pace,last,bag=moveBag(tactic,pace)){
  let kind=bag[Math.floor(rng()*bag.length)];if(kind===last)kind=bag[(bag.indexOf(kind)+1+Math.floor(rng()*(bag.length-1)))%bag.length];return kind;
 }
 // English commentary templates. Other languages provide the same structure under "cm" in their locale file; {{name}}-style slots are filled from the play.

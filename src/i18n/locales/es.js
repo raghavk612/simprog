@@ -412,7 +412,7 @@ export default {
   rebound:['{{rebounder}} captura el rebote.','Rebote… {{rebounder}}.','{{rebounder}} limpia el tablero.']
  },
  // Decision-trail and result lines written by the simulation.
- log:{gearBuy:"Compraste {{item}} por {{cost}} fichas.",gearEquip:"Equipaste {{item}} a {{name}}.",gearRemove:"Devolviste {{item}} al inventario.",
+ log:{skillUnlock:'Desbloqueaste {{move}} por {{cost}} fichas.',gearBuy:"Compraste {{item}} por {{cost}} fichas.",gearEquip:"Equipaste {{item}} a {{name}}.",gearRemove:"Devolviste {{item}} al inventario.",
   kitUnlocked:'Camiseta desbloqueada: {{kit}}.',
   wholeTeam:'todo el equipo',
   train:'{{plan}}: {{who}} · habilidad {{skill}}, energía {{energy}}, GPA {{gpa}}',
@@ -436,7 +436,7 @@ export default {
   seasonComplete:'Temporada completa.',perfectBonus:'bonificación de ejercicio perfecto',captain:'{{name}} es ahora el capitán del equipo.',event:'Bandeja: {{title}} → {{choice}}',press:'Rueda de prensa: {{n}} respuestas marcan el próximo partido.',pressSkip:'Rueda de prensa omitida. Aficionados −10.',pregame:'Rueda de prensa previa: {{n}} respuestas marcan el tono.',pregameSkip:'Rueda de prensa previa omitida. Afición −5.',scoutP:'Ojeaste a {{name}}: potencial y ética de trabajo revelados por {{cost}} fichas.',adjustTactic:'Descanso del cuarto {{q}}: cambio a {{tactic}}.',adjustPace:'Descanso del cuarto {{q}}: ritmo cambiado a {{pace}}.',upgrade:'Compraste {{item}} por {{cost}} fichas.',budget:'Presupuesto: +{{inc}} de ingresos, −{{upkeep}} asistente, −{{travel}} viajes (neto {{net}}).',},
  error:{title:'No se pudo cargar el programa.',body:'Vuelve a cargar la página cuando se restablezca la conexión.',reload:'Volver a cargar'},
  // Messages thrown by the simulation engine. The English text is the lookup key.
- errors:{...en.errors,
+ errors:{'Move unavailable.':'Movimiento no disponible.','You already know this move.':'Ya conoces este movimiento.','Learn the previous move in this branch first.':'Primero aprende el movimiento anterior de esta rama.',...en.errors,
   'This season is complete. Start a new season to play again.':'Esta temporada ha terminado. Empieza una nueva temporada para volver a jugar.',
   'Finish the current game first.':'Termina primero el partido en curso.',
   'Not enough program tokens.':'No hay suficientes fichas del programa.',

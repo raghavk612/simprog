@@ -368,7 +368,7 @@ export default {
   rebound:['{{rebounder}} बोर्ड पकड़ लेते हैं।','रिबाउंड… {{rebounder}}।','{{rebounder}} सफ़ाई कर देते हैं।']
  },
  // Decision-trail and result lines written by the simulation.
- log:{gearBuy:"{{cost}} टोकन में {{item}} खरीदा।",gearEquip:"{{name}} को {{item}} पहनाया।",gearRemove:"{{item}} संग्रह में लौटाया।",
+ log:{skillUnlock:'{{cost}} टोकन में {{move}} अनलॉक किया।',gearBuy:"{{cost}} टोकन में {{item}} खरीदा।",gearEquip:"{{name}} को {{item}} पहनाया।",gearRemove:"{{item}} संग्रह में लौटाया।",
   kitUnlocked:'जर्सी अनलॉक हुई: {{kit}}।',
   wholeTeam:'पूरी टीम',
   train:'{{plan}}: {{who}} · कौशल {{skill}}, ऊर्जा {{energy}}, GPA {{gpa}}',
@@ -392,7 +392,7 @@ export default {
   seasonComplete:'सीज़न पूरा।',perfectBonus:'परफ़ेक्ट ड्रिल बोनस',captain:'{{name}} अब टीम कप्तान हैं।',event:'इनबॉक्स: {{title}} → {{choice}}',press:'प्रेस कॉन्फ़्रेंस: {{n}} जवाब अगले मैच को प्रभावित करते हैं।',pressSkip:'प्रेस कॉन्फ़्रेंस छोड़ दी। प्रशंसक −10।',pregame:'मैच से पहले प्रेस कॉन्फ़्रेंस: {{n}} जवाबों ने माहौल तय किया।',pregameSkip:'मैच से पहले प्रेस कॉन्फ़्रेंस छोड़ी। फ़ैन्स −5।',scoutP:'{{name}} को स्काउट किया: {{cost}} टोकन में क्षमता और मेहनत सामने आई।',adjustTactic:'क्वार्टर {{q}} ब्रेक: {{tactic}} पर बदला।',adjustPace:'क्वार्टर {{q}} ब्रेक: रफ़्तार {{pace}} पर सेट।',upgrade:'{{cost}} टोकन में {{item}} खरीदा।',budget:'बजट: +{{inc}} आय, −{{upkeep}} सहायक, −{{travel}} यात्रा (शुद्ध {{net}})।',},
  error:{title:'प्रोग्राम लोड नहीं हो सका।',body:'कनेक्शन लौटने के बाद पृष्ठ फिर से लोड करें।',reload:'फिर से लोड करें'},
  // Messages thrown by the simulation engine. The English text is the lookup key.
- errors:{...en.errors,
+ errors:{'Move unavailable.':'यह मूव उपलब्ध नहीं है।','You already know this move.':'आप यह मूव पहले से जानते हैं।','Learn the previous move in this branch first.':'पहले इस शाखा का पिछला मूव सीखें।',...en.errors,
   'This season is complete. Start a new season to play again.':'यह सीज़न पूरा हो चुका है। दोबारा खेलने के लिए नया सीज़न शुरू करें।',
   'Finish the current game first.':'पहले मौजूदा मैच ख़त्म करें।',
   'Not enough program tokens.':'प्रोग्राम टोकन पर्याप्त नहीं हैं।',

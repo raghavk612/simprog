@@ -412,7 +412,7 @@ export default {
   rebound:['{{rebounder}} cattura il rimbalzo.','Rimbalzo… {{rebounder}}.','{{rebounder}} fa pulizia sotto.']
  },
  // Decision-trail and result lines written by the simulation.
- log:{gearBuy:"Acquistato {{item}} per {{cost}} gettoni.",gearEquip:"{{item}} equipaggiato a {{name}}.",gearRemove:"{{item}} restituito all’inventario.",
+ log:{skillUnlock:'Sbloccato {{move}} per {{cost}} gettoni.',gearBuy:"Acquistato {{item}} per {{cost}} gettoni.",gearEquip:"{{item}} equipaggiato a {{name}}.",gearRemove:"{{item}} restituito all’inventario.",
   kitUnlocked:'Maglia sbloccata: {{kit}}.',
   wholeTeam:'tutta la squadra',
   train:'{{plan}}: {{who}} · abilità {{skill}}, energia {{energy}}, GPA {{gpa}}',
@@ -436,7 +436,7 @@ export default {
   seasonComplete:'Stagione completata.',perfectBonus:'bonus per esercizio perfetto',captain:'{{name}} è ora il capitano della squadra.',event:'Casella: {{title}} → {{choice}}',press:'Conferenza stampa: {{n}} risposte influenzano la prossima partita.',pressSkip:'Conferenza stampa saltata. Tifosi −10.',pregame:'Conferenza pre-partita: {{n}} risposte danno il tono.',pregameSkip:'Conferenza pre-partita saltata. Tifosi −5.',scoutP:'Hai osservato {{name}}: potenziale e impegno rivelati per {{cost}} gettoni.',adjustTactic:'Pausa del quarto {{q}}: passaggio a {{tactic}}.',adjustPace:'Pausa del quarto {{q}}: ritmo impostato su {{pace}}.',upgrade:'Acquistato {{item}} per {{cost}} gettoni.',budget:'Budget: +{{inc}} di entrate, −{{upkeep}} vice, −{{travel}} trasferte (netto {{net}}).',},
  error:{title:'Non è stato possibile caricare il programma.',body:'Ricarica la pagina quando la connessione torna disponibile.',reload:'Ricarica'},
  // Messages thrown by the simulation engine. The English text is the lookup key.
- errors:{...en.errors,
+ errors:{'Move unavailable.':'Mossa non disponibile.','You already know this move.':'Conosci già questa mossa.','Learn the previous move in this branch first.':'Impara prima la mossa precedente di questo ramo.',...en.errors,
   'This season is complete. Start a new season to play again.':'Questa stagione è conclusa. Inizia una nuova stagione per giocare di nuovo.',
   'Finish the current game first.':'Prima termina la partita in corso.',
   'Not enough program tokens.':'Gettoni del programma insufficienti.',
