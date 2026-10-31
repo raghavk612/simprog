@@ -1,0 +1,46 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {titleMatchup,titleCamera,flyIn,SWEEP,HERO,END} from '../src/title.js';
+
+const games=[{opponent:'Bothell',date:'12/1/2026'},{opponent:'Skyline',date:'12/4/2026'},{opponent:'Liberty',date:'12/8/2026'}];
+const data={levels:{jv:{games},c:{games:[{opponent:'Redmond',date:'12/5/2026'}]},varsity:{games:[]}}};
+const save=(o={})=>({schedule:games,week:1,wins:1,losses:0,finished:false,results:[{opponent:'Bothell'}],...o});
+
+test('a mid-season save shows the next opponent with the real record',()=>{
+ assert.deepEqual(titleMatchup(save(),data),{opponent:'Skyline',game:2,games:3,wins:1,losses:0,date:'12/4/2026',continuing:true});
+});
+test('a finished save shows the last result as the final game',()=>{
+ const m=titleMatchup(save({finished:true,week:3,wins:2,losses:1,results:[{opponent:'Bothell'},{opponent:'Skyline'},{opponent:'Liberty'}]}),data);
+ assert.equal(m.opponent,'Liberty');assert.equal(m.game,3);assert.equal(m.games,3);assert.equal(m.wins,2);assert.equal(m.losses,1);assert.equal(m.continuing,true);
+});
+test('no save uses the first real game of the chosen difficulty at 0-0',()=>{
+ assert.deepEqual(titleMatchup(null,data),{opponent:'Bothell',game:1,games:3,wins:0,losses:0,date:'12/1/2026',continuing:false});
+ assert.equal(titleMatchup(undefined,data,'rookie').opponent,'Redmond');
+ assert.equal(titleMatchup(null,data,'elite').opponent,null);
+});
+
+test('the title camera sweeps along the near sideline and never leaves the gym',()=>{
+ assert.equal(SWEEP,60);
+ let minAz=Infinity,maxAz=-Infinity;
+ for(let t=0;t<=SWEEP;t+=.25){
+  const {position:[x,y,z],target:[tx,ty,tz]}=titleCamera(t);
+  assert.ok(z>9.6&&z<15,`z ${z} at ${t}`);assert.ok(Math.abs(x)<18,`x ${x} at ${t}`);assert.ok(y>2.5&&y<5,`y ${y} at ${t}`);
+  assert.deepEqual([tx,ty,tz],[HERO.x*.5,1.2,HERO.z*.5]);
+  const az=Math.atan2(x-tx,z-tz)*180/Math.PI;minAz=Math.min(minAz,az);maxAz=Math.max(maxAz,az);
+  assert.ok(Math.abs(Math.hypot(x-tx,z-tz)-13)<1e-9,'horizontal distance 13');
+ }
+ assert.ok(minAz<-39&&maxAz>39&&minAz>=-40.0001&&maxAz<=40.0001,`azimuth ${minAz}..${maxAz}`);
+});
+test('the title camera is periodic',()=>{
+ const a=titleCamera(0),b=titleCamera(SWEEP);
+ a.position.forEach((v,i)=>assert.ok(Math.abs(v-b.position[i])<1e-9));a.target.forEach((v,i)=>assert.ok(Math.abs(v-b.target[i])<1e-9));
+ const c=titleCamera(7),d=titleCamera(7+SWEEP);c.position.forEach((v,i)=>assert.ok(Math.abs(v-d.position[i])<1e-9));
+});
+
+test('flyIn eases from the title shot to the broadcast end shot and clamps',()=>{
+ const from=titleCamera(12.5);
+ assert.deepEqual(flyIn(0,from),from);assert.deepEqual(flyIn(1,from),END);
+ assert.deepEqual(flyIn(-3,from),from);assert.deepEqual(flyIn(9,from),END);
+ assert.deepEqual(END,{position:[0,7.5,15.5],target:[0,1,0]});
+ const mid=flyIn(.5,from);mid.position.forEach((v,i)=>assert.ok(Math.abs(v-(from.position[i]+END.position[i])/2)<1e-9));
+ const q=flyIn(.25,from);assert.ok(q.position[1]!==from.position[1]+(END.position[1]-from.position[1])*.25,'smoothstep, not linear');
+});
