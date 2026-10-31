@@ -27,3 +27,11 @@ export function lookFeatures(level){
  if(level==='medium')return {reflections:false,ao:false,bloom:true,grade:true,spots:3,contact:true,dof:true};
  return null;
 }
+/* Player level of detail by on-screen size in device pixels. The far mesh (30% of the triangles, scripts/player_lods.mjs)
+   dents the face and breaks up the hairline once a head is more than a few pixels tall, so it is used only when the whole
+   player is under LOD_PIXELS.far pixels tall (a head of about 18 px), and dropped again above LOD_PIXELS.near. Judging by
+   the fraction of the frame instead put the far mesh on 230 px players in the long-lens Follow view on large screens. */
+export const LOD_PIXELS={far:140,near:165};
+/* Height in pixels of a body `height` tall, `distance` away, through a vertical field of view of fovDeg on a view viewPx tall. */
+export const bodyPixels=(fovDeg,distance,viewPx,height=2.2)=>height/(2*Math.max(.01,distance)*Math.tan(fovDeg*Math.PI/360))*viewPx;
+export const lodFor=(px,current=0)=>px<(current?LOD_PIXELS.near:LOD_PIXELS.far)?1:0;

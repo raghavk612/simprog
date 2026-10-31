@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {GRAPHICS_LEVELS,qualityProfile,lowerLevel,autoDowngrade,probeDone,medianMs,PROBE} from '../src/graphics.js';
+import {GRAPHICS_LEVELS,bodyPixels,lodFor,LOD_PIXELS,qualityProfile,lowerLevel,autoDowngrade,probeDone,medianMs,PROBE} from '../src/graphics.js';
 import {normalizeA11y,A11Y_DEFAULTS,activeA11yCount} from '../src/settings.js';
 
 test('quality levels map to renderer profiles; High keeps the current look',()=>{
@@ -47,4 +47,17 @@ test('broadcast rig: the Spline values convert to game units on the same court',
  assert.equal(RIG.spots.length,6);assert.equal(RIG.banks.length,10);
  for(const c of Object.values(RIG.cameras)){assert.equal(c.position.length,3);assert.equal(c.target.length,3);}
  const key=toGame(RIG.key.position);assert.ok(key[1]>20,'key light high over the court');
+});
+test('player detail follows on-screen size in pixels: a Follow-view player on a big screen keeps the full head',()=>{
+ // a 2.2 m player 15 m away through a 43° lens on an 822 px tall view
+ assert.ok(Math.abs(bodyPixels(43,15,822)-2.2/(2*15*Math.tan(21.5*Math.PI/180))*822)<1e-9);
+ // the reported bug: Follow (long lens, ~30 m) on a Retina canvas 1644 px tall drew the 30% mesh (dented faces, jagged hair)
+ assert.equal(lodFor(bodyPixels(28.4,30,1644),0),0);
+ assert.equal(lodFor(bodyPixels(28.4,30,1644),1),0,'switches back to full detail');
+ // small on screen: the far mesh is fine (head only a few pixels)
+ assert.equal(lodFor(bodyPixels(43,40,600),0),1);
+ // hysteresis band so a player walking at the edge does not flicker between meshes
+ assert.equal(lodFor(LOD_PIXELS.far+5,0),0);
+ assert.equal(lodFor(LOD_PIXELS.far+5,1),1);
+ assert.equal(lodFor(LOD_PIXELS.near+1,1),0);
 });
