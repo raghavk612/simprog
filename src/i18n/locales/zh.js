@@ -12,7 +12,7 @@ export default {
  stage:{venue:'Kangs 球馆',place:'华盛顿州柯克兰',tagline:'我们的主场，你的球队。',camera:'镜头视角',wide:'全景',court:'场边',follow:'跟随',auto:'自动',player:'球员视角',orbit:'环绕',zoom:'缩放',autoTitle:'电视风格镜头，随每回合切换',playerTitle:'持球队员的第一人称视角',},
  metrics:{record:'战绩',tokens:'项目代币',chemistry:'默契',fans:'球迷'},
  level:{rookie:'C 队',standard:'JV',elite:'Varsity'},
- difficulty:{rookie:'C 队 · 执教真实的 C 队，有更多学习空间',standard:'Junior Varsity（JV）· 执教真实的 JV，每个决定都很重要',elite:'Varsity · 执教真实的 Varsity，容错极小'},
+ difficulty:{rookie:'C 队',standard:'Junior Varsity（JV）',elite:'Varsity'},
  landing:{
   school:'Lake Washington',
   program:'篮球项目',

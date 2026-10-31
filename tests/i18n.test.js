@@ -131,6 +131,16 @@ test('translations are real: most strings differ from English in every other lan
   assert.ok(same.length<15,`${code} leaves ${same.length} long strings in English: ${same.slice(0,8).join(', ')}`);
  }
 });
+test('difficulty options show the level name only, in every language',async()=>{
+ for(const {code} of LANGUAGES){
+  const pack=(await import(`../src/i18n/locales/${code}.js`)).default;
+  for(const k of ['rookie','standard','elite']){
+   const name=pack.difficulty[k];
+   assert.ok(name&&name===name.trim(),`${code}.difficulty.${k} is empty or padded: "${name}"`);
+   assert.ok(!name.includes('·')&&!name.includes(' - '),`${code}.difficulty.${k} still has a description: "${name}"`);
+  }
+ }
+});
 test('t() interpolates, falls back to English and then to the key',async()=>{
  await setLanguage('en',{persist:false});
  assert.equal(t('home.welcome',{name:'Sam'}),'Welcome back, Coach Sam.');

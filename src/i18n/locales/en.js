@@ -12,7 +12,7 @@ export default {
  stage:{venue:'Kangs Fieldhouse',place:'Kirkland, Washington',tagline:'Our house. Your program.',camera:'Camera view',wide:'Wide',court:'Courtside',follow:'Follow',auto:'Auto',player:'Player view',orbit:'Orbit',zoom:'Zoom',autoTitle:'TV-style camera that changes with each play',playerTitle:'First-person view from the ball handler',},
  metrics:{record:'Record',tokens:'Program tokens',chemistry:'Chemistry',fans:'Fans'},
  level:{rookie:'C Team',standard:'JV',elite:'Varsity'},
- difficulty:{rookie:'C Team · coach the real C-Team, more room to learn',standard:'Junior Varsity (JV) · coach the real JV, every decision matters',elite:'Varsity · coach the real varsity, small margins'},
+ difficulty:{rookie:'C Team',standard:'Junior Varsity (JV)',elite:'Varsity'},
  landing:{
   school:'Lake Washington',
   program:'Basketball program',

@@ -12,7 +12,7 @@ export default {
  stage:{venue:'Kangs フィールドハウス',place:'ワシントン州カークランド',tagline:'ここは私たちのホーム。あなたのプログラム。',camera:'カメラビュー',wide:'ワイド',court:'コートサイド',follow:'追従',auto:'オート',player:'プレーヤー視点',orbit:'回転',zoom:'ズーム',autoTitle:'プレーごとに切り替わるテレビ風カメラ',playerTitle:'ボールを持つ選手の一人称視点',},
  metrics:{record:'成績',tokens:'プログラムトークン',chemistry:'チームワーク',fans:'ファン'},
  level:{rookie:'Cチーム',standard:'JV',elite:'バーシティ'},
- difficulty:{rookie:'Cチーム · 実在のCチームを率いる、学ぶ余裕が多め',standard:'ジュニアバーシティ（JV）· 実在のJVを率いる、すべての決断が重要',elite:'バーシティ · 実在のバーシティを率いる、わずかな差が勝負'},
+ difficulty:{rookie:'Cチーム',standard:'ジュニアバーシティ（JV）',elite:'バーシティ'},
  landing:{
   school:'Lake Washington',
   program:'バスケットボールプログラム',

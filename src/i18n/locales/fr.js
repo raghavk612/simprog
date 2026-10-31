@@ -26,7 +26,7 @@ export default {
  stage:{venue:'Salle des Kangs',place:'Kirkland, Washington',tagline:'Notre maison. Votre programme.',camera:'Vue de la caméra',wide:'Large',court:'Bord de terrain',follow:'Suivre',auto:'Auto',player:'Vue du joueur',orbit:'Orbite',zoom:'Zoom',autoTitle:'Caméra façon TV qui change à chaque action',playerTitle:'Vue à la première personne du porteur du ballon',},
  metrics:{record:'Bilan',tokens:'Jetons du programme',chemistry:'Cohésion',fans:'Supporters'},
  level:{rookie:'Équipe C',standard:'JV',elite:'Varsity'},
- difficulty:{rookie:'Équipe C · entraînez la vraie Équipe C, plus de marge pour apprendre',standard:'Junior Varsity (JV) · entraînez la vraie JV, chaque décision compte',elite:'Varsity · entraînez la vraie varsity, des marges minuscules'},
+ difficulty:{rookie:'Équipe C',standard:'Junior Varsity (JV)',elite:'Varsity'},
  landing:{
   school:'Lake Washington',
   program:'Programme de basket-ball',

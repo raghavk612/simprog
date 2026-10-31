@@ -26,7 +26,7 @@ export default {
  stage:{venue:'Palazzetto dei Kangs',place:'Kirkland, Washington',tagline:'Casa nostra. Il tuo programma.',camera:'Inquadratura',wide:'Ampia',court:'A bordo campo',follow:'Segui',auto:'Auto',player:'Vista del giocatore',orbit:'Orbita',zoom:'Zoom',autoTitle:'Telecamera in stile TV che cambia a ogni azione',playerTitle:'Vista in prima persona del portatore di palla',},
  metrics:{record:'Bilancio',tokens:'Gettoni del programma',chemistry:'Intesa',fans:'Tifosi'},
  level:{rookie:'Squadra C',standard:'JV',elite:'Varsity'},
- difficulty:{rookie:'Squadra C · allena la vera Squadra C, più margine per imparare',standard:'Junior Varsity (JV) · allena la vera JV, ogni decisione conta',elite:'Varsity · allena la vera varsity, margini minimi'},
+ difficulty:{rookie:'Squadra C',standard:'Junior Varsity (JV)',elite:'Varsity'},
  landing:{
   school:'Lake Washington',
   program:'Programma di basket',

@@ -12,7 +12,7 @@ export default {
  stage:{venue:'Kangs फ़ील्डहाउस',place:'कर्कलैंड, वॉशिंगटन',tagline:'हमारा घर। आपका प्रोग्राम।',camera:'कैमरा दृश्य',wide:'चौड़ा',court:'कोर्ट के किनारे',follow:'पीछा करें',auto:'ऑटो',player:'खिलाड़ी का दृश्य',orbit:'घुमाएँ',zoom:'ज़ूम',autoTitle:'टीवी शैली का कैमरा जो हर प्ले के साथ बदलता है',playerTitle:'गेंद वाले खिलाड़ी का पहला-व्यक्ति दृश्य',},
  metrics:{record:'रिकॉर्ड',tokens:'प्रोग्राम टोकन',chemistry:'तालमेल',fans:'प्रशंसक'},
  level:{rookie:'सी टीम',standard:'JV',elite:'वार्सिटी'},
- difficulty:{rookie:'सी टीम · असली सी-टीम को कोच करें, सीखने की ज़्यादा गुंजाइश',standard:'जूनियर वार्सिटी (JV) · असली JV को कोच करें, हर फ़ैसला मायने रखता है',elite:'वार्सिटी · असली वार्सिटी को कोच करें, बहुत कम अंतर'},
+ difficulty:{rookie:'सी टीम',standard:'जूनियर वार्सिटी (JV)',elite:'वार्सिटी'},
  landing:{
   school:'Lake Washington',
   program:'बास्केटबॉल प्रोग्राम',

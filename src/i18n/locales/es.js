@@ -26,7 +26,7 @@ export default {
  stage:{venue:'Pabellón de los Kangs',place:'Kirkland, Washington',tagline:'Nuestra casa. Tu programa.',camera:'Vista de cámara',wide:'Panorámica',court:'Pie de cancha',follow:'Seguir',auto:'Auto',player:'Vista del jugador',orbit:'Orbitar',zoom:'Zoom',autoTitle:'Cámara estilo TV que cambia con cada jugada',playerTitle:'Vista en primera persona del jugador con el balón',},
  metrics:{record:'Récord',tokens:'Fichas del programa',chemistry:'Química',fans:'Aficionados'},
  level:{rookie:'Equipo C',standard:'JV',elite:'Varsity'},
- difficulty:{rookie:'Equipo C · dirige al Equipo C real, más margen para aprender',standard:'Junior Varsity (JV) · dirige al JV real, cada decisión cuenta',elite:'Varsity · dirige al varsity real, márgenes mínimos'},
+ difficulty:{rookie:'Equipo C',standard:'Junior Varsity (JV)',elite:'Varsity'},
  landing:{
   school:'Lake Washington',
   program:'Programa de baloncesto',
