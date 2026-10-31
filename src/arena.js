@@ -9,7 +9,7 @@ import {qualityProfile, lowerLevel, autoDowngrade, probeDone, PROBE} from './gra
 import {loadOpponentLogo} from './logos.js';
 import {gymColors} from './kits.js';
 import {classicBody,attachBody,disposeBody,validBody,athleteBody,variantFor,BODY_VARIANTS,lookFor,lookKey,loadAthletes} from './players.js';
-import {arenaPlayers} from './graphics.js';
+import {arenaPlayers,bodyPixels,lodFor} from './graphics.js';
 import {ballMaterial} from './materials.js';
 import {BroadcastLook} from './broadcast.js';
 import {animateAthlete} from './motion.js';
@@ -139,9 +139,10 @@ export class Arena{
  endFly(){const f=this.fly;this.fly=null;f?.done();}
  /* Athletes far from the camera draw their simplified meshes (about a third of the triangles). Chosen by how tall the player
     appears on screen, with a little hysteresis so nobody flickers between the two at the threshold. */
- updateLods(){const cam=this.camera,k=2.2/(2*Math.tan(cam.fov*Math.PI/360));
-  for(const p of this.people){const b=p.userData.body;if(!b?.setLod)continue;const size=k/Math.max(.01,cam.position.distanceTo(p.position)),far=b.lodLevel?size<.25:size<.22;
-   if(far!==!!b.lodLevel){b.lodLevel=far?1:0;b.setLod(b.lodLevel);}}}
+ /* Far mesh only for players that are small in actual pixels (see lodFor in src/graphics.js). */
+ updateLods(){const cam=this.camera,view=this.renderer.domElement.height;
+  for(const p of this.people){const b=p.userData.body;if(!b?.setLod)continue;const lod=lodFor(bodyPixels(cam.fov,cam.position.distanceTo(p.position),view),b.lodLevel||0);
+   if(lod!==(b.lodLevel||0)){b.lodLevel=lod;b.setLod(lod);}}}
  restoreHead(){const o=this.fpHidden;if(!o)return;this.fpHidden=null;for(const k of ['head','hair'])if(o.userData[k])o.userData[k].visible=true;}
  firstPerson(){const clip=this.event?this.presentation()?.clip:null;const team=clip?.team||'home';const actor=this.people[clip?(team==='home'?0:5):2];if(!actor){this.fpSubject=null;this.restoreHead();return;}const who=actor.userData.person;this.fpSubject=who?{number:who.number,name:team==='away'&&clip&&clip.player?clip.player:who.name,position:who.position,id:who.id,home:team==='home'}:null;const dir=team==='home'?1:-1;const rim=new THREE.Vector3(dir*12.15,3.05,0);const a=actor.position;const look=rim.clone().lerp(this.ball.position,.35);const flat=new THREE.Vector3(look.x-a.x,0,look.z-a.z);if(flat.lengthSq()<.01)flat.set(dir,0,0);flat.normalize();const eye=new THREE.Vector3(a.x+flat.x*.4,1.74,a.z+flat.z*.4);/* never inside a neighbour's head: keep 0.6 from every other body, and hide the subject's own head */for(const o of this.people){if(o===actor)continue;const dx=eye.x-o.position.x,dz=eye.z-o.position.z,d=Math.hypot(dx,dz);if(d<.6){eye.x=o.position.x+(d>.001?dx/d:flat.x)*.6;eye.z=o.position.z+(d>.001?dz/d:flat.z)*.6;}}if(this.fpHidden!==actor){this.restoreHead();this.fpHidden=actor;for(const k of ['head','hair'])if(actor.userData[k])actor.userData[k].visible=false;}if(!this.fpLook){this.camera.position.copy(eye);this.fpLook=look.clone();}this.camera.position.lerp(eye,.25);this.fpLook.lerp(look,.12);this.camera.lookAt(this.fpLook);}
  /* TV director for Auto camera: wide for the setup, tracking for the drive, then a first-person look at the rim (Kangs) or a baseline angle (visitors) on the shot. Returns true when the first-person shot is active. */

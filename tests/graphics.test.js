@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {GRAPHICS_LEVELS,qualityProfile,lowerLevel,autoDowngrade,probeDone,medianMs,PROBE,arenaPlayers} from '../src/graphics.js';
+import {GRAPHICS_LEVELS,bodyPixels,lodFor,LOD_PIXELS,qualityProfile,lowerLevel,autoDowngrade,probeDone,medianMs,PROBE,arenaPlayers} from '../src/graphics.js';
 import {normalizeA11y,A11Y_DEFAULTS,activeA11yCount} from '../src/settings.js';
 
 test('quality levels map to renderer profiles; High keeps the current look',()=>{
@@ -53,4 +53,19 @@ test('the title gym shows the 3D athletes whatever the players setting, except o
   for(const level of ['medium','high'])for(const choice of ['classic','athletes',undefined,'bogus'])assert.equal(arenaPlayers(choice,level,'title'),'athletes');
   for(const choice of ['classic','athletes'])assert.equal(arenaPlayers(choice,'low','title'),'classic');
   for(const mode of ['broadcast','court','office','auto',undefined]){assert.equal(arenaPlayers('classic','high',mode),'classic');assert.equal(arenaPlayers('athletes','medium',mode),'athletes');assert.equal(arenaPlayers('athletes','low',mode),'classic');}
+});
+test('player detail follows on-screen size in pixels: a Follow-view player on a big screen keeps the full head',()=>{
+ // a 2.2 m player 15 m away through a 43° lens on an 822 px tall view
+ assert.ok(Math.abs(bodyPixels(43,15,822)-2.2/(2*15*Math.tan(21.5*Math.PI/180))*822)<1e-9);
+ // the reported bug: Follow (long lens, ~30 m) on a Retina canvas 1644 px tall drew the 30% mesh (dented faces, jagged hair)
+ assert.equal(lodFor(bodyPixels(28.4,30,1644),0),0);
+ assert.equal(lodFor(bodyPixels(28.4,30,1644),1),0,'switches back to full detail');
+ // the same on the pixel-budgeted High canvas (1742x822 view at 1.6x = 1315 px) with the Follow camera at its farthest, even coming from the far mesh
+ assert.equal(lodFor(bodyPixels(29.3,38,1315),1),0);
+ // small on screen: the far mesh is fine (head only a few pixels)
+ assert.equal(lodFor(bodyPixels(43,40,600),0),1);
+ // hysteresis band so a player walking at the edge does not flicker between meshes
+ assert.equal(lodFor(LOD_PIXELS.far+5,0),0);
+ assert.equal(lodFor(LOD_PIXELS.far+5,1),1);
+ assert.equal(lodFor(LOD_PIXELS.near+1,1),0);
 });
