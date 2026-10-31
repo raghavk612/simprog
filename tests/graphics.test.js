@@ -54,6 +54,8 @@ test('player detail follows on-screen size in pixels: a Follow-view player on a 
  // the reported bug: Follow (long lens, ~30 m) on a Retina canvas 1644 px tall drew the 30% mesh (dented faces, jagged hair)
  assert.equal(lodFor(bodyPixels(28.4,30,1644),0),0);
  assert.equal(lodFor(bodyPixels(28.4,30,1644),1),0,'switches back to full detail');
+ // the same on the pixel-budgeted High canvas (1742x822 view at 1.6x = 1315 px) with the Follow camera at its farthest, even coming from the far mesh
+ assert.equal(lodFor(bodyPixels(29.3,38,1315),1),0);
  // small on screen: the far mesh is fine (head only a few pixels)
  assert.equal(lodFor(bodyPixels(43,40,600),0),1);
  // hysteresis band so a player walking at the edge does not flicker between meshes
