@@ -114,7 +114,10 @@ def measure(spec, v):
     s = np.nanargmin(np.where((ys > 5) & (ys < 33), mz, np.inf)); lm['sellion_y'] = ys[s]
     drop = np.where((ys[1:] > ys[t] - 20) & (ys[1:] <= ys[t]), np.diff(mz), -np.inf)   # nose base: steepest step under the tip
     lm['subnasale_y'] = float(ys[np.argmax(drop)] + ys[np.argmax(drop) + 1]) / 2
-    st = np.nanargmin(np.where((ys > -62) & (ys < -40), mz, np.inf)); lm['stomion_y'] = ys[st]
+    notch = (ys > -62) & (ys < -40)
+    notch[1:-1] &= (mz[1:-1] < mz[:-2]) & (mz[1:-1] <= mz[2:]); notch[[0, -1]] = False   # local minima only
+    st = np.nanargmin(np.where(notch, mz, np.inf)) if notch.any() else np.nanargmin(np.where((ys > -62) & (ys < -40), mz, np.inf))
+    lm['stomion_y'] = ys[st]
     lm['mid_face'] = lm['sellion_y'] - lm['subnasale_y']; lm['lower_face'] = lm['subnasale_y'] - lm['menton_y']
     y, z = grid(np.arange(-26, -15, 1.0), np.arange(lm['nose_tip_z'] - 16, lm['nose_tip_z'] - 9, 1.0))
     lm['alae_half'] = np.nanmax(half_width(f, y, z))
@@ -128,6 +131,23 @@ def measure(spec, v):
     w = half_width(f, y, z); i = np.nanargmax(w)
     side = half_width(local_fn(v, drop=('ear',)), y[i:i + 1], z[i:i + 1])[0]
     lm['ear_out'] = w[i]; lm['ear_protrusion'] = w[i] - side
+    # lips: depth of the lip line below the lower of the two lips; how far the upper lip stands ahead of the lower
+    sti = np.argmin(np.abs(ys - lm['stomion_y']))
+    up = np.nanmax(np.where((ys > ys[sti]) & (ys <= ys[sti] + 12), mz, -np.inf))
+    low = np.nanmax(np.where((ys < ys[sti]) & (ys >= ys[sti] - 12), mz, -np.inf))
+    lm['lip_line_depth'] = min(up, low) - mz[sti]; lm['upper_lip_ahead'] = up - low
+    # cheek hollow: rays aimed at the head's vertical axis from bearings 30-60 deg (front-side, the 3/4 view), at
+    # heights from the cheekbone (y = +8) down to just above the jaw (y = -50): how far the cheek surface sinks below
+    # the straight chord between those two heights. <= 0 means flat or convex.
+    hol = []
+    ys2 = np.arange(8, -50.5, -1.0)
+    for a in (30, 40, 50, 60):
+        n = np.array([np.cos(np.radians(a)), 0, np.sin(np.radians(a))])
+        o = np.stack([np.full_like(ys2, .2 * n[0]), ys2 / 1000, np.full_like(ys2, .2 * n[2])], 1)
+        rr = 200 - cast(f, o, -n) * 1000
+        chord = rr[0] + (rr[-1] - rr[0]) * (ys2 - ys2[0]) / (ys2[-1] - ys2[0])
+        hol.append(np.nanmax(chord - rr))
+    lm['cheek_hollow'] = max(hol)
     # neck
     zs = np.arange(-110, 81, 2.0)
     lm['neck_half'] = np.nanmax(half_width(f, np.full_like(zs, -140), zs))

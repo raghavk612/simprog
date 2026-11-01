@@ -148,34 +148,38 @@ def build_head(p):
     # neck: round cone leaning forward, entering the skull behind the jaw
     cone('neck', (0, -230, -32), (0, -40, -20), p['neck_base'], p['neck_top'], aspect=.86, k=36)
     # face masses: maxilla/muzzle and the lower face, joined to the cranium at 28 mm
-    ell('muzzle', (0, -40, 62), (44, 30, 38), k=28)
+    ell('muzzle', (0, -40, 62), (50, 30, 38), k=28)
     Zg = p['gonion_z']; Jw = p['bigonial'] / 2; Mn = p['menton']
     # lower face: one rounded box, its bottom along the jawline (pitched 24 deg), tapering to the jaw corners and the chin
     box('face_block', (0, -27, 48), (Jw - 8, 52, 46), 18, rot=(24, 0, 0), k=28, taper=(-.2, .2))
     # mandible: ramus up to the ear, body bar from the jaw corner to the chin (tall, thin cross-section)
     cone('ramus', (Jw - 14, -56, Zg - 4), (Jw - 6, -12, Zg - 14), 8, 8, aspect=1.3, up=(1, 0, 0), k=10, mirror=True)
-    cone('jaw_bar', (Jw - 12, -58, Zg - 2), (p['chin_half'] + 2, Mn + 10, 86), 9, 9, aspect=1.5, up=(0, 1, 0), k=10, mirror=True)
-    ell('jaw_angle', (Jw - 9, -58, Zg + 2), (6.5, 11, 13), k=8, mirror=True)
+    cone('jaw_bar', (Jw - 12, -58, Zg - 2), (p['chin_half'] + 6, Mn + 14, 80), 9, 9, aspect=1.5, up=(0, 1, 0), k=12, mirror=True)
+    ell('jaw_angle', (Jw - 11, -58, Zg + 2), (5.5, 10, 12), k=16, mirror=True)   # soft: the corner shows in silhouette, not as a bump
     ell('chin_mass', (0, -80, 74), (30, 20, 24), k=16)   # mentalis: fills from the lower lip to the chin
     box('chin_pad', (0, Mn + 12, 91), (p['chin_half'], 11, 8), 7, rot=(-8, 0, 0), k=12)
     # cheekbones: the malar mass under the eye (fills up to the lower lid), swept back toward the ear
     zx = p['bizyg'] / 2
     ell('malar', (zx - 34, 4, 66), (28, 20, 22), rot=(0, -20, 0), k=18, mirror=True)
+    # cheek pad: the muscle and fat layer over the buccal hollow and the masseter, so the lower cheek is flat to slightly
+    # convex from the side and 3/4 (a young face) instead of sinking under the cheekbone (a gaunt, older face)
+    ell('cheek_pad', (34, -18, 56), (26, 34, 28), k=20, mirror=True)
     # brow ridge: just proud of the cranium, outer ends swept back
     b = p['brow']
     ell('brow', (0, 38, G - 32), (56, 8 + 1.5 * b, 29 + 3 * b), k=12)   # one bar whose front follows the forehead curve
     gauss('glabella', (0, 36, G - 3), (13, 9, 8), 2.0 * b)
     # eye sockets carved under the brow (smooth subtraction), closed-lid surface inside
-    ell('eye_socket', (33, 25, G - 5), (18, 10, 12), op='subtract', k=14, mirror=True)
-    ell('eye_lid', (32, 26, G - 24), (13, 7, 9), k=5, mirror=True)
+    ell('eye_socket', (33, 25, G - 5), (18, 10, 12), op='subtract', k=15, mirror=True)
+    ell('eye_lid', (32, 26, G - 24), (14, 8, 9.5), k=7, mirror=True)   # eyeball under a closed lid: the painted eye sits on it
     # nose wedge: bridge pitched ~30 deg from sellion to tip, tip ball, alae
     cone('nose', (0, 24, G - 9), (0, -14, G + 8), 5, 7.5, aspect=1.0, k=8)
-    ell('nose_tip', (0, -16, G + 6), (8.5, 7.5, 8.5), k=7)
-    ell('nose_ala', (p['nose_w'] / 2 - 7, -22, G + 3), (7, 6.5, 8), k=8, mirror=True)
+    ell('nose_tip', (0, -16, G + 6), (8.5, 7.5, 8.5), k=10)
+    ell('nose_ala', (p['nose_w'] / 2 - 9, -21, G + 1), (7.5, 7, 9), k=13, mirror=True)   # soft wings, no smile-line crease
+    ell('nose_base', (0, -23, G - 4), (13, 4, 9), k=8)   # fills the undercut under the tip and wings (no moustache shadow)
     # lips and the mouth line
-    ell('upper_lip', (0, -40, 96), (21, 6.5, 8), k=6)
-    ell('lower_lip', (0, -57, 93), (19, 6.5, 8), k=6)
-    ell('mouth_line', (0, -49, 106), (24, 1.2, 7), op='subtract', k=3)
+    ell('upper_lip', (0, -41, 97), (21, 7, 8), k=8)    # a touch forward of the lower lip
+    ell('lower_lip', (0, -57, 94), (19, 7, 8), k=8)
+    ell('mouth_line', (0, -49, 106), (23, 1.2, 5), op='subtract', k=3)   # shallow lip line, under 2 mm
     # ears: flattened ellipsoids behind the midline, tilted back 15 deg and flared out, wider at the top
     ell('ear', (W + 4, 0, -14), (17, p['ear_len'] / 2, 5.5), axes=((.42, 0, -.91), (.1, .97, -.26)), taper=(0, .25), k=5, mirror=True)
     gauss('adams_apple', (0, -112, 34), (9, 12, 9), 3.0)

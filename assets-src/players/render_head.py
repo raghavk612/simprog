@@ -155,6 +155,7 @@ if __name__ == '__main__':
     ap.add_argument('--variant', nargs='*', default=None)
     ap.add_argument('--old', default=None, help='an older body_shapes.json to render as the "before" head')
     ap.add_argument('--size', type=int, default=320)
+    ap.add_argument('--r1', default=None, help='a first-version body_shapes.json (with head blocks) for head_r1_compare.png')
     ap.add_argument('--skip', nargs='*', default=[], help='skip outputs: views tiny variants before')
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
@@ -171,6 +172,15 @@ if __name__ == '__main__':
     if 'variants' not in a.skip and a.variant is None:
         rows = [views(*scene_new(spec, spec['variants'][n]), a.size * 3 // 4, ('front', '3/4', 'side'), n) for n in spec['variants']]
         row(rows, 10).save(os.path.join(a.out, 'head_variants.png'))
+    if a.r1:
+        first = json.load(open(a.r1)); v = spec['variants']['forward']
+        f1 = scene_new(first, first['variants']['forward']); f2 = scene_new(spec, v)
+        r1 = views(*f1, a.size, ('front', '3/4', 'side'), 'first version')
+        r2 = views(*f2, a.size, ('front', '3/4', 'side'), 'fix round 1')
+        t1, _ = tiny(*f1, sizes=(25,)); t2, _ = tiny(*f2, sizes=(25,))
+        row([col([r1, label(t1, 'first version, 25 px', (6, 16))], 8), col([r2, label(t2, 'fix round 1, 25 px', (6, 16))], 8)], 16).save(
+            os.path.join(a.out, 'head_r1_compare.png'))
+        print('rendered r1 compare', flush=True)
     if a.old and 'before' not in a.skip:
         old = json.load(open(a.old)); v = spec['variants']['forward']
         before = views(*scene_old(old, old['variants']['forward']), a.size, ('front', '3/4', 'side'), 'before')

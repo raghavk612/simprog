@@ -154,7 +154,7 @@ class Landmarks(unittest.TestCase):
             self.assertGreater(lm['parietal_half'], lm['temple_half'] + 12, msg)          # temple pinch
             self.assertGreater(lm['zyg_half'], lm['gonion_half'] + 12, msg)               # face tapers to the jaw corners
             self.assertTrue(.70 <= lm['gonion_half'] / lm['zyg_half'] <= .82, msg)
-            self.assertGreaterEqual(lm['socket_depth'], 7, msg)                           # brow shelf over the eyes
+            self.assertTrue(5 <= lm['socket_depth'] <= 7, msg)        # brow shelf shadows the eyes, sockets not sunken (fix round 1)
             self.assertGreaterEqual(lm['nose_proj'], 10, msg)                             # nose wedge stands proud of the brow
             self.assertTrue(-24 <= lm['nose_tip_y'] <= -4, msg)
             self.assertGreaterEqual(lm['chin_flat_half'], 13, msg)                        # squared chin
@@ -162,6 +162,19 @@ class Landmarks(unittest.TestCase):
             self.assertTrue(16 <= lm['ear_protrusion'] <= 30, msg)
             self.assertLess(lm['neck_top_z'], -5, msg)                                    # neck enters behind the jaw
             self.assertGreater(lm['lower_face'] / (lm['lower_face'] + lm['mid_face']), .53, msg)  # long lower third
+
+    def test_cheeks_are_not_hollow(self):
+        # fix round 1: a concave lower cheek (sinking below the chord from the cheekbone to the jaw in the 3/4 bearings)
+        # aged the head to ~50; the first version measured 2.1 mm, a young face is flat or convex
+        for name in VARIANTS:
+            self.assertLessEqual(landmarks(name)['cheek_hollow'], .5, name)
+
+    def test_young_mouth(self):
+        for name in VARIANTS:
+            lm = landmarks(name)
+            self.assertTrue(.5 <= lm['lip_line_depth'] <= 2.2, '%s lip line %.2f mm: a shallow line, not a dark slit' % (name, lm['lip_line_depth']))
+            self.assertTrue(1 <= lm['upper_lip_ahead'] <= 6, name)       # upper lip a touch forward of the lower
+            self.assertAlmostEqual(lm['stomion_y'], hl.TARGETS['stomion_y'], delta=4)
 
     def test_variants_differ(self):
         g, f, c = (landmarks(n) for n in ('guard', 'forward', 'center'))
