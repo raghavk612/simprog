@@ -1,8 +1,10 @@
 """Writes body_shapes.json: the Kangs player body as a table of shapes, shared by the Houdini builder
 (assets-src/players/houdini/build_players.py) and the rig/glTF step (scripts/build_players.py).
 
-All positions and radii are fractions of standing height. y is up, +z is forward, feet at y=0; x>0 is the player's left.
-Shape kinds:
+Body ('shapes'): all positions and radii are fractions of standing height. y is up, +z is forward, feet at y=0; x>0 is the
+player's left. The head is NOT in that list: each variant has a 'head' block in absolute head-local metres (see the
+head block section below and 'head_about' in the JSON); the core part is smin(body core, head, head.neck_k).
+Body shape kinds:
   ell  ellipsoid: centre c, radii r, rotation rot (degrees, xyz)
   cap  tapered capsule from a to b with radii ra -> rb; cross-section depth = radius * aspect
 Scaling per variant: radii *= mass**m; shapes/joints flagged sx have x (and capsule ends) scaled by the shoulder factor.
@@ -83,7 +85,7 @@ HEAD_Z = -.010   # head-local origin (ear canals) sits 1 cm behind the body's ce
 
 # Research table values (mm); see docs/superpowers/notes/2026-11-01-player-head-research.md
 HEAD_BASE = dict(crown=134, length=205, breadth=155, bizyg=144, bigonial=105, menton=-100, chin_half=16, brow=1.0,
-                 nose_w=38, ear_len=66, ear_prot=24, neck_top=46, neck_base=80, gonion_z=8)
+                 nose_w=38, ear_len=66, neck_top=46, neck_base=80, gonion_z=8)
 HEAD_PARAMS = {  # archetypes (research step 8), mild so all stay inside +-2 SD
     'guard': dict(HEAD_BASE, breadth=153, length=206, bizyg=140, bigonial=101, menton=-103, chin_half=14, brow=.9,
                   nose_w=36, ear_len=64, neck_top=44, neck_base=76),                    # long and lean
@@ -149,7 +151,7 @@ def build_head(p):
     ell('muzzle', (0, -40, 62), (44, 30, 38), k=28)
     Zg = p['gonion_z']; Jw = p['bigonial'] / 2; Mn = p['menton']
     # lower face: one rounded box, its bottom along the jawline (pitched 24 deg), tapering to the jaw corners and the chin
-    box('face_block', (0, -27, 48), (Jw - 8, 52, 46), 14, rot=(24, 0, 0), k=28, taper=(-.2, .2))
+    box('face_block', (0, -27, 48), (Jw - 8, 52, 46), 18, rot=(24, 0, 0), k=28, taper=(-.2, .2))
     # mandible: ramus up to the ear, body bar from the jaw corner to the chin (tall, thin cross-section)
     cone('ramus', (Jw - 14, -56, Zg - 4), (Jw - 6, -12, Zg - 14), 8, 8, aspect=1.3, up=(1, 0, 0), k=10, mirror=True)
     cone('jaw_bar', (Jw - 12, -58, Zg - 2), (p['chin_half'] + 2, Mn + 10, 86), 9, 9, aspect=1.5, up=(0, 1, 0), k=10, mirror=True)
@@ -158,7 +160,7 @@ def build_head(p):
     box('chin_pad', (0, Mn + 12, 91), (p['chin_half'], 11, 8), 7, rot=(-8, 0, 0), k=12)
     # cheekbones: the malar mass under the eye (fills up to the lower lid), swept back toward the ear
     zx = p['bizyg'] / 2
-    ell('malar', (zx - 34, 4, 66), (28, 20, 22), rot=(0, -20, 0), k=16, mirror=True)
+    ell('malar', (zx - 34, 4, 66), (28, 20, 22), rot=(0, -20, 0), k=18, mirror=True)
     # brow ridge: just proud of the cranium, outer ends swept back
     b = p['brow']
     ell('brow', (0, 38, G - 32), (56, 8 + 1.5 * b, 29 + 3 * b), k=12)   # one bar whose front follows the forehead curve
@@ -167,8 +169,8 @@ def build_head(p):
     ell('eye_socket', (33, 25, G - 5), (18, 10, 12), op='subtract', k=14, mirror=True)
     ell('eye_lid', (32, 26, G - 24), (13, 7, 9), k=5, mirror=True)
     # nose wedge: bridge pitched ~30 deg from sellion to tip, tip ball, alae
-    cone('nose', (0, 24, G - 9), (0, -15, G + 10), 5, 7.5, aspect=1.0, k=8)
-    ell('nose_tip', (0, -17, G + 8), (8.5, 7.5, 8.5), k=6)
+    cone('nose', (0, 24, G - 9), (0, -14, G + 8), 5, 7.5, aspect=1.0, k=8)
+    ell('nose_tip', (0, -16, G + 6), (8.5, 7.5, 8.5), k=7)
     ell('nose_ala', (p['nose_w'] / 2 - 7, -22, G + 3), (7, 6.5, 8), k=8, mirror=True)
     # lips and the mouth line
     ell('upper_lip', (0, -40, 96), (21, 6.5, 8), k=6)

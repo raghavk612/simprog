@@ -50,7 +50,7 @@ def normal(fn, P, e=.0004):
     n = sum(kk * fn(P + kk * e)[:, None] for kk in k)
     return n / np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-9)
 
-def trace(fn, ro, rd, tmax, eps=.00015, iters=260, relax=.8):
+def trace(fn, ro, rd, tmax, eps=.00015, iters=320, relax=.6):
     t = np.zeros(len(ro)); hit = np.zeros(len(ro), bool); live = np.ones(len(ro), bool)
     for _ in range(iters):
         idx = np.where(live)[0]
@@ -60,6 +60,10 @@ def trace(fn, ro, rd, tmax, eps=.00015, iters=260, relax=.8):
         hit[idx[done]] = True; live[idx[done]] = False
         t[idx[~done]] += np.maximum(d[~done] * relax, eps * .5)
         far = t > tmax; live &= ~far
+    # the body's flattened capsules overestimate distance (|grad| up to 1/aspect), so a step can land inside: walk back
+    idx = np.where(hit)[0]
+    for _ in range(6):
+        t[idx] += fn(ro[idx] + rd[idx] * t[idx, None]) * .9
     return t, hit
 
 def shade(fn, P, N, V, L):
@@ -70,9 +74,9 @@ def shade(fn, P, N, V, L):
         ao += (h - fn(P + N * h)) * (.7 ** i) / h
     ao = np.clip(1 - .28 * ao, 0, 1)
     sh = np.ones(len(P)); t = np.full(len(P), .002)
-    for _ in range(28):
+    for _ in range(40):   # march toward the key light far enough to reach the head from the chest
         d = fn(P + N * .0006 + key * t[:, None])
-        sh = np.minimum(sh, 10 * d / t); t += np.clip(d, .002, .03)
+        sh = np.minimum(sh, 10 * d / t); t += np.clip(d, .005, .04)
     sh = np.clip(sh, 0, 1)
     kd = np.clip(N @ key, 0, 1) * sh
     fd = np.clip(N @ fill, 0, 1)
@@ -126,12 +130,12 @@ def col(images, pad=4, bg=(255, 255, 255)):
 
 HEAD_H = .234   # crown to chin, for framing
 def views(fn, o, px, names=('front', '3/4', 'side', 'top'), tag=''):
-    target = o + np.array([0, -.035, .01])
+    target = o + np.array([0, -.025, .01])
     ims = []
     for name in names:
         yaw, pitch = VIEWS[name]
         tg = o + np.array([0, .0, .0]) if name == 'top' else target
-        ims.append(label(to_im(render(fn, tg, yaw, pitch, px, .17, 1)), (tag + ' ' + name).strip()))
+        ims.append(label(to_im(render(fn, tg, yaw, pitch, px, .175, 1)), (tag + ' ' + name).strip()))
     return row(ims)
 
 def tiny(fn, o, sizes=(15, 25, 35), names=('front', '3/4', 'side'), zoom=6):
