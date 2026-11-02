@@ -64,7 +64,7 @@ export function attachBody(player,body){
 export function disposeBody(body,keep=new Set()){
  if(!body)return;const mats=new Set();
  body.root.traverse(o=>{if(o.isMesh){if(!body.sharedGeometry||!o.isSkinnedMesh)o.geometry?.dispose();(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m&&!keep.has(m)&&mats.add(m));}});
- mats.forEach(m=>{m.map?.dispose();m.userData?.face?.map?.dispose();m.dispose();});   // the painted face lives in the skin's uniforms
+ mats.forEach(m=>{m.map?.dispose();m.userData?.face?.map?.dispose();const P=m.userData?.print;if(P)for(const k of ['kPrintF','kPrintB']){P[k].value?.dispose();P[k].value=null;}m.dispose();});   // the painted face and jersey print live in uniforms
 }
 
 /* True when a body offers every part the Arena drives (used to reject a broken imported model and stay on classic). */

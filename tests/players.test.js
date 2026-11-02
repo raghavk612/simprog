@@ -42,6 +42,9 @@ test('athlete bodies: every variant file loads as a rigged body the Arena can dr
   for(const bone of [...b.parts.legs,...b.parts.arms])assert.deepEqual(bone.quaternion.toArray(),[0,0,0,1],'bones rest unrotated');
   assert.ok(b.parts.legs[0].position.x<0&&b.parts.arms[0].getWorldPosition(new THREE.Vector3()).x<0,'x<0 side first, like the classic figure');
   let tris=0;b.root.traverse(o=>{if(o.isSkinnedMesh){tris+=o.geometry.index.count/3;assert.equal(o.frustumCulled,false);}});assert.ok(tris>10000&&tris<15000,`${v}: ${tris} triangles in budget`);
+  { const d=athleteBody(gltf,kit,3,0x6832ab,v,look);d.setLettering(3,'KANGS','#ffffff','#2a1050','home');const U=d.parts.jersey.userData.print,tex=[U.kPrintF.value,U.kPrintB.value];let freed=0;tex.forEach(t=>t.addEventListener('dispose',()=>freed++));
+    disposeBody(d,new Set([kit.capMat]));assert.equal(freed,2,`${v}: disposeBody frees the jersey print textures`); }
+  { const w=athleteBody(gltf,kit,3,0x6832ab,v,{...look,legSleeve:true});let t=0;w.root.traverse(o=>{if(o.isSkinnedMesh)t+=o.geometry.index.count/3;});assert.ok(t<15000,`${v}: worst-case look (afro, band, both sleeves) ${t} triangles in budget`); }
   // one shared skeleton per body, and a far-distance version (about a third of the triangles) swapped in by setLod
   const skels=new Set();b.root.traverse(o=>{if(o.isSkinnedMesh)skels.add(o.skeleton);});assert.equal(skels.size,1,'all meshes share one skeleton');
   assert.ok(!names.some(n=>n.endsWith('_lod1')),'LOD meshes are not separate objects');

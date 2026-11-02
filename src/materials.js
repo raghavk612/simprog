@@ -198,15 +198,17 @@ export function faceTexture(skinHex,seed=0,marks=FACE_MARKS){
  for(const s of [-1,1]){brow(s,1.3,.25,'#1a120d');brow(s,1,.9,'#16100c');}
  // eyes: a dark almond on the closed-lid bulge; the iris fills most of it, so only slivers of muted white show at the corners
  const white=hex(base.clone().lerp(new THREE.Color(0xd9d1c7),.45).multiplyScalar(.85));
- for(const s of [-1,1]){const cx=X(s*(33+spread)),cy=Y(M.eye),w=eyeW*mm,up=5*mm,dn=3.6*mm,inner=s<0?1:-1,a=inner*.7*mm;   // inner corner sits lower
-  const almond=()=>{x.beginPath();x.moveTo(cx-w,cy+a);x.bezierCurveTo(cx-w*.5,cy-up*1.3,cx+w*.35,cy-up*1.32,cx+w,cy-a);x.bezierCurveTo(cx+w*.45,cy+dn*1.3,cx-w*.45,cy+dn*1.3,cx-w,cy+a);x.closePath();};
+ // each eye is drawn in its own mirrored frame: lx runs from the outer corner (-w) to the inner corner (+w), so both eyes match,
+ // and the outer corner sits a little higher than the inner one (a young, alert eye; a drooping outer corner reads tired)
+ for(const s of [-1,1]){const cx=X(s*(33+spread)),cy=Y(M.eye),w=eyeW*mm,up=5*mm,dn=3.6*mm,a=.7*mm,P=(lx,ly)=>[cx-s*lx,cy+ly];
+  const almond=()=>{x.beginPath();x.moveTo(...P(-w,-a));x.bezierCurveTo(...P(-w*.35,-up*1.32),...P(w*.5,-up*1.3),...P(w,a));x.bezierCurveTo(...P(w*.45,dn*1.3),...P(-w*.45,dn*1.3),...P(-w,-a));x.closePath();};
   x.save();almond();x.globalAlpha=.95;x.fillStyle=white;x.fill();x.clip();
   x.fillStyle=iris;x.beginPath();x.arc(cx+s*.3*mm,cy+.2*mm,5.4*mm,0,Math.PI*2);x.fill();
   x.fillStyle='#0a0706';x.beginPath();x.arc(cx+s*.3*mm,cy+.2*mm,2.3*mm,0,Math.PI*2);x.fill();
   const lid=x.createLinearGradient(0,cy-up,0,cy);lid.addColorStop(0,'rgba(10,6,4,.55)');lid.addColorStop(1,'rgba(10,6,4,0)');x.fillStyle=lid;x.fillRect(cx-w,cy-up*1.4,2*w,up*1.4);   // lash shadow
-  x.fillStyle='rgba(255,255,255,.4)';x.beginPath();x.arc(cx-1.5*mm,cy-1.5*mm,.75*mm,0,Math.PI*2);x.fill();x.restore();
-  x.save();x.strokeStyle='#100a07';x.lineCap='round';x.lineWidth=1.6*mm;x.beginPath();x.moveTo(cx-w*1.02,cy+a*.8);x.bezierCurveTo(cx-w*.5,cy-up*1.32,cx+w*.35,cy-up*1.36,cx+w*1.06,cy-a*1.3);x.stroke();   // upper lid and lashes
-  x.globalAlpha=.4;x.strokeStyle=tone(.5);x.lineWidth=.8*mm;x.beginPath();x.moveTo(cx-w*.8,cy+dn*.8);x.bezierCurveTo(cx-w*.35,cy+dn*1.3,cx+w*.35,cy+dn*1.25,cx+w*.85,cy+dn*.7);x.stroke();x.restore();   // lower lid
+  x.fillStyle='rgba(255,255,255,.4)';x.beginPath();x.arc(cx-1.5*mm,cy-1.5*mm,.75*mm,0,Math.PI*2);x.fill();x.restore();   // catchlight: same side on both eyes (one light)
+  x.save();x.strokeStyle='#100a07';x.lineCap='round';x.lineWidth=1.6*mm;x.beginPath();x.moveTo(...P(-w*1.06,-a*1.3));x.bezierCurveTo(...P(-w*.35,-up*1.36),...P(w*.5,-up*1.32),...P(w*1.02,a*.8));x.stroke();   // upper lid and lashes
+  x.globalAlpha=.4;x.strokeStyle=tone(.5);x.lineWidth=.8*mm;x.beginPath();x.moveTo(...P(-w*.85,dn*.7));x.bezierCurveTo(...P(-w*.35,dn*1.25),...P(w*.35,dn*1.3),...P(w*.8,dn*.8));x.stroke();x.restore();   // lower lid
  }
  // nose: a soft light down the bridge, shade under the tip and round the wings, nostrils
  B(0,M.eye,-12,3.2,13,tone(1.1),.16,.3);
