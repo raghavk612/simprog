@@ -178,7 +178,7 @@ export function faceTexture(skinHex,seed=0,marks=FACE_MARKS){
  /* --- down-facing layer (bottom half): ambient occlusion where skin faces the floor --- */
  x.save();x.translate(0,HH);
  for(const s of [-1,1]){B(s*31,M.eye,5,19,9,deep,.55,.3);B(s*16,M.eye,3,7,7,deep,.4,.3);}   // under the brow shelf, into the sockets
- B(0,M.nose,2,21,9,deep,.6,.35);                                                                   // under the nose tip and wings
+ B(0,M.nose,2,13,7,deep,.55,.35);                                                                   // under the nose tip and wings (kept narrow)
  B(0,M.mouth,mouthUp-9,17,6,shadow,.5,.3);                                                         // under the lower lip, over the chin
  // under the jaw: everything below the jaw line, from the chin round to the jaw corners
  x.globalAlpha=.55;x.fillStyle=deep;x.beginPath();x.moveTo(X(-62),local(-50));
@@ -210,8 +210,9 @@ export function faceTexture(skinHex,seed=0,marks=FACE_MARKS){
  }
  // nose: a soft light down the bridge, shade under the tip and round the wings, nostrils
  B(0,M.eye,-12,3.2,13,tone(1.1),.16,.3);
- const nw=Math.max(16,M.noseHalf/M.pupil*33);   // nostril-wing half-width (mm)
- B(0,M.nose,-1.5,nw*.9,4,shadow,.4,.25);for(const s of [-1,1]){B(s*nw*.45,M.nose,1.2,3.4,2,deep,.75,.45);B(s*nw*.95,M.nose,4.5,3.2,5,tone(.65),.2,.3);}
+ const nw=Math.min(17,M.noseHalf/M.pupil*33);   // nostril-wing half-width (mm)
+ B(0,M.nose,-1.5,nw*.6,3.2,shadow,.32,.25);for(const s of [-1,1]){B(s*nw*.38,M.nose,1.2,2.8,1.7,deep,.7,.45);B(s*nw*.8,M.nose,4.5,2.4,4,tone(.65),.12,.3);}
+ B(0,M.nose,5,3.6,3.2,tone(1.12),.18,.3);   // soft light on the tip, so the base reads narrow
  // lips: one value darker than the skin with a little warmth, the upper lip darker than the lower; a soft lip line
  const lip=f=>{const l=base.clone().multiplyScalar(f);l.r*=1.07;l.g*=.9;l.b*=.93;return hex(l);},m=Y(M.mouth,mouthUp),mw=M.mouthHalf/M.pupil*33*mm;
  const upper=()=>{x.beginPath();x.moveTo(W/2-mw,m);x.quadraticCurveTo(W/2-mw*.45,m-5.5*mm,W/2-mw*.18,m-6.2*mm);x.quadraticCurveTo(W/2,m-4.8*mm,W/2+mw*.18,m-6.2*mm);x.quadraticCurveTo(W/2+mw*.45,m-5.5*mm,W/2+mw,m);x.closePath();};
