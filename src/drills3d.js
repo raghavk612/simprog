@@ -416,7 +416,9 @@ function toAthlete(S, rig, { jersey, skin, number, numberBg, numberFg, name, sca
   const body = athleteBody(T.guard, { capMat: new THREE.MeshBasicMaterial({ color: GOLD }) }, Math.max(0, SKINS.indexOf(skin)), jersey, 'guard', lookFor(`${name}|${number}`));
   body.setLod?.(0); body.setLettering(String(number), name, numberBg, numberFg, jersey === PURPLE ? 'home' : null);
   body.root.traverse(o => { if (o.isMesh) { o.userData.sharedGeometry = !!o.isSkinnedMesh; o.castShadow = true; } });
-  const H = (() => { const b = body.bones.head; body.root.updateMatrixWorld(true); return b.getWorldPosition(new THREE.Vector3()).y + 0.12; })();
+  // the size the drill athletes were tuned at (head joint, then at 0.875 of the height, plus 0.12); the head joint now sits
+  // higher in the skull, so this is worked out from the model height instead of from the joint
+  const H = body.height ? body.height * 0.875 + 0.12 : (() => { const b = body.bones.head; body.root.updateMatrixWorld(true); return b.getWorldPosition(new THREE.Vector3()).y + 0.05; })();
   const inner = new THREE.Group(), s = scale * 1.98 / H; inner.scale.setScalar(s); inner.add(body.root);
   rig.root.remove(rig.inner); rig.root.add(inner);
   const b = body.bones, legs = ['R', 'L'].map(k => ({ hip: b['hip_' + k], knee: b['knee_' + k], thigh: b['knee_' + k].position.length(), shin: b['ankle_' + k].position.length() }));

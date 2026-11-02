@@ -64,7 +64,7 @@ export function attachBody(player,body){
 export function disposeBody(body,keep=new Set()){
  if(!body)return;const mats=new Set();
  body.root.traverse(o=>{if(o.isMesh){if(!body.sharedGeometry||!o.isSkinnedMesh)o.geometry?.dispose();(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>m&&!keep.has(m)&&mats.add(m));}});
- mats.forEach(m=>{m.map?.dispose();m.dispose();});
+ mats.forEach(m=>{m.map?.dispose();m.userData?.face?.map?.dispose();const P=m.userData?.print;if(P)for(const k of ['kPrintF','kPrintB']){P[k].value?.dispose();P[k].value=null;}m.dispose();});   // the painted face and jersey print live in uniforms
 }
 
 /* True when a body offers every part the Arena drives (used to reject a broken imported model and stay on classic). */
@@ -132,7 +132,12 @@ export function athleteBody(template,kit,i,color,variant,look=lookFor(i)){
  // swapped in by setLod, so visibility (Player view hides the head) and materials are untouched
  const lodMeshes=[];for(const [name,o] of Object.entries(objs)){const m=name.match(/^(.*)_lod1$/);if(!m)continue;const base=objs[m[1]];o.parent?.remove(o);delete objs[name];
   if(base?.isMesh){base.userData.lods=[base.geometry,o.geometry];lodMeshes.push(base);}}
- const jersey=clothMaterial(color),skin=skinMaterial(SKIN_TONES[i%SKIN_TONES.length]),shoes=shoeMaterial(0xf4f4f4),sole=soleMaterial(0x1d1d22),
+ // skin: one material for the head and body, with the face painted on (see materials.js faceTexture): it is lit like the
+ // rest of the skin, hides with the head, and its painted shadow under the jaw carries onto the throat
+ const tone=SKIN_TONES[i%SKIN_TONES.length];let face=null;
+ if(info.face&&bones.head){root.updateMatrixWorld(true);const c=bones.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3().fromArray(info.face));const [fw,fh]=info.faceSize||[.156,.2];
+  face={map:faceTexture(tone,i,{...(info.faceMarks||{}),aspect:fw/fh}),center:c,size:new THREE.Vector2(fw,fh)};}
+ const jersey=clothMaterial(color),skin=skinMaterial(tone,face),shoes=shoeMaterial(0xf4f4f4),sole=soleMaterial(0x1d1d22),
   hairMat=hairMaterial(look.hairColor??0x161210),band=fabricMaterial(0xffffff),sleeve=fabricMaterial(0x111114),trim=fabricMaterial(0xe9b858);
  const pick={kit:jersey,skin,shoes,sole,hair:hairMat,band,sleeve,trim};   // trim: the binding round the neck, armholes and hems
  // keep one hair style and the chosen options; drop the rest
@@ -146,10 +151,6 @@ export function athleteBody(template,kit,i,color,variant,look=lookFor(i)){
  const nameplate=new THREE.Mesh(bentPlane(.42*ds,.11*ds,info.backRadius||0),decalMaterial(letteringTexture('KANGS','#ffffff','#2a1050',{w:512,h:128,weight:800})));nameplate.rotation.y=Math.PI;
  const capBadge=new THREE.Mesh(new THREE.PlaneGeometry(.09*ds,.09*ds),kit.capMat);capBadge.rotation.y=Math.PI;capBadge.visible=false;
  for(const m of [number,nameplate,capBadge])m.castShadow=false;
- // face: painted onto the head mesh by its own skin material (see materials.js), so it is lit like the skin and hides with the head
- const tone=SKIN_TONES[i%SKIN_TONES.length],headMesh=objs.head_mesh;
- if(headMesh&&info.face&&bones.head){root.updateMatrixWorld(true);const c=bones.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3().fromArray(info.face));const [fw,fh]=info.faceSize||[.15,.13];
-  const faceSkin=skinMaterial(tone,{map:faceTexture(tone,i),center:c,size:new THREE.Vector2(fw,fh)});headMesh.traverse(o=>{if(o.isMesh)o.material=faceSkin;});}
  for(const [m,at,dir] of [[number,info.number,1],[nameplate,info.nameplate,-1],[capBadge,info.capBadge,-1]]){if(at)m.position.fromArray(at);m.position.z+=dir*KIT_INFLATE;chest?.add(m);}
  const legs=[bones.hip_R,bones.hip_L],arms=[bones.shoulder_R,bones.shoulder_L];
  legs.forEach((b,j)=>b&&(b.userData.knee=bones[j?'knee_L':'knee_R']));arms.forEach((b,j)=>b&&(b.userData.elbow=bones[j?'elbow_L':'elbow_R']));
@@ -169,5 +170,5 @@ export function athleteBody(template,kit,i,color,variant,look=lookFor(i)){
   let kit;if(kitKey){kit=KITS[kitKey]||KITS.home;trim.color.set(kit.trim);}
   else{const stroke=lum(fg)>.45?shade(bg,lum(bg)>.6?.55:.45):'#ffffff';kit={ink:fg,trim:stroke,numLine:stroke,plain:true};trim.color.set(fg);}
   if(!U)return;for(const [k,side] of [['kPrintF','front'],['kPrintB','back']]){U[k].value?.dispose();U[k].value=kitLettering(kit,side,num,name);}U.kPrintOn.value=1;};
- return {root,bones,parts:{jersey,head:objs.head_mesh,hair,number,nameplate,capBadge,legs,arms},style:'athletes',variant,key:`${variant}|${lookKey(look)}`,look,sharedGeometry:true,setLettering,setLod,lodMeshes};
+ return {root,bones,parts:{jersey,head:objs.head_mesh,hair,number,nameplate,capBadge,legs,arms},style:'athletes',variant,key:`${variant}|${lookKey(look)}`,look,height:info.height,sharedGeometry:true,setLettering,setLod,lodMeshes};
 }
