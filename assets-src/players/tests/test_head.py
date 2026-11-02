@@ -121,7 +121,9 @@ class FaceIsolation(unittest.TestCase):
             Q = rng.uniform([-.1, -.11, .02], [.1, .15, .16], size=(20000, 3)) + pb.head_origin(v)
             head = pb.head_sdf(Q, pb.head_shapes(v))
             L = Q - pb.head_origin(v)
-            face = (np.abs(head) < .01) & ((L[:, 1] > -.06) | (L[:, 2] > .082))   # face surface down to the jaw corners, and the chin
+            # face surface (within 6 mm) down to the jaw corners, and the chin. (Was 10 mm; with the polish-round narrower jaw a
+            # sample 9.9 mm outside the center's jaw corner sees the shoulder dome at 0.004 mm. The surface itself is untouched.)
+            face = (np.abs(head) < .006) & ((L[:, 1] > -.06) | (L[:, 2] > .082))
             Q, head = Q[face], head[face]   # (the throat under the jaw is the neck junction, where the body may blend)
             self.assertGreater(len(Q), 500)
             np.testing.assert_allclose(pb.core_sdf(Q, SPEC, v), head, atol=1e-6)
@@ -175,6 +177,23 @@ class Landmarks(unittest.TestCase):
             self.assertTrue(.5 <= lm['lip_line_depth'] <= 2.2, '%s lip line %.2f mm: a shallow line, not a dark slit' % (name, lm['lip_line_depth']))
             self.assertTrue(1 <= lm['upper_lip_ahead'] <= 6, name)       # upper lip a touch forward of the lower
             self.assertAlmostEqual(lm['stomion_y'], hl.TARGETS['stomion_y'], delta=4)
+
+    def test_young_nose(self):
+        # polish round: the wide, bulbous nose (wings at +-20 mm, tip 15 mm proud of the brow) aged every close-up into the
+        # mid-20s. Narrow wings (alar crease at +-16-17 mm, the center a little broader), a smaller, less projecting tip,
+        # the nose base still near -27 mm.
+        lms = {n: landmarks(n) for n in VARIANTS}
+        for name, lm in lms.items():
+            self.assertTrue(14.5 <= lm['alae_half'] <= 17.5, '%s nose wings +-%.1f mm' % (name, lm['alae_half']))
+            self.assertTrue(10 <= lm['nose_proj'] <= 14.5, '%s nose tip %.1f mm proud of the brow' % (name, lm['nose_proj']))
+            self.assertAlmostEqual(lm['subnasale_y'], -27, delta=2, msg=name)
+        self.assertGreaterEqual(lms['center']['alae_half'], lms['guard']['alae_half'])
+
+    def test_jaw_not_heavy(self):
+        # polish round: jaw corners back toward the research table (52.5 mm half-width); they were 56.4 on the forward
+        self.assertTrue(52 <= landmarks('forward')['gonion_half'] <= 54.5, landmarks('forward')['gonion_half'])
+        for name in VARIANTS:
+            self.assertLess(landmarks(name)['gonion_half'], 59, name)
 
     def test_variants_differ(self):
         g, f, c = (landmarks(n) for n in ('guard', 'forward', 'center'))

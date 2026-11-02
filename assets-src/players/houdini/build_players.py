@@ -300,7 +300,7 @@ HEAD_BOX = {'head': ((0, .005, .0125), (.24, .30, .255), 1.0, 'target_head'),   
 # Neck seam (head-local): the plane y = SEAM_Y - SEAM_T * z, just under the jaw and chin, above the shoulders. The head mesh
 # keeps what is above it, the body mesh what is SEAM_GAP (along the plane normal) below it; a zipper strip fills the gap.
 SEAM_Y, SEAM_T, SEAM_GAP = -.085, .3, .004
-TARGET_CORE, TARGET_HEAD = 4200, 1400   # body below the seam, head above it (whole-player cap: 15k triangles in the game)
+TARGET_CORE, TARGET_HEAD = 4000, 1600   # body below the seam, head above it (whole-player cap: 15k triangles in the game)
 PARTS = ('core', 'arm_L', 'arm_R')
 PIECES = PARTS + tuple(GARMENT_VEX)
 
@@ -377,8 +377,11 @@ geo.addAttrib(hou.attribType.Global, 'open_edges', sum(1 for v in uses.values() 
 geo.addAttrib(hou.attribType.Global, 'flipped_edges', sum(1 for v in dirs.values() if v > 1))
 """ % (SEAM_Y, SEAM_T)
 
-# Python SOP after triangulating the core: polyreduce can leave a self-folded polygon that triangulates into a back-to-back
-# pair of identical triangles (a zero-area fin); delete such pairs, then re-check that every edge has exactly two triangles.
+# Python SOP after triangulating the core. Polyreduce can fold the narrow crevice in front of an ear root:
+#  * a self-folded polygon triangulates into a back-to-back pair of identical triangles (a zero-area fin): delete the pair;
+#  * two surface sheets collapse onto one shared edge/point (an edge with four triangles, a "pinch"): give each sheet its own
+#    copy of the pinched points (same position), so the sheets just touch and every edge has exactly two triangles again.
+# Then re-check that every edge has exactly two triangles.
 CLEAN_SOP = r'''
 import hou
 geo = hou.pwd().geometry()
@@ -387,12 +390,45 @@ for pr in geo.prims():
     same.setdefault(tuple(sorted(v.point().number() for v in pr.vertices())), []).append(pr)
 fins = [p for ps in same.values() if len(ps) > 1 for p in ps]
 if fins: geo.deletePrims(fins, keep_points=False)
+tris = [[v.point().number() for v in pr.vertices()] for pr in geo.prims()]
+count = {}
+for t in tris:
+    for k in range(3):
+        e = (min(t[k], t[k - 1]), max(t[k], t[k - 1])); count[e] = count.get(e, 0) + 1
+fan = {}
+for ti, t in enumerate(tris):
+    for v in t: fan.setdefault(v, []).append(ti)
+split, new_tris = 0, [list(t) for t in tris]
+for v, faces in fan.items():
+    if not any(count[(min(v, w), max(v, w))] != 2 for ti in faces for w in tris[ti] if w != v): continue
+    parent = {ti: ti for ti in faces}
+    def root(x):
+        while parent[x] != x: parent[x] = parent[parent[x]]; x = parent[x]
+        return x
+    by_edge = {}
+    for ti in faces:
+        for w in tris[ti]:
+            if w != v and count[(min(v, w), max(v, w))] == 2: by_edge.setdefault(w, []).append(ti)
+    for pair in by_edge.values():
+        if len(pair) == 2: parent[root(pair[0])] = root(pair[1])
+    comps = {}
+    for ti in faces: comps.setdefault(root(ti), []).append(ti)
+    for comp in list(comps.values())[1:]:   # every extra fan gets its own copy of the point
+        q = geo.createPoint(); q.setPosition(geo.point(v).position()); split += 1
+        for ti in comp: new_tris[ti] = [q.number() if x == v else x for x in new_tris[ti]]
+if split:
+    old = list(geo.prims()); pts = geo.points()
+    for t in new_tris:
+        pr = geo.createPolygon()
+        for x in t: pr.addVertex(pts[x])
+    geo.deletePrims(old, keep_points=True)
 uses = {}
 for pr in geo.prims():
     vs = [v.point().number() for v in pr.vertices()]
     for k in range(len(vs)):
         key = (min(vs[k], vs[(k + 1) % len(vs)]), max(vs[k], vs[(k + 1) % len(vs)])); uses[key] = uses.get(key, 0) + 1
 geo.addAttrib(hou.attribType.Global, 'fin_tris_removed', len(fins))
+geo.addAttrib(hou.attribType.Global, 'pinched_points_split', split)
 geo.addAttrib(hou.attribType.Global, 'core_bad_edges', sum(1 for n in uses.values() if n != 2))
 '''
 

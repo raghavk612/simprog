@@ -156,6 +156,7 @@ if __name__ == '__main__':
     ap.add_argument('--old', default=None, help='an older body_shapes.json to render as the "before" head')
     ap.add_argument('--size', type=int, default=320)
     ap.add_argument('--r1', default=None, help='a first-version body_shapes.json (with head blocks) for head_r1_compare.png')
+    ap.add_argument('--r2', default=None, help='the fix-round-1 body_shapes.json for head_r2_compare.png (round 1 vs polish round)')
     ap.add_argument('--skip', nargs='*', default=[], help='skip outputs: views tiny variants before')
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
@@ -181,6 +182,15 @@ if __name__ == '__main__':
         row([col([r1, label(t1, 'first version, 25 px', (6, 16))], 8), col([r2, label(t2, 'fix round 1, 25 px', (6, 16))], 8)], 16).save(
             os.path.join(a.out, 'head_r1_compare.png'))
         print('rendered r1 compare', flush=True)
+    if a.r2:   # polish round: narrower nose wings, smaller tip, lighter jaw and chin; one row per variant
+        prev = json.load(open(a.r2)); rows = []
+        for n in spec['variants']:
+            f1 = scene_new(prev, prev['variants'][n]); f2 = scene_new(spec, spec['variants'][n])
+            t1, _ = tiny(*f1, sizes=(25,)); t2, _ = tiny(*f2, sizes=(25,))
+            rows.append(row([col([views(*f1, a.size, ('front', '3/4', 'side'), n + ' round 1'), label(t1, 'round 1, 25 px', (6, 16))], 8),
+                             col([views(*f2, a.size, ('front', '3/4', 'side'), n + ' polish'), label(t2, 'polish, 25 px', (6, 16))], 8)], 16))
+        col(rows, 12).save(os.path.join(a.out, 'head_r2_compare.png'))
+        print('rendered r2 compare', flush=True)
     if a.old and 'before' not in a.skip:
         old = json.load(open(a.old)); v = spec['variants']['forward']
         before = views(*scene_old(old, old['variants']['forward']), a.size, ('front', '3/4', 'side'), 'before')

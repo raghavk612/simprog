@@ -84,14 +84,14 @@ OPS = ('union', 'subtract', 'intersect', 'add')
 HEAD_Z = -.010   # head-local origin (ear canals) sits 1 cm behind the body's centre line
 
 # Research table values (mm); see docs/superpowers/notes/2026-11-01-player-head-research.md
-HEAD_BASE = dict(crown=134, length=205, breadth=155, bizyg=144, bigonial=105, menton=-100, chin_half=16, brow=1.0,
-                 nose_w=38, ear_len=66, neck_top=46, neck_base=80, gonion_z=8)
+HEAD_BASE = dict(crown=134, length=205, breadth=155, bizyg=144, bigonial=99, menton=-100, chin_half=16, brow=1.0,
+                 nose_w=33, ear_len=66, neck_top=46, neck_base=80, gonion_z=8)
 HEAD_PARAMS = {  # archetypes (research step 8), mild so all stay inside +-2 SD
-    'guard': dict(HEAD_BASE, breadth=153, length=206, bizyg=140, bigonial=101, menton=-103, chin_half=14, brow=.9,
-                  nose_w=36, ear_len=64, neck_top=44, neck_base=76),                    # long and lean
+    'guard': dict(HEAD_BASE, breadth=153, length=206, bizyg=140, bigonial=96, menton=-103, chin_half=14, brow=.9,
+                  nose_w=32, ear_len=64, neck_top=44, neck_base=76),                    # long and lean
     'forward': dict(HEAD_BASE),                                                           # the table head
-    'center': dict(HEAD_BASE, breadth=161, length=203, bizyg=150, bigonial=114, menton=-101, chin_half=19, brow=1.25,
-                   nose_w=42, ear_len=67, neck_top=50, neck_base=85, gonion_z=10)}        # broad and square
+    'center': dict(HEAD_BASE, breadth=161, length=203, bizyg=150, bigonial=109, menton=-101, chin_half=19, brow=1.25,
+                   nose_w=34, ear_len=67, neck_top=50, neck_base=85, gonion_z=10)}        # broad and square
 
 def _rot(deg):  # Houdini buildRotate, xyz order, row-vector convention (v_world = v_local * R); same as preview_body.rot_matrix
     rx, ry, rz = [math.radians(a) for a in deg]
@@ -153,11 +153,11 @@ def build_head(p):
     # lower face: one rounded box, its bottom along the jawline (pitched 24 deg), tapering to the jaw corners and the chin
     box('face_block', (0, -27, 48), (Jw - 8, 52, 46), 18, rot=(24, 0, 0), k=28, taper=(-.2, .2))
     # mandible: ramus up to the ear, body bar from the jaw corner to the chin (tall, thin cross-section)
-    cone('ramus', (Jw - 14, -56, Zg - 4), (Jw - 6, -12, Zg - 14), 8, 8, aspect=1.3, up=(1, 0, 0), k=10, mirror=True)
+    cone('ramus', (Jw - 14, -56, Zg - 4), (Jw - 6, -12, Zg - 14), 8, 8, aspect=1.05, up=(1, 0, 0), k=10, mirror=True)
     cone('jaw_bar', (Jw - 12, -58, Zg - 2), (p['chin_half'] + 6, Mn + 14, 80), 9, 9, aspect=1.5, up=(0, 1, 0), k=12, mirror=True)
     ell('jaw_angle', (Jw - 11, -58, Zg + 2), (5.5, 10, 12), k=16, mirror=True)   # soft: the corner shows in silhouette, not as a bump
     ell('chin_mass', (0, -80, 74), (30, 20, 24), k=16)   # mentalis: fills from the lower lip to the chin
-    box('chin_pad', (0, Mn + 12, 91), (p['chin_half'], 11, 8), 7, rot=(-8, 0, 0), k=12)
+    box('chin_pad', (0, Mn + 12, 91), (p['chin_half'], 11, 8), 8.5, rot=(-8, 0, 0), k=14)
     # cheekbones: the malar mass under the eye (fills up to the lower lid), swept back toward the ear
     zx = p['bizyg'] / 2
     ell('malar', (zx - 34, 4, 66), (28, 20, 22), rot=(0, -20, 0), k=18, mirror=True)
@@ -172,10 +172,10 @@ def build_head(p):
     ell('eye_socket', (33, 25, G - 5), (18, 10, 12), op='subtract', k=15, mirror=True)
     ell('eye_lid', (32, 26, G - 24), (14, 8, 9.5), k=7, mirror=True)   # eyeball under a closed lid: the painted eye sits on it
     # nose wedge: bridge pitched ~30 deg from sellion to tip, tip ball, alae
-    cone('nose', (0, 24, G - 9), (0, -14, G + 8), 5, 7.5, aspect=1.0, k=8)
-    ell('nose_tip', (0, -16, G + 6), (8.5, 7.5, 8.5), k=10)
-    ell('nose_ala', (p['nose_w'] / 2 - 9, -21, G + 1), (7.5, 7, 9), k=13, mirror=True)   # soft wings, no smile-line crease
-    ell('nose_base', (0, -23, G - 4), (13, 4, 9), k=8)   # fills the undercut under the tip and wings (no moustache shadow)
+    cone('nose', (0, 24, G - 9), (0, -14, G + 7), 4.2, 6.3, aspect=1.0, k=8)
+    ell('nose_tip', (0, -15, G + 6), (7, 6.5, 7.5), k=9)
+    ell('nose_ala', (p['nose_w'] / 2 - 8, -20, G - 1), (6, 6.5, 8.5), k=12, mirror=True)   # soft wings, no smile-line crease
+    ell('nose_base', (0, -21.5, G - 5), (11, 4, 8), k=8)   # fills the undercut under the tip and wings (no moustache shadow)
     # lips and the mouth line
     ell('upper_lip', (0, -41, 97), (21, 7, 8), k=8)    # a touch forward of the lower lip
     ell('lower_lip', (0, -57, 94), (19, 7, 8), k=8)

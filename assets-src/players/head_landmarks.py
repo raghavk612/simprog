@@ -18,7 +18,7 @@ OPS = tuple(pb.OP)
 # research table (docs/superpowers/notes/2026-11-01-player-head-research.md), head-local mm
 TARGETS = {'crown_y': 134, 'parietal_half': 77.8, 'parietal_y': 40, 'temple_half': 58, 'zyg_half': 72.3, 'gonion_half': 52.5,
            'menton_y': -100, 'glabella_z': 110, 'back_z': -95, 'length': 205, 'ear_top': 33, 'ear_bottom': -33,
-           'ear_protrusion': 23.6, 'neck_half': 65, 'eye_y': 27, 'subnasale_y': -27, 'stomion_y': -50, 'alae_half': 19.5}
+           'ear_protrusion': 23.6, 'neck_half': 65, 'eye_y': 27, 'subnasale_y': -27, 'stomion_y': -50, 'alae_half': 16.5}   # alae: polish round (narrow young nose; research 17-22)
 NOTES = {'crown_y': 'vertex, tragion-to-top', 'parietal_half': 'max breadth / 2 (above the ears)', 'parietal_y': 'height of max breadth',
          'temple_half': 'min forehead half-width 40 mm behind glabella (ft-ft/2)', 'zyg_half': 'cheekbone half-width (bizygomatic/2)',
          'gonion_half': 'jaw-corner half-width (bigonial/2)', 'menton_y': 'chin bottom', 'glabella_z': 'brow front',
@@ -119,8 +119,16 @@ def measure(spec, v):
     st = np.nanargmin(np.where(notch, mz, np.inf)) if notch.any() else np.nanargmin(np.where((ys > -62) & (ys < -40), mz, np.inf))
     lm['stomion_y'] = ys[st]
     lm['mid_face'] = lm['sellion_y'] - lm['subnasale_y']; lm['lower_face'] = lm['subnasale_y'] - lm['menton_y']
-    y, z = grid(np.arange(-26, -15, 1.0), np.arange(lm['nose_tip_z'] - 16, lm['nose_tip_z'] - 9, 1.0))
-    lm['alae_half'] = np.nanmax(half_width(f, y, z))
+    # nostril wings: the alar crease, where the wing meets the cheek, seen from the front. Along each front-depth profile
+    # z(x) across the body of the wings (y -22..-16; lower, at the nostril sill, the crease is ambiguous) it is the point
+    # of strongest concavity (max d2z/dx2) beyond the bridge; the half-width is the widest crease over those heights.
+    # (Depth-independent: a window set back from the tip would slide into the cheek when the tip moves.)
+    xs = np.arange(6, 34.01, 0.5); cr = []
+    for yy in np.arange(-22, -15.9, 1.0):
+        zz = front_z(f, xs, np.full_like(xs, yy))
+        d2 = np.r_[np.nan, zz[2:] - 2 * zz[1:-1] + zz[:-2], np.nan]
+        cr.append(xs[np.nanargmax(np.where((xs > 8) & (xs < 32), d2, -np.inf))])
+    lm['alae_half'] = max(cr)
     # ears: extent from the ear shape alone, protrusion against the head without its ears
     fe = local_fn(v, keep=('ear',))
     x, z = grid(np.arange(60, 111, 1.0), np.arange(-50, 21, 1.0))
