@@ -50,7 +50,7 @@ vec3 kPerturb(vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDir){
    and folds with the jersey and can never sink into the body. material.userData.print holds the uniforms to update. */
 function patch(material,{map,scale,bump,fadeFar=9,wrap=0,scatter=[1,.42,.28],face=null,inflate=0,print=false}={}){
  if(print)material.userData.print={kPrintF:{value:null},kPrintB:{value:null},kPrintFC:{value:new THREE.Vector2()},kPrintBC:{value:new THREE.Vector2()},kPrintSize:{value:new THREE.Vector2(1,1)},kPrintMinY:{value:0},kPrintOn:{value:0}};
- material.userData.kDetail={map,scale,bump,wrap};
+ material.userData.kDetail={map,scale,bump,wrap};if(face)material.userData.face=face;
  material.onBeforeCompile=shader=>{
   Object.assign(shader.uniforms,{kDetailMap:{value:map},kDetailScale:{value:scale},kDetailBump:{value:bump},kFadeFar:{value:fadeFar}});
   if(face)Object.assign(shader.uniforms,{kFaceMap:{value:face.map},kFaceCenter:{value:face.center},kFaceSize:{value:face.size}});
@@ -69,14 +69,20 @@ function patch(material,{map,scale,bump,fadeFar=9,wrap=0,scatter=[1,.42,.28],fac
    normal = kPerturb(-vViewPosition, normal, vec2(dFdx(h), dFdy(h)) * kDetailBump * kFade, faceDirection);
   }
  }`);
-  // face: features painted straight onto the head (projected from the front in the rest pose), so they share the skin's lighting
+  // face: features painted straight onto the head (projected from the front in the rest pose), so they share the skin's lighting.
+  // The map holds two layers (see faceTexture): the top half for skin facing forward (features, soft shadows), the bottom
+  // half for skin facing down (shadow under the brow, nose, lower lip and jaw), which a front projection would otherwise smear.
   if(face)frag=frag.replace('#include <map_fragment>',`#include <map_fragment>
  {
   vec2 fuv = (vKRest.xy - kFaceCenter.xy) / kFaceSize + 0.5;
-  float front = smoothstep(0.15, 0.55, normalize(vKRestN).z) * step(kFaceCenter.z - 0.12, vKRest.z);
-  if (front > 0.0 && fuv.x > 0.0 && fuv.x < 1.0 && fuv.y > 0.0 && fuv.y < 1.0) {
-   vec4 f = texture2D(kFaceMap, fuv);
+  vec3 fn = normalize(vKRestN);
+  float inFront = step(kFaceCenter.z - 0.12, vKRest.z);
+  float front = smoothstep(0.15, 0.55, fn.z) * inFront, down = smoothstep(0.3, 0.75, -fn.y) * inFront;
+  if (front + down > 0.0 && fuv.x > 0.0 && fuv.x < 1.0 && fuv.y > 0.0 && fuv.y < 1.0) {
+   vec4 f = texture2D(kFaceMap, vec2(fuv.x, 0.5 + fuv.y * 0.5));
    diffuseColor.rgb = mix(diffuseColor.rgb, f.rgb, f.a * front);
+   vec4 d = texture2D(kFaceMap, vec2(fuv.x, fuv.y * 0.5));
+   diffuseColor.rgb = mix(diffuseColor.rgb, d.rgb, d.a * down);
   }
  }`);
   if(print)frag=frag.replace('#include <map_fragment>',`#include <map_fragment>
@@ -105,8 +111,9 @@ function patch(material,{map,scale,bump,fadeFar=9,wrap=0,scatter=[1,.42,.28],fac
 
 /* ---------- the materials ---------- */
 // Skin: physically based, light wrap (soft subsurface look, reddish where light bleeds round the edge), fine pores and a slight sweat sheen.
+// F0 = 0.028 (ior 1.4 at full specular intensity), the value measured for skin (GPU Gems 3, ch. 14); roughness .55.
 export function skinMaterial(color,face=null){
- return patch(new THREE.MeshPhysicalMaterial({color,roughness:.5,clearcoat:.14,clearcoatRoughness:.32,specularIntensity:.55,name:'skin'}),{map:MAPS.skin(),scale:9,bump:.35,fadeFar:7,wrap:.35,scatter:[.75,.32,.22],face});
+ return patch(new THREE.MeshPhysicalMaterial({color,roughness:.55,ior:1.4,specularIntensity:1,clearcoat:.1,clearcoatRoughness:.35,name:'skin'}),{map:MAPS.skin(),scale:9,bump:.35,fadeFar:7,wrap:.35,scatter:[.75,.32,.22],face});
 }
 export const KIT_INFLATE=.012;   // how far the jersey and shorts are pushed off the skin (decals sit on top of it)
 // Jersey and shorts: soft cloth sheen and the perforated athletic mesh.
@@ -146,39 +153,77 @@ export function decalMaterial(map){
  return new THREE.MeshPhysicalMaterial({map,transparent:true,alphaTest:.35,roughness:.6,sheen:.2,polygonOffset:true,polygonOffsetFactor:-4,polygonOffsetUnits:-8,name:'decal'});
 }
 
-/* ---------- painted face: brows, eyes, nose and lips in tones taken from the skin, on a decal bent round the face ---------- */
-export function faceTexture(skinHex,seed=0){
+/* ---------- painted face: brows, eyes, nose, lips and soft shadows, in tones taken from the skin ----------
+   The texture covers a frame on the front of the head, projected straight from the front in the rest pose (see patch).
+   Features are placed in millimetres on the head's own landmark rows (scripts/build_players.py writes them to the model as
+   extras.faceMarks: fractions of the frame from the top; pupil, mouthHalf and noseHalf as fractions of its width), so they
+   sit on the geometry: eyes on the closed-lid bulge inside the sockets, lips on the mouth line. The shadows the sockets,
+   nose, lower lip and jaw would get from ambient light are painted in (ambient occlusion), soft and low-frequency, because
+   at 15-35 pixels value reads and detail does not. Young faces: no creases, no lines beside the nose. */
+export const FACE_MARKS={brow:.151,eye:.213,nose:.513,mouth:.62,chin:.903,pupil:.229,mouthHalf:.181,noseHalf:.14,aspect:.776};
+export function faceTexture(skinHex,seed=0,marks=FACE_MARKS){
  if(typeof document==='undefined')return new THREE.Texture();
- const W=256,c=document.createElement('canvas');c.width=c.height=W;const x=c.getContext('2d');
- const base=new THREE.Color(skinHex),tone=f=>'#'+base.clone().multiplyScalar(f).getHexString(),r=n=>{const v=Math.sin(seed*91.7+n*13.1)*43758.5;return v-Math.floor(v);};
+ // two layers, one above the other: front-facing skin (top half) and down-facing skin (bottom half), see patch()
+ const M={...FACE_MARKS,...marks},W=256,HH=Math.round(W/M.aspect),c=document.createElement('canvas');c.width=W;c.height=HH*2;const x=c.getContext('2d');
+ const base=new THREE.Color(skinHex),hex=col=>'#'+col.getHexString();
+ const tone=f=>hex(base.clone().multiplyScalar(f)),r=n=>{const v=Math.sin(seed*91.7+n*13.1)*43758.5;return v-Math.floor(v);};
+ // millimetres on the head -> pixels: X across from the midline, rows from the landmark marks, Y(row, mm up from it)
+ const mm=W*M.pupil/33,X=d=>W/2+d*mm,Y=(row,up=0)=>row*HH-up*mm,local=y=>Y(M.eye,y-26.5);   // local: head-local y (mm), eye line +26.5
  const blob=(cx,cy,rx,ry,color,alpha,soft=.6)=>{const g=x.createRadialGradient(cx,cy,0,cx,cy,1);g.addColorStop(0,color);g.addColorStop(soft,color);g.addColorStop(1,'rgba(0,0,0,0)');x.save();x.translate(cx,cy);x.scale(rx,ry);x.translate(-cx,-cy);x.globalAlpha=alpha;x.fillStyle=g;x.beginPath();x.arc(cx,cy,1,0,Math.PI*2);x.fill();x.restore();};
- // proportions of a real face across the painted area (eyes about a fifth of the face wide, one eye-width apart)
- const browY=W*(.17+r(1)*.025),eyeY=W*.35,eyeDX=W*(.215+r(2)*.012),mouthY=W*(.79+r(3)*.02),ew=W*(.085+r(5)*.008),iris=['#3b2416','#2a1a10','#4a3020','#1e140d'][Math.floor(r(6)*4)];
- // planes of the face: cheekbone light, hollow under the cheek, jaw and temple shadow
- for(const s of [-1,1]){blob(W/2+s*W*.27,W*.5,W*.13,W*.1,tone(1.12),.35,.2);blob(W/2+s*W*.3,W*.68,W*.12,W*.15,tone(.78),.35,.25);blob(W/2+s*W*.42,W*.3,W*.08,W*.16,tone(.8),.4,.2);}
- for(const s of [-1,1]){
-  const ex=W/2+s*eyeDX;
-  blob(ex,eyeY-W*.01,W*.14,W*.085,tone(.6),.6,.25);                                                   // eye socket shadow
-  x.save();x.globalAlpha=.95;x.fillStyle='#efe9e1';x.beginPath();x.ellipse(ex,eyeY,ew,W*.034,0,0,Math.PI*2);x.fill();   // white of the eye
-  x.save();x.clip();x.fillStyle=iris;x.beginPath();x.arc(ex+s*W*.004,eyeY+W*.004,W*.034,0,Math.PI*2);x.fill();x.fillStyle='#070504';x.beginPath();x.arc(ex+s*W*.004,eyeY+W*.004,W*.015,0,Math.PI*2);x.fill();
-  x.fillStyle='rgba(255,255,255,.85)';x.beginPath();x.arc(ex-W*.01,eyeY-W*.01,W*.007,0,Math.PI*2);x.fill();x.restore();   // iris, pupil, catchlight
-  x.strokeStyle='#120c09';x.lineWidth=W*.016;x.lineCap='round';x.beginPath();x.ellipse(ex,eyeY+W*.002,ew*1.04,W*.04,0,Math.PI*1.04,Math.PI*1.96);x.stroke();   // upper lid and lashes
-  x.strokeStyle=tone(.55);x.lineWidth=W*.008;x.beginPath();x.ellipse(ex,eyeY-W*.002,ew,W*.036,0,Math.PI*.1,Math.PI*.9);x.stroke();x.restore();   // lower lid
-  x.save();x.globalAlpha=.9;x.strokeStyle='#140d0a';x.lineCap='round';x.lineWidth=W*(.04+r(4)*.014);x.beginPath();x.moveTo(W/2+s*W*.07,browY+W*.03);x.quadraticCurveTo(ex,browY-W*.025,W/2+s*eyeDX*1.62,browY+W*.03);x.stroke();x.restore();   // brow
+ const B=(dx,row,up,rx,ry,color,alpha,soft)=>blob(X(dx),Y(row,up),rx*mm,ry*mm,color,alpha,soft);   // a blob placed in mm
+ // per-player variety, kept small (millimetres): brow height and weight, eye spacing and size, mouth height, iris colour
+ const browUp=(r(1)-.5)*3,spread=(r(2)-.5)*2,mouthUp=(r(3)-.5)*2,browW=5+r(4)*2,eyeW=13.2+r(5)*1.4,iris=['#3a2416','#2a1a10','#45301f','#1e140d'][Math.floor(r(6)*4)];
+ const shadow=tone(.42),deep=tone(.3);
+
+ /* --- down-facing layer (bottom half): ambient occlusion where skin faces the floor --- */
+ x.save();x.translate(0,HH);
+ for(const s of [-1,1]){B(s*31,M.eye,5,19,9,deep,.55,.3);B(s*16,M.eye,3,7,7,deep,.4,.3);}   // under the brow shelf, into the sockets
+ B(0,M.nose,2,21,9,deep,.6,.35);                                                                   // under the nose tip and wings
+ B(0,M.mouth,mouthUp-9,17,6,shadow,.5,.3);                                                         // under the lower lip, over the chin
+ // under the jaw: everything below the jaw line, from the chin round to the jaw corners
+ x.globalAlpha=.55;x.fillStyle=deep;x.beginPath();x.moveTo(X(-62),local(-50));
+ x.bezierCurveTo(X(-52),local(-78),X(-30),Y(M.chin,4),X(0),Y(M.chin,1));x.bezierCurveTo(X(30),Y(M.chin,4),X(52),local(-78),X(62),local(-50));x.lineTo(X(62),HH);x.lineTo(X(-62),HH);x.closePath();x.fill();
+ x.restore();
+
+ /* --- front-facing layer (top half) --- */
+ // soft shade on the throat just under the chin (the jaw's shadow)
+ B(0,M.chin,-9,26,10,shadow,.45,.25);
+ // eye sockets: the shade under the brow shelf, a little deeper at the inner corner, and the lid crease
+ for(const s of [-1,1]){const ex=s*(33+spread);
+  B(ex*.96,M.eye,3,19,11,shadow,.32,.2);B(s*17,M.eye,1.5,6.5,8,deep,.24,.2);B(ex,M.eye,6.2,13,3.6,deep,.22,.3);
  }
- // nose: lit bridge between shaded sides, a shadow under the tip, nostrils
- x.save();x.globalAlpha=.4;x.fillStyle=tone(1.15);x.beginPath();x.ellipse(W/2,W*.5,W*.022,W*.11,0,0,Math.PI*2);x.fill();x.restore();
- for(const s of [-1,1])blob(W/2+s*W*.06,W*.5,W*.03,W*.11,tone(.7),.45,.3);
- blob(W/2,W*.635,W*.11,W*.05,tone(.55),.6,.3);
- for(const s of [-1,1])blob(W/2+s*W*.05,W*.625,W*.022,W*.014,tone(.3),.85,.5);
- // lips: darker upper lip, fuller lower lip with a soft highlight, a crisp line between
- x.save();x.globalAlpha=.9;x.fillStyle=tone(.62);x.beginPath();x.moveTo(W/2-W*.13,mouthY);x.quadraticCurveTo(W/2-W*.05,mouthY-W*.05,W/2,mouthY-W*.03);x.quadraticCurveTo(W/2+W*.05,mouthY-W*.05,W/2+W*.13,mouthY);x.closePath();x.fill();
- x.fillStyle=tone(.74);x.beginPath();x.moveTo(W/2-W*.12,mouthY);x.quadraticCurveTo(W/2,mouthY+W*.075,W/2+W*.12,mouthY);x.closePath();x.fill();
- x.globalAlpha=.5;x.fillStyle=tone(1.05);x.beginPath();x.ellipse(W/2,mouthY+W*.03,W*.05,W*.012,0,0,Math.PI*2);x.fill();
- x.globalAlpha=.95;x.strokeStyle=tone(.32);x.lineWidth=W*.012;x.lineCap='round';x.beginPath();x.moveTo(W/2-W*.13,mouthY);x.quadraticCurveTo(W/2,mouthY+W*.012,W/2+W*.13,mouthY);x.stroke();x.restore();
- blob(W/2,mouthY+W*.12,W*.09,W*.04,tone(.75),.4,.3);                                           // shadow under the lower lip
- // some players keep a little stubble or a goatee
- if(r(7)<.4){x.save();x.globalAlpha=.28+r(8)*.2;x.fillStyle='#1a120d';x.beginPath();x.ellipse(W/2,mouthY+W*.11,W*.14,W*.08,0,0,Math.PI*2);x.fill();x.beginPath();x.ellipse(W/2,mouthY-W*.055,W*.12,W*.022,0,0,Math.PI*2);x.fill();x.restore();}
+ // brows: thick, dark, tapering toward the temple, with a soft edge
+ const brow=(s,grow,alpha,color)=>{const p=(dx,up)=>[X(s*dx),Y(M.brow,up+browUp)],t=browW*grow;x.save();x.globalAlpha=alpha;x.fillStyle=color;x.beginPath();
+  x.moveTo(...p(12.5,-t*.5));x.lineTo(...p(11.5,t*.45));x.quadraticCurveTo(...p(29,t*.8+2.4),...p(51,-.6*grow));x.quadraticCurveTo(...p(31,-t*.3+1.4),...p(12.5,-t*.5));x.closePath();x.fill();x.restore();};
+ for(const s of [-1,1]){brow(s,1.3,.25,'#1a120d');brow(s,1,.9,'#16100c');}
+ // eyes: a dark almond on the closed-lid bulge; the iris fills most of it, so only slivers of muted white show at the corners
+ const white=hex(base.clone().lerp(new THREE.Color(0xd9d1c7),.45).multiplyScalar(.85));
+ for(const s of [-1,1]){const cx=X(s*(33+spread)),cy=Y(M.eye),w=eyeW*mm,up=5*mm,dn=3.6*mm,inner=s<0?1:-1,a=inner*.7*mm;   // inner corner sits lower
+  const almond=()=>{x.beginPath();x.moveTo(cx-w,cy+a);x.bezierCurveTo(cx-w*.5,cy-up*1.3,cx+w*.35,cy-up*1.32,cx+w,cy-a);x.bezierCurveTo(cx+w*.45,cy+dn*1.3,cx-w*.45,cy+dn*1.3,cx-w,cy+a);x.closePath();};
+  x.save();almond();x.globalAlpha=.95;x.fillStyle=white;x.fill();x.clip();
+  x.fillStyle=iris;x.beginPath();x.arc(cx+s*.3*mm,cy+.2*mm,5.4*mm,0,Math.PI*2);x.fill();
+  x.fillStyle='#0a0706';x.beginPath();x.arc(cx+s*.3*mm,cy+.2*mm,2.3*mm,0,Math.PI*2);x.fill();
+  const lid=x.createLinearGradient(0,cy-up,0,cy);lid.addColorStop(0,'rgba(10,6,4,.55)');lid.addColorStop(1,'rgba(10,6,4,0)');x.fillStyle=lid;x.fillRect(cx-w,cy-up*1.4,2*w,up*1.4);   // lash shadow
+  x.fillStyle='rgba(255,255,255,.4)';x.beginPath();x.arc(cx-1.5*mm,cy-1.5*mm,.75*mm,0,Math.PI*2);x.fill();x.restore();
+  x.save();x.strokeStyle='#100a07';x.lineCap='round';x.lineWidth=1.6*mm;x.beginPath();x.moveTo(cx-w*1.02,cy+a*.8);x.bezierCurveTo(cx-w*.5,cy-up*1.32,cx+w*.35,cy-up*1.36,cx+w*1.06,cy-a*1.3);x.stroke();   // upper lid and lashes
+  x.globalAlpha=.4;x.strokeStyle=tone(.5);x.lineWidth=.8*mm;x.beginPath();x.moveTo(cx-w*.8,cy+dn*.8);x.bezierCurveTo(cx-w*.35,cy+dn*1.3,cx+w*.35,cy+dn*1.25,cx+w*.85,cy+dn*.7);x.stroke();x.restore();   // lower lid
+ }
+ // nose: a soft light down the bridge, shade under the tip and round the wings, nostrils
+ B(0,M.eye,-12,3.2,13,tone(1.1),.16,.3);
+ const nw=Math.max(16,M.noseHalf/M.pupil*33);   // nostril-wing half-width (mm)
+ B(0,M.nose,-1.5,nw*.9,4,shadow,.4,.25);for(const s of [-1,1]){B(s*nw*.45,M.nose,1.2,3.4,2,deep,.75,.45);B(s*nw*.95,M.nose,4.5,3.2,5,tone(.65),.2,.3);}
+ // lips: one value darker than the skin with a little warmth, the upper lip darker than the lower; a soft lip line
+ const lip=f=>{const l=base.clone().multiplyScalar(f);l.r*=1.07;l.g*=.9;l.b*=.93;return hex(l);},m=Y(M.mouth,mouthUp),mw=M.mouthHalf/M.pupil*33*mm;
+ const upper=()=>{x.beginPath();x.moveTo(W/2-mw,m);x.quadraticCurveTo(W/2-mw*.45,m-5.5*mm,W/2-mw*.18,m-6.2*mm);x.quadraticCurveTo(W/2,m-4.8*mm,W/2+mw*.18,m-6.2*mm);x.quadraticCurveTo(W/2+mw*.45,m-5.5*mm,W/2+mw,m);x.closePath();};
+ const lower=()=>{x.beginPath();x.moveTo(W/2-mw*.94,m);x.bezierCurveTo(W/2-mw*.6,m+8.5*mm,W/2+mw*.6,m+8.5*mm,W/2+mw*.94,m);x.closePath();};
+ x.save();x.globalAlpha=.85;x.fillStyle=lip(.74);upper();x.fill();x.fillStyle=lip(.84);lower();x.fill();x.restore();
+ B(0,M.mouth,mouthUp-3.5,9,2,tone(1.06),.3,.3);                                                      // soft light on the lower lip
+ x.save();x.globalAlpha=.8;x.strokeStyle=tone(.42);x.lineWidth=1.2*mm;x.lineCap='round';x.beginPath();x.moveTo(W/2-mw*.96,m);x.quadraticCurveTo(W/2,m+1.1*mm,W/2+mw*.96,m);x.stroke();x.restore();
+ for(const s of [-1,1])B(s*(mw/mm),M.mouth,mouthUp,2.6,2.2,shadow,.35,.3);                         // mouth corners
+ B(0,M.mouth,mouthUp-12,13,4,shadow,.3,.25);                                                         // under the lower lip
+ // a faint warmth over the cheeks
+ for(const s of [-1,1])B(s*40,M.eye,-23,15,10,lip(.95),.12,.2);
+ // some players keep a little stubble or a goatee (light: they are high-school kids)
+ if(r(7)<.4){B(0,M.chin,10,13,8,'#1a120d',.14+r(8)*.12,.4);if(r(9)<.5)B(0,M.mouth,mouthUp+8.5,mw/mm*.8,2.4,'#1a120d',.1+r(8)*.08,.4);}
  const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t;
 }
-

@@ -11,7 +11,12 @@ What is in each .glb (one scene, game units, y up, +z forward, feet at y=0):
   * skinned meshes sharing that skeleton: "body_mesh" and "head_mesh" (skin), "jersey_mesh" and "shorts_mesh" (kit, recoloured
     per team), "shoes_mesh" (shoes, sole), four hair styles "hair_buzz/crop/afro/rows_mesh", and the options "headband_mesh",
     "sleeve_arm_mesh" (right arm) and "sleeve_leg_mesh" (left leg). The game keeps one hair style and the options it wants.
-  * scene extras: decal anchors (chest number, back nameplate, captain badge) relative to the chest bone, and the height
+  * scene extras: decal anchors (chest number, back nameplate, captain badge) relative to the chest bone, and the height;
+    the painted face: "face" (frame centre relative to the head bone), "faceSize" (absolute: heads do not scale with height)
+    and "faceMarks" (brow, eye, nose, mouth and chin rows as fractions of the frame from its top; pupil, mouth and nose
+    half-widths as fractions of its width), measured on the head SDF (assets-src/players/head_landmarks.py)
+  * head rig: the head joint sits at the top of the spine, head-local (0, -35, -10) mm, the neck joint at the base of the
+    neck; the head mesh is the fine Houdini head piece (above the H2 seam plane) and moves rigidly above the jaw line
 """
 import json, math, os, struct, sys
 import numpy as np
@@ -54,7 +59,51 @@ def joints_for(spec, v):
     out = {}
     for k, p in spec['joints'].items():
         out[k] = np.array([p[0] * (SH if k in spec['shoulder_joints'] else 1) * H, p[1] * H, p[2] * H])
+    # The head is built in absolute metres round its own origin (midway between the ear canals, body_shapes.json
+    # variants.<v>.head) and does not scale with height, so its joints come from that origin, not from fractions of H.
+    O = head_origin(v)
+    out['head'] = O + HEAD_JOINT    # the top of the spine (occipital condyles): head turns and nods pivot here
+    out['neck'] = O + NECK_JOINT    # the base of the neck, inside the neck column just above the shoulders
     return out
+
+# Head-local frame (metres): origin midway between the ear canals, +y up, +z forward.
+HEAD_JOINT = np.array([0, -.035, -.010])
+NECK_JOINT = np.array([0, -.175, -.020])
+
+def head_origin(v):
+    h = v['head']
+    return np.array([0.0, v['height_m'] - h['origin_from_top'], h['origin_z']])
+
+def head_local(P, v):
+    return P - head_origin(v)
+
+def above_seam(L):
+    """The head/body seam of the Houdini mesh (H2): the fine head piece is everything above this tilted plane, about 97 mm
+    under the origin at the throat and 64 mm at the nape. L: head-local points."""
+    return L[..., 1] > -.085 - .3 * L[..., 2]
+
+def head_weight(L):
+    """Share of the head bone (0..1) for head-local points: everything above the jaw line (y > -60 mm) and the underside of
+    the jaw in front of the neck move rigidly with the head; below that the skin blends into the neck."""
+    w_y = smooth(-.125, -.06, L[..., 1])
+    w_front = smooth(.03, .058, L[..., 2]) * smooth(-.118, -.098, L[..., 1]) * (1 - smooth(.05, .075, np.abs(L[..., 0])))
+    return np.maximum(w_y, w_front)
+
+def face_layout(spec, v):
+    """Where the painted face goes: a frame in head-local metres and the landmark rows inside it, measured on the head SDF
+    (assets-src/players/head_landmarks.py, the same zero set the mesh is made from)."""
+    sys.path.insert(0, SRC)
+    import head_landmarks as hl
+    lm = hl.measure(spec, v); f = hl.local_fn(v)
+    eye, nose, mouth, chin = lm['eye_y'] / 1000, lm['subnasale_y'] / 1000, lm['stomion_y'] / 1000, lm['menton_y'] / 1000
+    brow = eye + .0115                                   # brow line about +38 mm
+    top, bottom, half = .066, chin - .018, .072          # frame: above the brows to just under the chin (jaw shadow)
+    sellion_z = float(hl.front_z(f, [0], [lm['sellion_y']])[0]) / 1000
+    rows = lambda y: (top - y) / (top - bottom)          # 0 at the top of the frame, 1 at the bottom
+    return {'centre': np.array([0, (top + bottom) / 2, sellion_z]), 'size': (2 * half, top - bottom),
+            'marks': {'brow': rows(brow), 'eye': rows(eye), 'nose': rows(nose), 'mouth': rows(mouth), 'chin': rows(chin),
+                      'pupil': .033 / (2 * half), 'mouthHalf': .026 / (2 * half), 'noseHalf': lm['alae_half'] / 1000 / (2 * half)},
+            'landmarks': lm}
 
 def chain_weights(P, joints_xyz, bones, widths):
     """Blends weights down a chain of bones (bones[i] starts at joints_xyz[i]) by each point's position along
@@ -331,14 +380,19 @@ def build_variant(name, spec, objpath):
         w = chain_weights(P[m], jx, bones, [0, .022 * H, .012 * H])
         for i, b in enumerate(bones): W[m, BI[b]] += w[:, i] * legness[m][:, None].ravel()
         W[m, BI['pelvis']] += 1 - legness[m]
-    # torso chain: redistribute the pelvis share up the spine by height
+    # torso chain: redistribute the pelvis share up the spine by height (pelvis > spine > chest > neck), then the head
+    # takes everything above the jaw line (head_weight), blending into the neck below it
     torso = W[:, BI['pelvis']].copy()
     ys = P[:, 1]
-    tb = ['pelvis', 'spine', 'chest', 'neck', 'head']
-    jy = [J['pelvis'][1], J['spine'][1], J['chest'][1], J['neck'][1], J['head'][1]]
-    tw = np.zeros((len(P), len(tb))); tw[:, 0] = 1
+    tb = ['pelvis', 'spine', 'chest', 'neck']
+    jy = [J['pelvis'][1], J['spine'][1], J['chest'][1], J['neck'][1]]
+    widths = [0, .02 * H, .02 * H, .035]
+    tw = np.zeros((len(P), len(tb) + 1)); tw[:, 0] = 1
     for i in range(1, len(tb)):
-        w = smooth(jy[i] - .02 * H, jy[i] + .02 * H, ys); tw[:, i] = tw[:, i - 1] * w; tw[:, i - 1] *= (1 - w)
+        w = smooth(jy[i] - widths[i], jy[i] + widths[i], ys); tw[:, i] = tw[:, i - 1] * w; tw[:, i - 1] *= (1 - w)
+    hw = head_weight(head_local(P, v))
+    tw[:, :len(tb)] *= (1 - hw)[:, None]; tw[:, len(tb)] = hw
+    tb = tb + ['head']
     for i, b in enumerate(tb): W[core, BI[b]] = 0
     for i, b in enumerate(tb): W[core, BI[b]] += torso[core] * tw[core, i]
     # keep the 4 strongest influences, normalised
@@ -386,9 +440,17 @@ def build_variant(name, spec, objpath):
             tris += [([base + a, base + b, base + c], 'hand_' + side) for a, b, c in ptris]
     # skin hidden under the jersey and shorts is removed (no poke-through, fewer triangles)
     drop |= inside_body(P, N, G, tris, H)
-    hidden = covered_body(P, N, G, tris, H, J['neck'][1], drop)
+    hidden = covered_body(P, N, G, tris, H, .81 * H, drop)   # skin below the old neck height only (the collar stays)
     tris = [(tri, g) for ti, (tri, g) in enumerate(tris) if ti not in drop and not (g == 'core' and hidden[tri].all())]
     P, N, UV, JI, JW, G, tris = add_trim(P, N, UV, JI, JW, G, tris, H)
+    # the headband is pushed out along its normals in the game (materials.js inflate); with split normals at its edges the
+    # pieces part and open dark cracks, so every corner at one position gets the same, averaged normal
+    band = np.where(G == 'headband')[0]
+    if len(band):
+        groups = {}
+        for i in band: groups.setdefault(tuple(np.round(P[i], 5)), []).append(i)
+        for ids in groups.values():
+            n = N[ids].sum(0); N[ids] = n / max(np.linalg.norm(n), 1e-9)
     core = G == 'core'
     # materials and meshes by region (heights as fractions of H)
     y = lambda f: f * H
@@ -399,7 +461,7 @@ def build_variant(name, spec, objpath):
             mat = GARMENTS[g][1]
             if g == 'shoes' and c[1] < y(.011): mat = 'sole'
             return (g, mat)
-        if g == 'core' and c[1] > J['neck'][1] + .012 * H: return ('head', 'skin')
+        if g == 'core' and above_seam(head_local(c, v)): return ('head', 'skin')   # the fine Houdini head piece
         if g == 'core' and c[1] < y(.07) and 'shoes' in GARMENTS and (G == 'shoes').any(): return (None, None)  # feet are inside the shoes
         return ('body', 'skin')
     meshes = {}
@@ -418,13 +480,16 @@ def build_variant(name, spec, objpath):
               'nameplate': [0, (y(.775) - chest[1]) * S, (z_back - chest[2] - .003) * S],
               'capBadge': [-.06 * H * S, (y(.792) - chest[1]) * S, (z_back - chest[2] - .006) * S],
               'decalScale': H * S / 2.15}
-    # face: where the painted face sits on the head (relative to the head bone) and how much the face curves
-    headv = P[core & (P[:, 1] > J['neck'][1] + .012 * H)]
-    eye = headv[np.abs(headv[:, 1] - y(.912)) < .006 * H]
-    zf = eye[np.abs(eye[:, 0]) < .006 * H][:, 2].max()
-    a = np.abs(eye[eye[:, 2] > 0][:, 0]).max(); b = zf - eye[:, 2].min()
-    extras['face'] = [0, (y(.91) - J['head'][1]) * S, (zf - J['head'][2] + .0015) * S]
-    extras['faceSize'] = [.072 * H * S, .062 * H * S]
+    # face: where the painted face sits on the head (relative to the head bone, game units), its size (absolute: heads do not
+    # grow with height) and the landmark rows the painted features line up with (fractions of the frame, from the top)
+    fl = face_layout(spec, v)
+    O = head_origin(v)
+    extras['face'] = [float(x) for x in (O + fl['centre'] + [0, 0, .0015] - J['head']) * S]
+    extras['faceSize'] = [float(fl['size'][0] * S), float(fl['size'][1] * S)]
+    extras['faceMarks'] = {k: round(float(x), 4) for k, x in fl['marks'].items()}
+    # how much the face curves across the eye line (ellipse curvature at the centre line)
+    L = head_local(P, v); band = L[core & above_seam(L) & (np.abs(L[:, 1] - fl['landmarks']['eye_y'] / 1000) < .006)]
+    a = np.abs(band[band[:, 2] > 0][:, 0]).max(); b = band[:, 2].max() - band[:, 2].min()
     extras['faceRadius'] = float(a * a / max(b / 2, 1e-3) * S * .9)
     # how much the jersey curves across the chest and back (ellipse curvature at the centre line), so decals can follow it
     for key, yy, sel in (('chestRadius', y(.705), lambda z: z > 0), ('backRadius', y(.775), lambda z: z < 0)):
