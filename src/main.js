@@ -8,7 +8,7 @@ import {mountDrill,drillName} from './drills.js';
 import {opponentLogo} from './logos.js';
 import {titleMatchup} from './title.js';
 import {pairTeamLogos,strengthLevel} from './teamLabels.js';
-import {gearBody} from './gearView.js';
+import {gearBody} from './gearView.js';import {selectSkill,skillNeighbour} from './skillsView.js';
 import * as V from './events.js';
 import {createJerseyShowcase,SCRIPT_FONT} from './jerseys.js';
 import {lockerBody,jerseyWho,plateName,byNumber,kitName,kitHow} from './locker.js';
@@ -518,7 +518,8 @@ return;}
  if(a==='scout-prospect'){E.scoutProspect(state,el.dataset.id);notify(logText(state.log[0]),{type:'success',icon:'film',title:t('scoutP.toastTitle'),chips:[signed(-E.SCOUT_COST,t('toast.tokens'))]});}
  if(a==='release'){if(!await confirmDialog(t('confirm.release'),{yes:t('confirm.releaseYes'),danger:true}))return;E.release(state,el.dataset.id);modal.close();}
  if(a==='gear-filter'){gearFilter=el.dataset.filter==='owned'?'owned':'all';render();return;}
- if(a==='skill-unlock'){const key=el.dataset.key,node=E.skillNode(key);E.unlockSkill(state,key);save();play('signing');const name=t(`shot.${key}`);notify(t('skills.unlockedMsg',{move:name}),{type:'success',icon:'ball',title:t('skills.unlockedTitle'),chips:[signed(-node.cost,t('toast.tokens'))]});announce(`${t('skills.unlockedTitle')}: ${name}`);render();$(`#skill-${key}`)?.focus({preventScroll:true});return;}
+ if(a==='skill-select'){const key=el.dataset.key;selectSkill(key);render();$(`#skill-${key}`)?.focus({preventScroll:true});return;}
+ if(a==='skill-unlock'){const key=el.dataset.key,node=E.skillNode(key);E.unlockSkill(state,key);selectSkill(key);save();play('signing');const name=t(`shot.${key}`);notify(t('skills.unlockedMsg',{move:name}),{type:'success',icon:'ball',title:t('skills.unlockedTitle'),chips:[signed(-node.cost,t('toast.tokens'))]});announce(`${t('skills.unlockedTitle')}: ${name}`);render();const n=$(`#skill-${key}`);n?.classList.add('st-burst');n?.focus({preventScroll:true});return;}
  if(a==='gear-buy'){E.buyGear(state,el.dataset.key);notify(t('gear.bought',{item:t(`gear.items.${el.dataset.key}`)}),{type:'success'});}
  if(a==='gear-equip'){E.equipGear(state,+el.dataset.id,el.dataset.key);notify(t('gear.equipDone',{item:t(`gear.items.${el.dataset.key}`),name:state.players.find(p=>p.id===+el.dataset.id).name}),{type:'success'});}
  if(a==='gear-remove')E.unequipGear(state,+el.dataset.id,el.dataset.slot);
@@ -580,6 +581,7 @@ if(import.meta.env.PROD&&'serviceWorker' in navigator)navigator.serviceWorker.re
 function setCamera(mode){arena.setView(mode);announce(t('a11y.camera',{view:document.querySelector(`[data-camera="${mode}"]`)?.textContent.trim()||mode}));document.querySelectorAll('[data-camera]').forEach(b=>{b.classList.toggle('active',b.dataset.camera===mode);b.setAttribute('aria-pressed',b.dataset.camera===mode);});}
 
 function cycleRoster(step){const list=state?.players||[];if(!list.length)return;const i=Math.max(0,list.findIndex(p=>p.id===rosterSel));rosterSel=list[(i+step+list.length)%list.length].id;play('select');render();document.querySelector(`.rv-arrow.${step>0?'next':'prev'}`)?.focus({preventScroll:true});}
+document.addEventListener('keydown',e=>{const n=e.target.closest?.('.st-node');if(!n||e.ctrlKey||e.metaKey||e.altKey)return;const k=skillNeighbour(n.dataset.key,e.key);if(!/^Arrow/.test(e.key))return;e.preventDefault();if(k)document.getElementById(`skill-${k}`)?.focus();});
 document.addEventListener('keydown',e=>{if(document.body.dataset.view!=='roster'||modal.open||e.ctrlKey||e.metaKey||e.altKey)return;if(e.target.closest?.('input,select,textarea'))return;if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();cycleRoster(e.key==='ArrowRight'?1:-1);}});
 document.addEventListener('click',e=>{const tr=e.target.closest?.('tr[data-select]');if(!tr||e.target.closest('input,button,a,select'))return;rosterSel=+tr.dataset.select;play('select');render();});
 
