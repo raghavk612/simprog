@@ -7,8 +7,8 @@ const KEYS=Object.values(SKILL_TREE).flat().map(n=>n.key);
 const nodeHtml=(html,key)=>{const m=html.match(new RegExp(`<button class="st-node[^"]*" id="skill-${key}"[\\s\\S]*?</button>`));assert.ok(m,`node ${key} rendered`);return m[0];};
 const stateOf=(html,key)=>nodeHtml(html,key).match(/class="st-node (\w+)/)[1];
 const label=(html,key)=>nodeHtml(html,key).match(/aria-label="([^"]*)"/)[1];
-const detail=html=>{const m=html.match(/<aside class="st-detail[\s\S]*?<\/aside>/);assert.ok(m,'detail panel');return m[0];};
-test.beforeEach(()=>{setLanguage('en',{persist:false});selectSkill(null);});
+const detail=html=>{const m=html.match(/<div class="st-detail[\s\S]*?<!--\/detail-->/);assert.ok(m,'detail panel');return m[0];};
+test.beforeEach(()=>{setLanguage('en',{persist:false});});
 
 test('a new season shows the five basic moves and three branches in order, roots ready to unlock and the rest locked',()=>{
  const s=game(),html=skillTreeCard(s);
@@ -31,7 +31,7 @@ test('the detail panel starts on the first move you can unlock and offers its Un
  assert.match(d,new RegExp(`<button class="primary wide" data-action="skill-unlock" data-key="${root.key}"[^>]*>${t('skills.unlock',{cost:root.cost})}</button>`));
 });
 test('selecting a locked move explains what it needs and offers no Unlock button',()=>{
- const s=game();selectSkill('dunk');const html=skillTreeCard(s),d=detail(html);
+ const s=game();selectSkill('dunk',s);const html=skillTreeCard(s),d=detail(html);
  assert.match(nodeHtml(html,'dunk'),/aria-pressed="true"/);assert.match(nodeHtml(html,'corner'),/aria-pressed="false"/);
  assert.ok(d.includes(t('skills.needs',{move:t('shot.euro')})));assert.ok(d.includes(t('skills.locked')));assert.doesNotMatch(d,/data-action="skill-unlock"/);
  assert.ok(d.includes(t('tactic.perimeter').replace(/&/g,'&amp;')),'dunk hint names the tactic');
@@ -43,17 +43,17 @@ test('an unlocked move shows as learned, lights its link and opens the next move
  assert.match(html,/<line class="st-link next b-slasher" data-from="euro" data-to="dunk"/);assert.match(html,/<line class="st-link locked b-slasher" data-from="dunk" data-to="alley"/);
  E.unlockSkill(s,'dunk');assert.match(skillTreeCard(s),/<line class="st-link lit b-slasher" data-from="euro" data-to="dunk"/);
  assert.equal(selectedSkill(s),'corner','still the first move you can unlock');
- selectSkill('euro');assert.ok(detail(skillTreeCard(s)).includes(t('skills.owned')));
+ selectSkill('euro',s);assert.ok(detail(skillTreeCard(s)).includes(t('skills.owned')));
  assert.ok(skillTreeCard(s).includes(t('skills.progress',{n:7,total:13})));
 });
 test('a move blocked by tokens, a live game, the inbox or a finished season keeps a disabled button and says why',()=>{
  const cases=[[s=>{s.tokens=100;},t('office.needTokens',{n:50})],[s=>{s.match={};},t('office.gameActive')],[s=>{s.pendingEvent={id:'x'};},t('office.inboxFirst')],[s=>{s.finished=true;},t('office.seasonDone')]];
- for(const [set,why] of cases){const s=game();set(s);selectSkill('corner');const html=skillTreeCard(s),d=detail(html);
+ for(const [set,why] of cases){const s=game();set(s);selectSkill('corner',s);const html=skillTreeCard(s),d=detail(html);
   assert.equal(stateOf(html,'corner'),'blocked');assert.ok(label(html,'corner').includes(why),why);
   assert.match(d,/<button class="primary wide locked-action" data-action="skill-unlock" data-key="corner"[^>]*disabled/);assert.ok(d.includes(why),why);}
 });
 test('when every move is learned the panel shows the last one, and unknown selections are ignored',()=>{
- const s=game();s.skills=[...KEYS];selectSkill('nonsense');assert.equal(selectedSkill(s),KEYS.at(-1));
+ const s=game();s.skills=[...KEYS];selectSkill('nonsense',s);assert.equal(selectedSkill(s),KEYS.at(-1));
  assert.ok(skillTreeCard(s).includes(t('skills.progress',{n:13,total:13})));
 });
 test('arrow keys walk up and down a branch and across branches on the same tier',()=>{
@@ -67,7 +67,16 @@ test('the Team Gear page shows the skill tree between the loadout and the shop',
 });
 test('the skill tree renders in every language without missing keys',async()=>{
  const s=game();E.unlockSkill(s,'corner');const english=skillTreeCard(s);
- for(const {code} of LANGUAGES){await setLanguage(code,{persist:false});for(const k of [null,'stepback','fadeaway','corner']){selectSkill(k);const html=skillTreeCard(s);assert.doesNotMatch(html,/skills\.|shot\.|office\.|tactic\.|\{\{/,`${code} ${k}`);}
-  if(code!=='en'){const html=skillTreeCard(s);assert.ok(!html.includes(english.match(/<p class="skill-intro">([^<]*)/)[1]),`${code} intro is translated`);assert.ok(!html.includes('>Ready to unlock<')||code==='en',`${code} state is translated`);}}
+ for(const {code} of LANGUAGES){await setLanguage(code,{persist:false});for(const k of [null,'stepback','fadeaway','corner']){selectSkill(k,s);const html=skillTreeCard(s);assert.doesNotMatch(html,/skills\.|shot\.|office\.|tactic\.|\{\{/,`${code} ${k}`);}
+  if(code!=='en'){const html=skillTreeCard(s);assert.ok(!html.includes(english.match(/<p class="skill-intro">([^<]*)/)[1]),`${code} intro is translated`);selectSkill('stepback',s);assert.ok(!label(skillTreeCard(s),'stepback').includes('Ready to unlock'),`${code} state is translated`);}}
  await setLanguage('en',{persist:false});
+});
+test('the tree is one Tab stop: only the selected move is tabbable, and the panel is a labelled region',()=>{
+ const s=game();selectSkill('dunk',s);const html=skillTreeCard(s);
+ for(const k of KEYS)assert.match(nodeHtml(html,k),new RegExp(`tabindex="${k==='dunk'?0:-1}"`),k);
+ assert.match(html,/<div class="st-detail[^"]*" role="region" aria-labelledby="st-detail-name">/);assert.doesNotMatch(html,/<aside/);
+});
+test('a picked move belongs to its own game: a new season starts on its first move you can unlock',()=>{
+ const a=game();selectSkill('dunk',a);assert.equal(selectedSkill(a),'dunk');
+ const b=game();assert.equal(selectedSkill(b),'corner');assert.equal(selectedSkill(a),'dunk');
 });

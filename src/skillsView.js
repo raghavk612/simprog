@@ -32,11 +32,12 @@ const info=(s,n)=>{const c=canUnlock(s,n.key),state=c.ok?'open':c.reason==='owne
 const where=key=>{for(const b of BRANCHES){const i=SKILL_TREE[b].findIndex(n=>n.key===key);if(i>=0)return {b,i};}return null;};
 
 /* The move shown in the detail panel: the one the coach picked, else the first move they can unlock now, else the next move in
-   line that something blocks, else the first locked one, else (every move learned) the last move. */
-let picked=null;
-export function selectSkill(key){picked=key&&where(key)?key:null;}
+   line that something blocks, else the first locked one, else (every move learned) the last move.
+   The pick is remembered per game (save object), so a new season, an imported save or the demo starts fresh. */
+const picked=new WeakMap();
+export function selectSkill(key,s){if(!s||typeof s!=='object')return;if(key&&where(key))picked.set(s,key);else picked.delete(s);}
 export function selectedSkill(s){
- if(picked)return picked;const by=st=>ALL.find(n=>info(s,n).state===st)?.key;
+ if(picked.has(s))return picked.get(s);const by=st=>ALL.find(n=>info(s,n).state===st)?.key;
  return by('open')||by('blocked')||by('locked')||ALL.at(-1).key;
 }
 /* Arrow keys on the tree: up and down walk a branch, left and right step to the neighbouring branch on the same tier. */
@@ -50,7 +51,7 @@ export function skillNeighbour(key,dir){
 function nodeButton(s,b,n,i,sel){
  const {state,text}=info(s,n),x=ax(b,TIERS[i]),on=n.key===sel;
  const label=t('skills.nodeLabel',{move:move(n.key),state:text,cost:t('skills.cost',{cost:n.cost})});
- return `<button class="st-node ${state} b-${b}" id="skill-${n.key}" data-action="skill-select" data-key="${n.key}" style="--x:${pct(x,VW)};--y:${pct(TIERS[i],VH)}" aria-pressed="${on}" aria-label="${esc(label)}"${on?' aria-describedby="st-detail-hint"':''}>`
+ return `<button class="st-node ${state} b-${b}" id="skill-${n.key}" data-action="skill-select" data-key="${n.key}" style="--x:${pct(x,VW)};--y:${pct(TIERS[i],VH)}" aria-pressed="${on}" tabindex="${on?0:-1}" aria-label="${esc(label)}"${on?' aria-describedby="st-detail-hint"':''}>`
   +`<span class="st-medal" aria-hidden="true">${icon(n.key)}${state==='locked'?LOCK:state==='owned'?CHECK:''}</span>`
   +(state==='owned'?'':`<span class="st-cost" aria-hidden="true">${n.cost}</span>`)
   +`<span class="st-name" aria-hidden="true">${esc(move(n.key))}</span></button>`;
@@ -69,9 +70,9 @@ function beam(b){const [x0,x1]=AXIS[b],poly=[[x0-20,BASE],[x0+20,BASE],[x1+90,0]
 function detail(s,sel){
  const {b,i}=where(sel),n=SKILL_TREE[b][i],{state,why:w}=info(s,n),cost=t('skills.cost',{cost:n.cost});
  const body=state==='owned'?`<p class="skill-state"><span aria-hidden="true">✓</span> ${t('skills.owned')}</p>`
-  :state==='locked'?`<p class="skill-state"><b>${t('skills.locked')}</b> · ${w}</p><small class="st-price">${cost}</small>`
-  :`<button class="primary wide${state==='blocked'?' locked-action':''}" data-action="skill-unlock" data-key="${n.key}" aria-describedby="st-detail-name${state==='blocked'?' st-detail-why':''}" ${state==='blocked'?'disabled':''}>${t('skills.unlock',{cost:n.cost})}</button>${state==='blocked'?`<small id="st-detail-why">${w}</small>`:''}`;
- return `<aside class="st-detail ${state} b-${b}" aria-labelledby="st-detail-name"><div class="st-detail-top"><span class="st-medal" aria-hidden="true">${icon(n.key)}</span><div><span class="eyebrow">${esc(tu(`skills.branch.${b}`))} · ${t('skills.tier',{n:i+1,total:SKILL_TREE[b].length})}</span><h3 id="st-detail-name">${move(n.key)}</h3></div></div><p class="skill-hint" id="st-detail-hint">${t(`skills.hint.${n.key}`,{tactic:t('tactic.perimeter')})}</p>${body}</aside>`;
+  :state==='locked'?`<p class="skill-state"><b>${t('skills.locked')}</b> · ${esc(w)}</p><small class="st-price">${cost}</small>`
+  :`<button class="primary wide${state==='blocked'?' locked-action':''}" data-action="skill-unlock" data-key="${n.key}" aria-describedby="st-detail-name${state==='blocked'?' st-detail-why':''}" ${state==='blocked'?'disabled':''}>${t('skills.unlock',{cost:n.cost})}</button>${state==='blocked'?`<small id="st-detail-why">${esc(w)}</small>`:''}`;
+ return `<div class="st-detail ${state} b-${b}" role="region" aria-labelledby="st-detail-name"><div class="st-detail-top"><span class="st-medal" aria-hidden="true">${icon(n.key)}</span><div><span class="eyebrow">${esc(tu(`skills.branch.${b}`))} · ${t('skills.tier',{n:i+1,total:SKILL_TREE[b].length})}</span><h3 id="st-detail-name">${esc(move(n.key))}</h3></div></div><p class="skill-hint" id="st-detail-hint">${t(`skills.hint.${n.key}`,{tactic:t('tactic.perimeter')})}</p>${body}</div><!--/detail-->`;
 }
 
 export function skillTreeCard(s){
