@@ -55,6 +55,7 @@ test('season codes round-trip, are strict, and rebuild the same starting season'
 });
 test('the next-step nudge follows its priority order',()=>{
  const s=game();
+ assert.deepEqual(E.nextStep(s),{id:'break',view:'recruit',break:'pre'},'a new season opens on preseason');E.endBreak(s);
  assert.equal(E.nextStep(s).id,'practice');assert.equal(E.nextStep(s).n,3);
  E.train(s,'bond');assert.equal(E.nextStep(s).id,'scout','some slots left and not scouted: scout');
  E.scout(s);assert.equal(E.nextStep(s).id,'practice','scouted with slots left: practice again');
@@ -63,7 +64,7 @@ test('the next-step nudge follows its priority order',()=>{
  E.autoLineup(s);s.players.forEach(p=>{p.starter=false;p.minutes=0;});assert.equal(E.nextStep(s).id,'lineup');
  E.autoLineup(s);s.pendingEvent={id:'x',params:{}};assert.equal(E.nextStep(s).id,'inbox','inbox first of all');assert.equal(E.nextStep(s).action,'inbox-open');
  s.pendingEvent=null;
- const g=game();play(g);g.press=null;assert.equal(E.nextStep(g).id,'press');g.press={week:g.week,questions:[],done:true};assert.equal(E.nextStep(g).id,'practice');
+ const g=game();E.endBreak(g);play(g);g.press=null;assert.equal(E.nextStep(g).id,'press');g.press={week:g.week,questions:[],done:true};assert.equal(E.nextStep(g).id,'practice');
  E.startMatch(g);assert.equal(E.nextStep(g).id,'live');while(g.match)E.possession(g);
  const f=game();f.finished=true;assert.deepEqual(E.nextStep(f),{id:'finished',view:'season'});
  for(const x of [s,g,f])assert.ok(E.nextStep(x).view||E.nextStep(x).action);

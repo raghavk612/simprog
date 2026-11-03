@@ -10,8 +10,8 @@ The topic asks for a high-school team championship simulation involving recruiti
 | Rules / outcomes / challenge | In-game handbook, validated rotations, three difficulty levels (C Team · Rookie, Junior Varsity · All-Star, Varsity · Hall of Fame), qualification and championship/end states |
 | Innovation | Real published season reimagined through a transparent decision model; recorded shot scenes explain coaching effects |
 | Technical implementation | Three.js assets, seeded simulation, source-refresh pipeline, validated saves, offline cache and automated tests |
-| Graphics / consistency / visual-audio design | Purple-white identity, 3D gym, imported models, numbered jerseys, responsive screens, adjustable synthesized sound and an accessibility settings panel (colour-vision correction, contrast, motion, text size, seven languages) |
-| Title / UX rationale / navigation / controls | Coach entry, persistent navigation, first-run arrows, keyboard controls, explicit costs and unavailable states |
+| Graphics / consistency / visual-audio design | One set theme built on the real logo purple ("Gym at night", flat graphite with scoreboard amber) with a designed light mode, 3D gym, imported models, numbered jerseys, responsive screens, adjustable synthesized sound and an accessibility settings panel (colour-vision correction, contrast, motion, text size, seven languages) |
+| Title / UX rationale / navigation / controls | Coach entry, a first game that doubles as the tutorial, one weekly path (prepare, play, postgame) with three tabs (This week, Team, Season) for looking things up, keyboard controls, explicit costs and unavailable states |
 | Presentation | Team demonstrates the decisions and explains the engine; software does not substitute for delivery or Q&A |
 
 Presentation preparation: rehearse within the published setup/presentation/Q&A timings (3/7/3 minutes). Prepare an offline copy, verify venue-device requirements, and check state/district variations. Do not rely on judges opening links. Keep the local source and asset ledger available for explanations.
@@ -21,11 +21,11 @@ Presentation preparation: rehearse within the published setup/presentation/Q&A t
 1. Enter a coach name and show the 3D gym.
 2. Contrast a public roster fact with a clearly labeled simulated attribute.
 3. Use study hall or recovery to make an athlete available, and adjust the rotation.
-4. Scout an opponent; explain the token/time tradeoff.
+4. On Prep, study film on an opponent; explain the token/time tradeoff.
 5. Call a timeout and change tactics during live play.
 6. Open a postgame shot replay and show probability contributions.
 7. Show the single-season state path, source timestamps, and credits.
 
 ## Design rationale
 
-A persistent program sidebar makes frequently repeated coaching actions predictable. Large scene areas establish the basketball setting while conventional HTML controls retain keyboard access and legibility. All resource costs appear before a decision. Source facts and game-only attributes are separated to keep the real-school connection honest. Replays expose model contributions instead of pretending that a simulation proves real-world causation.
+Every week runs the same path: prepare, play, postgame. Home shows only the next step, worked out by the engine, and a grey timeline of the steps after it, so a coach never has to choose where to start. The prep screen holds all three weekly picks in one list. Recruiting, staff, upgrades and jerseys open only at three breaks (preseason, midseason and before the playoffs), which gives the season a shape and keeps spending decisions rare and meaningful. Three tabs (This week, Team, Season) stay available for looking things up. The first game is the tutorial: the assistant coach pauses the real game to point at one control at a time, so the rules are learned by playing rather than read. Large scene areas establish the basketball setting while conventional HTML controls retain keyboard access and legibility. Anything on the 3D gym stays dark in both colour modes, as a broadcast overlay would. All resource costs appear before a decision. Source facts and game-only attributes are separated to keep the real-school connection honest. Replays expose model contributions instead of pretending that a simulation proves real-world causation.

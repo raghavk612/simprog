@@ -32,9 +32,10 @@ test('a move blocked by tokens, a live game, the inbox or a finished season keep
  for(const [set,why] of cases){const s=game();set(s);const h=nodeHtml(skillTreeCard(s),'corner');
   assert.equal(h.match(/class="skill-node (\w+)"/)[1],'blocked');assert.match(h,/<button class="primary small wide locked-action" data-action="skill-unlock" data-key="corner"[^>]*disabled/);assert.ok(h.includes(why),why);}
 });
-test('the Team Gear page shows the skill tree between the loadout and the shop',()=>{
- const html=gearBody(game(),0),tree=html.indexOf('class="card skill-tree"');
- assert.ok(tree>html.indexOf('gear-loadout')&&tree<html.indexOf('gear-shop-heading'));
+test('gear and the skill tree are separate shop tabs',()=>{
+ const html=gearBody(game(),0);
+ assert.ok(html.includes('gear-loadout')&&html.includes('gear-shop-heading'));
+ assert.ok(!html.includes('skill-tree'));
 });
 test('the skill tree renders in every language without missing keys',async()=>{
  const s=game();E.unlockSkill(s,'corner');const english=skillTreeCard(s);

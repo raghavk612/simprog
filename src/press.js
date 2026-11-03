@@ -33,9 +33,9 @@ export function context(s){
 const params=(id,c)=>({opp:c.next||'',pid:c.top?.id??-1,name:c.top?.name||'',pts:c.top?.pts||0,n:id==='threes'?c.threes:Math.abs(c.streak),oppPts:c.oppPts,margin:Math.abs(c.margin)});
 
 /* Starts the press conference for the game that just finished: 3 questions, 4 after a close game or a streak of 3, 5 in the final run. Nothing happens once the season is over. */
-export function startPress(s){
+export function startPress(s,max=5){
  if(s.finished||!s.results.length||s.match)return null;const c=context(s);if(!c)return null;
- const size=c.finalRun?5:(Math.abs(c.margin)<=5||Math.abs(c.streak)>=3)?4:3;
+ const size=Math.min(max,c.finalRun?5:(Math.abs(c.margin)<=5||Math.abs(c.streak)>=3)?4:3);
  const first=c.won?'winwhy':'losswhy',rest=QUESTIONS.filter(x=>x.id!==first&&x.id!=='crowd'&&x.when(c)).map(x=>({x,h:hashStr(`${s.seed}|press|${s.week}|${x.id}`)})).sort((a,b)=>a.h-b.h).map(o=>o.x);
  const picked=[q(first),...rest,q('crowd')].filter((x,i,a)=>a.indexOf(x)===i).slice(0,size);
  s.press={week:s.week,questions:picked.map(x=>({id:x.id,params:params(x.id,c),answer:null})),done:false};return s.press;

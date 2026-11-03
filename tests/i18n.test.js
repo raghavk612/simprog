@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';import fs f
 import en from '../src/i18n/locales/en.js';
 import {GRAPHICS_LEVELS} from '../src/graphics.js';
 import {THREE_SPOTS,FT_SPOT} from '../src/shotphysics.js';
-import {LANGUAGES,t,tu,list,has,translateError,setLanguage,getLanguage,detectLanguage,formatDate,supported} from '../src/i18n/index.js';
+import {LANGUAGES,t,tu,up,list,has,translateError,setLanguage,getLanguage,detectLanguage,formatDate,supported} from '../src/i18n/index.js';
 import {plans,staff,DIFFICULTIES,UPGRADES} from '../src/engine.js';import {VALUES} from '../src/narrative.js';import {SHOTS} from '../src/basketball.js';import {SOUND_KEYS} from '../src/audio.js';import {SKILL_TREE} from '../src/skills.js';import {ACTIONS} from '../src/keys.js';
 const read=f=>fs.readFileSync(new URL(f,import.meta.url),'utf8');
 // Every string leaf, keyed by its path. Arrays are indexed.
@@ -45,7 +45,11 @@ for(const l of GRAPHICS_LEVELS)need.push(`settings.accessibility.graphicsOptions
  for(const v of ['steady','fast'])need.push(`pace.${v}`);
  for(const v of ['home','away','alternate'])need.push(`locker.${v}`);for(const v of ['throwback','seniornight','blackout'])need.push(`lk.kit.${v}`,`lk.how.${v}`);for(const v of ['injured','gpa','energy','bench'])need.push(`lk.flag.${v}`);for(const v of ['ready','tired','injured','gpa'])need.push(`lk.tag.${v}`);for(const v of ['happy','neutral','upset'])need.push(`lk.face.${v}`);need.push('log.kitUnlocked');
  for(const v of ['rookie','standard','elite'])need.push(`level.${v}`,`difficulty.${v}`);
- for(const n of [1,2,3,4])need.push(`tutorial.step${n}.title`,`tutorial.step${n}.body`);
+ for(const v of ['home','pick','fill','run','retry','toGame','five','watch','shot','timeout','quarter','speed','press','done'])need.push(`tutorial.b.${v}`);
+ for(const v of ['pre','mid','playoff','practice','tipoff','live','press','inbox','issues','lineup','finished'])need.push(`flow.now.${v}`);
+ for(const v of ['pre','mid','playoff','prepare','play','post','end'])need.push(`flow.step.${v}`);
+ for(const v of ['pre','mid','playoff'])need.push(`flow.btn.${v}`,`flow.done.${v}`);
+ for(const v of ['prepare','play','post'])need.push(`flow.track.${v}`);
  for(const v of ['made','miss','block','steal'])need.push(`outcome.${v}`);
  for(const v of ['skill','energy','morale','chemistry','shotType','space','tactics','repertoire'])need.push(`impact.${v}`);
  for(const v of ['open','tight','contested'])need.push(`contest.${v}`);
@@ -146,7 +150,7 @@ test('t() interpolates, falls back to English and then to the key',async()=>{
  await setLanguage('en',{persist:false});
  assert.equal(t('home.welcome',{name:'Sam'}),'Welcome back, Coach Sam.');
  assert.equal(t('no.such.key'),'no.such.key');
- assert.equal(tu('home.welcome',{name:'Sam'}),'WELCOME BACK, COACH SAM.');
+ assert.equal(tu('home.welcome',{name:'Sam'}),t('home.welcome',{name:'Sam'}));
  assert.equal(list('hb.cr.list').length,5);assert.ok(has('nav.home'));assert.ok(!has('nav.nope'));
  assert.equal(t('home.welcome'),'Welcome back, Coach {{name}}.');
 });
@@ -160,7 +164,7 @@ test('switching language changes output; unknown codes fall back to English',asy
  assert.equal(translateError('Something unexpected'),'Something unexpected');
 });
 test('uppercasing follows language rules',async()=>{
- await setLanguage('fr',{persist:false});assert.equal(tu('top.settings'),t('top.settings').toLocaleUpperCase('fr'));
+ await setLanguage('fr',{persist:false});assert.equal(up(t('top.settings')),t('top.settings').toLocaleUpperCase('fr'));
  await setLanguage('en',{persist:false});
 });
 // Runs fn with a global temporarily replaced (Node 22 has no localStorage, Node 25 has one).

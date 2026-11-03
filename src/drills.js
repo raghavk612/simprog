@@ -64,7 +64,7 @@ function shotDrill(root, spec, onDone) {
 
   function draw(ball) {
     ctx.clearRect(0, 0, W, H);
-    const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#1c1230'); g.addColorStop(1, '#0d0915'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#17181c'; ctx.fillRect(0, 0, W, H);
     // floor + markings
     ctx.fillStyle = '#c9965e'; ctx.fillRect(0, ground, W, H - ground); ctx.fillStyle = '#b5824d'; for (let i = 0; i < W; i += 60) ctx.fillRect(i, ground, 2, H - ground);
     ctx.fillStyle = '#6832ab'; ctx.fillRect(X(dist - 19), ground, X(dist) - X(dist - 19) + 30, 6);

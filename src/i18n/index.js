@@ -21,8 +21,8 @@ export function t(key,params){
  const text=lookup(packs[current],key)??lookup(en,key);
  return typeof text==='string'?fill(text,params):key;
 }
-// The design uses all-caps labels. Strings are stored in normal case (better for screen readers) and capitalised by language rules here.
-export const tu=(key,params)=>t(key,params).toLocaleUpperCase(localeTag());
+// Labels show as written (sentence case). Where capitals are wanted, as on the scoreboard, CSS adds them.
+export const tu=t;
 export const up=text=>String(text).toLocaleUpperCase(localeTag());
 // Arrays of strings, such as the rulebook steps.
 export function list(key){const v=lookup(packs[current],key)??lookup(en,key);return Array.isArray(v)?v:[];}

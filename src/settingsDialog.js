@@ -17,7 +17,7 @@ const resetButton=(act,label)=>`<div class="sfooter"><button type="button" class
 
 export function createSettingsDialog({modal,show,notify,onKeysChange}){
  let tab=isTouchOnly()?'sound':'controls',keys=loadKeys(),listening=null,open=false;
- const tabs=()=>[...(isTouchOnly()?[]:['controls']),'sound','accessibility','language'];
+ const tabs=()=>[...(isTouchOnly()?[]:['controls']),'sound','accessibility','language','game'];
 
  function controlsPanel(){
   const rows=ACTIONS.map(a=>{const name=t(`settings.controls.actions.${a}`),on=listening===a;return `<div class="srow"><div class="stext"><span class="slabel">${esc(name)}</span></div><button type="button" class="keycap${on?' listening':''}" data-s-bind="${a}" data-fk="bind:${a}" aria-label="${esc(t('settings.controls.rebind',{action:name,key:keyLabel(keys[a])}))}">${on?esc(t('settings.controls.pressKey')):esc(keyLabel(keys[a]))}</button></div>`;}).join('');
@@ -56,10 +56,15 @@ export function createSettingsDialog({modal,show,notify,onKeysChange}){
   const cards=LANGUAGES.map(l=>`<button type="button" class="choice-card${getLanguage()===l.code?' selected':''}" aria-pressed="${getLanguage()===l.code}" data-s-choice="language" data-value="${l.code}" data-fk="lang:${l.code}"><span class="choice-name">${esc(t(`lang.${l.code}`))}</span><span class="choice-sample" lang="${l.code}">${esc(l.native)}</span></button>`).join('');
   return section(t('settings.language.title'),`<p class="hint">${esc(t('settings.language.desc'))}</p><div class="choice-grid">${cards}</div>`);
  }
+ // Everything that used to sit in the top bar: appearance, the save file, credits and the way out.
+ function gamePanel(){
+  const a=getA11y(),row=(action,label)=>`<button type="button" class="secondary" data-action="${action}">${esc(label)}</button>`;
+  return section(t('settings.tabs.game'),toggleRow('a11y.lightTheme',t('settings.accessibility.lightTheme'),t('settings.accessibility.lightThemeDesc'),a.lightTheme)+`<div class="game-actions">${row('export',t('top.export'))}${row('credits',t('side.credits'))}${row('title',t('settings.game.exit'))}</div>`)+`<p class="statement">${esc(t('side.footerNote'))}</p>`;
+ }
  function html(){
   const list=tabs(),count=activeA11yCount();
   const bar=list.map(id=>`<button type="button" role="tab" id="tab-${id}" aria-selected="${tab===id}" aria-controls="panel-${id}" tabindex="${tab===id?0:-1}" data-s-tab="${id}" data-fk="tab:${id}">${esc(t(`settings.tabs.${id}`))}${id==='accessibility'&&count?`<span class="badge" aria-label="${esc(t('settings.activeCount',{n:count}))}">${count}</span>`:''}</button>`).join('');
-  const panel={controls:controlsPanel,sound:soundPanel,accessibility:accessibilityPanel,language:languagePanel}[tab]();
+  const panel={controls:controlsPanel,sound:soundPanel,accessibility:accessibilityPanel,language:languagePanel,game:gamePanel}[tab]();
   return `<div class="settings"><span class="eyebrow">${esc(tu('settings.eyebrow'))}</span><h1>${esc(t('settings.title'))}</h1><div class="tabs" role="tablist" aria-label="${esc(t('settings.title'))}">${bar}</div><div class="spanel" role="tabpanel" id="panel-${tab}" aria-labelledby="tab-${tab}" tabindex="0">${panel}</div><div class="sdone"><button type="button" class="primary" data-s-act="done" data-fk="act:done">${esc(t('settings.done'))}</button></div></div>`;
  }
  function render(focus){

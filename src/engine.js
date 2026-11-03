@@ -109,7 +109,7 @@ export function setStarter(s,id,on){open(s);const p=s.players.find(x=>x.id===+id
 /* Who in the rotation cannot play, and why: the reason is 'injured', 'gpa' or 'tired' (the first that applies). */
 export function lineupIssues(s){return s.players.filter(p=>(p.starter||p.minutes>0)&&!eligible(p)).map(p=>({id:p.id,name:p.name,reason:p.injury>0?'injured':p.gpa<2?'gpa':'tired'}));}
 /* Plays games with sensible preparation (recover when tired, study when grades slip, otherwise bond or shoot) until the season reaches the given week. Used by the judge demo and its "jump ahead" button. */
-export function playTo(s,week){s.pendingEvent=null;if(s.press)s.press.done=true;let guard=0;const stop=Math.min(week,s.schedule.length);while(!s.finished&&s.week<stop&&guard++<s.schedule.length+1){if(s.match)while(s.match)possession(s);if(s.week>=stop)break;if(mean(s.players,'energy')<70&&s.actions>0)train(s,'recovery');if(mean(s.players,'gpa')<2.7&&s.actions>0)train(s,'study');while(s.actions>0)train(s,s.chemistry<85?'bond':'shooting');autoLineup(s);startMatch(s);let k=0;while(s.match&&k++<500)possession(s);}return s;}
+export function playTo(s,week){s.pendingEvent=null;if(s.press)s.press.done=true;s.breaksDone=[...BREAK_IDS];let guard=0;const stop=Math.min(week,s.schedule.length);while(!s.finished&&s.week<stop&&guard++<s.schedule.length+1){if(s.match)while(s.match)possession(s);if(s.week>=stop)break;if(mean(s.players,'energy')<70&&s.actions>0)train(s,'recovery');if(mean(s.players,'gpa')<2.7&&s.actions>0)train(s,'study');while(s.actions>0)train(s,s.chemistry<85?'bond':'shooting');autoLineup(s);startMatch(s);let k=0;while(s.match&&k++<500)possession(s);}return s;}
 /* The season shown in the judge demo: a Junior Varsity campaign played to the middle of the schedule. It uses the first seed whose story suits a demonstration (4–5 wins by mid-season, then qualifying for the final run and winning it with the same sensible preparation), so it stays repeatable even after the schedule data is refreshed. */
 export const DEMO={difficulty:'standard',week:7,seeds:400};
 export function demoSeason(data){
@@ -297,6 +297,7 @@ export function validSave(s){
    &&(x.eventLog===undefined||(Array.isArray(x.eventLog)&&x.eventLog.length<=60&&x.eventLog.every(e=>only(e,['week','id','choice'])&&Number.isInteger(e.week)&&e.week>=0&&e.week<=41&&id(e.id)&&id(e.choice))))
    &&(x.upgrades===undefined||(Array.isArray(x.upgrades)&&x.upgrades.length<=UPGRADES.length&&new Set(x.upgrades).size===x.upgrades.length&&x.upgrades.every(k=>UPGRADES.some(u=>u.key===k))))&&(x.seed0===undefined||(Number.isInteger(x.seed0)&&x.seed0>=0&&x.seed0<=4294967295))
    &&(x.press==null||(only(x.press,['week','questions','done'])&&typeof x.press.done==='boolean'&&Array.isArray(x.press.questions)&&x.press.questions.length<=5&&x.press.questions.every(q=>only(q,['id','params','answer'])&&id(q.id)&&small(q.params||{})&&(q.answer==null||id(q.answer)))))
+   &&(x.breaksDone===undefined||(Array.isArray(x.breaksDone)&&x.breaksDone.length<=BREAK_IDS.length&&x.breaksDone.every(k=>BREAK_IDS.includes(k))))&&(x.deferPre===undefined||typeof x.deferPre==='boolean')
    &&(x.pregame==null||(only(x.pregame,['week','questions','done'])&&Number.isInteger(x.pregame.week)&&x.pregame.week>=0&&x.pregame.week<=41&&typeof x.pregame.done==='boolean'&&Array.isArray(x.pregame.questions)&&x.pregame.questions.length<=3&&x.pregame.questions.every(q=>only(q,['id','params','answer'])&&id(q.id)&&small(q.params||{})&&(q.answer==null||id(q.answer)))));};
  const num=(n,min,max)=>Number.isFinite(n)&&n>=min&&n<=max;
  const text=(v,max=200)=>typeof v==='string'&&v.length<=max;
@@ -339,16 +340,33 @@ export const seasonCode=s=>Number.isInteger(s?.seed0)&&s.seed0>=0&&s.seed0<=4294
 /* Strict: exactly KNG-, one level letter, then 1 to 7 base-36 digits without leading zeros that fit in 32 bits. Case and surrounding spaces are forgiven. Returns {difficulty,seed} or null. */
 export function parseSeasonCode(text){const m=/^KNG-([CJV])-([0-9A-Z]{1,7})$/.exec(String(text??'').trim().toUpperCase());if(!m||(m[2].length>1&&m[2][0]==='0'))return null;const seed=parseInt(m[2],36);if(!(seed>=0&&seed<=4294967295))return null;return {difficulty:Object.keys(CODE_LEVEL).find(k=>CODE_LEVEL[k]===m[1]),seed};}
 /* ---- "What should I do now?": one prioritised suggestion. id picks the sentence, view or action says where the button goes. Order: season over, game in progress, unanswered inbox or press questions, ineligible players in the rotation, preparation slots (practice first while all are free, scout while some are left, practice again once scouted), a lineup that is not legal, then tip-off. ---- */
+/* The season's three breaks, the only times the program can sign players, hire staff or buy upgrades. When game 1 is the tutorial, preseason waits until that game is played. */
+export const BREAK_IDS=['pre','mid','playoff'];
+export function breakWeeks(s){const cut=seasonPlan(s).cut;return {pre:s.deferPre?1:0,mid:Math.max(2,Math.floor(cut/2)),playoff:cut};}
+export function breakDue(s){if(s.finished||s.match)return null;const w=breakWeeks(s);return BREAK_IDS.find(id=>w[id]===s.week&&!s.breaksDone?.includes(id))??null;}
+export function endBreak(s){const id=breakDue(s);if(id)(s.breaksDone??=[]).push(id);return id;}
 export function nextStep(s){
  if(s.finished)return {id:'finished',view:'season'};
  if(s.match)return {id:'live',view:'game'};
  if(s.pendingEvent)return {id:'inbox',action:'inbox-open'};
  if(s.results.length>0&&(!s.press||s.press.week!==s.week||!s.press.done))return {id:'press',action:'press-open'};
+ const pause=breakDue(s);if(pause)return {id:'break',view:'recruit',break:pause};
  const bad=lineupIssues(s);if(bad.length)return {id:'issues',view:'roster',n:bad.length};
  if(s.actions>0&&(s.actions===3||s.scouted))return {id:'practice',view:'practice',n:s.actions};
- if(s.actions>0&&!s.scouted)return {id:'scout',view:'game',n:s.actions};
+ if(s.actions>0&&!s.scouted)return {id:'scout',view:'practice',n:s.actions};
  try{validateLineup(s);}catch{return {id:'lineup',view:'roster'};}
  return {id:'tipoff',view:'game'};
+}
+/* What comes after the next step, in order. A game week runs prepare, play, postgame; a break sits in front of the game it falls before. */
+export function roadmap(s,count=4){
+ if(s.finished)return [];
+ const id=nextStep(s).id,ahead=[],w=breakWeeks(s),first=['press','inbox'].includes(id)?0:id==='break'?1:['tipoff','live'].includes(id)?3:2;
+ for(let g=s.week,part=first;g<s.schedule.length&&ahead.length<count;g++,part=0){const opp=s.schedule[g].opponent;
+  if(part<1)for(const b of BREAK_IDS)if(w[b]===g&&!s.breaksDone?.includes(b))ahead.push({id:b});
+  if(part<2)ahead.push({id:'prepare',opp});
+  if(part<3)ahead.push({id:'play',opp});
+  ahead.push({id:'post'});}
+ return (ahead.length<count?[...ahead,{id:'end'}]:ahead).slice(0,count);
 }
 /* ---- Tip-off preview: what the coach knows before the game starts. ---- */
 export function tipoffPreview(s){
