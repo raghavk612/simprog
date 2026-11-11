@@ -10,23 +10,19 @@ const BRANCHES = Object.keys(SKILL_TREE),
   move = k => t(`shot.${k}`);
 const esc = s =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-// Layout in stage units (the stage keeps this aspect ratio): each branch leans along an axis from its base to the top edge.
+// Layout in stage units (the stage keeps this aspect ratio): each branch is a column, its label at the base and tier 1 just above it.
 const VW = 600,
   VH = 500,
   BASE = 470,
   RIBBON = 440,
   TIERS = [330, 205, 80],
-  AXIS = { shooter: [150, 75], slasher: [300, 300], post: [450, 525] };
+  AXIS = { shooter: [110, 110], slasher: [300, 300], post: [490, 490] };
 const ax = (b, y) => {
     const [x0, x1] = AXIS[b];
     return x0 + ((x1 - x0) * (BASE - y)) / BASE;
   },
   pct = (v, of) => `${+((v / of) * 100).toFixed(2)}%`;
-const lean = b => {
-  const [x0, x1] = AXIS[b];
-  return +((Math.atan2(x1 - x0, BASE) * 180) / Math.PI).toFixed(1);
-};
-// Line icons (24×24, stroked in the branch colour): what each move looks like on court.
+// Line icons (24×24, stroked in the state colour): what each move looks like on court.
 const ICONS = {
   corner: '<path d="M4 3v17h17"/><path d="M4 8a12 12 0 0 1 12 12"/><circle cx="8" cy="16" r="1.8"/>',
   stepback:
@@ -110,7 +106,7 @@ function nodeButton(s, b, n, i, sel) {
     cost: t('skills.cost', { cost: n.cost }),
   });
   return (
-    `<button class="st-node ${state} b-${b}" id="skill-${n.key}" data-action="skill-select" data-key="${n.key}" style="--x:${pct(x, VW)};--y:${pct(TIERS[i], VH)}" aria-pressed="${on}" tabindex="${on ? 0 : -1}" aria-label="${esc(label)}"${on ? ' aria-describedby="st-detail-hint"' : ''}>` +
+    `<button class="st-node ${state}" id="skill-${n.key}" data-action="skill-select" data-key="${n.key}" style="--x:${pct(x, VW)};--y:${pct(TIERS[i], VH)}" aria-pressed="${on}" tabindex="${on ? 0 : -1}" aria-label="${esc(label)}"${on ? ' aria-describedby="st-detail-hint"' : ''}>` +
     `<span class="st-medal" aria-hidden="true">${icon(n.key)}${state === 'locked' ? LOCK : state === 'owned' ? CHECK : ''}</span>` +
     (state === 'owned' ? '' : `<span class="st-cost" aria-hidden="true">${n.cost}</span>`) +
     `<span class="st-name" aria-hidden="true">${esc(move(n.key))}</span></button>`
@@ -122,10 +118,10 @@ function links(s, b) {
     own = unlockedMoves(s),
     line = (from, to, x1, y1, x2, y2) => {
       const st = own.includes(from) && own.includes(to) ? 'lit' : own.includes(from) ? 'next' : 'locked';
-      return `<line class="st-link ${st} b-${b}" data-from="${from}" data-to="${to}" x1="${x1.toFixed(1)}" y1="${y1}" x2="${x2.toFixed(1)}" y2="${y2}"/>`;
+      return `<line class="st-link ${st}" data-from="${from}" data-to="${to}" x1="${x1.toFixed(1)}" y1="${y1}" x2="${x2.toFixed(1)}" y2="${y2}"/>`;
     };
   // from the ribbon (the branch's base, always open) to its first move, then move to move
-  const base = `<line class="st-link ${own.includes(nodes[0].key) ? 'lit' : 'next'} b-${b}" data-from="base" data-to="${nodes[0].key}" x1="${ax(b, RIBBON - 14).toFixed(1)}" y1="${RIBBON - 14}" x2="${ax(b, TIERS[0]).toFixed(1)}" y2="${TIERS[0]}"/>`;
+  const base = `<line class="st-link ${own.includes(nodes[0].key) ? 'lit' : 'next'}" data-from="base" data-to="${nodes[0].key}" x1="${ax(b, RIBBON - 14).toFixed(1)}" y1="${RIBBON - 14}" x2="${ax(b, TIERS[0]).toFixed(1)}" y2="${TIERS[0]}"/>`;
   return (
     base +
     nodes
@@ -133,19 +129,6 @@ function links(s, b) {
       .map((n, i) => line(nodes[i].key, n.key, ax(b, TIERS[i]), TIERS[i], ax(b, TIERS[i + 1]), TIERS[i + 1]))
       .join('')
   );
-}
-// A light fan behind each branch, narrow at its ribbon and wide at the top (clip-path in stage percentages).
-function beam(b) {
-  const [x0, x1] = AXIS[b],
-    poly = [
-      [x0 - 20, BASE],
-      [x0 + 20, BASE],
-      [x1 + 90, 0],
-      [x1 - 90, 0],
-    ]
-      .map(([x, y]) => `${pct(Math.min(VW, Math.max(0, x)), VW)} ${pct(y, VH)}`)
-      .join(',');
-  return `<div class="st-beam b-${b}" style="clip-path:polygon(${poly})" aria-hidden="true"></div>`;
 }
 
 function detail(s, sel) {
@@ -159,16 +142,16 @@ function detail(s, sel) {
       : state === 'locked'
         ? `<p class="skill-state"><b>${t('skills.locked')}</b> · ${esc(w)}</p><small class="st-price">${cost}</small>`
         : `<button class="secondary wide${state === 'blocked' ? ' locked-action' : ''}" data-action="skill-unlock" data-key="${n.key}" aria-describedby="st-detail-name${state === 'blocked' ? ' st-detail-why' : ''}" ${state === 'blocked' ? 'disabled' : ''}>${t('skills.unlock', { cost: n.cost })}</button>${state === 'blocked' ? `<small id="st-detail-why">${esc(w)}</small>` : ''}`;
-  return `<div class="st-detail ${state} b-${b}" role="region" aria-labelledby="st-detail-name"><div class="st-detail-top"><span class="st-medal" aria-hidden="true">${icon(n.key)}</span><div><span class="eyebrow">${esc(tu(`skills.branch.${b}`))} · ${t('skills.tier', { n: i + 1, total: SKILL_TREE[b].length })}</span><h3 id="st-detail-name">${esc(move(n.key))}</h3></div></div><p class="skill-hint" id="st-detail-hint">${t(`skills.hint.${n.key}`, { tactic: t('tactic.perimeter') })}</p>${body}</div><!--/detail-->`;
+  return `<div class="st-detail ${state}" role="region" aria-labelledby="st-detail-name"><div class="st-detail-top"><span class="st-medal" aria-hidden="true">${icon(n.key)}</span><div><span class="eyebrow">${esc(tu(`skills.branch.${b}`))} · ${t('skills.tier', { n: i + 1, total: SKILL_TREE[b].length })}</span><h3 id="st-detail-name">${esc(move(n.key))}</h3></div></div><p class="skill-hint" id="st-detail-hint">${t(`skills.hint.${n.key}`, { tactic: t('tactic.perimeter') })}</p>${body}</div><!--/detail-->`;
 }
 
 export function skillTreeCard(s) {
   const sel = selectedSkill(s);
   const branches = BRANCHES.map(
     b =>
-      `<div class="st-branch b-${b}" role="group" aria-labelledby="skill-branch-${b}"><h3 class="st-ribbon" id="skill-branch-${b}" style="--x:${pct(ax(b, RIBBON), VW)};--y:${pct(RIBBON, VH)};--r:${lean(b)}deg">${t(`skills.branch.${b}`)}</h3>${SKILL_TREE[b].map((n, i) => nodeButton(s, b, n, i, sel)).join('')}</div><!--/${b}-->`,
+      `<div class="st-branch" role="group" aria-labelledby="skill-branch-${b}"><h3 class="st-ribbon" id="skill-branch-${b}" style="--x:${pct(ax(b, RIBBON), VW)};--y:${pct(RIBBON, VH)}">${t(`skills.branch.${b}`)}</h3>${SKILL_TREE[b].map((n, i) => nodeButton(s, b, n, i, sel)).join('')}</div><!--/${b}-->`,
   ).join('');
-  return `<section class="card skill-tree game-tree" aria-label="${t('skills.title')}"><div class="skill-head"><p class="skill-intro">${t('skills.intro')}</p><span class="pill">${t('skills.progress', { n: unlockedMoves(s).length, total: TOTAL })}</span></div>
- <div class="st-board"><div class="st-stage" style="aspect-ratio:${VW}/${VH}">${BRANCHES.map(beam).join('')}<svg class="st-links" viewBox="0 0 ${VW} ${VH}" preserveAspectRatio="none" aria-hidden="true" focusable="false">${BRANCHES.map(b => links(s, b)).join('')}</svg>${branches}</div>${detail(s, sel)}</div>
+  return `<section class="card skill-tree" aria-label="${t('skills.title')}"><div class="skill-head"><p class="skill-intro">${t('skills.intro')}</p><span class="pill">${t('skills.progress', { n: unlockedMoves(s).length, total: TOTAL })}</span></div>
+ <div class="st-board"><div class="st-stage" style="aspect-ratio:${VW}/${VH}"><svg class="st-links" viewBox="0 0 ${VW} ${VH}" preserveAspectRatio="none" aria-hidden="true" focusable="false">${BRANCHES.map(b => links(s, b)).join('')}</svg>${branches}</div>${detail(s, sel)}</div>
  <div class="st-basics"><h3 class="skill-sub">${t('skills.basic')}</h3><ul class="skill-chips">${BASIC_MOVES.map(k => `<li class="skill-chip"><span class="sr-only">${t('skills.owned')}: </span><span aria-hidden="true">✓</span> ${move(k)}</li>`).join('')}</ul></div></section>`;
 }

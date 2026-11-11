@@ -48,7 +48,7 @@ test('a new season shows the five basic moves and three branches in order, roots
   for (const [b, nodes] of Object.entries(SKILL_TREE)) {
     const branch = html.match(
       new RegExp(
-        `<div class="st-branch b-${b}" role="group" aria-labelledby="skill-branch-${b}">[\\s\\S]*?id="skill-branch-${b}"[^>]*>${t(`skills.branch.${b}`)}<[\\s\\S]*?<!--/${b}-->`,
+        `<div class="st-branch" role="group" aria-labelledby="skill-branch-${b}">[\\s\\S]*?id="skill-branch-${b}"[^>]*>${t(`skills.branch.${b}`)}<[\\s\\S]*?<!--/${b}-->`,
       ),
     );
     assert.ok(branch, b);
@@ -117,10 +117,10 @@ test('an unlocked move shows as learned, lights its link and opens the next move
   assert.ok(label(html, 'euro').includes(t('skills.owned')));
   assert.equal(stateOf(html, 'dunk'), 'open');
   assert.equal(stateOf(html, 'alley'), 'locked');
-  assert.match(html, /<line class="st-link next b-slasher" data-from="euro" data-to="dunk"/);
-  assert.match(html, /<line class="st-link locked b-slasher" data-from="dunk" data-to="alley"/);
+  assert.match(html, /<line class="st-link next" data-from="euro" data-to="dunk"/);
+  assert.match(html, /<line class="st-link locked" data-from="dunk" data-to="alley"/);
   E.unlockSkill(s, 'dunk');
-  assert.match(skillTreeCard(s), /<line class="st-link lit b-slasher" data-from="euro" data-to="dunk"/);
+  assert.match(skillTreeCard(s), /<line class="st-link lit" data-from="euro" data-to="dunk"/);
   assert.equal(selectedSkill(s), 'corner', 'still the first move you can unlock');
   selectSkill('euro', s);
   assert.ok(detail(skillTreeCard(s)).includes(t('skills.owned')));
