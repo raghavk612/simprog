@@ -730,6 +730,13 @@ export default {
       speed: 'La suite du match est à vous. Accélérez ici si vous voulez.',
       press: 'Les journalistes. Ce que vous dites ici compte pour le prochain match.',
       done: 'Voilà une semaine. Il vous reste {{n}} {{tokens}}. Allez construire l’équipe.',
+      tryouts:
+        'Présaison. Rien n’est obligatoire ici. D’abord les essais : recrutez un joueur avec des jetons, ou observez-le pour en savoir plus.',
+      staff:
+        'Un assistant à la fois, et il aide chaque semaine. Les améliorations en dessous s’achètent une seule fois.',
+      skills:
+        'Chaque nouveau geste ajoute des actions que votre équipe joue en match. Choisissez-en un pour voir ce qu’il fait.',
+      kit: 'Dernière étape : choisissez vos maillots. Lancez la saison quand vous êtes prêt.',
     },
   },
   timeout: {

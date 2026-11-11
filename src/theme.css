@@ -989,6 +989,18 @@ body.live-match .topbar {
   box-shadow: 0 0 0 100vmax #00000094;
   pointer-events: none;
 }
+.coach-ring.soft {
+  box-shadow: none;
+}
+/* Phones: the coach card covers the bottom of the screen, so the page gets that much more room to scroll. */
+@media (max-width: 760px) {
+  html:has(.coach-card:not([hidden])) {
+    scroll-padding-bottom: var(--coach-h, 0px);
+  }
+  body:has(.coach-card:not([hidden])) main {
+    padding-bottom: var(--coach-h, 0px);
+  }
+}
 .coach-card {
   position: fixed;
   z-index: 61;
@@ -1076,9 +1088,11 @@ body:has(#modal[open]) .coach-glow:not(#modal *) {
     animation: none;
   }
 }
+/* Phones: just above the coach card (its height is --coach-h), clear of the tab row and its Start button. */
 @media (max-width: 620px) {
   .coach-skip {
-    top: 66px;
+    top: auto;
+    bottom: calc(var(--coach-h, 84px) + 8px);
     left: auto;
     right: 12px;
     transform: none;

@@ -1,4 +1,5 @@
-// The first game is the tutorial, and it counts. It goes one beat at a time: the game holds, the assistant says
+// The first game is the tutorial, and it counts; then it walks through the preseason break that follows (Tryouts,
+// Staff, Skill tree, Jerseys). It goes one beat at a time: the game holds, the assistant says
 // one line (tutorial.b.<id> in the locales), and only what they point at can be used. coachTick() runs every 100 ms.
 //
 // A beat in BEATS:
@@ -7,6 +8,7 @@
 //   lock    what can still be clicked (default: spot) next    wait for the card's Next button instead of done()
 //   inline  the line sits inside the open dialog      game    only during a live game (skipped otherwise)
 //   skip()  pass the beat by without opening it       last    the final beat
+//   soft    the page around the ring stays lit (everything on it can be used)
 //   enter / leave   run when the beat opens / closes  say()   values for the line
 // The tutorial and the judge demo open screens by route name, so renaming a route means updating them too.
 import * as E from '../engine.js';
@@ -170,12 +172,30 @@ export const BEATS = [
     spot: '.home-bar',
     lock: '.hb-go',
     act: '.hb-go',
-    last: true,
     on: () => view === 'home' && !modal.open,
     done: () => view !== 'home',
     say: () => ({ n: formatNumber(state.tokens), tokens: t('toast.tokens') }),
   },
+  // The preseason break: one beat per tab. Everything on the page can be used; "Next: <tab>" moves on.
+  breakBeat('tryouts', 'recruit', '.cards.three', 'staff'),
+  breakBeat('staff', 'staff', '.office-section', 'skills'),
+  breakBeat('skills', 'skills', '.st-tree', 'locker'),
+  { ...breakBeat('kit', 'locker', '.lk-stage-row'), act: '[data-action="break-done"]', last: true },
 ];
+// A beat for one break tab: it rings the page's main card, glows the button to the next tab, and closes on arriving
+// there (or, on the last tab, when the break is over). Skipped when no break is open, e.g. a save without one.
+function breakBeat(id, route, spot, next) {
+  return {
+    id,
+    spot,
+    lock: 'main,.subnav-end',
+    soft: true,
+    act: next ? `.break-next [data-view="${next}"]` : null,
+    skip: () => !E.breakDue(state),
+    on: () => view === route && !modal.open,
+    done: () => (next ? view === next : view !== route || !E.breakDue(state)),
+  };
+}
 export function startTour() {
   state.deferPre = true;
   tour = { i: 0, open: false };
@@ -185,6 +205,7 @@ export function startTour() {
 }
 function clearCoach() {
   document.querySelectorAll('.coach-card,.coach-ring,.coach-line').forEach(x => x.remove());
+  document.documentElement.style.removeProperty('--coach-h');
   document.querySelectorAll('.coach-glow').forEach(x => x.classList.remove('coach-glow'));
 }
 // The page redraws under the tutorial, so the glow is put back on every tick.
@@ -261,7 +282,7 @@ function drawCoach() {
   document.body.append(card);
   if (b.spot) {
     const ring = document.createElement('div');
-    ring.className = 'coach-ring';
+    ring.className = b.soft ? 'coach-ring soft' : 'coach-ring';
     document.body.append(ring);
   }
   placeCoach();
@@ -286,6 +307,8 @@ function placeCoach() {
         height: `${r.height + 12}px`,
       });
   }
+  // On a phone the card sits at the bottom; --coach-h lets the page scroll its last button clear of it (theme.css).
+  if (innerWidth <= 760) document.documentElement.style.setProperty('--coach-h', `${h + 84}px`);
   if (!r || innerWidth <= 760) {
     card.style.left = `${Math.max(12, (innerWidth - w) / 2)}px`;
     card.style.top = `${innerHeight - h - (innerWidth <= 760 ? 84 : 24)}px`;

@@ -727,6 +727,13 @@ export default {
       speed: 'Il resto della partita è tuo. Accelera qui se vuoi.',
       press: 'I giornalisti. Quello che dici qui pesa sulla prossima partita.',
       done: 'Ecco una settimana. Hai {{n}} {{tokens}} da spendere. Vai a costruire la squadra.',
+      tryouts:
+        'Precampionato. Qui niente è obbligatorio. Prima i provini: ingaggia un giocatore con i gettoni, o osservalo per saperne di più.',
+      staff:
+        'Un assistente alla volta, e aiuta ogni settimana. I potenziamenti qui sotto si comprano una volta sola.',
+      skills:
+        'Le nuove mosse aggiungono giocate che la tua squadra usa in partita. Scegline una per vedere cosa fa.',
+      kit: 'Ultima tappa: scegli le divise. Inizia la stagione quando sei pronto.',
     },
   },
   timeout: {

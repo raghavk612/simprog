@@ -711,6 +711,11 @@ export default {
       speed: 'Rest of the game’s yours. Speed it up here if you want.',
       press: 'Reporters. What you say here carries into the next game.',
       done: 'That’s a week. You’ve got {{n}} {{tokens}} sitting there. Go build the team.',
+      tryouts:
+        'Preseason. Nothing here is required. Tryouts first: sign a player for tokens, or scout one to learn more.',
+      staff: 'One assistant at a time, and they help every week. The upgrades below are one-time buys.',
+      skills: 'New moves add plays your team runs in games. Pick one to see what it does.',
+      kit: 'Last stop: pick your jerseys. Start the season when you’re ready.',
     },
   },
   timeout: {
