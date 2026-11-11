@@ -2,7 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as E from '../src/engine.js';
-import { SHOTS, sampleClip, CLIP_SECONDS } from '../src/basketball.js';
+import {
+  SHOTS,
+  sampleClip,
+  CLIP_SECONDS,
+  BALL,
+  fly,
+  launch,
+  shotTiming,
+  smoothRoute,
+} from '../src/basketball.js';
 const data = JSON.parse(fs.readFileSync(new URL('../public/data/kangs.json', import.meta.url)));
 function match(seed) {
   const s = E.createGame(data, 'Actions', 'standard', seed);
@@ -99,4 +108,48 @@ test('new action records survive save validation; malformed replay paths are rej
   assert.ok(E.validSave(s));
   s.match.events[0].plays[0].lane = 'bad';
   assert.equal(E.validSave(s), false);
+});
+test('a launched ball reaches its target on time under gravity, and bounces lose speed off the floor', () => {
+  const p = { x: 6, y: 3.1, z: 1 },
+    q = { x: 12.15, y: BALL.rim, z: 0 },
+    at = fly(p, launch(p, q, 1.1), 1.1);
+  for (const k of ['x', 'y', 'z']) assert.ok(Math.abs(at[k] - q[k]) < 1e-9, k);
+  // dropped from 3 units: every bounce peaks lower than the one before, and the ball never goes through the floor
+  let peaks = [],
+    prev = 3,
+    rising = false;
+  for (let t = 0; t < 4; t += 0.002) {
+    const y = fly({ x: 0, y: 3, z: 0 }, { x: 0, y: 0, z: 0 }, t).y;
+    assert.ok(y >= BALL.floor - 1e-9);
+    if (rising && y < prev) peaks.push(prev);
+    rising = y > prev;
+    prev = y;
+  }
+  assert.ok(peaks.length >= 2 && peaks.every((h, i) => h < (i ? peaks[i - 1] : 3)));
+});
+test('shots fly for as long as gravity takes: threes hang longest, dunks barely leave the hand', () => {
+  const T = k => shotTiming(k).flight;
+  assert.ok(T('catch') > 1 && T('catch') < 1.3);
+  assert.ok(T('drive') < T('floater') && T('floater') < T('catch'));
+  assert.ok(T('dunk') < 0.5);
+  for (const k of Object.keys(SHOTS)) {
+    const s = shotTiming(k);
+    assert.ok(s.gather < s.release && s.release < BALL.arrive, k);
+  }
+});
+test('routes are rounded through their waypoints instead of turning on the spot', () => {
+  const route = [
+      [0, 0],
+      [4, 0],
+      [4, 4],
+    ],
+    curve = smoothRoute(route);
+  for (const w of route) assert.ok(curve.some(p => Math.hypot(p[0] - w[0], p[1] - w[1]) < 1e-9));
+  // near the corner the curve cuts inside it, so the heading changes over several steps
+  const turns = curve.slice(2).map((p, i) => {
+    const a = Math.atan2(curve[i + 1][1] - curve[i][1], curve[i + 1][0] - curve[i][0]),
+      b = Math.atan2(p[1] - curve[i + 1][1], p[0] - curve[i + 1][0]);
+    return Math.abs(Math.atan2(Math.sin(b - a), Math.cos(b - a)));
+  });
+  assert.ok(Math.max(...turns) < Math.PI / 4);
 });

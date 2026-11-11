@@ -1212,8 +1212,8 @@ export default {
       },
       players: 'Modèles des joueurs',
       playersDesc:
-        'Silhouettes classiques ou nouveaux corps athlétiques en 3D (bêta, créés dans Houdini). En graphismes bas, les classiques sont toujours utilisées.',
-      playersOptions: { classic: 'Classiques', athletes: 'Athlètes 3D (bêta)' },
+        'Silhouettes classiques ou nouveaux corps athlétiques en 3D (créés dans Houdini). En graphismes bas, les classiques sont toujours utilisées.',
+      playersOptions: { classic: 'Classiques', athletes: 'Athlètes 3D' },
     },
     language: {
       title: 'Langue',

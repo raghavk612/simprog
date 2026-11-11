@@ -224,3 +224,9 @@ test('sound settings keep commentary on by default and reject bad values', async
   assert.equal(normalizeSound({ commentary: 'yes' }).commentary, true);
   assert.equal(normalizeSound(null).toggles.cheer, true);
 });
+test('the 3D athletes are the default; settings saved before they were keep the old default no longer, a later choice stays', () => {
+  assert.equal(normalizeA11y(null).players, 'athletes');
+  assert.equal(normalizeA11y({ players: 'classic', textScale: 1.2 }).players, 'athletes'); // saved under the old default
+  assert.equal(normalizeA11y({ players: 'classic', modelsVersion: 2 }).players, 'classic'); // chosen since
+  assert.equal(normalizeA11y({ players: 'classic' }).modelsVersion, 2); // written back with the marker
+});

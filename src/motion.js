@@ -43,6 +43,102 @@ export function footAt(phase, stride, lift) {
 }
 const damp = (cur, target, rate, dt) => cur + (target - cur) * (1 - Math.exp(-rate * dt));
 
+/* ---- Personal space: players keep about 3 ft apart, and go round each other instead of through ---- */
+export const SPACE = { min: 0.95, contest: 0.85 }; // game units centre to centre (1 ft = 0.33); a shot contest comes closer
+/* One frame of keeping players apart. desired = where the play puts each player ([{x, z}]); state = {drawn, off} from the
+   previous frame (or a new {}); pinned = indexes that never move (the player with the ball); gap(i, j) = the distance
+   two players keep. Returns where to draw them.
+   Each player is drawn at desired + an offset that eases back to zero. Two players too close are separated along the line
+   between where they were drawn last frame (they were apart then, so the push never flips side as it would if taken from
+   this frame's positions alone), and a player the play sends straight through another slides round him on the side he is
+   heading for. Without a previous frame (or with dt 0) it is a plain push apart. */
+export function keepApart(state, desired, { pinned = new Set(), gap = () => SPACE.min, dt = 0 } = {}) {
+  const n = desired.length,
+    prev = state.drawn?.length === n ? state.drawn : null,
+    off = state.off?.length === n ? state.off : desired.map(() => ({ x: 0, z: 0 })),
+    relax = Math.exp(-3 * dt),
+    q = desired.map((d, i) => ({ x: d.x + off[i].x * relax, z: d.z + off[i].z * relax }));
+  for (let round = 0; round < 3; round++)
+    for (let i = 0; i < n; i++)
+      for (let j = i + 1; j < n; j++) {
+        const need = gap(i, j),
+          d = Math.hypot(q[j].x - q[i].x, q[j].z - q[i].z);
+        if (d >= need) continue;
+        // separation direction: from last frame's drawn positions when they were apart, else from now, else fixed
+        let nx = q[j].x - q[i].x,
+          nz = q[j].z - q[i].z;
+        if (prev) {
+          const px = prev[j].x - prev[i].x,
+            pz = prev[j].z - prev[i].z;
+          if (Math.hypot(px, pz) > 1e-3) {
+            nx = px;
+            nz = pz;
+          }
+        }
+        let l = Math.hypot(nx, nz);
+        if (l < 1e-6) {
+          nx = Math.cos(i * 7 + j);
+          nz = Math.sin(i * 7 + j);
+          l = 1;
+        }
+        nx /= l;
+        nz /= l;
+        // where the play wants j relative to i: if that is through i (behind the separation line), slide round him
+        const rx = desired[j].x - desired[i].x,
+          rz = desired[j].z - desired[i].z,
+          through = Math.max(0, -(rx * nx + rz * nz)) / Math.max(need, Math.hypot(rx, rz)),
+          s = nx * rz - nz * rx >= 0 ? 1 : -1, // the side he is heading for
+          tx = nx - s * nz * through * 1.5,
+          tz = nz + s * nx * through * 1.5,
+          tl = Math.hypot(tx, tz);
+        const push = need - d,
+          pi = pinned.has(i),
+          pj = pinned.has(j);
+        if (pi && pj) continue;
+        const ki = pi ? 0 : pj ? 1 : 0.5,
+          kj = 1 - ki;
+        q[i].x -= (tx / tl) * push * ki;
+        q[i].z -= (tz / tl) * push * ki;
+        q[j].x += (tx / tl) * push * kj;
+        q[j].z += (tz / tl) * push * kj;
+      }
+  state.drawn = q.map(p => ({ ...p }));
+  state.off = q.map((p, i) => ({ x: p.x - desired[i].x, z: p.z - desired[i].z }));
+  return q;
+}
+
+/* ---- Facing: where a player's body points while the play moves him (both player models) ---- */
+const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
+/* The angle a fraction w of the way from a to b, the short way round. */
+export const mixAngle = (a, b, w) => a + wrap(b - a) * w;
+/* Turns `current` toward `target` like a body does: quickly at first, easing in, never faster than maxRate radians per second
+   (about one and a half turns a second, a hard plant-and-pivot). */
+export function steerYaw(current, target, dt, maxRate = 9, rate = 10) {
+  const d = wrap(target - current),
+    step = d * (1 - Math.exp(-rate * dt)),
+    cap = maxRate * dt;
+  return current + Math.max(-cap, Math.min(cap, step));
+}
+/* How much a player turns to face the way he is running (1) rather than where the play points him (0), from his ground
+   speed in game units per second (a jog is about 3, a sprint about 7), what his arms are doing (pose.arms) and `off`, the
+   angle in radians (0..π) between where he runs and where the play points him.
+   - Aimed actions (a shot, a block, a screen, a pass, a rebound) keep the play's facing: they point at something.
+   - Defenders slide and backpedal square to their man; only a sprint turns them to run.
+   - A ball handler half-turns toward the drive and keeps the rim in view.
+   - Anyone else running faces the way he runs, more the faster he goes.
+   - Moving backwards (a step-back, a retreat) is a backpedal, not a turn round, until it becomes a sprint.
+   Weights ramp smoothly with speed so a player near a threshold does not flick between facings. */
+const AIMED = new Set(['shoot', 'hook', 'block', 'screen', 'pass', 'rebound']);
+export function facingWeight(speed, arms, off = 0) {
+  if (AIMED.has(arms)) return 0;
+  const ramp = (a, b) => {
+    const x = Math.max(0, Math.min(1, (speed - a) / (b - a)));
+    return x * x * (3 - 2 * x);
+  };
+  const w = arms === 'defend' ? ramp(4.5, 7) : arms === 'dribble' ? 0.7 * ramp(1.5, 5) : ramp(1, 4);
+  return off > 2.2 ? w * ramp(5.5, 7.5) : w;
+}
+
 /* Two-bone arm IK in the chest's space. S = shoulder, T = wrist target, L1/L2 = upper arm and forearm, pole = where the elbow
    should point. Returns the upper-arm direction u, the forearm bend direction b (both unit) and the elbow bend angle
    (0 = straight), or null if the target sits on the shoulder. */

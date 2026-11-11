@@ -1150,8 +1150,8 @@ export default {
       graphicsOptions: { auto: '自動', low: '低（最速）', medium: '中', high: '高（最も鮮明）' },
       players: '選手モデル',
       playersDesc:
-        'クラシックな人形、または新しいアスリートの3Dボディ（ベータ版、Houdiniで制作）。グラフィック「低」では常にクラシックを使用します。',
-      playersOptions: { classic: 'クラシック', athletes: '3Dアスリート（ベータ）' },
+        'クラシックな人形、または新しいアスリートの3Dボディ（Houdiniで制作）。グラフィック「低」では常にクラシックを使用します。',
+      playersOptions: { classic: 'クラシック', athletes: '3Dアスリート' },
     },
     language: {
       title: '言語',

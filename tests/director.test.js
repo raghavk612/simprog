@@ -14,6 +14,8 @@ test('director: the angles follow a possession, with close angles for jump shots
   assert.equal(pickShot(0.7, { kind: 'drive', replay: true }), 'replayClose');
   for (const k of Object.keys(LENS)) assert.ok(LENS[k] > 15 && LENS[k] < 60);
   assert.equal(APERTURE.wide, 0, 'no tilt-shift look on the wide angle');
+  for (const shot of ['wide', 'track', 'baseline', 'freeThrow'])
+    assert.equal(APERTURE[shot], 0, `live ${shot} is sharp`);
 });
 test('director: angles come from the Spline rig, mirrored for the visitors, sideline cameras stay on the broadcast side', () => {
   assert.deepEqual(CAMERAS.wide.position, toGame(RIG.cameras.wide.position));

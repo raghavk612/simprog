@@ -1199,8 +1199,8 @@ export default {
       },
       players: 'Modelli dei giocatori',
       playersDesc:
-        'Figure classiche o i nuovi corpi atletici in 3D (beta, creati in Houdini). Con grafica bassa si usano sempre quelle classiche.',
-      playersOptions: { classic: 'Classici', athletes: 'Atleti 3D (beta)' },
+        'Figure classiche o i nuovi corpi atletici in 3D (creati in Houdini). Con grafica bassa si usano sempre quelle classiche.',
+      playersOptions: { classic: 'Classici', athletes: 'Atleti 3D' },
     },
     language: {
       title: 'Lingua',

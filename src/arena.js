@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { CLIP_SECONDS, SHOTS, sampleClip, isDunk, family } from './basketball.js';
+import { CLIP_SECONDS, SHOTS, sampleClip, isDunk, family, shotTiming, guardSpot } from './basketball.js';
 import {
   drawScoreboard,
   scoreboardData,
@@ -30,11 +30,13 @@ import {
 import { arenaPlayers, bodyPixels, lodFor } from './graphics.js';
 import { ballMaterial } from './materials.js';
 import { BroadcastLook } from './broadcast.js';
-import { animateAthlete } from './motion.js';
+import { animateAthlete, facingWeight, mixAngle, steerYaw, keepApart, SPACE } from './motion.js';
 import { Director } from './director.js';
 import { PerfHud, perfWanted } from './perfHud.js';
 import { titleCamera, flyIn, heroYaw, titleFov, HERO, STILL, titlePath } from './title.js';
 import { seatLayout, hash } from './seating.js';
+import { makeWood } from './courtwood.js';
+import { buildCrowd } from './crowd.js';
 const purple = 0x6832ab;
 export class Arena {
   constructor(host) {
@@ -233,6 +235,34 @@ export class Arena {
     this.scene.add(m);
     return m;
   }
+  /* The maple floor as a canvas (w x h px at pxPerFt), and its varnish wear as this.courtWear: a small grey texture over the
+     whole floor read as a roughness factor (0.45 on fresh varnish up to 1 where it is most worn) by the broadcast look. */
+  courtWood(w, h, pxPerFt, wearAt) {
+    const { rgba, wear } = makeWood(w, h, pxPerFt, wearAt),
+      c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    c.getContext('2d').putImageData(new ImageData(rgba, w, h), 0, 0);
+    const k = 4, // the wear map is a quarter of the size each way: boards are still several pixels long
+      ww = Math.floor(w / k),
+      wh = Math.floor(h / k),
+      data = new Uint8Array(ww * wh * 4);
+    for (let y = 0; y < wh; y++)
+      for (let x = 0; x < ww; x++) {
+        const v = 115 + 0.55 * wear[y * k * w + x * k], // stored as a roughness factor: 0.45 on fresh varnish, 1 fully worn
+          i = ((wh - 1 - y) * ww + x) * 4; // bottom row first: texture v runs up, canvas rows run down
+        data[i] = data[i + 1] = data[i + 2] = v;
+        data[i + 3] = 255;
+      }
+    const t = new THREE.DataTexture(data, ww, wh, THREE.RGBAFormat);
+    t.magFilter = THREE.LinearFilter;
+    t.minFilter = THREE.LinearMipmapLinearFilter;
+    t.generateMipmaps = true;
+    t.anisotropy = this.aniso || 8;
+    t.needsUpdate = true;
+    this.courtWear = t;
+    return c;
+  }
   /* NFHS high-school court (84'x50') on the 32x20 floor at 128 px per world unit. Feet->units is solved so the basket centre, 5'3" in from the baseline, sits exactly under the 3D rims at x=+-12.15 (1 ft = 0.3306 u; baselines at +-13.89, sidelines at +-8.27). */
   court() {
     const S = Math.min(1, (this.renderer.capabilities.maxTextureSize || 4096) / 4096),
@@ -254,28 +284,25 @@ export class Arena {
         const s = Math.sin(n * 127.1) * 43758.5453;
         return s - Math.floor(s);
       };
+    // maple strips (src/courtwood.js) at the canvas's own resolution, made once; the paint below is redrawn over it
+    const wood = this.courtWood(c.width, c.height, F * S, (px, py) => {
+      // traffic wear in feet from the court's centre: the paint under both baskets and the centre circle
+      const fx = (px / S - cx) / F,
+        fy = (py / S - cy) / F,
+        g = (dx, sx, sy) => Math.exp(-(dx * dx) / (2 * sx * sx) - (fy * fy) / (2 * sy * sy));
+      return 0.55 * (g(fx - 31, 9, 8) + g(fx + 31, 9, 8)) + 0.3 * g(fx, 7, 7);
+    });
+    const STAIN = 'rgba(86,31,172,.86)'; // a stain: the grain shows through, and over average maple it comes out the gym purple #6934a5
     const draw = () => {
       x.setTransform(S, 0, 0, S, 0, 0);
       x.fillStyle = '#6934a5';
       x.fillRect(0, 0, 4096, 2560);
-      x.save();
+      x.drawImage(wood, 0, 0, 4096, 2560);
+      x.fillStyle = STAIN; // the apron round the court
       x.beginPath();
+      x.rect(0, 0, 4096, 2560);
       x.rect(cx - L, cy - Wd, 2 * L, 2 * Wd);
-      x.clip();
-      for (let r = 0, y = cy - Wd; y < cy + Wd; r++, y += U * 0.5) {
-        let px = cx - L - R(r + 1) * U * 2.4;
-        for (let k = 0; px < cx + L; k++) {
-          const len = U * (1.9 + R(r * 31 + k) * 1.5);
-          x.fillStyle = ['#d9ad76', '#d2a46d', '#dfb683', '#d6a972'][Math.floor(R(r * 7 + k * 13 + 0.5) * 4)];
-          x.fillRect(px, y, len, U * 0.5);
-          x.fillStyle = 'rgba(110,70,35,.2)';
-          x.fillRect(px, y, 3, U * 0.5);
-          px += len;
-        }
-        x.fillStyle = 'rgba(110,70,35,.14)';
-        x.fillRect(cx - L, y, 2 * L, 2);
-      }
-      x.restore();
+      x.fill('evenodd');
       x.strokeStyle = '#fff6e4';
       x.lineWidth = lw;
       for (const s of [1, -1]) {
@@ -286,7 +313,7 @@ export class Arena {
           fc = -L + 19 * F - lw / 2,
           r3 = 19.75 * F - lw / 2,
           h8 = (8 / 12) * F;
-        x.fillStyle = '#6934a5';
+        x.fillStyle = STAIN;
         x.fillRect(-L, -lane, 19 * F, 2 * lane);
         x.strokeRect(-L + lw / 2, -lane + lw / 2, 19 * F - lw, 2 * lane - lw); // 12' lane, free-throw line 15' from the backboard (19' from the baseline)
         x.beginPath();
@@ -319,7 +346,9 @@ export class Arena {
       if (logo.naturalWidth) {
         const w = 880,
           h = (w * logo.naturalHeight) / logo.naturalWidth;
+        x.globalAlpha = 0.9; // painted on the wood, like the lane
         x.drawImage(logo, cx - w / 2, cy - h / 2, w, h);
+        x.globalAlpha = 1;
       } else if (logo.failed) {
         x.fillStyle = '#6934a5';
         x.font = 'italic 900 420px "Barlow Condensed",Arial,sans-serif';
@@ -484,17 +513,20 @@ export class Arena {
       this.people.push(player);
       this.scene.add(player);
     }
+    // ball (placed by the plays) > spinner (turned by spinBall, lowered by settleBall) > sphere and seams
     this.ball = new THREE.Group();
+    this.ballSpinner = new THREE.Group();
+    this.ball.add(this.ballSpinner);
     const sphere = new THREE.Mesh(
       new THREE.SphereGeometry(0.28, 24, 16),
       this.mat(0xe9832a, { roughness: 0.85 }),
     );
-    this.ball.add(sphere);
+    this.ballSpinner.add(sphere);
     for (let i = 0; i < 3; i++) {
       const seam = new THREE.Mesh(new THREE.TorusGeometry(0.282, 0.009, 4, 48), this.mat(0x392318));
       if (i === 1) seam.rotation.x = Math.PI / 2;
       if (i === 2) seam.rotation.y = Math.PI / 2;
-      this.ball.add(seam);
+      this.ballSpinner.add(seam);
     }
     this.scene.add(this.ball);
     // Program spaces share the gym: imported furniture, jersey wall, and coach desk.
@@ -551,7 +583,7 @@ export class Arena {
   }
   /* With the athletes the ball is drawn at its real size (24 cm across) in pebbled leather; classic keeps the bigger toy ball. Presentation only. */
   styleBall(real) {
-    const sphere = this.ball?.children[0];
+    const sphere = this.ballSpinner?.children[0];
     if (!sphere) return;
     this.ballReal = real;
     sphere.userData.classic ??= sphere.material;
@@ -561,8 +593,42 @@ export class Arena {
     } else {
       sphere.material = sphere.userData.classic;
       this.ball.scale.setScalar(1);
-      this.ball.children.forEach(c => (c.position.y = 0));
+      this.ballSpinner.position.y = 0;
     }
+  }
+  /* Turns the ball the way a real one turns, from how it moved since the last frame: backspin on a shot (about two turns a
+     second, top spinning back toward the shooter), rolling when it runs along the floor, and slowed by the hands while a
+     player holds or dribbles it. In the air with nobody touching it, it keeps the spin it had. */
+  spinBall(shot) {
+    const b = this.ball,
+      dt = this.frameDt || 0,
+      w = (this.ballSpin ??= new THREE.Vector3()),
+      last = (this.ballLast ??= b.position.clone());
+    if (!dt) return;
+    const v = b.position.clone().sub(last).divideScalar(dt);
+    last.copy(b.position);
+    if (v.lengthSq() > 900) return; // a jump (new play, teleport): not a movement
+    const R = 0.13, // the real ball's radius; spin is drawn the same on the classic ball
+      roll = new THREE.Vector3(v.z, 0, -v.x).divideScalar(R), // up x velocity: rolling forward along the motion
+      onFloor = b.position.y < 0.36;
+    let want = null,
+      rate = 0;
+    if (shot) {
+      want = roll.lengthSq() > 1e-6 ? roll.normalize().multiplyScalar(-12.5) : null;
+      rate = 10;
+    } else if (this.holder) {
+      want = roll.multiplyScalar(0.15);
+      rate = 8;
+    } else if (onFloor) {
+      want = roll;
+      rate = 25;
+    }
+    if (want) w.lerp(want, 1 - Math.exp(-rate * dt));
+    const a = w.length() * dt;
+    if (a > 1e-6)
+      this.ballSpinner.quaternion.premultiply(
+        new THREE.Quaternion().setFromAxisAngle(w.clone().normalize(), a),
+      );
   }
   /* The plays place the ball for the classic 0.28 ball; near the floor the smaller real ball drops by the difference so its bounces still touch the wood. Drawing only: the ball's position is untouched. */
   settleBall() {
@@ -570,7 +636,7 @@ export class Arena {
     const s = this.ball.scale.x,
       y = this.ball.position.y,
       drop = (0.28 - 0.13) * Math.max(0, Math.min(1, 1 - (y - 0.28) / 1.2));
-    this.ball.children.forEach(c => (c.position.y = -drop / s));
+    this.ballSpinner.position.y = -drop / s;
   }
   /* Gives one player the body the current setting asks for: classic, or the athlete variant for his position. */
   styleBody(p) {
@@ -646,37 +712,15 @@ export class Arena {
     }
   }
   /* Bleachers (layout in src/seating.js): six rows on both sidelines, four behind each baseline cut around the props there; solid risers (no hollow gaps), a lit ribbon on each front rail, aisles,
-    and one instanced seated crowd sized to the players, turned to face the court. Seats on the title jib's path stay empty so no fan fills its lens. */
+    and the instanced seated crowd (src/crowd.js) sized to the players, turned to face the court. Seats on the title jib's path stay empty so no fan fills its lens. */
   stands() {
     const { risers, rails, seats } = seatLayout(titlePath());
     for (const [w, h, d, x, y, z] of rails) this.glow(this.box(w, h, d, 0xa76aff, x, y, z), 0x8e43ed, 2.4);
     for (const [w, h, d, x, y, z, odd] of risers) this.box(w, h, d, odd ? 0x7e51b1 : 0x4e2b78, x, y, z);
-    const torso = new THREE.InstancedMesh(
-        new THREE.BoxGeometry(0.42, 0.56, 0.28),
-        this.mat(0xffffff),
-        seats.length,
-      ),
-      head = new THREE.InstancedMesh(new THREE.SphereGeometry(0.17, 10, 8), this.mat(0xffffff), seats.length),
-      m = new THREE.Matrix4(),
-      col = new THREE.Color();
-    seats.forEach(({ x, y, z, ry, h, n }, i) => {
-      torso.setMatrixAt(i, m.makeRotationY(ry).setPosition(x, y + 0.28 + h, z));
-      torso.setColorAt(
-        i,
-        col.set([0x6832ab, 0xf3ecff, 0xe9b858, 0x3d1d66, 0x7541b0, 0x6832ab][Math.floor(hash(n + 0.7) * 6)]),
-      );
-      head.setMatrixAt(i, m.makeTranslation(x, y + 0.75 + h, z));
-      head.setColorAt(
-        i,
-        col.set([0xca9e79, 0x8c5f41, 0xf2cbab, 0x6b4430, 0xe0b48c][Math.floor(hash(n + 0.9) * 5)]),
-      );
-    });
-    for (const o of [torso, head]) {
-      o.castShadow = true;
-      o.receiveShadow = true;
-      this.scene.add(o);
-    }
-    this.crowd = [torso, head];
+    // the seated crowd (src/crowd.js): four instanced meshes, swaying on the GPU
+    this.fans = buildCrowd(seats, hash);
+    for (const o of this.fans.meshes) this.scene.add(o);
+    this.crowd = this.fans.meshes;
   }
 
   async importModels() {
@@ -1275,11 +1319,35 @@ export class Arena {
       z: f.z + (target.z - f.z) * s,
     };
   }
+  /* The way a player's body faces: the play's facing, turned toward where he is running by facingWeight (motion.js), and
+     steered at a human turning speed instead of snapping. Ground speed is measured from his drawn positions. */
+  faceYaw(player, pose) {
+    const u = player.userData,
+      dt = this.frameDt || 0,
+      last = u.faceLast;
+    u.faceLast = { x: pose.x, z: pose.z };
+    if (!this.motion || u.faceYaw === undefined || !last) return (u.faceYaw = pose.yaw);
+    if (!dt) return u.faceYaw;
+    const dx = pose.x - last.x,
+      dz = pose.z - last.z,
+      d = Math.hypot(dx, dz);
+    if (d > 1.5) return (u.faceYaw = pose.yaw); // a jump to a new spot: no turning
+    const speed = (u.faceSpeed =
+      (u.faceSpeed || 0) + (d / dt - (u.faceSpeed || 0)) * (1 - Math.exp(-8 * dt)));
+    if (d > 1e-4) u.faceTravel = Math.atan2(dx, dz);
+    const off =
+        u.faceTravel === undefined
+          ? 0
+          : Math.abs(Math.atan2(Math.sin(u.faceTravel - pose.yaw), Math.cos(u.faceTravel - pose.yaw))),
+      w = Math.max(0, Math.min(1, facingWeight(speed, pose.arms, off) || 0)),
+      want = u.faceTravel === undefined ? pose.yaw : mixAngle(pose.yaw, u.faceTravel, w);
+    return (u.faceYaw = steerYaw(u.faceYaw, want, dt));
+  }
   posePlayer(player, pose, t, ease = 1) {
     const u = player.userData,
       run = (u.run = ease >= 1 || u.run === undefined ? pose.run : u.run + (pose.run - u.run) * ease);
     player.position.set(pose.x, pose.y, pose.z);
-    player.rotation.set(0, pose.yaw, 0);
+    player.rotation.set(0, this.faceYaw(player, pose), 0);
     u.legs.forEach((leg, j) => {
       leg.rotation.set(Math.sin(t * 11 + j * Math.PI) * 0.65 * run, 0, 0);
       leg.userData.knee.rotation.x = Math.max(0, -Math.sin(t * 11 + j * Math.PI)) * 0.8 * run;
@@ -1387,6 +1455,9 @@ export class Arena {
       if (titled && !still) this.titleClock = (this.titleClock || 0) + dt;
     }
     this.frameDt = this.event && this.paused ? 0 : dt * (this.event ? this.speed || 1 : 1);
+    // the crowd breathes and sways, and bounces for a few seconds after a Kangs basket (still with reduced motion)
+    this.cheer = this.motion ? (this.cheer || 0) * Math.exp(-dt * 0.7) : 0;
+    this.fans?.update(this.motion ? dt : 0, Math.min(1, this.cheer * 1.6));
     // One continuous stride/dribble clock, so legs and arms never jump when a clip restarts.
     this.gait =
       (this.gait || 0) +
@@ -1410,6 +1481,7 @@ export class Arena {
         clipTime = Math.min(CLIP_SECONDS, this.playTime - index * CLIP_SECONDS);
       // New clip: re-order bodies (never re-dress them) so the clip's defender is people[0], then ease everyone from where they stand.
       if (index !== this.clipIndex) {
+        this.spacing = {}; // bodies are re-ordered for the new play; it starts from where everyone is drawn
         this.clipIndex = index;
         const lineup = this.event.lineup || this.state?.players.filter(p => p.starter) || [];
         let home = [...lineup];
@@ -1430,17 +1502,23 @@ export class Arena {
         o = clip.team === 'home' ? 0 : 5,
         ease = !this.motion ? 1 : this.paused ? 0 : 1 - Math.exp(-dt * this.speed * 22);
       const tr = this.transit;
-      pose.actors.forEach((p, i) =>
-        this.posePlayer(
-          this.people[i],
+      // where the play wants everyone, then personal space (motion.js keepApart): about 3 ft apart, going round each other
+      // instead of through; the ball handler is never pushed, and the defender contesting him may come a little closer
+      const wanted = pose.actors.map((p, i) =>
           this.blend(
             this.people[i].userData.from,
             tr ? { ...p, arms: i === o ? 'dribble' : 'run' } : p,
             tr ? tr.t : clipTime,
           ),
-          this.gait,
-          ease,
         ),
+        mk = 5 - o,
+        kept = keepApart((this.spacing ??= {}), wanted, {
+          pinned: new Set([o]),
+          dt: this.motion ? this.frameDt : 0,
+          gap: (i, j) => ((i === o && j === mk) || (i === mk && j === o) ? SPACE.contest : SPACE.min),
+        });
+      wanted.forEach((w, i) =>
+        this.posePlayer(this.people[i], { ...w, x: kept[i].x, z: kept[i].z }, this.gait, ease),
       );
       // While a player is still easing into place the ball stays in his hands (the handler, or the defender after a steal).
       const sm = x => ((x = Math.max(0, Math.min(1, x))), x * x * (3 - 2 * x)),
@@ -1451,7 +1529,7 @@ export class Arena {
         a = off(o),
         b = off(5 - o),
         st = clip.outcome === 'steal' ? sm((u - 0.27) / 0.09) : 0,
-        hold = 1 - sm((u - 0.55) / 0.06);
+        hold = 1 - sm((u - shotTiming(clip.kind).release + 0.06) / 0.06);
       // in transition the new ball handler dribbles it up the floor (after a short pass to him if it is elsewhere)
       const h = this.people[o],
         hy = h.rotation.y,
@@ -1471,17 +1549,13 @@ export class Arena {
         tr ? tr.t : clipTime,
       );
       this.ball.position.set(ball.x, ball.y, ball.z);
-      this.ball.rotation.set(this.gait * 6, 0, this.gait * 2);
+      this.spinBall(pose.flying);
       this.focusRing.visible = true;
       this.focusRing.position.x = this.people[o].position.x;
       this.focusRing.position.z = this.people[o].position.z;
       this.nets.forEach(n => (n.mesh.rotation.y = n.side === (clip.team === 'home' ? 1 : -1) ? pose.net : 0));
       this.trail.forEach((d, i) => {
-        d.visible =
-          this.motion &&
-          clipTime > CLIP_SECONDS * 0.61 &&
-          clipTime < CLIP_SECONDS * 0.9 &&
-          clip.outcome !== 'steal';
+        d.visible = this.motion && pose.flying;
         if (d.visible) {
           const previous = sampleClip(clip, Math.max(0, clipTime - i * 0.025)).ball;
           d.position.set(previous.x, previous.y, previous.z);
@@ -1491,6 +1565,11 @@ export class Arena {
       const impact = `${this.run}|${index}`;
       if (presentation.resolved && this.impactKey !== impact) {
         this.impactKey = impact;
+        // the home crowd jumps up for a Kangs basket (longest for a three or a dunk) and for a stop on defence
+        const big = SHOTS[clip.kind]?.three || isDunk(clip.kind);
+        if (clip.points && clip.team === 'home') this.cheer = big ? 1.6 : 1;
+        else if (clip.team === 'away' && (clip.outcome === 'block' || clip.outcome === 'steal'))
+          this.cheer = 1;
         if (isDunk(clip.kind) && clip.points) this.shake = 0.24;
         else if (clip.outcome === 'block') this.shake = 0.18;
       }
@@ -1515,8 +1594,11 @@ export class Arena {
       this.people.forEach((p, i) => {
         const k = i % 5,
           hero = titled && i === 2,
-          tx = hero ? HERO.x : [-6, -2, 4, 8, 1][k] + (i >= 5 ? 1 : 0),
-          tz = hero ? HERO.z : [-4, 4, -3, 3, 0][k],
+          spot = { x: [-6, -2, 4, 8, 1][k], z: [-4, 4, -3, 3, 0][k] },
+          // a visitor stands guard on his Kangs man: about 5.5 ft off him, between him and the basket they attack (+x)
+          guard = i >= 5 ? guardSpot(spot, 1, 1.7) : spot,
+          tx = hero ? HERO.x : guard.x,
+          tz = hero ? HERO.z : guard.z,
           rest = hero ? heroYaw() : i < 5 ? Math.PI / 2 : -Math.PI / 2,
           dx = tx - p.position.x,
           dz = tz - p.position.z,
@@ -1546,6 +1628,7 @@ export class Arena {
           ? ((this.ballFrom = { ...at, t0: this.idleClock }), at)
           : this.blendBall(at, this.idleClock);
       this.ball.position.set(b.x, b.y, b.z);
+      this.spinBall(false);
       this.trail.forEach(d => (d.visible = false));
     }
     this.posed = true;

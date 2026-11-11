@@ -1141,8 +1141,8 @@ export default {
       graphicsOptions: { auto: 'ऑटो', low: 'कम (सबसे तेज़)', medium: 'मध्यम', high: 'उच्च (सबसे स्पष्ट)' },
       players: 'खिलाड़ी मॉडल',
       playersDesc:
-        'क्लासिक आकृतियाँ, या नए एथलेटिक 3D शरीर (बीटा, Houdini में बने)। लो ग्राफ़िक्स पर हमेशा क्लासिक दिखते हैं।',
-      playersOptions: { classic: 'क्लासिक', athletes: '3D एथलीट (बीटा)' },
+        'क्लासिक आकृतियाँ, या नए एथलेटिक 3D शरीर (Houdini में बने)। लो ग्राफ़िक्स पर हमेशा क्लासिक दिखते हैं।',
+      playersOptions: { classic: 'क्लासिक', athletes: '3D एथलीट' },
     },
     language: {
       title: 'भाषा',

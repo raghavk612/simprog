@@ -45,8 +45,12 @@ export const A11Y_DEFAULTS = {
   timingAssist: false,
   simplifiedUI: false,
   graphics: 'auto',
-  players: 'classic',
+  players: 'athletes',
+  modelsVersion: 2,
 };
+/* Settings saved before the 3D athletes became the default (modelsVersion missing) hold 'classic' only because it was the
+   old default, so they take the new one once; a choice saved since then is kept. */
+const MODELS_VERSION = 2;
 const cache = {};
 export function normalizeSound(raw) {
   const r = raw && typeof raw === 'object' ? raw : {},
@@ -74,7 +78,8 @@ export function normalizeA11y(raw, base = A11Y_DEFAULTS) {
     timingAssist: bool(r.timingAssist, d.timingAssist),
     simplifiedUI: bool(r.simplifiedUI, d.simplifiedUI),
     graphics: pick(r.graphics, GRAPHICS_LEVELS, d.graphics),
-    players: pick(r.players, PLAYER_MODELS, d.players),
+    players: r.modelsVersion === MODELS_VERSION ? pick(r.players, PLAYER_MODELS, d.players) : d.players,
+    modelsVersion: MODELS_VERSION,
   };
 }
 // First visit: adopt the operating-system preferences for motion and contrast.
@@ -114,8 +119,9 @@ export const setA11y = patch => commitA11y(normalizeA11y({ ...getA11y(), ...patc
 export const resetA11y = () => commitA11y({ ...A11Y_DEFAULTS });
 // Number of accessibility options that differ from their defaults (shown as a badge on the tab).
 export const activeA11yCount = (s = getA11y()) =>
-  Object.keys(A11Y_DEFAULTS).filter(k => k !== 'graphics' && k !== 'players' && s[k] !== A11Y_DEFAULTS[k])
-    .length;
+  Object.keys(A11Y_DEFAULTS).filter(
+    k => !['graphics', 'players', 'modelsVersion'].includes(k) && s[k] !== A11Y_DEFAULTS[k],
+  ).length;
 export const isTouchOnly = () =>
   typeof matchMedia === 'function' && matchMedia('(hover: none) and (pointer: coarse)').matches;
 // Mirrors the settings onto <html> as classes and custom properties; the stylesheet does the rest.

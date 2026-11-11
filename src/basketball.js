@@ -32,6 +32,31 @@ const smooth = t => {
   t = clamp(t);
   return t * t * (3 - 2 * t);
 };
+/* A route through its waypoints as a smooth curve (centripetal Catmull-Rom, which never loops or overshoots on a sharp cut),
+   as a dense polyline: players round their cuts the way real ones do instead of turning on the spot at each waypoint. */
+export function smoothRoute(points, steps = 10) {
+  if (points.length < 3) return points;
+  const P = [points[0], ...points, points[points.length - 1]],
+    out = [points[0]],
+    knot = (a, b) => Math.max(1e-4, Math.sqrt(Math.hypot(b[0] - a[0], b[1] - a[1])));
+  for (let i = 1; i < P.length - 2; i++) {
+    const [p0, p1, p2, p3] = [P[i - 1], P[i], P[i + 1], P[i + 2]],
+      t1 = knot(p0, p1),
+      t2 = t1 + knot(p1, p2),
+      t3 = t2 + knot(p2, p3);
+    for (let k = 1; k <= steps; k++) {
+      const t = t1 + ((t2 - t1) * k) / steps,
+        L = (a, b, ta, tb) => [0, 1].map(j => ((tb - t) * a[j] + (t - ta) * b[j]) / (tb - ta)),
+        A1 = L(p0, p1, 0, t1),
+        A2 = L(p1, p2, t1, t2),
+        A3 = L(p2, p3, t2, t3),
+        B1 = L(A1, A2, 0, t2),
+        B2 = L(A2, A3, t1, t3);
+      out.push(L(B1, B2, t1, t2));
+    }
+  }
+  return out;
+}
 /* A point along a route at fraction t of its length: an even speed through the waypoints (no stop at each corner), so the
    overall run curve alone decides how a player speeds up and slows down. */
 function path(points, t) {
@@ -252,6 +277,73 @@ export function describePlay(c, rng) {
   }
   return { text: renderCommentary(c, cm), cm };
 }
+/* ---- Ball physics for the plays (game units: the rim is 10 ft up at y 3.28, so 1 ft = 0.328) ---- */
+export const BALL = {
+  g: 32.2 * 0.328, // gravity in game units per second squared
+  floor: 0.3, // the ball's centre when it touches the floor (the plays place the classic ball, see Arena.settleBall)
+  rim: 3.28,
+  bounce: 0.75, // a basketball keeps about three quarters of its speed off a hardwood floor
+  arrive: 0.86, // fraction of the clip at which every shot reaches the rim (the score is shown then)
+  hand: 2.3, // shooting pocket height before the jump
+};
+/* Where a thrown or bouncing ball is `tau` seconds after leaving p with velocity v: gravity, and bounces off the floor that
+   keep BALL.bounce of the speed. Horizontal speed is constant (the plays are too short for floor friction to show). */
+export function fly(p, v, tau) {
+  const g = BALL.g;
+  let y = Math.max(BALL.floor, p.y),
+    vy = v.y,
+    t = Math.max(0, tau);
+  for (let n = 0; n < 24; n++) {
+    const hit = (vy + Math.sqrt(vy * vy + 2 * g * (y - BALL.floor))) / g; // time until it reaches the floor
+    if (t <= hit) {
+      y += vy * t - 0.5 * g * t * t;
+      break;
+    }
+    t -= hit;
+    vy = (g * hit - vy) * BALL.bounce;
+    y = BALL.floor;
+    if (vy < 0.4) break; // settled
+  }
+  return { x: p.x + v.x * tau, y: Math.max(BALL.floor, y), z: p.z + v.z * tau };
+}
+/* The launch velocity that carries a ball from p to q in T seconds under gravity. */
+export const launch = (p, q, T) => ({
+  x: (q.x - p.x) / T,
+  y: (q.y - p.y + 0.5 * BALL.g * T * T) / T,
+  z: (q.z - p.z) / T,
+});
+/* A shot's timeline as fractions of the clip. The ball rises `rise` above the rim (higher arcs for jump shots, almost none
+   for a dunk), so its flight time follows from gravity; the release comes that long before the ball reaches the rim, at the
+   top of the jump, and the run, the gather and the jump are placed around it. */
+export function shotTiming(kind) {
+  const fam = family(kind),
+    spec = SHOTS[kind] || SHOTS.pullup,
+    jump = fam === 'dunk' ? 1.2 : fam === 'drive' || fam === 'roll' ? 0.65 : 0.8,
+    y0 = BALL.hand + jump,
+    apex = Math.max(y0, BALL.rim) + spec.arc * 0.45,
+    flight = Math.sqrt((2 * (apex - y0)) / BALL.g) + Math.sqrt((2 * (apex - BALL.rim)) / BALL.g),
+    release = BALL.arrive - flight / CLIP_SECONDS;
+  return {
+    flight,
+    release,
+    jump,
+    y0,
+    gather: release - 0.18,
+    takeoff: release - 0.15,
+    arrive: release - 0.13,
+  };
+}
+/* ---- Spacing (game units; 1 ft = 0.33) ---- */
+/* A defender's spot for a man at {x,z}: `gap` units from him toward the rim. Without a gap: a third of the way to the rim,
+   at least 4 ft and at most 8 ft off him, the way an off-ball defender sits between his man and the basket. */
+export function guardSpot(man, side, gap = null) {
+  const dx = 12.15 * side - man.x,
+    dz = -man.z,
+    d = Math.hypot(dx, dz) || 1,
+    // near the rim the gap shrinks with the room left, but never to nothing: the defender stays on the rim side of his man
+    g = Math.min(Math.max(0.3, d - 0.4), gap ?? Math.max(1.3, Math.min(2.6, d * 0.33)));
+  return { x: man.x + (dx / d) * g, z: man.z + (dz / d) * g };
+}
 // Sample any point in a recorded clip. Same clip + time always gives the same pose.
 // Coordinates are mirrored for the visitors, so both baskets are used.
 export function sampleClip(c, time) {
@@ -272,38 +364,43 @@ export function sampleClip(c, time) {
           : fam === 'dunk'
             ? [start, [1, 2.5 * lane], [6, 1.4 * lane], end]
             : [start, [5, 4.6 * lane], [6.6, 1.5 * lane], [8.2, 3 * lane], end];
+  // the shot's timeline (shotTiming): rel = release at the top of the jump; d shifts the old fixed beats (release at 0.61)
+  const T = shotTiming(c.kind),
+    rel = T.release,
+    d = rel - 0.61;
   const hop = u =>
-    u >= 0.48 && u <= 0.78
-      ? Math.sin(((u - 0.48) / 0.3) * Math.PI) *
-        (fam === 'dunk' ? 1.2 : fam === 'drive' || fam === 'roll' ? 0.65 : 0.8)
-      : 0;
-  const m0 = clamp(t / 0.5),
+    u >= T.takeoff && u <= T.takeoff + 0.3 ? Math.sin(((u - T.takeoff) / 0.3) * Math.PI) * T.jump : 0;
+  const m0 = clamp(t / T.arrive),
     movement = 0.35 * m0 + 0.65 * smooth(m0),
-    at = path(route, movement), // an even run with a gentle start and finish (peak speed 1.3x the average)
-    gather = clamp((t - 0.43) / 0.14),
+    at = path(smoothRoute(route), movement), // an even run with a gentle start and finish (peak speed 1.3x the average)
+    gather = clamp((t - T.gather) / 0.14),
     jump = hop(t);
   const offense = c.team === 'home' ? 0 : 5,
     defense = c.team === 'home' ? 5 : 0;
+  // The offense spreads round the arc (spots in units from half court, the rim at x 12.15) and drifts as the play develops.
+  const SPOTS = [
+    [2, 4.7],
+    [3, -5.5],
+    [8, 5.7],
+    [9, -4.4],
+    [6, 0],
+  ];
   const actors = Array.from({ length: 10 }, (_, i) => {
-    const k = i % 5;
-    const off = i >= offense && i < offense + 5;
-    const base = [
-      [2, 4.7],
-      [3, -5.5],
-      [8, 5.7],
-      [9, -4.4],
-      [6, 0],
-    ][k];
+    const k = i % 5,
+      off = i >= offense && i < offense + 5,
+      base = SPOTS[k];
     return {
-      x: (base[0] + (off ? Math.sin(t * 3 + k) * 0.7 : 0.9)) * side,
+      x: (base[0] + (off ? Math.sin(t * 3 + k) * 0.7 : 0)) * side,
       y: 0,
-      z: base[1] + (off ? 0 : 0.8),
+      z: base[1],
       yaw: (side * Math.PI) / 2,
       run: off ? 0.35 : 0.25,
       arms: off ? 'run' : 'defend',
       jump: 0,
     };
   });
+  // Defenders start on their man's guard spot (guardSpot): between him and the basket.
+  for (let k = 0; k < 5; k++) Object.assign(actors[defense + k], guardSpot(actors[offense + k], side));
   // Every value below is continuous in t: actors and ball ease between beats instead of snapping.
   const shooter = actors[offense],
     marker = actors[defense];
@@ -311,36 +408,36 @@ export function sampleClip(c, time) {
     x: at[0] * side,
     y: jump,
     z: at[1],
-    run: 1 - smooth((t - 0.42) / 0.08),
-    arms: t < 0.43 ? 'dribble' : t < 0.8 ? (fam === 'hook' ? 'hook' : 'shoot') : 'relax',
+    run: 1 - smooth((t - T.arrive + 0.08) / 0.08),
+    arms: t < T.gather ? 'dribble' : t < rel + 0.19 ? (fam === 'hook' ? 'hook' : 'shoot') : 'relax',
     yaw: Math.atan2((12.15 - at[0]) * side, -at[1]),
   });
-  const separation = c.contest === 'open' ? 1.9 : c.contest === 'tight' ? 0.45 : 1;
-  marker.x = (at[0] + separation) * side;
-  marker.z = at[1] + 0.5 * lane;
-  marker.yaw = (-side * Math.PI) / 2;
-  marker.run = 0.85 - 0.75 * smooth((t - 0.45) / 0.08);
+  // the on-ball defender: between the shooter and the rim, 3 ft off on a tight contest, 4.5 ft normally, 7.5 ft when open
+  const separation = c.contest === 'open' ? 2.5 : c.contest === 'tight' ? 1 : 1.5;
+  Object.assign(marker, guardSpot(shooter, side, separation));
+  marker.run = 0.85 - 0.75 * smooth((t - 0.45 - d) / 0.08);
   const defenseJump =
-    t >= 0.5 && t <= 0.81
-      ? Math.sin(((t - 0.5) / 0.31) * Math.PI) *
+    t >= 0.5 + d && t <= 0.81 + d
+      ? Math.sin(((t - 0.5 - d) / 0.31) * Math.PI) *
         (c.outcome === 'block' ? 1.05 : c.contest === 'open' ? 0.22 : 0.7)
       : 0;
   marker.y = defenseJump;
-  marker.arms = t > 0.48 && t < 0.82 ? 'block' : 'defend';
+  marker.arms = t > 0.48 + d && t < 0.82 + d ? 'block' : 'defend';
   if (fam === 'drive' || fam === 'floater' || fam === 'roll') {
-    marker.z += Math.sin(t * 12) * 0.7;
-    marker.x -= Math.sin(t * Math.PI) * side * 0.6;
+    marker.z += Math.sin(t * 12) * 0.35; // slides with the driver's moves
+    marker.x += Math.sin(t * Math.PI) * side * 0.3; // and gives ground toward the basket
   }
   // A second defender slides from the weak side to help at the basket.
   const help = actors[defense + 2];
   help.x = lerp(9, 11, t) * side;
   help.z = lerp(-4 * lane, -0.9 * lane, smooth(t / 0.6));
-  help.arms = t > 0.48 && t < 0.8 ? 'block' : 'defend';
+  help.arms = t > 0.48 + d && t < 0.8 + d ? 'block' : 'defend';
   help.y = defenseJump * 0.6;
   const screen = actors[offense + 1];
   if (fam === 'roll') {
-    screen.x = 5.8 * side;
-    screen.z = 3 * lane;
+    // set beside the handler's path (about 3.5 ft off it), so he runs off the screener's shoulder instead of through him
+    screen.x = 4.8 * side;
+    screen.z = 2.5 * lane;
     screen.run = 0;
     screen.arms = 'screen';
   }
@@ -355,8 +452,11 @@ export function sampleClip(c, time) {
   // Off-ball cuts and closeouts: players do not just oscillate in place.
   actors[offense + 2].x = lerp(4, 10, smooth(t)) * side;
   actors[offense + 2].z = lerp(-5, 3, smooth(t)) * lane;
-  actors[defense + 3].x = lerp(9, 5, t) * side;
-  actors[defense + 3].z = -5 * lane;
+  // the cutter's man trails him; the weak-side defender sags into the lane, then closes out to his man
+  Object.assign(actors[defense + 3], {
+    x: lerp(10.2 * side, actors[defense + 3].x, smooth(t)),
+    z: lerp(-1.8 * lane, actors[defense + 3].z, smooth(t)),
+  });
   const mix = (a, b, w) => ({ x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), z: lerp(a.z, b.z, w) });
   let ball = { x: shooter.x + 0.38 * side, y: 0.3 + Math.abs(Math.sin(t * 45)) * 0.95, z: shooter.z + 0.15 };
   if (fam === 'catch') {
@@ -376,58 +476,50 @@ export function sampleClip(c, time) {
       smooth((t - 0.17) / 0.08),
     );
   }
-  const pickup = 0.3 + Math.abs(Math.sin(0.43 * 45)) * 0.95;
-  if (t >= 0.43 && t < 0.61) {
+  const pickup = 0.3 + Math.abs(Math.sin(T.gather * 45)) * 0.95;
+  if (t >= T.gather && t < rel) {
     ball = {
       x: shooter.x + lerp(0.38, 0.28, gather) * side,
-      y: lerp(pickup, 2.3, gather) + jump,
+      y: lerp(pickup, BALL.hand, gather) + jump,
       z: shooter.z + lerp(0.15, 0, gather),
     };
   }
-  const release = { x: (end[0] + 0.28) * side, y: 2.3 + hop(0.61), z: end[1] },
-    flight = u => {
-      const q = clamp((u - 0.61) / 0.25);
-      return {
-        x: lerp(release.x, 12.15 * side, q),
-        y: lerp(release.y, 3.28, q) + Math.sin(q * Math.PI) * spec.arc,
-        z: lerp(release.z, 0, q),
-      };
-    };
-  if (t >= 0.61) ball = flight(t);
-  // A make drops through the net, hits the floor and bounces out; a miss caroms off the rim.
-  if (t > 0.86) {
-    const q = clamp((t - 0.86) / 0.14);
-    if (c.points) {
-      const f = clamp(q / 0.5),
-        u = clamp((q - 0.5) / 0.5);
-      ball = {
-        x: (12.15 - 1.1 * smooth(u)) * side,
-        y: q < 0.5 ? 3.28 - 2.98 * f * f : 0.3 + Math.sin(u * Math.PI) * 0.7,
-        z: 0.35 * lane * smooth(u),
-      };
-    } else
-      ball = {
-        x: lerp(12.15, 9, q) * side,
-        y: 3.28 - Math.sin((q * Math.PI) / 2) * 1.8,
-        z: lerp(0, -2 * lane, q),
-      };
-  }
+  // In flight the ball follows a true parabola under gravity from the release to the rim (constant speed across the floor).
+  const sec = CLIP_SECONDS,
+    release = { x: (end[0] + 0.28) * side, y: BALL.hand + hop(rel), z: end[1] },
+    rim = { x: 12.15 * side, y: BALL.rim, z: 0 },
+    shot = launch(release, rim, T.flight),
+    flight = u => fly(release, shot, (Math.min(u, BALL.arrive) - rel) * sec);
+  if (t >= rel) ball = flight(t);
+  // A make slows in the net, drops and bounces; a miss caroms off the rim towards the rebound.
   const land =
     c.outcome === 'block'
       ? { x: 7 * side, y: 1.3, z: -3 * lane }
-      : { x: 9 * side, y: 3.28 - 1.8, z: -2 * lane };
+      : { x: 9 * side, y: BALL.rim - 1.8, z: -2 * lane };
+  if (t > BALL.arrive) {
+    const tau = (t - BALL.arrive) * sec,
+      NET = 0.12; // seconds in the net, at 3 units/s
+    if (c.points)
+      ball =
+        tau < NET
+          ? { x: rim.x, y: BALL.rim - 3 * tau, z: 0 }
+          : fly(
+              { x: rim.x, y: BALL.rim - 3 * NET, z: 0 },
+              { x: -1.2 * side, y: -3, z: 0.5 * lane },
+              tau - NET,
+            );
+    else ball = fly(rim, launch(rim, land, (1 - BALL.arrive) * sec), tau);
+  }
   if (c.outcome === 'block') {
-    const w = smooth((t - 0.52) / 0.13);
-    marker.x = lerp(marker.x, (end[0] + 0.4) * side, w);
-    marker.z = lerp(marker.z, end[1], w);
-    if (t > 0.65) {
-      const from = flight(0.65),
-        q = clamp((t - 0.65) / 0.35);
-      ball = {
-        x: lerp(from.x, land.x, q),
-        y: lerp(from.y, land.y, q) + Math.sin(q * Math.PI) * 0.8,
-        z: lerp(from.z, land.z, q),
-      };
+    const w = smooth((t - 0.52 - d) / 0.13),
+      hit = rel + 0.04; // the block meets the ball just after the release and swats it down and away
+    const up = guardSpot(shooter, side, 0.85); // right up on the shooter to reach the ball
+    marker.x = lerp(marker.x, up.x, w);
+    marker.z = lerp(marker.z, up.z, w);
+    if (t > hit) {
+      const from = flight(hit),
+        span = (1 - hit) * sec;
+      ball = fly(from, { x: (land.x - from.x) / span, y: -2, z: (land.z - from.z) / span }, (t - hit) * sec);
     }
   }
   if (c.outcome === 'steal') {
@@ -457,17 +549,26 @@ export function sampleClip(c, time) {
     rebounder.run = Math.max(rebounder.run, Math.sin(w * Math.PI) * 0.9);
     if (t > 0.84) rebounder.arms = 'rebound';
   }
+  // Defenders face their man (or the ball once the shot is up). Personal space is kept frame by frame by the Arena
+  // (motion.js keepApart), which remembers which side players pass each other on.
+  for (let k = 0; k < 5; k++) {
+    const dfd = actors[defense + k];
+    if (dfd === marker && c.outcome === 'steal' && t > 0.3) continue; // he is dribbling the other way
+    const look = t >= rel && dfd !== marker ? ball : actors[offense + k];
+    if (Math.hypot(look.x - dfd.x, look.z - dfd.z) > 0.05)
+      dfd.yaw = Math.atan2(look.x - dfd.x, look.z - dfd.z);
+  }
   return {
     actors,
     ball,
     phase:
-      t < 0.43
+      t < T.gather
         ? fam === 'catch'
           ? 'Pass & relocate'
           : 'Attack & dribble'
-        : t < 0.61
+        : t < rel
           ? 'Gather & contest'
-          : t < 0.86
+          : t < BALL.arrive
             ? c.outcome === 'block'
               ? 'Shot blocked'
               : c.outcome === 'steal'
@@ -476,7 +577,8 @@ export function sampleClip(c, time) {
             : c.points
               ? 'Basket'
               : 'Rebound',
-    resolved: t >= 0.86,
-    net: c.points && t > 0.86 ? Math.sin(((t - 0.86) * Math.PI) / 0.14) * 0.12 : 0,
+    resolved: t >= BALL.arrive,
+    flying: c.outcome !== 'steal' && t >= rel && (c.outcome === 'block' ? t < rel + 0.04 : t < BALL.arrive),
+    net: c.points && t > BALL.arrive ? Math.sin(((t - BALL.arrive) * Math.PI) / 0.14) * 0.12 : 0,
   };
 }

@@ -4,7 +4,7 @@
 //   wide        -> the high wide angle at the start of a possession
 //   track       -> the low sideline camera on a long lens, following the ball handler
 //   baseline    -> the end-zone camera behind the play (visitors' finishes)
-//   freeThrow   -> behind the shooter, looking at the rim (jump shots), with depth of field
+//   freeThrow   -> behind the shooter, looking at the rim (jump shots), everyone in focus
 //   replayClose -> the low corner camera at the rim (replays), with depth of field
 //   player      -> the existing first-person view (home drives and dunks)
 // Cameras move on critically damped springs (frame-rate independent) with a little look-ahead, and cut (no glide)
@@ -23,8 +23,9 @@ export const RIM_X = 12.15,
   RIM_Y = 3.05;
 /* Field of view per angle (degrees, 16:9). The sideline cameras are long lenses, which flattens the court like TV. */
 export const LENS = { wide: 30, track: 22, baseline: 22, freeThrow: 46, replayClose: 40 };
-/* Depth of field per angle: aperture scales the blur (0 = none). Only the close angles use it. */
-export const APERTURE = { freeThrow: 2.2, replayClose: 3, track: 0, wide: 0, baseline: 0 };
+/* Depth of field per angle: aperture scales the blur (0 = none). Only the replay close-up uses it: in live play a shot is
+   watched sharp, both teams in focus (the blur made the defenders and the shooter's teammates look smudged). */
+export const APERTURE = { freeThrow: 0, replayClose: 3, track: 0, wide: 0, baseline: 0 };
 const JUMPERS = new Set(['catch', 'pullup', 'stepback']);
 export const CUTS = new Set(['baseline', 'freeThrow', 'replayClose', 'player']);
 

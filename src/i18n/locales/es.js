@@ -1192,8 +1192,8 @@ export default {
       graphicsOptions: { auto: 'Auto', low: 'Baja (más rápida)', medium: 'Media', high: 'Alta (más nítida)' },
       players: 'Modelos de jugadores',
       playersDesc:
-        'Figuras clásicas o los nuevos cuerpos atléticos en 3D (beta, hechos en Houdini). Con gráficos bajos se usan siempre las clásicas.',
-      playersOptions: { classic: 'Clásicos', athletes: 'Atletas 3D (beta)' },
+        'Figuras clásicas o los nuevos cuerpos atléticos en 3D (hechos en Houdini). Con gráficos bajos se usan siempre las clásicas.',
+      playersOptions: { classic: 'Clásicos', athletes: 'Atletas 3D' },
     },
     language: {
       title: 'Idioma',

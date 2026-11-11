@@ -19,6 +19,8 @@ import { lookFeatures } from './graphics.js';
 // Spline light units to three.js (physically based) units, matched by eye against the classic gym's exposure.
 const K = { key: 1.6, spot: 17, rim: 1.6, ambient: 1.1, distance: ((1 / 50) * 0.3306) / 0.3048 };
 const FLOOR_Y = 0.042; // just above the court's top face
+const BLACK = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); // no wear map: fresh varnish everywhere
+BLACK.needsUpdate = true;
 const REFLECTED = 2; // layer of what the court mirrors: players, ball, hoops, the light rig (not the stands, walls or crowd)
 
 /* The court reflection: the mirrored scene, softly blurred, shown more at grazing angles (Fresnel), over the wood. */
@@ -28,23 +30,26 @@ const GLOSS = {
     color: { value: null },
     tDiffuse: { value: null },
     textureMatrix: { value: null },
-    strength: { value: 0.42 },
+    strength: { value: 0.5 },
     texel: { value: new THREE.Vector2(1 / 512, 1 / 512) },
+    tWear: { value: null },
   },
-  vertexShader: `uniform mat4 textureMatrix; varying vec4 vUv; varying vec3 vWorld;
+  vertexShader: `uniform mat4 textureMatrix; varying vec4 vUv; varying vec3 vWorld; varying vec2 vFloor;
 #include <common>
 #include <logdepthbuf_pars_vertex>
-void main(){ vUv = textureMatrix * vec4(position, 1.0); vec4 w = modelMatrix * vec4(position, 1.0); vWorld = w.xyz; gl_Position = projectionMatrix * viewMatrix * w;
+void main(){ vUv = textureMatrix * vec4(position, 1.0); vFloor = uv; vec4 w = modelMatrix * vec4(position, 1.0); vWorld = w.xyz; gl_Position = projectionMatrix * viewMatrix * w;
 #include <logdepthbuf_vertex>
 }`,
-  fragmentShader: `uniform sampler2D tDiffuse; uniform float strength; uniform vec2 texel; varying vec4 vUv; varying vec3 vWorld;
+  fragmentShader: `uniform sampler2D tDiffuse; uniform sampler2D tWear; uniform float strength; uniform vec2 texel; varying vec4 vUv; varying vec3 vWorld; varying vec2 vFloor;
 #include <logdepthbuf_pars_fragment>
 void main(){
 #include <logdepthbuf_fragment>
+ // worn varnish (rough) blurs the mirror image more and shows less of it
+ float rough = clamp((texture2D(tWear, vFloor).g - 0.45) / 0.55, 0.0, 1.0); float spread = mix(1.0, 3.5, rough);
  vec2 uv = vUv.xy / vUv.w; vec3 acc = vec3(0.0); float ws = 0.0;
- for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) { float w = exp(-float(i * i + j * j) / 4.0); acc += texture2D(tDiffuse, uv + vec2(float(i), float(j)) * texel * 2.0).rgb * w; ws += w; }
+ for (int i = -2; i <= 2; i++) for (int j = -2; j <= 2; j++) { float w = exp(-float(i * i + j * j) / 4.0); acc += texture2D(tDiffuse, uv + vec2(float(i), float(j)) * texel * spread).rgb * w; ws += w; }
  vec3 v = normalize(cameraPosition - vWorld); float fres = 0.18 + 0.82 * pow(1.0 - abs(v.y), 2.5);
- gl_FragColor = vec4(acc / ws, strength * fres);
+ gl_FragColor = vec4(acc / ws, strength * fres * mix(1.0, 0.35, rough));
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
 }`,
@@ -128,16 +133,19 @@ export class BroadcastLook {
       s.environment = env0;
       s.environmentIntensity = ei0;
     });
-    // varnished maple: clearcoat over the painted court
+    // varnished maple: a hard, glossy clearcoat over the wood, duller where players run most (Arena.courtWear)
     const floor = a.floor;
     if (floor) {
       const mats = floor.material,
         top = mats[2];
       const gloss = new THREE.MeshPhysicalMaterial({
         map: top.map,
-        roughness: 0.48,
-        clearcoat: dbg.clearcoat ?? 0.28,
-        clearcoatRoughness: 0.48,
+        roughness: 0.55,
+        // times the wear map: 0.27 fresh, 0.6 worn. A spotlight's highlight peaks at about clearcoat / roughness^2, here about
+        // five times the old matte finish: a visible sheen that does not bloom into a glare over the players
+        clearcoat: dbg.clearcoat ?? 0.45,
+        clearcoatRoughness: 0.6,
+        clearcoatRoughnessMap: a.courtWear || null,
       });
       mats[2] = gloss;
       this.keep(() => {
@@ -227,6 +235,7 @@ export class BroadcastLook {
         clipBias: 0.003,
         multisample: 0,
       });
+      g.material.uniforms.tWear.value = a.courtWear || BLACK;
       g.rotation.x = -Math.PI / 2;
       g.position.y = FLOOR_Y;
       g.material.transparent = true;

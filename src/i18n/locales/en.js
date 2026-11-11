@@ -1022,8 +1022,8 @@ export default {
       graphicsOptions: { auto: 'Auto', low: 'Low (fastest)', medium: 'Medium', high: 'High (sharpest)' },
       players: 'Player models',
       playersDesc:
-        'Classic figures, or the new athletic 3D bodies (beta, built in Houdini). Low graphics always uses classic.',
-      playersOptions: { classic: 'Classic', athletes: '3D athletes (beta)' },
+        'Classic figures, or the new athletic 3D bodies (built in Houdini). Low graphics always uses classic.',
+      playersOptions: { classic: 'Classic', athletes: '3D athletes' },
     },
     language: {
       title: 'Language',
