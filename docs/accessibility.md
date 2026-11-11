@@ -56,7 +56,7 @@ Text the simulation writes (play-by-play, decision trail, result summary) is als
 - **A language:** copy `src/i18n/locales/en.js`, translate the values, add the code to `LANGUAGES` and `LOADERS` in `src/i18n/index.js`. `tests/i18n.test.js` fails until the keys and `{{placeholders}}` match English exactly.
 - **A sound:** add the key to `SOUND_KEYS` and a synthesizer to `SOUNDS` in `src/audio.js`, add `settings.sound.items.<key>` to every locale, and call `play('<key>')`.
 - **An accessibility option:** add it to `A11Y_DEFAULTS` and `normalizeA11y` in `src/settings.js`, apply it in `applyA11y`, add a row in `src/settingsDialog.js`, and add strings to every locale.
-- **A shortcut:** add the action to `ACTIONS` and `DEFAULT_KEYS` in `src/keys.js`, handle it in the keydown handler in `src/main.js`, and add `settings.controls.actions.<action>` to every locale.
+- **A shortcut:** add the action to `ACTIONS` and `DEFAULT_KEYS` in `src/keys.js`, handle it in `onShortcut` in `src/ui/keyboard.js`, and add `settings.controls.actions.<action>` to every locale.
 
 ## Known limits
 

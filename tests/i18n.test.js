@@ -5,6 +5,8 @@ import {THREE_SPOTS,FT_SPOT} from '../src/shotphysics.js';
 import {LANGUAGES,t,tu,up,list,has,translateError,setLanguage,getLanguage,detectLanguage,formatDate,supported} from '../src/i18n/index.js';
 import {plans,staff,DIFFICULTIES,UPGRADES} from '../src/engine.js';import {VALUES} from '../src/narrative.js';import {SHOTS} from '../src/basketball.js';import {SOUND_KEYS} from '../src/audio.js';import {SKILL_TREE} from '../src/skills.js';import {ACTIONS} from '../src/keys.js';
 const read=f=>fs.readFileSync(new URL(f,import.meta.url),'utf8');
+// The interface: main.js and everything in src/ui/.
+const UI=['../src/main.js',...['../src/ui/','../src/ui/screens/'].flatMap(d=>fs.readdirSync(new URL(d,import.meta.url)).filter(n=>n.endsWith('.js')).map(n=>d+n))];
 // Every string leaf, keyed by its path. Arrays are indexed.
 function flatten(value,prefix='',out={}){
  if(typeof value==='string')out[prefix]=value;
@@ -22,7 +24,7 @@ test('every language is listed, supported and has a locale file',()=>{
 });
 test('every static translation key used by the code exists in English',()=>{
  const missing=[];
- for(const file of ['../src/main.js','../src/settingsDialog.js','../src/narrative.js','../src/drills.js','../src/locker.js','../src/drillscenes.js','../src/drills3d.js','../src/skillsView.js','../src/i18n/index.js']){
+ for(const file of [...UI,'../src/settingsDialog.js','../src/narrative.js','../src/drills.js','../src/locker.js','../src/drillscenes.js','../src/drills3d.js','../src/skillsView.js','../src/i18n/index.js']){
   for(const m of read(file).matchAll(/\b(?:t|tu|tb|list|has)\('([a-zA-Z0-9_.]+)'/g)){
    const key=m[1];if(!Object.keys(flat).some(k=>k===key||k.startsWith(`${key}.`)))missing.push(`${file}: ${key}`);
   }
@@ -107,7 +109,7 @@ for(const k of need)assert.equal(typeof flat[k],'string',k);
  assert.equal(en.hb.cr.list.length,5);
 });
 test('every message thrown by the interface has a translation entry',()=>{
- const thrown=[...read('../src/main.js').matchAll(/throw Error\('([^']+)'/g)].map(m=>m[1]).filter(m=>/\s/.test(m)&&!m.includes('${')&&m!=='Data unavailable');// that one is never shown: the page shows its own error screen
+ const thrown=UI.flatMap(f=>[...read(f).matchAll(/throw Error\('([^']+)'/g)].map(m=>m[1])).filter(m=>/\s/.test(m)&&!m.includes('${')&&m!=='Data unavailable');// that one is never shown: the page shows its own error screen
  for(const message of thrown)assert.ok(en.errors[message],message);
 });
 test('every message thrown by the engine has a translation entry',()=>{

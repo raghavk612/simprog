@@ -1,639 +1,127 @@
+// KANGS · Road to the Championship. This file starts the app and connects the page's events to the code in src/ui/.
+// src/ui/README.md says where everything lives.
 import './style.css';
 import './theme.css';
 import './a11y.css';
-import * as E from './engine.js';
-import {CLIP_SECONDS,isDunk} from './basketball.js';
-import {Arena} from './arena.js';
+import { onSettingsChange } from './settings.js';
+import { t } from './i18n/index.js';
+import { arena, modal, app } from './ui/page.js';
+import { data, view, ui, setData, setView, restoreSave } from './ui/store.js';
+import { html } from './ui/markup.js';
+import { render, applyArena, syncCrowd, keepNavTabInView, syncCameraButtons } from './ui/shell.js';
+import { onAction, onChange } from './ui/actions.js';
+import { onShortcut, pickWithNumberKeys } from './ui/keyboard.js';
+import { fpHud, reportPlay, syncPresentation, watchTick } from './ui/playback.js';
+import { blockOutsideSpotlight, coachTick } from './ui/tutorial.js';
+import { pressClosed, postGame } from './ui/postgame.js';
+import { endPracticeRun } from './ui/screens/prep.js';
+import { startSeason, syncTitlePause, clearPreviews } from './ui/screens/landing.js';
+import { renamePlayer, onRosterKey, onRosterRowClick } from './ui/screens/roster.js';
+import { onDrawerToggle } from './ui/screens/game.js';
 
-import {mountDrill,drillName} from './drills.js';
-import {opponentLogo} from './logos.js';
-import {titleMatchup} from './title.js';
-import {pairTeamLogos,strengthLevel} from './teamLabels.js';
-import {gearBody} from './gearView.js';
-import {skillTreeCard} from './skillsView.js';
-import * as V from './events.js';
-import {createJerseyShowcase,SCRIPT_FONT} from './jerseys.js';
-import {lockerBody,jerseyWho,plateName,byNumber,kitName,kitHow} from './locker.js';
-import {gymColors,isSpecialKit,KITS} from './kits.js';
-import * as P from './press.js';
-import * as G from './pregame.js';
-import {t,tu,up,list,has,translateError,formatNumber,formatDate,formatDateTime,initLanguage,localeTag} from './i18n/index.js';
-import {commentaryText as commentary,explanationText,logText,reasonText,feedLines,tv} from './narrative.js';
-import {achievements,newlyEarned} from './achievements.js';
-import {arc,sparkPoints,roomLevel} from './arcs.js';
-import {initSettings,getSound,setSound,getA11y,setA11y,onSettingsChange} from './settings.js';
-import {play,startCrowd,stopCrowd} from './audio.js';
-import {speak,stopSpeech} from './speech.js';
-import {announce} from './a11y.js';
-import {ACTIONS,loadKeys,keyLabel,ariaKey} from './keys.js';
-import {createSettingsDialog} from './settingsDialog.js';
-
-const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-await initLanguage();initSettings();
-const app=$('#app'),modal=$('#modal'),host=$('#scene');const arena=new Arena(host);let data,state=null,view='home',auto=false,selected='all',lastError='',playbackSpeed=1,closingMatch=null,pendingResult=null,replayEvent=null,keys=loadKeys(),gap=0,cued='';const KEY='kangs-three-season-v2',TUTORIAL='kangs-three-tutorial-v3';
-// Judge demo: a repeatable mid-season save kept under its own key, so a player's own season is never overwritten.
-const DEMOKEY='kangs-demo-season-v1',DEMO_TIMES=['0:00','0:25','0:50','1:20','1:50','2:15','2:40','3:00'],DEMO_VIEWS=['home','roster','practice','game','season','home','data','game'];
-let prospectJerseys=[],gearPlayer=null,gearFilter='all';
-let saveKey=KEY,demo=null,realState=null,jerseys=null,jerseysTried=false,jerseyId=null,captainPick=null,lateKits=[];const hintJ='aria-keyshortcuts="J"';
-const team=()=>E.teamFor(data,state?.difficulty??'elite');
-// What can be opened at any time is the top row. Prep and Game day are reached through the next step, and the break screens exist only during a break. Every screen is still its own route, so the tutorial and the judge demo can jump straight to one.
-const NAV={week:['home','practice','game'],team:['roster'],season:['season','bracket','standings','data'],break:['recruit','staff','locker']},NAV_ICON={week:'home',team:'roster',season:'season'};
-const navGroup=v=>Object.keys(NAV).find(g=>NAV[g].includes(v))||'week';
-const btn=(text,action,cls='',extra='')=>`<button class="${cls}" data-action="${action}" ${extra}>${text}</button>`;
-const pill=(text,cls='')=>`<span class="pill ${cls}">${text}</span>`;
-// Shortcut hint for a button: announced by screen readers and shown as a tooltip.
-const hint=(name,about='')=>`aria-keyshortcuts="${esc(ariaKey(keys[name]))}" title="${esc((about?about+' · ':'')+t('keys.shortcut',{key:keyLabel(keys[name])}))}"`;
-const PHASES={'Pass & relocate':'pass','Attack & dribble':'attack','Gather & contest':'gather','Shot blocked':'blocked','Turnover':'turnover','Shot in flight':'flight','Basket':'basket','Rebound':'rebound'};
-const phase=name=>PHASES[name]?t(`phase.${PHASES[name]}`):name;
-const shot=c=>has(`shot.${c.kind}`)?t(`shot.${c.kind}`):c.label;
-const sgn=n=>`${n>=0?'+':''}${n}`;
-const capBadge=id=>state?.captain===id?` <abbr class="cap-badge" title="${esc(t('captain.badge'))}">${t('captain.c')}</abbr>`:'';
-const svg=(d,cls='')=>`<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${d}</svg>`;
-const kbd=k=>`<kbd class="key${k.length>2?' kw':''}">${k}</kbd>`;
-const MOUSE={drag:'<rect x="7" y="3" width="10" height="16" rx="5"/><path d="M12 3v6M7.5 9h9"/><path d="M3 21l2-2M21 21l-2-2"/>',scroll:'<rect x="7" y="3" width="10" height="16" rx="5"/><path d="M12 6.5v3"/><path d="M10 13.5l2 2 2-2"/>',tap:'<path d="M9 11V5.5a1.5 1.5 0 013 0V10l4.6 1a2 2 0 011.6 2.3L17.5 18a3 3 0 01-3 2.5H11a3 3 0 01-2.4-1.2L5.3 15a1.4 1.4 0 012.1-1.9L9 14.5"/>'};
-const micon=k=>`<span class="mouse-icon">${svg(MOUSE[k])}</span>`;
-const NAV_ICONS={gear:'<path d="M4 13l3-7 5 2v5l8 4v3H4zM4 17h16"/>',home:'<path d="M4 11l8-6.5 8 6.5"/><path d="M6 9.8V19h12V9.8M10 19v-5h4v5"/>',roster:'<circle cx="9" cy="8" r="3"/><path d="M3.5 19c.6-3.3 2.7-5 5.5-5s4.9 1.7 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.8 14.2c2.4.1 4 1.6 4.7 4.8"/>',practice:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6"/>',recruit:'<circle cx="10" cy="8" r="3.2"/><path d="M4 19c.6-3.4 2.9-5.2 6-5.2 1.3 0 2.4.3 3.4.9"/><path d="M18 13v6M15 16h6"/>',staff:'<rect x="4" y="6" width="16" height="13" rx="2"/><path d="M9 6V4.5h6V6M4 11.5h16"/>',game:'<circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4v16M6.3 6.3c2.6 2.6 2.6 8.8 0 11.4M17.7 6.3c-2.6 2.6-2.6 8.8 0 11.4"/>',locker:'<path d="M7 4h10v16H7z"/><path d="M12 4v16M9.5 10v2M14.5 10v2"/>',season:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M8 14h3M8 17h6"/>',data:'<path d="M5 19V11M10 19V5M15 19v-6M20 19V8"/>'};
-const PLAN_ICONS=['<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>','<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>','<path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/><path d="M8.5 11.5h2l1-2 1.5 4 1-2h1.5"/>','<path d="M4 6.5C7 5 9.5 5 12 6.5 14.5 5 17 5 20 6.5V19c-3-1.5-5.5-1.5-8 0-2.5-1.5-5-1.5-8 0z"/><path d="M12 6.5V19"/>','<path d="M4 17h16M6 17v-5a6 6 0 0112 0v5"/><path d="M12 4v2M8.5 20h7"/>'];
-const oppMark=(n,cls,fb)=>{const u=opponentLogo(n);return u?`<img class="${cls}" src="${u}" alt="" decoding="async">`:fb;},oppBadge=n=>oppMark(n,'opp-badge','<span class="opp-badge ph"></span>');
-const crestText=n=>String(n||'').replace(/\(.*?\)/g,'').trim().split(/\s+/).filter(w=>/^[A-Za-z]/.test(w)).slice(0,2).map((w,i,a)=>a.length>1?w[0]:w.slice(0,3)).join('').toUpperCase()||'OPP';
-const LOGO=`${import.meta.env.BASE_URL}images/kangs-logo.png`,LOGO_WHITE=`${import.meta.env.BASE_URL}images/kangs-logo-white.png`;
-// The logo for themed pages: white in dark mode, purple in light mode (theme.css shows one). Pages on the 3D gym are always dark and use LOGO_WHITE.
-const logoPair=(cls,alt='')=>`<img class="${cls} on-dark" src="${LOGO_WHITE}" alt="${alt}"><img class="${cls} on-light" src="${LOGO}" alt="${alt}">`;
-const teamObserver=new MutationObserver(records=>{
- teamObserver.disconnect();
- const names=['Lake Washington','Kangs',...Object.values(data?.levels||{}).flatMap(l=>l.games.map(g=>g.opponent))];
- const roots=new Set(records.map(r=>r.target.nodeType===Node.TEXT_NODE?r.target.parentElement:r.target));
- for(const root of roots)if(root?.isConnected&&[app,modal,$('#toast')].some(el=>el?.contains(root)))pairTeamLogos(root,names);
- teamObserver.observe(document.body,{childList:true,subtree:true,characterData:true});
-});
-// Team logos sit next to team names only in the Season Journal bracket (oppBadge in bracket()); the automatic logo pass
-// (pairTeamLogos) is not started.
-// The real team being coached and the names of the season's stages depend on the level (varsity, JV or C-team).
-const lvl=()=>state?.level??'varsity';
-const teamName=key=>t(`team.${key}`);
-const teamLabel=()=>teamName(lvl());
-const plan=()=>E.seasonPlan(state);
-const stages=()=>({run:t(lvl()==='varsity'?'season.runState':'season.runTitle'),stretch:t(lvl()==='varsity'?'season.stretchDistrict':'season.stretchLeague')});
-const f1=v=>v==null?'—':v.toFixed(1);
-const cap1=s=>up(s.charAt(0))+s.slice(1);
-// Season progress: current game, record, and one tick per game (green win, red loss, outlined next).
-function seasonTicks(){return `<div class="gt-ticks" style="--n:${state.schedule.length}" aria-hidden="true">${state.schedule.map((g,i)=>{const r=state.results[i],cls=r?(r.home>r.away?'w':'l'):i===state.week&&!state.finished?'next':'',title=r?t('tracker.tickResult',{n:i+1,outcome:t(r.home>r.away?'result.win':'result.loss'),home:r.home,away:r.away}):t('tracker.tick',{n:i+1});return `<i class="${cls}" title="${esc(title)}"></i>`;}).join('')}</div>`;}
-/* ESPN-style season leaders: category, player, per-game value. */
-const hasScore=g=>Number.isInteger(g?.points)&&Number.isInteger(g?.against);
-/* Where estimated player stats come from: this season's final scores once any exist, else last season's average. */
-const estSrc=()=>state?.schedule?.some(hasScore)?t('rv.srcReal'):t('rv.srcLast');
-function leadersCard(){const L=E.leaders(state);return `<section class="card leaders-card"><span class="eyebrow">${tu('leaders.title',{team:esc(teamLabel())})}</span><ul class="leaders">${['ppg','apg','rpg','bpg','spg'].map(k=>{const l=L[k];return `<li><b>${t(`leaders.${k}`)}:</b> ${l?t('leaders.value',{name:`<button class="leader-link" data-action="player" data-id="${l.id}">${esc(l.name)}</button>`,value:l.value.toFixed(1)}):`<span class="muted">${t('leaders.none')}</span>`}</li>`;}).join('')}</ul><small class="muted">
-${L.est?t('leaders.est',{src:estSrc()}):t('leaders.note')}</small>
-</section>`;}
-/* ESPN-style box score: starters, bench, team totals. */
-function boxTable(line,title,compact=false){if(!line)return '';const rows=Object.entries(line).map(([id,l])=>({p:state.players.find(p=>p.id===+id),l})).filter(x=>x.l.min>0||x.l.fga||x.l.reb||x.l.ast||x.l.stl||x.l.blk||x.l.tov);if(!rows.length)return '';const tot=rows.reduce((s,{l})=>{for(const k of ['min','pts','reb','ast','stl','blk','fgm','fga','tpm','tpa','tov'])s[k]=(s[k]||0)+(l[k]||0);return s;},{});const cells=l=>compact?`<td><b>${l.pts}</b></td><td>${l.reb}</td><td>${l.ast}</td><td>${l.stl}</td><td>${l.blk}</td>`:`<td>${l.min??'—'}</td><td><b>${l.pts}</b></td><td>${l.fgm}-${l.fga}</td><td>${l.tpm}-${l.tpa}</td><td>${l.reb}</td><td>${l.ast}</td><td>${l.stl}</td><td>${l.blk}</td><td>${l.tov}</td>`;const heads=(compact?['pts','reb','ast','stl','blk']:['min','pts','fg','tp','reb','ast','stl','blk','to']).map(h=>t(`box.${h}`));const group=(name,list)=>list.length?`<tr class="box-group"><td>${name}</td>${heads.map(h=>`<td>${esc(h)}</td>`).join('')}</tr>${list.map(({p,l})=>`<tr><td class="box-player"><span class="box-name">${esc(p?.name??t('result.former'))}</span>${p?capBadge(p.id):''} <span class="box-pos">${p&&p.position[0]!=='N'?esc(p.position[0])+' ':''}#${p?.number??''}</span></td>${cells(l)}</tr>`).join('')}`:'';return `<div class="table-wrap box-score${compact?' compact':''}"><table><caption>${esc(title)}</caption><tbody>${group(tu('box.starters'),rows.filter(x=>x.l.start))}${group(tu('box.bench'),rows.filter(x=>!x.l.start))}<tr class="box-total"><td class="box-player">${tu('box.team')}</td>${cells(tot)}</tr></tbody></table></div>`;}
-const TOAST_ICONS={success:'<path d="M5 12.5l4.2 4.2L19 7"/>',info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/>',error:'<path d="M12 3l9.5 17h-19z"/><path d="M12 10v4.5M12 17.5v.01"/>',warn:'<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.01"/>',staff:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-4 3.6-6 7-6s6.2 2 7 6"/>',ball:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M5.6 5.6c3 3 3 9.8 0 12.8M18.4 5.6c-3 3-3 9.8 0 12.8"/>',film:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5l5 2.5-5 2.5z"/>'};
-// Notification cards: a few at a time, each dismissable, paused while hovered. The text and the title are already in the player's language.
-function notify(msg,opt={}){const box=$('#toast');if(!box)return;const type=opt.type||'info',ms=opt.ms??(getA11y().timingAssist?12000:type==='error'?6500:5200);const card=document.createElement('div');card.className=`toast-card ${type}`;card.setAttribute('role',type==='error'?'alert':'status');card.style.setProperty('--life',ms+'ms');
- card.innerHTML=`<span class="toast-icon" aria-hidden="true"><svg viewBox="0 0 24 24">${TOAST_ICONS[opt.icon]||TOAST_ICONS[type]}</svg></span><div class="toast-body"><b>${esc(opt.title||t(`toast.${type}`))}</b><p>${esc(msg)}</p>${opt.chips?.length?`<div class="toast-chips">${opt.chips.map(c=>`<span class="${/^[−-]/.test(c)?'down':'up'}">${esc(c)}</span>`).join('')}</div>`:''}</div><button type="button" class="toast-close" aria-label="${esc(t('toast.dismiss'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><i class="toast-timer" aria-hidden="true"></i>`;
- const kill=()=>{if(card.dataset.out)return;card.dataset.out=1;card.classList.add('out');setTimeout(()=>{card.remove();if(!box.children.length&&box.hidePopover&&box.matches(':popover-open'))box.hidePopover();},260);};
- let left=ms,start=Date.now(),timer=setTimeout(kill,left);card.addEventListener('mouseenter',()=>{clearTimeout(timer);left-=Date.now()-start;card.classList.add('hold');});card.addEventListener('mouseleave',()=>{start=Date.now();card.classList.remove('hold');timer=setTimeout(kill,Math.max(900,left));});card.querySelector('.toast-close').addEventListener('click',e=>{e.stopPropagation();clearTimeout(timer);kill();});
- box.prepend(card);[...box.children].slice(3).forEach(c=>c.remove());if(box.showPopover){try{if(box.matches(':popover-open'))box.hidePopover();box.showPopover();}catch{}}}
-const signed=(n,unit)=>`${n>0?'+':'−'}${Math.abs(Math.round(n))} ${unit}`;
-// After a coaching action: the decision-trail line plus what it cost or gained.
-function actionToast(a,was){if(!state)return;const msg=state.log[0]?logText(state.log[0]):t('notify.saved'),chips=[];if(was){const dt=state.tokens-was.tokens,ds=state.actions-was.actions,dc=state.chemistry-was.chemistry;if(dt)chips.push(signed(dt,t('toast.tokens')));if(ds)chips.push(signed(ds,t(Math.abs(ds)===1?'toast.slot':'toast.slots')));if(dc)chips.push(signed(dc,t('toast.chemistry')));}
- if(a==='hire'){const c=E.staff.find(x=>x.key===state.assistant);return notify(c?t('toast.hired',{name:t(`staff.${c.key}.name`),detail:cap1(t(`staff.${c.key}.detail`))}):msg,{type:'success',icon:'staff',title:t('toast.hiredTitle'),chips});}
- const map={train:['train','success','ball'],recruit:['recruit','success','staff'],talk:['talk','success','staff'],scout:['scout','success','film'],release:['release','warn','staff'],dismiss:['dismiss','warn','staff'],upgrade:['upgrade','success','staff']};const [key,type,icon]=map[a]||['saved','success'];notify(msg,{title:t(`toast.titles.${key}`),type,icon,chips});}
-// Achievements are computed from the save; only the ids already announced are stored. A save that predates them is marked silently on its first save.
-function announceAch(){if(!state)return;if(!Array.isArray(state.seenAch)){state.seenAch=achievements(state).filter(a=>a.earned).map(a=>a.id);return;}for(const id of newlyEarned(state)){state.seenAch.push(id);notify(t(`ach.items.${id}.desc`),{type:'success',icon:'ball',title:t('ach.unlocked',{name:t(`ach.items.${id}.name`)})});}}
-function save(){announceAch();try{localStorage.setItem(saveKey,JSON.stringify(state));}catch{notify(t('notify.storage'),{type:'warn',title:t('toast.storageTitle')});}}
-// Styled in-page replacement for confirm(): resolves true only on the yes button. The safe (no) button has focus first, Esc / backdrop / no all resolve false. Own <dialog>, so it can stack on top of the player modal.
-function confirmDialog(message,{yes=t('confirm.yes'),no=t('confirm.no'),danger=false}={}){return new Promise(resolve=>{const prev=document.activeElement,d=document.createElement('dialog');let done=false;d.className='confirm-dlg';d.setAttribute('role','alertdialog');d.setAttribute('aria-labelledby','confirm-msg');d.innerHTML=`<div class="modal-content"><p id="confirm-msg">${esc(message)}</p><div class="confirm-actions"><button type="button" class="secondary" data-no>${esc(no)}</button><button type="button" class="primary${danger?' danger':''}" data-yes>${esc(yes)}</button></div></div>`;
- const end=v=>{if(done)return;done=true;resolve(v);d.close();};d.addEventListener('click',e=>{if(e.target.closest('[data-yes]'))end(true);else if(e.target===d||e.target.closest('[data-no]'))end(false);});d.addEventListener('cancel',e=>{e.preventDefault();end(false);});d.addEventListener('keydown',e=>{if(e.key!=='Tab')e.stopPropagation();});d.addEventListener('close',()=>{end(false);d.remove();if(prev?.isConnected)prev.focus({preventScroll:true});});
- document.body.append(d);d.showModal();d.querySelector('[data-no]').focus();});}
-function show(html){arena.paused=true;stopCrowd();stopSpeech();modal.innerHTML=`${btn('×','close','close',`aria-label="${esc(t('a11y.closeDialog'))}"`)}<div class="modal-content">${html}</div>`;const h=modal.querySelector('h1');if(h){h.id='modal-title';modal.setAttribute('aria-labelledby','modal-title');}if(!modal.open)modal.showModal();}
-const settings=createSettingsDialog({modal,show,notify,onKeysChange:k=>{keys=k;render();}});
-function openSettings(tab){settings.open(tab);}
-function toggleSound(){const muted=!getSound().muted;setSound({muted});if(!muted)play('select');announce(muted?t('a11y.soundOff'):t('a11y.soundOn'));}
-const speedLabel=n=>`${n}×`;
-function applyArena(){const a=getA11y();jerseys?.setMotion(!a.reducedMotion);prospectJerseys.forEach(j=>j.setMotion(!a.reducedMotion));arena.motion=!a.reducedMotion;arena.shakeOn=a.screenShake;arena.setQuality(a.graphics);arena.setPlayers(a.players);arena.speed=playbackSpeed*a.playbackSpeed;}
+// The 3D gym follows the settings, shows the first-person player tag, and reports each play as it resolves.
 applyArena();
-function stage(cls='',{controls=true}={}){const cams=[['auto','camAuto','stage.auto','stage.autoTitle'],['broadcast','camWide','stage.wide'],['court','camCourt','stage.court'],['follow','camFollow','stage.follow'],['player','camPlayer','stage.player','stage.playerTitle']];return `<div id="arena" class="${cls}" role="group" aria-label="${esc(t('a11y.stage'))}"><div class="arena-top">${pill('● '+tu('stage.venue'),'live')}${controls?`<span class="orbit-hint">${micon('drag')}${t('stage.orbit')}${micon('scroll')}${t('stage.zoom')}</span>`:''}</div>${cls.includes('game-arena')?'<div class="fp-hud" role="status" aria-live="polite" hidden></div>':''}<div class="arena-bottom"><div><span class="eyebrow">${tu('stage.place')}</span><h3 class="live-action">${t('stage.tagline')}</h3></div>${controls?`<div class="camera-controls" role="group" aria-label="${esc(t('stage.camera'))}">${cams.map(([v,k,l,d])=>btn(t(l),'camera',arena.mode===v?'active':'',`data-camera="${v}" aria-pressed="${arena.mode===v}" ${hint(k,d?t(d):'')}`)).join('')}</div>`:''}</div></div>`;}
-function meters(){return `<div class="metrics">${[[t('metrics.record'),`${state.wins}–${state.losses}`],[t('metrics.tokens'),formatNumber(state.tokens)],[t('metrics.chemistry'),`${Math.round(state.chemistry)}%`],[t('metrics.fans'),formatNumber(state.fans)]].map(([a,b])=>`<div><span>${a}</span><strong>${b}</strong></div>`).join('')}</div>`;}
-function header(kicker,title,description=''){return `<div class="page-heading"><div><span class="eyebrow">${kicker}</span><h1 tabindex="-1">${title}</h1>${description?`<p>${description}</p>`:''}</div></div>`;}
-// Game, record, tokens and slots on every page, so a coach never has to look for them.
-function statusStrip(){const n=state.schedule.length,item=(k,v)=>`<span>${k} <b>${v}</b></span>`;return `<div class="status-strip">${state.finished?'':`<span>${t('landing.nextGame',{n:Math.min(n,state.week+1),total:n})}</span>`}${item(t('metrics.record'),`${state.wins}–${state.losses}`)}${item(t('metrics.tokens'),formatNumber(state.tokens))}${item(cap1(t('toast.slots')),state.actions)}</div>`;}
-// The row under the top bar. Home has none. Prep and Game day show where the week has got to; a break and the Season tab have their own tabs.
-function subnav(group){if(view==='home')return '';const pause=group==='break'?E.breakDue(state):null,tabs=(group==='break'||group==='season')?`<nav aria-label="${esc(pause?t(`flow.step.${pause}`):t(`nav.groups.${group}`))}">${pause?`<b class="break-name">${t(`flow.step.${pause}`)}</b>`:''}${NAV[group].map(v=>`<button data-view="${v}" class="sub-item ${view===v?'active':''}" ${view===v?'aria-current="page"':''}>${t(`nav.${v}`)}</button>`).join('')}</nav>`:group==='week'?weekTrack():'<span></span>';return `<div class="subnav">${tabs}<div class="subnav-end">${statusStrip()}${pause?btn(t(`flow.done.${pause}`),'break-done','primary small'):''}</div></div>`;}
-function weekTrack(){const at=view==='game'?1:0;return `<ol class="week-track" aria-label="${esc(t('nav.groups.week'))}">${['prepare','play','post'].map((k,i)=>`<li class="${i<at?'past':i===at?'now':''}" ${i===at?'aria-current="step"':''}>${t(`flow.track.${k}`)}</li>`).join('')}</ol>`;}
-// Title screen. With a save: next game, Continue (primary) and New season, which reveals the start form; without one the form is shown. The season code folds behind a <details>.
-let titlePause=null,launching=false;const bgPaused=()=>{const rm=!!getA11y().reducedMotion;return titlePause?.rm===rm?titlePause.paused:rm;},pauseLabel=()=>t(bgPaused()?'landing.playBg':'landing.pauseBg'),pauseAttr=()=>getA11y().reducedMotion?'hidden':'';/* with reduced motion the gym is already still: no pause button */
-/* The gym (with the phone layout's pause overlay) comes first in the markup, as on phones it is the picture at the top; on desktop it is the full-screen backdrop and the links row holds the pause button instead. */
-function landing(){const m=titleMatchup(state,data);return `<main class="landing" id="main"><div class="landing-brand"><img class="brand-logo" src="${LOGO_WHITE}" alt="" width="58" height="43"><div>${tu('landing.school')} <span>${tu('landing.program')}</span></div>${pill(tu('landing.badge'))}</div><div class="landing-content"><div class="landing-visual">${stage('title-arena',{controls:false})}${btn(pauseLabel(),'title-pause','title-pause-over',pauseAttr())}<div class="season-ticket"><span>${tu('landing.ticketSeason',{season:esc((data?.season??'2026–27').replace('–','—'))})}</span><strong>${tu('landing.ticketA')}<br>${tu('landing.ticketB')}</strong><div>${data?.levels?t('landing.ticketReal',{players:Object.values(data.levels).reduce((a,x)=>a+x.players.length,0),games:Object.values(data.levels).reduce((a,x)=>a+x.games.length,0)}):t('landing.ticketFallback')}<br>${t('landing.ticketTail')}</div></div></div><div class="landing-copy"><div class="eyebrow"><span class="line"></span> ${tu('landing.tagline')}</div><h1 tabindex="-1">${tu('landing.titleA')}<br><em>${tu('landing.titleB')}</em></h1><p>${t('landing.intro')}</p>${state?`<div class="title-next"><p class="title-next-game"><span>${tu('landing.nextGame',{n:m.game,total:m.games})}</span>${m.opponent?` <span aria-hidden="true">·</span> <strong>${t('landing.vs',{team:esc(m.opponent)})}</strong>`:''}</p><p class="title-next-record">${t('landing.record',{w:m.wins,l:m.losses})}</p></div>${btn(t('landing.continueSeason'),'continue','primary launch')}${btn(t('landing.newSeason'),'new-season-form','secondary wide','aria-expanded="false" aria-controls="start-form"')}`:''}<form id="start-form"${state?' hidden':''}><label for="coach">${tu('landing.name')}</label><input id="coach" name="coach" maxlength="32" placeholder="${esc(t('landing.namePlaceholder'))}" required autocomplete="given-name"><div class="difficulty"><label for="difficulty">${tu('landing.challenge')}</label><select id="difficulty" name="difficulty">${Object.keys(E.DIFFICULTIES).map(k=>`<option value="${k}" ${k==='standard'?'selected':''}>${t(`difficulty.${k}`)}</option>`).join('')}</select></div><details class="code-toggle"><summary>${t('code.toggle')}</summary><label for="code">${t('code.field')}</label><input id="code" name="code" maxlength="16" placeholder="${esc(t('code.placeholder'))}" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="code-hint"><small id="code-hint" class="code-hint">${t('code.hint')}</small></details><label class="walk-check"><input type="checkbox" name="walk" ${walkDefault()?'checked':''}> ${t('flow.walk')}</label><button class="primary launch" type="submit">${t('landing.start')}</button></form><div class="landing-links">${btn(t('landing.howTo'),'rules')}${btn(t('side.credits'),'credits')}${btn(t('landing.import'),'import')}${btn(t('landing.demo'),'demo-start')}${btn(t('top.settings'),'settings',' ',hint('settings'))}${btn(pauseLabel(),'title-pause','title-pause-link',pauseAttr())}</div></div></div><footer>${tu('landing.footer')} <span>${tu('landing.footerNote')}</span></footer></main>`;}
-// The pause toggle follows reduced motion until the coach presses it, and again once that setting changes (WCAG 2.2.2: a way to stop the moving gym behind the menu).
-function syncTitlePause(){arena.setTitlePaused(bgPaused());const rm=!!getA11y().reducedMotion;document.querySelectorAll('[data-action="title-pause"]').forEach(b=>{b.textContent=pauseLabel();b.hidden=rm;});}
-// Start / Continue: with motion on, the menu slides out while the camera flies into the gym; with reduced motion there is no wait.
-async function leaveTitle(){const l=$('.landing');if(!arena.motion||!l)return;l.classList.add('leaving');l.inert=true;await arena.flyIn(900);}
-// If anything after leaveTitle fails, the menu comes back so the coach can try again.
-function restoreTitle(){arena.endFly();const l=$('.landing');if(l){l.classList.remove('leaving');l.inert=false;}}
-// Home: the gym, the one thing to do next, and a grey timeline of what follows it. The timeline is a map, not a menu, so nothing on it can be clicked.
-function home(){if(state.pendingEvent&&V.eventStale(state)){state.pendingEvent=null;save();}const n=E.nextStep(state),opp=state.finished?'':esc(E.opponent(state).opponent),key=n.break||(n.id==='scout'?'practice':n.id),label=n.break?t(`flow.btn.${n.break}`):t(`nudge.btn.${key}`),ahead=E.roadmap(state);
- return `<div class="home-view"><div class="home-stage">${stage('home-arena',{controls:false})}</div><section class="home-bar" aria-label="${esc(t('home.barAria'))}"><div class="home-next"><h1 tabindex="-1"><b>${t('flow.next')}</b> ${t(`flow.now.${key}`,{opp})}</h1>${n.action?btn(label,n.action,'primary hb-go'):`<button class="primary hb-go" data-view="${n.view}">${label}</button>`}</div>${ahead.length?`<ol class="home-path" aria-label="${esc(t('flow.later'))}">${ahead.map(x=>`<li>${t(`flow.step.${x.id}`,{opp:esc(x.opp??'')})}</li>`).join('')}</ol>`:''}</section></div>`;}
-const SKIN=['#f1c7a3','#e0a87e','#c68a5e','#a86f45','#8a5634','#6b3f24','#4f2c19','#d9a07a'];
-const HAIR=['#17110d','#2a1b12','#3d2616','#5b3a22','#8a5a2e','#b9874a','#d8b06a','#20180f'];
-function avatar(p,size=48){const h=E.hashStr((p.originalName||p.name)+'|'+p.id),g=n=>(h>>>n),skin=SKIN[g(1)%SKIN.length],hair=HAIR[(g(4)+(SKIN.indexOf(skin)>3?0:2))%HAIR.length],style=(g(7)+p.id)%7,rx=21+g(11)%4,ry=26+g(13)%3,band=g(16)%6===0,beard=['Junior','Senior'].includes(p.year)&&g(18)%3===0,kit=isSpecialKit(state?.kit)?gymColors(state.kit):state?.kit==='away'?['#f4effc','#562494']:state?.kit==='alternate'?['#191126','#e9b858']:['#6832ab','#ffffff'];
- const top=60-ry,shade=`color-mix(in srgb,${skin} 78%,#000)`;
- const hairSvg=[
-  `<path d="M${60-rx} ${58-ry*.15}Q${60-rx} ${top-3} 60 ${top-3}Q${60+rx} ${top-3} ${60+rx} ${58-ry*.15}Q${60+rx-3} ${top+8} 60 ${top+6}Q${60-rx+3} ${top+8} ${60-rx} ${58-ry*.15}Z" fill="${hair}" opacity=".9"/>`,
-  `<path d="M${60-rx+1} ${top+14}L${60-rx+2} ${top-14}Q60 ${top-20} ${60+rx-2} ${top-14}L${60+rx-1} ${top+14}Q60 ${top+4} ${60-rx+1} ${top+14}Z" fill="${hair}"/>`,
-  `<g fill="${hair}">${[-16,-8,0,8,16,-12,-4,4,12].map((x,k)=>`<circle cx="${60+x}" cy="${top+(k<5?2:-5)}" r="${7.5}"/>`).join('')}</g>`,
-  `<path d="M${60-rx} ${top+16}Q${60-rx} ${top-4} 60 ${top-4}Q${60+rx} ${top-4} ${60+rx} ${top+16}Q60 ${top+6} ${60-rx} ${top+16}Z" fill="${hair}"/><path d="M${60-rx+5} ${top+6}q6 -3 12 0t12 0t12 0" stroke="${skin}" stroke-opacity=".25" fill="none"/>`,
-  `<path d="M${60-rx-1} ${top+20}Q${60-rx-2} ${top-6} 60 ${top-5}Q${60+rx+3} ${top-5} ${60+rx+1} ${top+18}Q${60+4} ${top+4} ${60-rx-1} ${top+20}Z" fill="${hair}"/>`,
-  `<ellipse cx="60" cy="${top+10}" rx="${rx+9}" ry="${ry*.75}" fill="${hair}"/>`,
-  `<path d="M${60-rx} ${top+18}Q${60-rx} ${top-2} 60 ${top-2}Q${60+rx} ${top-2} ${60+rx} ${top+18}L${60+rx-2} ${top+9}Q60 ${top+3} ${60-rx+2} ${top+9}Z" fill="${hair}"/><path d="M${60-rx+2} ${top+10}Q${60-rx-6} ${top+26} ${60-rx-1} ${top+34}M${60+rx-2} ${top+10}Q${60+rx+6} ${top+26} ${60+rx+1} ${top+34}" stroke="${hair}" stroke-width="5" fill="none" stroke-linecap="round"/>`][style];
- const behind=style===5?hairSvg:'',front=style===5?`<path d="M${60-rx+2} ${top+12}Q60 ${top+2} ${60+rx-2} ${top+12}" stroke="${hair}" stroke-width="6" fill="none"/>`:hairSvg;
- return `<svg class="avatar" width="${size}" height="${size*7/6}" viewBox="0 0 120 140" ${size>=96?`role="img" aria-label="${esc(t('rv.avatar',{name:p.name}))}"`:'aria-hidden="true"'}><rect width="120" height="140" rx="6" fill="#343740"/>${behind}
-  <path d="M8 140C12 110 32 100 60 100S108 110 112 140Z" fill="${kit[0]}"/><path d="M44 101L60 118L76 101" fill="none" stroke="${kit[1]}" stroke-width="4"/><text x="60" y="137" text-anchor="middle" font-family="Barlow Condensed,Arial Narrow,sans-serif" font-weight="800" font-size="20" fill="${kit[1]}">${esc(p.number)}</text>
-  <rect x="51" y="78" width="18" height="26" rx="6" fill="${shade}"/><ellipse cx="${60-rx}" cy="62" rx="4" ry="6" fill="${shade}"/><ellipse cx="${60+rx}" cy="62" rx="4" ry="6" fill="${shade}"/><ellipse cx="60" cy="60" rx="${rx}" ry="${ry}" fill="${skin}"/>${front}
-  ${band?`<rect x="${60-rx}" y="${top+12}" width="${rx*2}" height="6" rx="3" fill="${kit[0]}" stroke="${kit[1]}" stroke-width="1"/>`:''}
-  <path d="M${48-g(20)%3} 53q5 -${2+g(21)%2} 9 0M${63+g(20)%3} 53q5 -${2+g(21)%2} 9 0" stroke="${hair}" stroke-width="2.6" fill="none" stroke-linecap="round"/><ellipse cx="52.5" cy="60" rx="2.6" ry="3" fill="#1a1210"/><ellipse cx="67.5" cy="60" rx="2.6" ry="3" fill="#1a1210"/><path d="M60 62q-3 7 0 9" stroke="${shade}" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M${53+g(22)%2} 77q7 ${3+g(23)%3} 14 0" stroke="#4a2a22" stroke-width="2.2" fill="none" stroke-linecap="round"/>
-  ${beard?`<path d="M${60-rx+3} 66Q${60-rx+6} ${60+ry} 60 ${60+ry+1}Q${60+rx-6} ${60+ry} ${60+rx-3} 66" stroke="${hair}" stroke-width="3.2" fill="none" opacity=".85"/>`:''}</svg>`;}
-let rosterSel=null,rosterFull=false;
-const energyWord=e=>t(`rv.energy.${e>=80?'fresh':e>=55?'rested':e>=30?'tired':'exhausted'}`),moraleWord=m=>t(`rv.morale.${m>=80?'fired':m>=60?'content':m>=40?'restless':'unhappy'}`);
-const playerStatus=p=>p.injury?t('status.injured'):p.gpa<2?t('status.ineligible'):p.starter?t('status.starter'):p.minutes?t('status.rotation'):t('status.bench');
-const ineligibleWhy=p=>p.injury?t('status.injured'):p.gpa<2?t('status.ineligible'):t('status.exhausted');
-function rosterCard(p){const r=E.ratings(p),b=E.bio(p),line=E.statLine(state,p),idx=state.players.indexOf(p),n=state.players.length;const ring=`conic-gradient(var(--score) ${r.ovr*3.6}deg,var(--panel-3) 0)`;
- const stars=k=>`<span class="stars" role="img" aria-label="${esc(t('rv.stars',{k}))}">${[1,2,3].map(i=>`<i class="${i<=k?'on':''}" aria-hidden="true">★</i>`).join('')}</span>`;
- const words=p.name.split(' '),first=words.slice(0,-1).join(' '),last=words.slice(-1)[0];
- return `<section class="rv-hero" aria-live="polite"><button class="rv-arrow prev" data-action="rv-cycle" data-step="-1" aria-label="${esc(t('rv.prev'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
- <div class="rv-portrait"><span class="rv-num" aria-hidden="true">${esc(p.number)}</span>${avatar(p,220)}<span class="rv-count">${idx+1} / ${n}</span></div>
- <div class="rv-main"><div class="rv-name"><span>${esc(first)}</span> <b>${esc(last)}</b><em>| ${esc(p.number)}</em>${capBadge(p.id)}</div>
-  <div class="rv-row"><div class="rv-ovr"><span class="rv-tag">${tu('rv.overall')}</span><div class="ovr-ring" style="background:${ring}"><b>${r.ovr}</b></div></div>
-  <div class="rv-arch"><span class="rv-tag">${esc(cap1(tv(r.archetype)))}</span>${r.attrs.map(a=>`<div>${stars(a.stars)}<span>${esc(cap1(tv(a.name)))}</span></div>`).join('')}</div>
-  <div class="rv-info">${[[tu('rv.position'),cap1(tv(b.position))+(b.assigned?'*':'')],[tu('rv.height'),b.height+(b.assigned?'*':'')],[tu('roster.energy'),cap1(energyWord(p.energy))],[tu('roster.morale'),cap1(moraleWord(p.morale))],[tu('rv.class'),cap1(tv(p.year))],[tu('roster.status'),cap1(playerStatus(p))]].map(([a,v])=>`<div><span class="rv-tag">${a}</span><strong>${esc(v)}</strong></div>`).join('')}</div></div>
-  <div class="rv-stats">${['ppg','rpg','apg','spg','bpg','fgp'].map(k=>`<div><strong>${line[k]==null?'0.0':line[k].toFixed(1)}</strong><span>${t(`stat.${k}`)}</span></div>`).join('')}${arcBlock(p)}<small>${line.est?t('rv.estLine',{src:estSrc()}):t(line.gp===1?'rv.seasonOne':'rv.seasonN',{n:line.gp})}</small></div></div>
- <div class="rv-side">${btn(t('rv.fullProfile'),'player','secondary small',`data-id="${p.id}"`)}${btn(state.captain===p.id?t('captain.is'):t('captain.name'),'captain-set','secondary small',`data-id="${p.id}" aria-pressed="${state.captain===p.id}" ${state.captain===p.id||state.match?'disabled':''}`)}<label class="rv-start"><input type="checkbox" data-starter="${p.id}" ${p.starter?'checked':''} ${state.match?'disabled':''}> ${t('status.starter')}</label></div>
- <button class="rv-arrow next" data-action="rv-cycle" data-step="1" aria-label="${esc(t('rv.next'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button></section>`;}
+setInterval(fpHud, 150);
+arena.onPresentation = p => {
+  if (p.resolved) reportPlay(p);
+  syncPresentation(p);
+};
 
-const short2=text=>Array.from(String(text||'')).slice(0,2).join('').toLocaleUpperCase();
-// One player in the lineup view: who they are, whether they can play, and the two decisions (start, minutes).
-function squadCard(p){const r=E.ratings(p),b=E.bio(p),ok=E.eligible(p);return `<article class="sq-card ${ok?'':'out'}"><button class="sq-face" data-action="player" data-id="${p.id}" aria-label="${esc(t('rv.fullProfile'))}: ${esc(p.name)}">${avatar(p,p.starter?72:48)}</button><div class="sq-id"><strong>${esc(p.name)}${capBadge(p.id)}</strong><small>#${esc(p.number)}, ${esc(tv(b.position))}${ok?'':`, <span class="warn-text">${esc(ineligibleWhy(p))}</span>`}</small></div><b class="sq-ovr" title="${esc(t('rv.overall'))}">${r.ovr}</b><div class="sq-energy"><span class="bar" aria-hidden="true"><i style="width:${p.energy}%"></i></span>${t('roster.energy')} ${Math.round(p.energy)}</div><div class="sq-set"><label class="sq-start"><input type="checkbox" data-starter="${p.id}" ${p.starter?'checked':''} aria-label="${esc(t('roster.startAria',{name:p.name}))}" ${state.match?'disabled':''}> ${t('roster.start')}</label></div></article>`;}
-function roster(){const cap=state.players.find(p=>p.id===state.captain);
- const tools=`<div class="toolbar"><span>${pill(t('roster.spots',{n:state.players.length}))} ${pill(cap?t('flow.captain',{name:esc(cap.name)}):t('flow.noCaptain'))}</span><span class="toolbar-go">${btn(t(rosterFull?'roster.lineup':'roster.fullStats'),'roster-full','secondary')}${btn(t('flow.bestFive'),'auto-lineup','primary')}</span></div>${(bad=>bad.length?`<p class="notice" role="status">${issueText(bad,true)}</p>`:'')(E.lineupIssues(state))}`;
- if(!rosterFull)return `${header(tu('roster.kicker'),t('nav.roster'),t('hb.r.lead'))}${tools}<h2 class="squad-head">${t('box.starters')}</h2><div class="squad starters">${state.players.filter(p=>p.starter).map(squadCard).join('')}</div><h2 class="squad-head">${t('box.bench')}</h2><div class="squad bench">${state.players.filter(p=>!p.starter).map(squadCard).join('')}</div>`;
- if(!state.players.some(p=>p.id===rosterSel))rosterSel=(state.players.find(p=>p.starter)||state.players[0])?.id;const sel=state.players.find(p=>p.id===rosterSel);const est=E.estimateLines(state);const assigned=state.players.some(p=>E.bio(p).assigned);
- const cell=v=>`<td class="grade g-${E.grade(v)[0]}">${E.grade(v)}</td>`;
- return `${header(tu('roster.kicker'),t('nav.roster'),t('rv.intro'))}
-${tools}
-${sel?rosterCard(sel):''}
- <div class="table-wrap rv-table"><div class="rv-team"><span>${tu('rv.team',{team:esc(teamLabel())})}</span><span>${tu('rv.record',{w:state.wins,l:state.losses,c:Math.round(state.chemistry)})}</span></div><table aria-label="${esc(t('nav.roster'))}">
-<thead><tr><th scope="col">${t('roster.start')}</th><th scope="col">${t('rv.name')}</th><th scope="col">${t('rv.pos')}</th><th scope="col">${t('rv.yr')}</th><th scope="col" class="ovr-col">${t('rv.ovr')}</th>${['ins','mid','tpt','perd','insd'].map(k=>`<th scope="col" title="${esc(t(`rv.${k}T`))}">${t(`rv.${k}`)}</th>`).join('')}<th scope="col">${t('roster.energy')}</th>${['gp','ppg','rpg','apg','spg','bpg'].map(k=>`<th scope="col" title="${esc(t(`stat.${k}Title`))}">${t(`stat.${k}`)}</th>`).join('')}</tr></thead><tbody>
-${state.players.map(p=>{const r=E.ratings(p),b=E.bio(p),g=p.games?E.perGame(p):est[p.id];return `<tr class="${p.id===rosterSel?'selected':''} ${E.eligible(p)?'':'out'}" data-select="${p.id}"><td><input type="checkbox" data-starter="${p.id}" ${p.starter?'checked':''} aria-label="${esc(t('roster.startAria',{name:p.name}))}" ${state.match?'disabled':''}></td><td><button class="player-cell" data-action="rv-select" data-id="${p.id}" ${p.id===rosterSel?'aria-current="true"':''}>${avatar(p,34)}<div><strong>${esc(p.name)}${capBadge(p.id)}</strong><small>#${esc(p.number)}${E.eligible(p)?'':` · <span class="warn-text">${esc(ineligibleWhy(p))}</span>`}</small></div></button></td><td>${esc(t(`rv.short.${b.position}`))}${b.assigned?'*':''}</td><td>${esc(short2(tv(p.year)))}</td><td class="ovr-col"><b>${r.ovr}</b></td>${cell(r.ins)}${cell(r.mid)}${cell(r.tpt)}${cell(r.perd)}${cell(r.insd)}<td><span class="bar" aria-hidden="true"><i style="width:${p.energy}%"></i></span>${Math.round(p.energy)}</td><td>${g.gp}</td><td class="${g.est?'est':''}"><b>${g.ppg.toFixed(1)}</b></td><td class="${g.est?'est':''}">${g.rpg.toFixed(1)}</td><td class="${g.est?'est':''}">${g.apg.toFixed(1)}</td><td class="${g.est?'est':''}">${g.spg.toFixed(1)}</td><td class="${g.est?'est':''}">${g.bpg.toFixed(1)}</td></tr>`}).join('')}</tbody></table></div>
- <p class="footnote">${t('rv.footnote',{italic:`<span class="est-key">${t('rv.italic')}</span>`,src:estSrc()})}${assigned?` ${t('rv.assignedNote')}`:''}</p><p class="footnote">${t('captain.note')}</p>`;}
-let practicePlan=[],practiceRun=null;
-function planCap(){return Math.max(0,Math.min(3,state?.actions??0));}
-// Prep: one list of everything a week can hold. Picks can change until the week is run; the practice picks then go to their drills, and the rest happen at once.
-const PREP=[...Object.keys(E.plans),'fundraise','film'];
-function practice(){
- practicePlan=practicePlan.filter(k=>PREP.includes(k)).slice(0,planCap());const cap=planCap(),full=practicePlan.length>=cap,locked=state.finished||!!state.match,opp=state.finished?'':esc(E.opponent(state).opponent),filmCost=E.hasUpgrade(state,'film')?0:50;
- const why=k=>k==='fundraise'&&state.conversation?t('office.checkDone'):k==='film'&&state.scouted?t('prep.filmDone'):k==='film'&&state.tokens<filmCost?t('office.needTokens',{n:filmCost-state.tokens}):'';
- const used=3-cap,slots=[0,1,2].map(i=>{const label=`<span>${tu('practice.slot',{n:i+1})}</span>`,k=practicePlan[i-used];if(i<used)return `<div class="plan-slot used">${label}<b>${t('flow.doneBadge')}</b></div>`;return k?`<div class="plan-slot filled">${label}<b>${prepName(k)}</b><button class="plan-x" data-action="plan-toggle" data-plan="${k}" aria-label="${esc(t('practice.removeAria',{name:prepName(k)}))}">${svg('<path d="M6 6l12 12M18 6L6 18"/>')}</button></div>`:`<div class="plan-slot open">${label}<b>${t('practice.open')}</b></div>`;}).join('');
- const fx=k=>{const p=E.plans[k];if(!p)return k==='film'?`<span>${filmCost?`${filmCost} ${t('toast.tokens')}`:t('office.upgOwned')}</span>`:t('office.fundraiseFx').split(' · ').map(x=>`<span>${x}</span>`).join('');return [p.skill&&t('practice.fxSkill',{n:'+'+p.skill}),p.energy&&t('practice.fxEnergy',{n:sgn(p.energy)}),p.morale&&t('practice.fxMorale',{n:'+'+p.morale}),p.gpa&&t('practice.fxGpa',{n:sgn(p.gpa.toFixed(2))})].filter(Boolean).map(x=>`<span>${x}</span>`).join('');};
- const row=k=>{const on=practicePlan.includes(k),i=Object.keys(E.plans).indexOf(k),no=why(k);return `<li class="prep-row ${on?'on':''}">${i>=0?`<span class="prep-icon" aria-hidden="true">${svg(PLAN_ICONS[i])}</span>`:officeIcon(k)}<div class="prep-main"><strong>${prepName(k)}</strong><small>${no||prepDesc(k,opp)}</small></div><div class="effect-list">${fx(k)}</div>${btn(t(on?'practice.inPlan':full?'practice.planFull':'practice.add'),'plan-toggle',on?'primary small':'secondary small',`data-plan="${k}" aria-pressed="${on}" ${locked||no||(!on&&full)?'disabled':''}`)}</li>`;};
- return `${header(tu('practice.kicker'),state.finished?t('nav.practice'):t('prep.title',{opp}),t('prep.slots',{n:state.actions}))}<div class="prep-grid"><section class="card prep-list"><ul>${PREP.map(row).join('')}</ul></section><section class="prep-side"><div class="plan-slots">${slots}</div>${cap?btn(t('flow.run'),'practice-start','primary wide',practicePlan.length&&!locked?'':'disabled'):''}<button class="${cap?'secondary':'primary'} wide prep-go" data-view="game">${t('flow.toGame')}</button></section></div>`;}
-const prepName=k=>E.plans[k]?t(`plan.${k}.name`):k==='film'?t('prep.film'):t('office.fundraise');
-const prepDesc=(k,opp)=>E.plans[k]?t(`plan.${k}.desc`):k==='film'?t('prep.filmFx',{opp}):'';
-function togglePlan(key){if(!PREP.includes(key))return;const i=practicePlan.indexOf(key);if(i>=0)practicePlan.splice(i,1);else{if(practicePlan.length>=planCap())throw Error(planCap()?'Your plan holds 3 sessions. Remove one first.':'No preparation slots left this week.');practicePlan.push(key);}render();}
-function startPractice(){if(!practicePlan.length||practiceRun)return;practiceRun={queue:[...practicePlan],done:[],cleanup:null};nextDrill();}
-const drillResult=(passed,badge,msg,last)=>`<div class="drill-result ${passed?'pass':'fail'}" role="status"><b>${badge}</b><p>${esc(msg)}</p>${btn(t(last?'practice.finish':'practice.nextDrill'),'practice-next','primary')}</div>`;
-function nextDrill(){const run=practiceRun;if(!run)return;run.cleanup?.();run.cleanup=null;const key=run.queue.shift();
- if(!key){practiceRun=null;practicePlan=practicePlan.filter(k=>!run.done.some(d=>d.key===k&&d.passed));if(modal.open)modal.close();render();const won=run.done.filter(d=>d.passed);notify(won.length?`${t('practice.doneUnlocked',{names:won.map(d=>prepName(d.key)).join(', ')})}${run.done.length>won.length?` ${t('practice.doneMissed')}`:''}`:t('practice.doneNone'),{type:won.length?'success':'warn',icon:'ball',title:won.length?t('practice.titleWon',{won:won.length,total:run.done.length}):t('practice.titleNone')});return;}
- const name=prepName(key),left=run.queue.length;show(`<div class="drill-shell"><span class="eyebrow">${esc(t('practice.session',{name}))}${left?`, ${esc(t('practice.more',{n:left}))}`:''}</span><div id="drill-root"></div></div>`);
- if(!E.plans[key]){let ok=true,msg;try{if(key==='film')E.scout(state);else E.talk(state,key);save();msg=logText(state.log[0]);}catch(err){ok=false;msg=translateError(err.message);}run.done.push({key,passed:ok});modal.querySelector('#drill-root').innerHTML=drillResult(ok,ok?t('flow.doneBadge'):tu('practice.badgeFail'),msg,!run.queue.length);if(ok)play('confirm');modal.querySelector('[data-action="practice-next"]')?.focus();return;}
- run.cleanup=mountDrill(modal.querySelector('#drill-root'),key,r=>{run.cleanup?.();run.cleanup=null;let msg;if(r.passed){try{E.train(state,key,selected,{perfect:r.perfect});save();msg=t(r.perfect?'practice.unlockedPerfect':'practice.unlockedMsg',{name,log:state.log[0]?logText(state.log[0]):''}).trim();}catch(err){msg=translateError(err.message);r.passed=false;}}else msg=t('practice.missMsg',{made:r.made,total:r.total,name});run.done.push({key,passed:r.passed});
-  const root=modal.querySelector('#drill-root');if(root)root.innerHTML=drillResult(r.passed,tu(r.passed?(r.perfect?'practice.badgePerfect':'practice.badgeUnlocked'):'practice.badgeFail'),msg,!run.queue.length);if(r.passed)play(r.perfect?'signing':'confirm');modal.querySelector('[data-action="practice-next"]')?.focus();});}
-
-function recruit(){return `${header(tu('recruit.kicker'),t('nav.recruit'),t('recruit.intro'))}<div class="toolbar">${pill(t('roster.spots',{n:state.players.length}))}<span>${t('recruit.tokens',{n:formatNumber(state.tokens)})}</span></div><div class="cards three">${state.pool.map(p=>`<section class="card recruit"><div class="prospect-jersey-stage" data-prospect="${p.id}" aria-hidden="true"><span class="prospect-jersey">${p.number}</span></div><span class="eyebrow">${tu('recruit.tryout',{pos:esc(tv(p.position))})}</span><h2>${esc(p.name)}</h2><div class="effect-list"><span>${t('roster.skill')} <b>${p.skill}</b></span><span>${t('roster.energy')} <b>${p.energy}</b></span><span>${t('roster.gpa')} <b>${p.gpa}</b></span></div>${scoutRow(p)}${btn(t('recruit.sign',{cost:p.cost}),'recruit','primary wide',`data-id="${p.id}" aria-label="${esc(t('recruit.signAria',{name:p.name,cost:p.cost}))}" ${state.players.length>=15||state.tokens<p.cost||state.finished||state.match?'disabled':''}`)}</section>`).join('')||`<section class="card">${t('recruit.none')}</section>`}</div>`;}
-const officeIcon=key=>`<span class="office-icon" aria-hidden="true">${svg(({listen:'<path d="M4 4h16v12H9l-5 4z"/>',fundraise:'<path d="M12 3v18M17 7H9a3 3 0 000 6h6a3 3 0 010 6H6"/>',academics:'<path d="M3 5h7l2 2 2-2h7v14h-7l-2 2-2-2H3zM12 7v14"/>',development:'<path d="M4 19l6-7 4 3 6-11M13 4h7v7"/>',recovery:'<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>',culture:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-3a8 8 0 0116 0v3"/>',film:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M10 8l6 4-6 4z"/>',facility:'<path d="M3 21V7l9-4 9 4v14M8 21v-8h8v8"/>',nutrition:'<path d="M12 8c-8-6-12 5-5 12 2 2 3 0 5 0s3 2 5 0c7-7 3-18-5-12zM12 8V3l4-1"/>',tutor:'<path d="M3 5h7l2 2 2-2h7v14h-7l-2 2-2-2H3zM12 7v14"/>'})[key])}</span>`;
-function gear(){return `${header(tu('gear.kicker'),t('nav.gear'),t('gear.intro'))}${gearBody(state,gearPlayer,gearFilter)}`;}
-function skillsView(){return `${header(tu('skills.kicker'),t('nav.skills'))}${skillTreeCard(state)}`;}
-function staffView(){const blocked=state.finished?t('office.seasonDone'):state.match?t('office.gameActive'):state.pendingEvent?t('office.inboxFirst'):'';
- return `${header(tu('office.assistantKicker'),t('nav.staff'))}<section class="card office-section"><div class="office-heading"><h2>${t('office.buildStaff')}</h2>${state.assistant?btn(t('office.dismiss'),'dismiss','secondary small',blocked?'disabled':''):''}</div><div class="office-grid">${E.staff.map(a=>{const hired=state.assistant===a.key,reason=blocked||(hired?t('office.hired'):state.assistant?t('office.slotFull'):state.tokens<a.cost?t('office.needTokens',{n:a.cost-state.tokens}):'');return `<article class="office-option ${hired?'owned':''}">${officeIcon(a.key)}<h3>${t(`staff.${a.key}.name`)}</h3><p>${t(`staff.${a.key}.detail`)}</p>${btn(hired?'✓ '+t('office.hired'):t('office.hireCost',{cost:a.cost}),'hire','primary wide',`data-key="${a.key}" ${reason?'disabled':''}`)}${reason?`<small>${reason}</small>`:''}</article>`;}).join('')}</div></section>${upgradesCard()}`;}
-function upgradesView(){return `${header(tu('office.upgKicker'),t('nav.upgrades'))}${upgradesCard()}`;}
-function upgradesCard(){const g=state.finished?null:state.schedule[state.week],w=E.gameIncome(state,true,g),l=E.gameIncome(state,false,g);return `<section class="card office-section"><div class="office-heading"><div><span class="eyebrow">${tu('office.upgKicker')}</span><h2>${t('office.upgTitle')}</h2></div>${pill(t('office.permanent'))}</div><div class="office-grid upgrades-grid">${E.UPGRADES.map(u=>{const own=E.hasUpgrade(state,u.key),name=t(`upg.${u.key}.name`),fx=t(`upg.${u.key}.fx`),reason=state.finished?t('office.seasonDone'):state.match?t('office.gameActive'):state.pendingEvent?t('office.inboxFirst'):state.tokens<u.cost?t('office.needTokens',{n:u.cost-state.tokens}):'';return `<article class="office-option ${own?'owned':''}">${officeIcon(u.key)}<h3>${name}</h3><p>${fx}</p>${own?`<span class="pill">✓ ${t('office.upgOwned')}</span>`:btn(t('office.upgBuy',{cost:u.cost}),'upgrade','secondary wide',`data-key="${u.key}" aria-label="${esc(t('office.upgAria',{name,cost:u.cost,effect:fx}))}" ${reason?'disabled':''}`)}${!own&&reason?`<small>${reason}</small>`:''}</article>`;}).join('')}</div>${g?`<details class="office-budget"><summary>${t('office.budgetDetails')}</summary><p>${t('office.upgBudget',{lo:l.net,hi:w.net,upkeep:l.upkeep,travel:l.travel})}</p></details>`:''}</section>`;}
-// Tip-off preview on Game day, before the game starts, and the "How the model works" panel it opens.
-function tipoffCard(){const v=E.tipoffPreview(state);return `<section class="card tipoff-card"><span class="eyebrow">${tu('tipoff.kicker')}</span><div class="effect-list"><span class="strength-badge ${strengthLevel(v.rating)}">${t('game.strength')} <b>${Math.round(v.rating)} · ${t(`game.strengthLevel.${strengthLevel(v.rating)}`)}</b></span><span>${t('game.style')} <b>${v.style?t(`style.${v.style}`):t('game.unscouted')}</b></span><span>${t('tipoff.energy')} <b>${v.energy}</b></span><span>${t('tipoff.morale')} <b>${v.morale}</b></span><span>${t('metrics.chemistry')} <b>${v.chemistry}</b></span><span>${t('tipoff.timeouts')} <b>${v.timeouts}</b></span></div>${v.effective!==v.rating?`<p>${t('tipoff.effective',{n:v.effective})}</p>`:''}<p>${v.away?t('tipoff.travel',{n:v.travel}):t('tipoff.homeGame')}</p><h3>${t('tipoff.mods')}</h3>${v.mods.length?`<div class="chips">${v.mods.map(([k,x])=>chipHtml({k,v:x,who:'next'})).join('')}</div>`:`<p class="muted">${t('tipoff.none')}</p>`}${btn(t('tipoff.model'),'model','secondary small')}</section>`;}
-function modelPanel(){const M=E.modelSnapshot(state),f=n=>`${n>=0?'+':'−'}${Math.abs(n).toFixed(1)}`,v=n=>n.toFixed(1);
- const rows=[[t('model.l.base'),t('model.base',{base:M.base,miss:f(M.miss),three:f(M.threeMiss)})],[t('impact.skill'),t('model.skill',{a:v(M.skill),b:v(M.rating),pp:f(M.pp.skill)})],[t('impact.energy'),t('model.energy',{v:v(M.energy),pp:f(M.pp.energy)})],[t('impact.morale'),t('model.morale',{v:v(M.morale),pp:f(M.pp.morale)})],[t('impact.chemistry'),t('model.chemistry',{v:v(M.chem),pp:f(M.pp.chemistry)})],[t('impact.shotType'),t('model.shotType',{hi:f(M.shotHi),lo:f(M.shotLo)})],[t('impact.space'),t('model.space',{n:v(M.space)})],[t('impact.tactics'),t('model.tactics',{scout:f(M.scout),pp:f(M.pp.tactics)})],[t('impact.repertoire'),t('model.repertoire',{max:v(E.TUNING.repertoire*100),pp:f(M.pp.repertoire)})],[t('model.l.diff'),t('model.diff',{level:t(`level.${M.level}`),pp:f(M.diff)})],[t('model.l.boost'),t('model.boost',{n:f(M.boost)})]];
- const factors=[...Object.entries(M.pp).map(([key,value])=>[t(`impact.${key}`),value]),[t('model.l.diff'),M.diff]],scale=Math.max(10,...factors.map(([,n])=>Math.abs(n)));
- show(`<div class="shot-model"><span class="eyebrow">${tu('tipoff.kicker')}</span><h1>${t('model.title')}</h1><div class="shot-overview"><div class="shot-gauge" style="--chance:${M.before}%"><strong>${M.before}%</strong></div><div><h2>${t('model.visual.typical')}</h2><p>${t('model.visual.context')}</p><div class="shot-equation"><span>${(M.base+M.miss).toFixed(1)}%<small>${t('model.l.base')}</small></span><b>+</b><span>${f(Object.values(M.pp).reduce((a,b)=>a+b,0)+M.diff)}<small>${t('model.visual.adjustments')}</small></span></div></div></div><h3>${t('model.visual.factors')}</h3><p class="shot-caption">${t('model.visual.pp')}</p><div class="shot-factors">${factors.map(([label,n])=>`<div class="shot-factor ${n<0?'negative':'positive'}"><span>${label}</span><div class="shot-track" aria-hidden="true"><i style="width:${Math.abs(n)/scale*50}%;left:${n<0?50-Math.abs(n)/scale*50:50}%"></i></div><b>${f(n)}</b></div>`).join('')}</div><div class="shot-variables"><div><span>${t('impact.shotType')}</span><strong>${f(M.shotLo)} → ${f(M.shotHi)}</strong></div><div><span>${t('impact.space')}</span><strong>±${M.space}</strong></div><div><span>${t('model.l.boost')}</span><strong>+${M.boost}</strong></div></div><details class="shot-details"><summary>${t('model.visual.details')}</summary><p>${t('model.intro',{min:M.min,max:M.max})}</p><ul class="model-list">${rows.map(([l,x])=>`<li><strong>${esc(l)}</strong><span>${x}</span></li>`).join('')}</ul><p>${t('model.note')}</p></details></div>`);}
-
-// Season code card in the journal, and copying it.
-function codeCard(){const c=E.seasonCode(state);return `<section class="card season-code"><span class="eyebrow">${tu('code.kicker')}</span>${c?`<p>${t('code.body')}</p><div class="code-row"><code class="code-box" id="season-code">${esc(c)}</code>${btn(t('code.copy'),'copy-code','secondary small',`data-code="${esc(c)}"`)}</div>`:`<p class="muted">${t('code.unavailable')}</p>`}</section>`;}
-async function copyCode(c){try{await navigator.clipboard.writeText(c);notify(t('code.copied',{code:c}),{type:'success'});}catch{const el=$('#season-code');if(el){const r=document.createRange();r.selectNodeContents(el);const sel=getSelection();sel.removeAllRanges();sel.addRange(r);}notify(t('code.failed'),{type:'info'});}}
-function speedControls(){return `<div class="playback-controls"><span id="speed-label">${tu('game.speed')}</span><div role="group" aria-labelledby="speed-label" ${hint('speed')}>${[1,2,4].map(n=>btn(speedLabel(n),'speed',playbackSpeed===n?'selected':'',`data-speed="${n}" aria-pressed="${playbackSpeed===n}"`)).join('')}</div></div>`;}
-function teamStats(stats,opp=''){if(!stats)return '';return `<div class="table-wrap team-compare"><table><thead><tr><th scope="col">${t('stats.title')}</th><th scope="col">${esc(t('game.kangs'))}</th><th scope="col">${esc(opp)}</th></tr></thead><tbody>${['rebounds','assists','steals','blocks'].map(k=>`<tr><td>${t(`stats.${k}`)}</td><td><b>${stats.home[k]}</b></td><td>${stats.away[k]}</td></tr>`).join('')}</tbody></table></div>`;}
-function replayView(){const p=arena.presentation(),e=replayEvent;return `${header(tu('replay.kicker'),t('replay.title'),t('replay.intro'))}<div class="replay-layout">${stage('game-arena')}<div class="score-strip"><div>${tu('game.kangs')}<strong id="live-home">${p?.home??e.home}</strong></div><div class="clock"><span>${tu('replay.recorded')}</span><strong>#${e.number}</strong></div><div>${tu('game.visitors')}<strong id="live-away">${p?.away??e.visitor}</strong></div></div><p class="play-call"></p><div class="play-feed"></div>${speedControls()}${btn(t('replay.again'),'replay-again','primary')}${btn(arena.paused?t('replay.resume'):t('replay.pause'),'replay-pause','secondary',hint('playPause'))}${btn(t('replay.back'),'journal','secondary')}</div>`;}
-
-function scoreBug(m,o){const q=m.possession>64?t('bug.ot'):t('bug.q',{n:Math.max(1,Math.min(4,Math.ceil(m.possession/16)))}),clock=`${Math.max(0,8-Math.floor((m.possession?((m.possession-1)%16)+1:0)/2))}:00`,P=state?plan():null,tag=P&&state.week>=P.cut?up(stages().run):`${esc(up(teamLabel()))} · ${esc(up(tv(o.type||'Regular Season')))}`,to=Math.max(0,m.timeouts??0);
- return `<div class="score-strip bug2k" role="group" aria-label="${esc(t('bug.aria'))}"><span class="bug-tag">${tag}</span><div class="bug-team home"><img src="${LOGO_WHITE}" alt=""><div class="bug-name"><b>${esc(up(t('game.kangs')))}</b><small>${state.wins}–${state.losses} · <span class="bug-to" role="img" aria-label="${esc(t('bug.timeouts',{n:to}))}">${[0,1,2].map(i=>`<i class="${i<to?'on':''}"></i>`).join('')}</span></small></div><strong id="live-home">${arena.presentation()?.home??m.home}</strong></div><div class="bug-mid"><span>${esc(q)}</span><strong>${clock}</strong><small>${tu('bug.poss',{n:m.possession})}</small></div><div class="bug-team away"><strong id="live-away">${arena.presentation()?.away??m.away}</strong><div class="bug-name"><b>${esc(crestText(o.opponent))}</b><small>${esc(o.opponent)}</small></div>${oppMark(o.opponent,'bug-logo',`<span class="bug-crest">${esc(crestText(o.opponent)).slice(0,3)}</span>`)}</div><span class="bug-slogan">${tu('bug.slogan')}</span></div>`;}
-
-function game(){if(replayEvent)return replayView();if(state.finished&&!closingMatch)return endscreen();const lineupBad=E.lineupIssues(state),o=closingMatch?state.results.at(-1):E.opponent(state),m=state.match||closingMatch,P=plan(),names=stages();return `${header(m?tu('game.liveKicker'):tu('game.prepKicker'),m?t('game.liveTitle'):t('game.vs',{opp:esc(o.opponent)}),`${esc(formatDate(o.date))} · ${esc(o.venue)} · ${state.week>=P.cut?t('game.eliminationGame',{run:names.run}):t('game.matchup',{type:esc(o.type?tv(o.type):t('game.typeDefault'))})}`)}<div class="game-layout"><div class="court-panel">${
-stage('game-arena')}
-${
-m?`${scoreBug(m,o)}<p class="play-call" aria-live="polite">
-${esc(arena.presentation()?.clip?shot(arena.presentation().clip):t('game.choosePlay'))}</p><details class="commentary-drawer"><summary>${t('game.playByPlay')}</summary><div class="play-feed">${(arena.isPlaying()?feedLines(m).slice(2):feedLines(m)).map((x,i)=>`<p class="${i===0?'new':''}">${esc(x)}</p>`).join('')||`<p>${t('game.crowdReady')}</p>`}</div></details>`:`<div class="home-drawers"><details class="home-drawer" name="game-drawers"><summary>${tu('game.scouting')}</summary><section class="card"><p>
-${hasScore(o)?t('game.reference',{a:o.points,b:o.against}):t('game.upcoming',{when:`${esc(formatDate(o.date))}${o.time?` · ${esc(o.time)}`:''}`,where:t(o.home?'game.homeGame':'game.awayGame'),venue:esc(o.venue)})}</p>
-<div class="effect-list"><span class="strength-badge ${strengthLevel(o.rating)}">${t('game.strength')} <b>${Math.round(o.rating)} · ${t(`game.strengthLevel.${strengthLevel(o.rating)}`)}</b></span><span>${t('game.style')} <b>${state.scouted?t(`style.${o.style}`):t('game.unscouted')}</b></span></div>${state.scouted?`<p class="notice">${t(`game.advice.${o.style}`)} ${t('game.adviceNote')}</p>`:`<button class="secondary small" data-view="practice">${t('nudge.btn.scout')}</button>`}</section></details><details class="home-drawer" name="game-drawers"><summary>${tu('tipoff.kicker')}</summary>${tipoffCard()}</details></div>`}${m?`<details class="box-drawer"><summary>${t('game.boxScore')}</summary>${teamStats(m.stats,o.opponent)}${boxTable(m.line,up(t('game.kangs')),true)}</details><details class="why-drawer"><summary>${t('game.why')}</summary><p class="muted">${t('result.whyBody')}</p>${btn(t('tipoff.model'),'model','secondary small')}<div id="why-body" aria-live="polite">${lastWhy||`<p>${t('game.whyNone')}</p>`}</div></details>`:''}</div><aside class="right-rail" aria-label="${esc(t('game.controls'))}"><section class="card"><span class="eyebrow">${m?tu('game.sideline'):tu('game.startingFive')}</span>${m?`<h2>${t('game.callPlay')}</h2><label>${tu('game.system')}<select id="tactic">${['balanced','zone','pressure','perimeter'].map(v=>`<option value="${v}" ${m.tactic===v?'selected':''}>${t(`tactic.${v}`)}</option>`).join('')}</select></label><label>${tu('game.tempo')}<select id="pace">${['steady','fast'].map(v=>`<option value="${v}" ${m.pace===v?'selected':''}>${t(`pace.${v}`)}</option>`).join('')}</select></label>${speedControls()}${
-btn(closingMatch?(arena.paused?t('game.resumeFinal'):t('game.pauseFinal')):auto?t('game.pause'):arena.paused?t('game.resume'):t('game.watch'),'auto','primary wide',hint('playPause'))}${btn(t('game.next'),'step','secondary wide',`${hint('nextPlay')} ${arena.isPlaying()||closingMatch?'disabled':''}`)}${btn(t('game.timeout',{n:m.timeouts}),'timeout','secondary wide',`${hint('timeout')} ${m.timeouts&&!closingMatch?'':'disabled'}`)}`:`<h2>${t('game.ready')}</h2>${state.players.filter(p=>p.starter).map(p=>{const why=lineupBad.find(x=>x.id===p.id)?.reason;return `<div class="lineup-row"><span class="jersey">${p.number}</span><strong>${esc(p.name)}</strong>${why?`<span class="pill warn">${t(`lineup.${why}`)}</span>`:''}</div>`;}).join('')}${lineupBad.length?`<p class="notice" role="alert">${issueText(lineupBad,true)}</p>${btn(t('lineup.fix'),'auto-lineup','primary wide')}`:''}${btn(t('game.adjust'),'rotation','secondary wide')}${btn(t('game.tipOff'),'start-match','primary wide')}`}</section></aside></div>`;}
-function locker(){return `${header(tu('locker.kicker'),t('nav.locker'),t('locker.intro'))}${lockerBody({state,avatar,jerseyId,captainPick})}`;}
-function lockersView(){return `${header(tu('locker.kicker'),t('nav.lockers'))}${lockerBody({state,avatar,part:'lockers'})}`;}
-function captainView(){return `${header(tu('locker.kicker'),t('nav.captain'))}${lockerBody({state,avatar,captainPick,part:'captain'})}`;}
-// The final run drawn as a bracket: four win-or-go-home rounds that fill in as games are played.
-function bracket(){const B=E.runBracket(state),names=stages();
- const gate=B.gate==='qualified'?t('bracket.qualified',{w:B.wins,need:B.need}):B.gate==='failed'?t('bracket.failed',{w:B.wins,cut:B.cut,need:B.need}):t('bracket.open',{w:B.wins,need:B.need,cut:B.cut,played:B.played});
- return `<section class="card bracket-card" aria-labelledby="bracket-h"><span class="eyebrow">${tu('bracket.kicker')}</span><h2 id="bracket-h">${t('hb.g.run',{run:names.run})}</h2><p class="bracket-gate ${B.gate}">${gate}</p><ol class="bracket" aria-label="${esc(t('bracket.aria'))}">${B.rounds.map((r,i)=>{const status=t(`bracket.status.${r.status}`,{h:r.home,a:r.away});return `<li class="round ${r.status}" aria-label="${esc(t('bracket.item',{r:i+1,opp:r.opponent,status}))}"><span class="round-name">${t(`bracket.round.${i}`)}</span><b>${oppBadge(r.opponent)}${esc(r.opponent)}</b><small>${esc(formatDate(r.date))}${r.time?` · ${esc(r.time)}`:''}</small><em>${status}</em></li>`;}).join('')}</ol></section>`;}
-function journal(){return `${header(tu('journal.kicker'),t('nav.season'),t('journal.intro'))}${state.finished?`<section class="card purple"><span class="eyebrow">${state.champion?tu('journal.bannerYours'):tu('journal.teaches')}</span><h2>${state.champion?t('home.champions'):t('journal.whistle')}</h2><p>${t('journal.summary',{coach:esc(state.coach),w:state.wins,l:state.losses,fans:formatNumber(state.fans),chem:Math.round(state.chemistry)})}</p>${btn(t('journal.newSeason'),'new-season','secondary')}${btn(t('journal.export'),'export','secondary')}</section>${reportCard()}`:''}<div class="cards two fit-row"><section class="card fit-col"><h2>${t('journal.scoreboard')}</h2><div class="fit-scroll" tabindex="0">${state.results.map((r,i)=>`<button class="result-row" data-action="result" data-index="${i}"><b class="${r.won?'win':'loss'}">${r.won?'W':'L'}<span class="sr-only"> ${r.won?t('result.win'):t('result.loss')}</span></b><span>${esc(r.opponent)}<small>${esc(formatDate(r.date))}</small></span><strong>${r.home}–${r.away}</strong><span>${t('journal.replay')}</span></button>`).join('')||`<p>${t('journal.noGames')}</p>`}</div></section><section class="card fit-col"><h2>${t('journal.trail')}</h2><div class="journal-log fit-scroll" tabindex="0">${state.log.map(l=>`<p><small>${tu('journal.gameN',{n:l.week})}</small>${esc(logText(l))}</p>`).join('')||`<p>${t('journal.trailEmpty')}</p>`}</div></section></div>`;}
-function bracketView(){return `${header(tu('bracket.kicker'),t('nav.bracket'))}<div class="season-path" aria-label="${esc(t('journal.path'))}">${(P=>[['01',t('journal.regular'),state.week<P.stretch],['02',stages().stretch,state.week>=P.stretch&&state.week<P.cut],['03',stages().run,state.week>=P.cut]])(plan()).map(([n,l,cur],i)=>`${i?'<i aria-hidden="true">→</i>':''}<span class="${cur?'current':''}"${cur?' aria-current="step"':''}>${n} / ${l}</span>`).join('')}</div>${bracket()}${codeCard()}`;}
-function standingsView(){const teams={};for(const r of state.results){teams[r.opponent]??={name:r.opponent,w:0,l:0};r.won?teams[r.opponent].l++:teams[r.opponent].w++;}const ranks=Object.values(state.standings||{'Lake Washington':{name:'Lake Washington',w:state.wins,l:state.losses},...teams}).sort((a,b)=>b.w/Math.max(1,b.w+b.l)-a.w/Math.max(1,a.w+a.l));return `${header(tu('journal.standings'),t('nav.standings'))}<div class="standings-grid"><section class="card fit-col"><h2>${t('journal.table')}</h2><p>${t('journal.tableNote')}</p><div class="fit-scroll" tabindex="0">${ranks.map((r,i)=>`<div class="staff-row"><span>${i+1}. ${esc(r.name)}</span><b>${r.w}–${r.l}</b></div>`).join('')}</div></section>${leadersCard()}${achCard()}</div>`;}
-// Achievements: earned ones are marked and highlighted, locked ones dimmed and labelled in words, with progress where it makes sense.
-function achCard(){const list=achievements(state),got=list.filter(a=>a.earned).length;
- return `<section class="card ach" aria-labelledby="ach-h"><span class="eyebrow">${tu('ach.kicker')}</span><h2 id="ach-h">${t('ach.title')}</h2><p class="muted">${t('ach.count',{n:got,of:list.length})}</p><ul class="ach-list">${list.map(a=>`<li class="${a.earned?'earned':'locked'}"><span class="ach-mark" aria-hidden="true">${a.earned?'★':'○'}</span><div><strong>${t(`ach.items.${a.id}.name`)}</strong><small>${t(`ach.items.${a.id}.desc`)}</small>${!a.earned&&a.progress?`<small class="ach-prog">${t('ach.progress',a.progress)}</small>`:''}</div><b class="ach-state">${t(a.earned?'ach.earned':'ach.locked')}</b></li>`).join('')}</ul></section>`;}
-// A player's development arc: skill sparkline with a text alternative, ceiling hint, and a Breakout or Slump tag (thresholds in arcs.js).
-function arcBlock(p){const a=arc(p),lvl=roomLevel(E.growthRoom(p.skill,p.ceil)),rf=Math.round(a.from),rt=Math.round(a.to);
- const alt=a.show?t(rt>rf?'arc.rose':rt<rf?'arc.fell':'arc.flat',{from:rf,to:rt,n:a.games}):'',pts=a.show?sparkPoints(a.series):'',end=pts.split(' ').at(-1).split(',');
- const stars=p.work?`<span role="img" aria-label="${esc(t('scoutP.workAria',{k:p.work}))}">${[1,2,3,4,5].map(i=>i<=p.work?'★':'☆').join('')}</span>`:'';
- return `<aside class="arc" aria-label="${esc(t('arc.title'))}"><div class="arc-top"><span class="rv-tag">${tu('arc.title')}</span>${a.tag?`<b class="arc-tag ${a.tag}">${t(`arc.${a.tag}`)}</b>`:''}</div>${a.show?`<svg class="spark" viewBox="0 0 120 32" role="img" aria-label="${esc(alt)}" focusable="false"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${end[0]}" cy="${end[1]}" r="3" fill="currentColor"/></svg><small>${alt}</small>`:`<small>${t('arc.none')}</small>`}${a.tag?`<small>${t(`arc.${a.tag}Note`)}</small>`:''}<small>${p.ceil?`${t('arc.potential',{n:p.ceil})} · `:''}${t('arc.room',{level:t(`arc.level.${lvl}`)})}${stars?` · ${t('scoutP.work')} ${stars}`:''}</small></aside>`;}
-// Tryouts: scouting reveals a prospect's hidden potential and work ethic for a small token cost.
-function scoutRow(p){if(state.scoutedProspects?.[p.id]){const tr=E.prospectTraits(state.seed,p.id);return `<div class="effect-list scout-traits"><span>${t('scoutP.potential')} <b>${tr.ceil}</b></span><span>${t('scoutP.work')} <b role="img" aria-label="${esc(t('scoutP.workAria',{k:tr.work}))}">${[1,2,3,4,5].map(i=>i<=tr.work?'★':'☆').join('')}</b></span></div>`;}
- return `<p class="muted scout-hidden">${t('scoutP.hidden')}</p>${btn(t('scoutP.btn',{cost:E.SCOUT_COST}),'scout-prospect','secondary small wide',`data-id="${p.id}" aria-label="${esc(t('scoutP.aria',{name:p.name,cost:E.SCOUT_COST}))}" ${state.tokens<E.SCOUT_COST||state.finished||state.match?'disabled':''}`)}`;}
-// The season report card, with the working behind the grade shown so it can be questioned.
-function reportCard(){const R=E.seasonReport(state),G=R.grade,who=id=>esc(state.players.find(p=>p.id===id)?.name||'—');
- const facts=[t('report.record',{w:R.record[0],l:R.record[1]}),t('report.scoring',{f:R.ppg,a:R.oppg}),R.bestWin&&t('report.bestWin',{opp:esc(R.bestWin.opponent),h:R.bestWin.home,a:R.bestWin.away}),R.toughestLoss&&t('report.worstLoss',{opp:esc(R.toughestLoss.opponent),h:R.toughestLoss.home,a:R.toughestLoss.away}),t('report.practice',{n:R.sessions,p:R.perfect}),R.eliminated&&t('report.eliminated',{n:R.games})].filter(Boolean);
- return `<section class="card report" aria-labelledby="report-h"><span class="eyebrow">${tu('report.kicker')}</span><h2 id="report-h">${t('report.title')}</h2><div class="report-grid"><div class="report-grade"><small>${t('report.grade')}</small><strong>${esc(G.letter)}</strong><span>${G.total} / 100</span></div><ul class="report-parts">${Object.entries(G.parts).map(([k,v])=>`<li><span>${t(`report.parts.${k}`)}</span><b>${t('report.points',{pts:v,max:E.GRADE_POINTS[k]})}</b></li>`).join('')}</ul></div><p class="muted">${t('report.how')}</p><h3>${t('report.awards')}</h3><ul class="report-awards">${R.awards.length?R.awards.map(a=>`<li><span>${t(`report.award.${a.key}`)}</span><strong>${who(a.id)}</strong><small>${t(`report.value.${a.key}`,{v:a.value})}</small></li>`).join(''):`<li class="muted">${t('report.noAwards')}</li>`}</ul><ul class="report-facts">${facts.map(x=>`<li>${x}</li>`).join('')}</ul>${btn(t('report.save'),'report-save','secondary')}</section>`;}
-async function saveReportCard(){
- try{
-  const R=E.seasonReport(state),G=R.grade,font=getComputedStyle(document.body).fontFamily,cv=document.createElement('canvas');cv.width=1200;cv.height=630;const x=cv.getContext('2d');
-  x.fillStyle='#17181c';x.fillRect(0,0,1200,630);
-  try{await document.fonts.ready;}catch{}
-  await new Promise(done=>{const im=new Image();im.onload=()=>{x.drawImage(im,48,36,116,87);done();};im.onerror=done;im.src=LOGO_WHITE;});
-  const write=(text,px,y,color,weight=700,left=190,max=960)=>{let size=px;x.fillStyle=color;do{x.font=`${weight} ${size}px ${font}`;size-=2;}while(x.measureText(text).width>max&&size>14);x.fillText(text,left,y);};
-  write(t('report.kicker'),26,66,'#f2b233');write(t('meta.title'),48,118,'#ffffff',800);
-  write(`${t('side.coach',{name:state.coach})} · ${teamLabel()} · ${data?.season??''}`,26,166,'#b9bcc4');
-  x.fillStyle='#292b31';x.fillRect(48,210,300,330);write(t('report.grade'),24,254,'#f2b233',700,72,240);write(G.letter,150,400,'#ffffff',900,72,240);write(`${G.total} / 100`,34,452,'#b9bcc4',700,72,240);
-  const lines=[t('report.record',{w:R.record[0],l:R.record[1]}),t('report.scoring',{f:R.ppg,a:R.oppg}),...(R.bestWin?[t('report.bestWin',{opp:R.bestWin.opponent,h:R.bestWin.home,a:R.bestWin.away})]:[]),...(R.toughestLoss?[t('report.worstLoss',{opp:R.toughestLoss.opponent,h:R.toughestLoss.home,a:R.toughestLoss.away})]:[])];
-  lines.forEach((l,i)=>write(l,28,246+i*40,'#ffffff',600,390,760));
-  const top=246+lines.length*40+24;write(t('report.awards'),22,top,'#f2b233',700,390,760);
-  R.awards.forEach((a,i)=>write(`${t(`report.award.${a.key}`)}: ${state.players.find(p=>p.id===a.id)?.name||''} · ${t(`report.value.${a.key}`,{v:a.value})}`,26,top+38+i*38,'#ffffff',600,390,760));
-  write(t('side.footerNote'),18,596,'#ffffff99',500,48,1100);
-  const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download='kangs-report-card.png';document.body.append(a);a.click();a.remove();
-  notify(t('report.saved'),{type:'success'});
- }catch{notify(t('report.failed'),{type:'error'});}
-}
-function endscreen(){return `${header(tu('ending.kicker'),state.champion?t('ending.won'):t('ending.over'))} ${stage()}<section class="card ending"><h2>${state.champion?t('ending.bannerTitle'):t('ending.lossTitle')}</h2><p>${t('ending.record',{w:state.wins,l:state.losses})} ${state.champion?t('ending.championBody'):t('ending.lossBody')}</p>${btn(t('ending.story'),'journal','primary')}${btn(t('journal.newSeason'),'new-season','secondary')}</section>${reportCard()}`;}
-let dataLevel=null;
-function dataView(){const levels=Object.entries(data.levels),pick=dataLevel&&data.levels[dataLevel]?dataLevel:lvl(),rec=lv=>{const done=lv.games.filter(hasScore),left=lv.games.length-done.length;return done.length?`${done.filter(g=>g.points>g.against).length}–${done.filter(g=>g.points<g.against).length}${left?` · ${t('data.upcomingN',{n:left})}`:''}`:t('data.upcomingGames',{n:left});};
- return `${header(tu('data.kicker'),t('data.title'),t('data.intro',{season:esc(data.season)}))}<section class="card source-summary"><div>${pill(tu('data.badge'),'good')}<h2>${t('data.school')}</h2><p>${t('data.checked',{date:formatDateTime(data.checkedAt)})}</p><p>${t('data.notice')}</p></div>${btn(t('data.refresh'),'refresh','secondary')}</section><div class="level-tabs" role="group" aria-label="${esc(t('data.title'))}">${levels.map(([k])=>btn(esc(teamName(k)),'data-level','secondary small',`data-key="${k}" aria-pressed="${k===pick}"`)).join('')}</div>${levels.filter(([key])=>key===pick).map(([key,lv])=>`<h2 class="section-title">${esc(teamName(key))} · ${rec(lv)}</h2><div class="data-cols"><div><div class="table-wrap"><table aria-label="${esc(teamName(key))}"><thead><tr><th scope="col">#</th><th scope="col">${t('data.player')}</th><th scope="col">${t('data.position')}</th><th scope="col">${t('data.height')}</th><th scope="col">${t('data.grade')}</th></tr></thead><tbody>${lv.players.map(p=>`<tr><td>${p.number}${p.numberAssigned?`<span class="muted" title="${esc(t('data.assignedTitle'))}">*</span>`:''}</td><td>${esc(p.name)}</td><td>${esc(tv(p.position))}</td><td>${esc(p.height)}</td><td>${esc(tv(p.year))}</td></tr>`).join('')}</tbody></table></div><p class="footnote">${t('data.rosterNote',{season:esc(lv.rosterSeason||data.season)})}${lv.players.some(p=>p.numberAssigned)?` ${t('data.assignedNote')}`:''}</p></div><div><details class="schedule-drawer" open><summary>${t('data.scheduleSummary',{team:esc(teamName(key)),season:esc(data.season),n:lv.games.length})}</summary><div class="table-wrap"><table aria-label="${esc(t('data.scheduleSummary',{team:teamName(key),season:data.season,n:lv.games.length}))}"><thead><tr><th scope="col">${t('data.date')}</th><th scope="col">${t('data.time')}</th><th scope="col">${t('data.opponent')}</th><th scope="col">${t('data.type')}</th><th scope="col">${t('data.score')}</th><th scope="col">${t('data.venue')}</th></tr></thead><tbody>${lv.games.map(g=>`<tr><td>${esc(formatDate(g.date))}</td><td>${esc(g.time||'')}</td><td>${t(g.home?'data.vs':'data.at')} ${esc(g.opponent)}</td><td>${esc(tv(g.type))}</td>${hasScore(g)?`<td class="${g.points>g.against?'good-text':'warn-text'}"><span aria-hidden="true">${g.points>g.against?'W':'L'}</span><span class="sr-only">${g.points>g.against?t('result.win'):t('result.loss')}</span> ${g.points}–${g.against}</td>`:`<td class="muted">${t('data.upcoming')}</td>`}<td>${esc(g.venue)}</td></tr>`).join('')}</tbody></table></div></details>${(o=>`<details class="schedule-drawer"><summary>${t('data.oppSummary',{team:esc(teamName(key)),real:o.filter(([,v])=>v.real).length,fiction:o.filter(([,v])=>!v.real).length})}</summary>${o.map(([n,v])=>`<p class="opp-roster"><b>${oppBadge(n)}${esc(n)}</b> <span class="muted">${t(v.real?'data.oppReal':'data.oppFictional')}</span><br>${v.players.map(x=>`#${x.number} ${esc(x.name)}`).join(' · ')}</p>`).join('')}</details>`)(Object.entries(lv.opponents||{}))}<p class="footnote"><a href="${esc(lv.source)}" target="_blank" rel="noreferrer">${t('data.openPage',{team:esc(teamName(key))})}<span class="sr-only"> (${t('a11y.newTab')})</span></a></p></div></div>`).join('')}`;}
-// Focus and scroll survive a re-render, so keyboard users are not thrown back to the top of the page after every action.
-// Names every player in the rotation who cannot play and why; escape is for text that goes into the page rather than a notification.
-const issueText=(list,escape)=>t('lineup.warn',{names:list.map(x=>t('lineup.item',{name:escape?esc(x.name):x.name,why:t(`lineup.${x.reason}`)})).join(', ')});
-const FOCUS_KEYS=['data-action','data-view','data-id','data-plan','data-camera','data-starter','data-minutes','data-speed','data-choice','data-key','data-kit','data-step','data-select','data-index','data-event','data-message','data-tab','id'];
-let renderedView=null;
-function focusMemo(){const a=document.activeElement;if(!a||a===document.body||!app.contains(a))return null;let sel=a.tagName.toLowerCase(),n=0;for(const k of FOCUS_KEYS)if(a.hasAttribute(k)){sel+=`[${k}="${CSS.escape(a.getAttribute(k))}"]`;n++;}return n?{sel,nth:[...app.querySelectorAll(sel)].indexOf(a)}:null;}
-/* The title screen's arena shows a real season for the chosen difficulty when there is no save: built once per difficulty (seed 1), never saved. */
-let previews={};function titlePreview(difficulty='standard'){return data&&E.DIFFICULTIES[difficulty]?previews[difficulty]??=E.createGame(data,'Coach',difficulty,1):null;}
-function render(){if(state&&NAV.break.includes(view)&&!E.breakDue(state))view='home';for(const jersey of prospectJerseys)jersey.dispose();prospectJerseys=[];const keep=renderedView===view?{focus:focusMemo(),y:window.scrollY}:null;renderedView=view;document.body.dataset.view=view;document.body.classList.toggle('live-match',view==='game'&&!!(state?.match||closingMatch||replayEvent));document.body.append(host);if(view==='landing'){app.innerHTML=landing();}else{const group=navGroup(view),top=group==='break'?'week':group;app.innerHTML=`<div class="shell"><div class="workspace"><header class="topbar"><a href="#" class="brand" data-action="home">${logoPair('brand-logo')}<div>KANGS</div></a><nav class="main-nav" aria-label="${esc(t('side.nav'))}">${Object.keys(NAV_ICON).map(g=>`<button data-view="${NAV[g][0]}" class="nav-item ${g===top?'active':''}" ${g===top?'aria-current="true"':''}><span class="nav-icon" aria-hidden="true">${svg(NAV_ICONS[NAV_ICON[g]])}</span><b class="nav-label">${t(`nav.groups.${g}`)}</b></button>`).join('')}</nav><div class="top-tools"><span class="top-coach">${t('side.coach',{name:esc(state.coach)})}</span>${btn(t('top.settings'),'settings','',hint('settings'))}${btn(t('top.help'),'rules','',hint('rules'))}</div></header>${subnav(group)}<main class="content" id="main" tabindex="-1">${({home,roster,practice,recruit,staff:staffView,game,locker,season:journal,bracket:bracketView,standings:standingsView,data:dataView}[view]||home)()}</main></div></div>`;}
- const target=$('#arena');if(target){arena.mount(target);arena.update(view==='landing'?state||titlePreview($('#difficulty')?.value):state);}else host.hidden=true;host.hidden=!target;if(view==='landing'){syncTitlePause();if(keep)$('.landing')?.classList.add('entered');}
- if(view==='locker')mountJerseys();
- if(view==='recruit')mountProspectJerseys();
- syncCrowd();
- if(demo&&view!=='landing')renderDemoGuide();if(arena.event)syncPresentation(arena.presentation());
- if(keep){const f=keep.focus,el=f&&[...app.querySelectorAll(f.sel)][Math.max(0,f.nth)];if(el&&!el.disabled)el.focus({preventScroll:true});window.scrollTo(0,keep.y);}
-}
-function enterDemo(){if(demo)return;realState=state;saveKey=DEMOKEY;state=E.demoSeason(data);try{E.autoLineup(state);}catch{}demo={step:0,hidden:false};stopTour();practicePlan=[];selected='all';save();go('home');notify(t('demo.entered',{w:state.wins,l:state.losses}),{type:'success',title:t('demo.jumpedTitle')});}
-function leaveDemo(){demo=null;saveKey=KEY;state=realState;realState=null;}
-function exitDemo(){leaveDemo();go('landing');notify(t('demo.closed'),{type:'info',title:t('demo.jumpedTitle')});}
-function demoStep(delta){if(!demo)return;demo.step=Math.max(0,Math.min(DEMO_VIEWS.length-1,demo.step+delta));if(view!==DEMO_VIEWS[demo.step])go(DEMO_VIEWS[demo.step]);else render();}
-// Plays the season on with the same sensible preparation until the final run begins.
-function demoJump(){if(!demo||!state)return;if(state.match||closingMatch){notify(t('demo.busy'),{type:'error'});return;}const P=plan();if(state.week>=P.cut){notify(t('demo.already'),{type:'info'});return;}E.playTo(state,P.cut);save();arena.clear();go('game');notify(t('demo.jumped'),{type:'success',title:t('demo.jumpedTitle')});}
-function renderDemoGuide(){const el=document.createElement('div'),total=DEMO_VIEWS.length,i=demo.step;el.className='tutorial demo-guide';el.setAttribute('role','region');el.setAttribute('aria-label',t('demo.label'));
- if(demo.hidden){el.classList.add('collapsed');el.innerHTML=btn(t('demo.show'),'demo-show','primary small');app.append(el);return;}
- const S=list('demo.steps')[i]||{title:'',body:''};
- el.innerHTML=`<span class="eyebrow">${esc(t('demo.kicker',{n:i+1,total,time:DEMO_TIMES[i]}))}</span><h3>${esc(S.title)}</h3><p>${esc(S.body)}</p>${i===5?`<div class="demo-actions">${btn(t('top.settings'),'settings','secondary small')}</div>`:''}<div class="demo-nav">${btn(t('demo.back'),'demo-back','secondary small',i?'':'disabled')}${btn(i===total-1?t('demo.finish'):t('demo.next'),i===total-1?'demo-exit':'demo-next','primary small')}</div><div class="demo-foot">${btn(`${t('demo.jump')} · J`,'demo-jump','text-button',hintJ)}${btn(t('demo.hide'),'demo-hide','text-button')}${btn(t('demo.exit'),'demo-exit','text-button')}</div>`;
- app.append(el);}
-// ---- Coach's inbox (events) and the post-game press room. They open one after the other once a result dialog is closed. ----
-const chipHtml=c=>{const v=Number.isInteger(c.v)?c.v:Math.round(c.v*100)/100,good=c.k==='oppRating'||c.k==='injury'?v<0:v>0,who=c.who&&c.who!=='team'&&c.who!=='next'?`${esc(c.who)}: `:'';return `<span class="chip ${good?'good':'bad'}">${who}${v>0?'+':'−'}${Math.abs(v)} ${t(`chip.${c.k}`)}${c.who==='next'?` · ${t('chip.next')}`:''}</span>`;};
-const eventText=(id,key,params)=>t(`ev.${id}.${key}`,Object.fromEntries(Object.entries(params||{}).map(([k,v])=>[k,typeof v==='string'?esc(v):v])));
-let flowPending=false;
-function eventShell(icon,title,body){return `<div class="inbox-card"><div class="inbox-icon" aria-hidden="true">${svg(TOAST_ICONS[icon==='recruit'?'staff':icon]||TOAST_ICONS.info)}</div><span class="eyebrow">${tu('inbox.kicker')}</span><h1>${title}</h1>${body}</div>`;}
-function showEvent(){const pe=state?.pendingEvent;if(!pe)return false;const d=V.EVENTS.find(e=>e.id===pe.id);if(!d||V.eventStale(state)){state.pendingEvent=null;save();render();return false;}
- const opts=V.previewOptions(state);
- show(eventShell(d.icon,t(`ev.${d.id}.title`),`<p class="inbox-text">${eventText(d.id,'text',pe.params)}</p><div class="inbox-options">${opts.map((o,i)=>`<button type="button" class="inbox-option" data-action="pick-event" data-i="${i}" data-pick ${o.available?'':'disabled'}><kbd class="key">${i+1}</kbd><span><strong>${t(`ev.${d.id}.o.${o.id}`)}</strong><span class="chips">${o.available?o.chips.map(chipHtml).join('')||`<span class="chip">${t('press.none')}</span>`:`<span class="chip bad">${t('inbox.unavailable')}</span>`}</span></span></button>`).join('')}</div><p class="muted">${t('inbox.hint')}</p>`));
- modal.querySelector('[data-pick]:not([disabled])')?.focus();announce(t('inbox.pending'));return true;}
-function chooseEvent(i){try{const r=V.resolveEvent(state,i);save();if(!r){modal.close();render();return;}
-  const body=`<p class="inbox-text">${t('inbox.chose',{choice:`<b>${t(`ev.${r.id}.o.${r.choice}`)}</b>`})}</p><div class="chips">${r.chips.map(chipHtml).join('')||`<span class="chip">${t('press.none')}</span>`}</div><div class="modal-actions">${btn(t('inbox.continue'),'inbox-done','primary')}</div>`;
-  show(eventShell('success',t(`ev.${r.id}.title`),body));modal.querySelector('[data-action="inbox-done"]')?.focus();render();}
- catch(err){notify(translateError(err.message),{type:'error'});play('error');}}
-let pressOpen=false;const PRESS_MAX=2;
-function showPress(){const pr=state?.press;if(!pr||pr.done)return false;pressOpen=true;const prev=P.previewPress(state),i=pr.questions.findIndex(x=>!x.answer);if(i<0)return false;const q=pr.questions[i],pv=prev[i];
- const qText=t(`press.${q.id}.q`,Object.fromEntries(Object.entries(q.params||{}).map(([k,v])=>[k,typeof v==='string'?esc(v):v])));
- show(`<div class="inbox-card press"><div class="inbox-icon reporter" aria-hidden="true">${svg(TOAST_ICONS.film)}</div><span class="eyebrow">${tu('press.kicker')} · ${esc(t('press.progress',{n:i+1,total:pr.questions.length}))}</span><h1>${t('press.title')}</h1><div class="drill-pips" aria-hidden="true">${pr.questions.map((x,k)=>`<i class="${x.answer?'done':k===i?'now':''}"></i>`).join('')}</div><p class="inbox-text"><b>${t('press.reporter')}:</b> ${qText}</p><div class="inbox-options">${pv.answers.map((a,k)=>`<button type="button" class="inbox-option" data-action="pick-press" data-q="${i}" data-a="${a.id}" data-pick><kbd class="key">${k+1}</kbd><span><strong>${t(`press.${q.id}.a.${a.id}`)}</strong><span class="chips">${a.chips.map(chipHtml).join('')||`<span class="chip">${t('press.none')}</span>`}</span></span></button>`).join('')}</div><div class="modal-actions">${btn(t('press.skip'),'press-skip','text-button')}</div></div>`);
- modal.querySelector('[data-pick]')?.focus();return true;}
-function choosePress(qi,ans){try{P.answerPress(state,qi,ans);save();
-  if(state.press.done){pressOpen=false;const nm=state.nextMods||{},chips=[...Object.entries(nm).filter(([,v])=>v).map(([k,v])=>({k,v,who:'next'}))];
-   show(`<div class="inbox-card press"><div class="inbox-icon reporter" aria-hidden="true">${svg(TOAST_ICONS.success)}</div><span class="eyebrow">${tu('press.kicker')}</span><h1>${t('press.done')}</h1><h2>${t('press.effects')}</h2><div class="chips">${chips.map(chipHtml).join('')||`<span class="chip">${t('press.none')}</span>`}</div><div class="modal-actions">${btn(t('inbox.continue'),'press-after','primary')}</div></div>`);modal.querySelector('[data-action="press-after"]')?.focus();render();}
-  else showPress();}
- catch(err){notify(translateError(err.message),{type:'error'});play('error');}}
-// ---- Pregame press conference: asked when the coach heads to tip-off. Answers land on tonight's game; skipping costs 5 fans. ----
-const MIC='<rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 10.5a6.5 6.5 0 0013 0M12 17v4M8.5 21h7"/>';
-function preShell(i,total,body){const o=E.opponent(state);return `<div class="inbox-card press pregame"><div class="inbox-icon mic" aria-hidden="true">${svg(MIC)}</div><span class="eyebrow">${tu('pre.kicker')}${total?` · ${esc(t('press.progress',{n:i+1,total}))}`:''}</span><h1>${t('pre.title')}</h1><p class="pre-matchup"><b>${t('game.vs',{opp:esc(o.opponent)})}</b>${o.venue?` · ${esc(o.venue)}`:''}</p>${body}</div>`;}
-function showPregame(){const pr=state?.pregame;if(!pr||pr.done||pr.week!==state.week)return false;const prev=G.previewPregame(state),i=pr.questions.findIndex(x=>!x.answer);if(i<0)return false;const q=pr.questions[i];
- const qText=t(`pre.${q.id}.q`,Object.fromEntries(Object.entries(q.params||{}).map(([k,v])=>[k,typeof v==='string'?esc(v):v])));
- show(preShell(i,pr.questions.length,`<div class="drill-pips" aria-hidden="true">${pr.questions.map((x,k)=>`<i class="${x.answer?'done':k===i?'now':''}"></i>`).join('')}</div><p class="inbox-text"><b>${t('press.reporter')}:</b> ${qText}</p><div class="inbox-options">${prev[i].answers.map((a,k)=>`<button type="button" class="inbox-option" data-action="pick-pre" data-q="${i}" data-a="${a.id}" data-pick><kbd class="key">${k+1}</kbd><span><strong>${t(`pre.${q.id}.a.${a.id}`)}</strong><span class="chips">${a.chips.map(chipHtml).join('')||`<span class="chip">${t('press.none')}</span>`}</span></span></button>`).join('')}</div><div class="modal-actions">${btn(t('pre.skip'),'pre-skip','text-button')}</div>`));
- modal.querySelector('[data-pick]')?.focus();announce(t('pre.title'));return true;}
-function choosePregame(qi,ans){try{G.answerPregame(state,qi,ans);save();
-  if(state.pregame.done){const chips=Object.entries(state.nextMods||{}).filter(([,v])=>v).map(([k,v])=>({k,v,who:'team'}));
-   show(preShell(0,0,`<h2>${t('pre.done')}</h2><h3>${t('pre.effects')}</h3><div class="chips">${chips.map(chipHtml).join('')||`<span class="chip">${t('press.none')}</span>`}</div><div class="modal-actions">${btn(t('pre.tip'),'pre-tip','primary')}</div>`));modal.querySelector('[data-action="pre-tip"]')?.focus();}
-  else showPregame();}
- catch(err){notify(translateError(err.message),{type:'error'});play('error');}}
-function tipOff(){const bad=E.lineupIssues(state);if(bad.length)throw Error(issueText(bad));E.startMatch(state);lastWhy='';auto=false;arena.clear();setCamera('auto');}
-// After the press room: the inbox may have news.
-function afterPress(){modal.close();const pe=V.rollEvent(state);save();if(pe){render();showEvent();}else go('home');}
-// After a game result is closed: press room first (if the season goes on), then maybe an event.
-function postGame(){if(!state||state.finished){flowPending=false;return;}P.startPress(state,PRESS_MAX);save();render();if(!showPress())afterPress();}
-// The locker room's rotating 3D jerseys: one canvas, created on first use and moved into the page each time it is drawn.
-// Wearing a kit: core kits always, special kits once the season has earned them (E.setKit refuses a locked one).
-function wearKit(k){
- if(!state)return;
- if(!E.kitUnlocked(state,k)){unlockPopup(k);return;}
- E.setKit(state,k);save();play('select');announce(t('locker.picked',{kit:kitName(k)}));arena.update(state);render();
-}
-// A locked special jersey: an animated card that says how to earn it and how close the season is.
-function unlockPopup(k){
- const P=E.seasonPlan(state),home=E.lastHomeGame(state),n=Math.min(state.week+1,state.schedule.length),total=state.schedule.length,col=KITS[k]||KITS.home;
- let pct=0,prog='';
- if(k==='throwback'){const best=E.winStreak(state);pct=Math.min(1,best/E.KIT_STREAK);prog=t('lk.unlockProgress.throwback',{n:Math.min(best,E.KIT_STREAK),total:E.KIT_STREAK});}
- else if(k==='seniornight'){if(home<0)prog=t('lk.unlockProgress.seniornightNone');else{pct=Math.min(1,state.week/Math.max(1,home));prog=t('lk.unlockProgress.seniornight',{n,total,home:home+1});}}
- else{pct=Math.min(1,state.week/Math.max(1,P.cut));prog=t('lk.unlockProgress.blackout',{cut:P.cut+1,n});}
- play('select');
- show(`<div class="unlock-pop" style="--kit:${col.body};--kit2:${col.trim}"><div class="up-art" aria-hidden="true"><svg class="up-shirt" viewBox="0 0 120 120"><path d="M40 10h11q9 13 18 0h11l27 15-11 23-12-6v66H36V42l-12 6-11-23z"/></svg><span class="up-shine"></span><span class="up-lock">${svg('<rect x="5" y="11" width="14" height="9.5" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>')}</span></div><span class="eyebrow">${tu('lk.unlockKicker')}</span><h1>${esc(kitName(k))}</h1><p class="up-how">${esc(t(`lk.how.${k}`,{n:E.KIT_STREAK}))}</p><div class="up-meter" role="progressbar" aria-label="${esc(prog)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct*100)}"><i style="--p:${pct}"></i></div><p class="up-prog">${esc(prog)}</p><div class="modal-actions">${btn(t('lk.unlockGot'),'close','primary')}</div></div>`);
-}
-// Name and number on all the showcase jerseys. Only the textures are repainted; the select, the caption and the 3D scene are updated in place.
-function applyJerseyPlayer(){
- const p=jerseyWho(state,jerseyId);if(!p)return;
- jerseys?.setPlayer({name:plateName(p),number:p.number});
- const sel=$('#jersey-player');if(sel)sel.value=String(p.id);
- const cap=$('#jersey-caption');if(cap)cap.innerHTML=`<b>${esc(p.number)}</b> ${esc(plateName(p))}`;
-}
-// Naming (or changing) the captain uses the engine's setCaptain; the dialog states the price first.
-async function makeCaptain(id){
- const p=state.players.find(x=>x.id===id);if(!p)return;
- const old=state.players.find(x=>x.id===state.captain);
- const msg=old&&old.id!==p.id?t('lk.confirmChange',{name:plateName(p),old:plateName(old),morale:E.CAPTAIN_COST.morale,chem:E.CAPTAIN_COST.chem}):t('lk.confirmFirst',{name:plateName(p)});
- if(!await confirmDialog(msg,{yes:t('lk.confirmYes')}))return;
- E.setCaptain(state,id);captainPick=null;save();play('confirm');notify(t('captain.set',{name:p.name}),{type:'success',icon:'staff'});if(modal.open)modal.close();render();
-}
-function stepJerseyPlayer(step){
- const list=byNumber(state.players),cur=jerseyWho(state,jerseyId),i=Math.max(0,list.findIndex(p=>p.id===cur?.id));
- jerseyId=list[(i+step+list.length)%list.length].id;play('select');applyJerseyPlayer();announce(t('lk.jerseyNow',{num:jerseyWho(state,jerseyId).number,name:plateName(jerseyWho(state,jerseyId))}));
-}
-function mountProspectJerseys(){
- for(const box of document.querySelectorAll('[data-prospect]')){
-  const p=state.pool.find(p=>p.id===Number(box.dataset.prospect));if(!p)continue;
-  const jersey=createJerseyShowcase({kitKeys:[state.kit||'home'],preview:true});if(!jersey)continue;
-  jersey.setUnlocked(state.unlockedKits||[]);jersey.setPlayer({name:plateName(p),number:p.number});jersey.setMotion(!getA11y().reducedMotion);
-  box.replaceChildren();jersey.mount(box);prospectJerseys.push(jersey);
- }
- const current=[...prospectJerseys];document.fonts?.load(`400 100px ${SCRIPT_FONT}`).then(()=>{for(const jersey of current)if(prospectJerseys.includes(jersey))jersey.refreshFont();});
-}
-function mountJerseys(){const box=$('#jersey-stage');if(!box)return;
- if(!jerseysTried){jerseysTried=true;jerseys=createJerseyShowcase({onPick:wearKit});jerseys?.setMotion(!getA11y().reducedMotion);document.fonts?.ready.then(()=>jerseys?.refreshFont());document.fonts?.load(`400 100px ${SCRIPT_FONT}`).then(()=>jerseys?.refreshFont()).catch(()=>{});}
- if(!jerseys){box.classList.add('no-webgl');return;}
- jerseys.setUnlocked(state.unlockedKits||[]);jerseys.setKit(state.kit);applyJerseyPlayer();jerseys.mount(box);
- box.addEventListener('keydown',e=>{if((e.key!=='ArrowRight'&&e.key!=='ArrowLeft')||e.target!==box||e.ctrlKey||e.metaKey||e.altKey)return;e.preventDefault();stepJerseyPlayer(e.key==='ArrowRight'?1:-1);});
- const group=$('.kit-options');group?.addEventListener('focusin',e=>{const i=[...group.querySelectorAll('button')].indexOf(e.target.closest('button'));jerseys.focusKit(i);});group?.addEventListener('focusout',()=>jerseys.focusKit(-1));
- group?.addEventListener('keydown',e=>{if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;const b=[...group.querySelectorAll('button')],i=b.indexOf(document.activeElement);if(i<0)return;e.preventDefault();b[(i+(e.key==='ArrowRight'?1:b.length-1))%b.length].focus();});}
-// A special jersey was just earned: tell the coach where to find it.
-function announceKits(kits){for(const k of kits||[]){const name=kitName(k);notify(t('lk.unlockedMsg',{kit:name}),{type:'success',icon:'staff',title:t('lk.unlockedTitle')});announce(t('lk.unlockedTitle')+': '+name);}}
-const link=(href,label)=>`<a href="${href}" target="_blank" rel="noreferrer">${label}</a>`;
-function credits(){show(`<span class="eyebrow">${tu('credits.kicker')}</span><h1>${t('side.credits')}</h1><h2>${t('credits.creators')}</h2><p class="creator-names">Ajisth Sareen<br>Raghav Krishnan<br>Malhar Pawar</p><h2>${t('credits.assets')}</h2><ul class="sources"><li>${t('credits.logos')}</li><li>${t('credits.kenney',{link:link('https://kenney.nl/assets/furniture-kit','Kenney Furniture Kit'),loaded:arena.models})}</li><li>${t('credits.three',{link:link('https://threejs.org/','Three.js')})}</li><li>${t('credits.fonts',{barlow:link('https://fonts.google.com/specimen/Barlow','Barlow'),condensed:link('https://fonts.google.com/specimen/Barlow+Condensed','Barlow Condensed')})}</li><li>${link('https://fonts.google.com/specimen/Yellowtail','Yellowtail')} · Astigmatic · Apache 2.0</li><li>${t('credits.vite',{link:link('https://vite.dev/','Vite')})}</li><li>${t('credits.finalscore',{link:link(data.source,'KingCo Athletics'),season:esc(data.season)})}</li><li>${t('credits.kangs',{link:link('https://www.kangsbasketball.com/hs','Lake Washington Boys Basketball')})}</li><li>${t('credits.nfhs',{link:link('https://www.nfhs.org/sports/basketball/rules','NFHS basketball rules')})}</li><li>${t('credits.fbla',{event:link('https://www.fbla.org/competitive-events/computer-game-simulation-programming/','FBLA event'),guidelines:link('https://greektrack-fbla-public.s3.us-east-1.amazonaws.com/files/1/High%20School%20Competitive%20Events%20Resources/Individual%20Guidelines/Presentation%20Events/Computer-Game-Simulation-Programming.pdf','2026–27')})}</li><li>${t('credits.ecoquest',{link:link('https://github.com/Rishboy39/EcoQuest','EcoQuest')})}</li></ul><p>${t('credits.generated')}</p><p>${t('credits.render')}</p>`);}
-
-const RULE_TABS=['goal','prep','rotation','gameday','difficulty','controls','court','data'],RULE_BODY=['controls','goal','difficulty','rotation','prep','gameday','court','data'];
-function rules(tab=0){tab=(tab+RULE_TABS.length)%RULE_TABS.length;const P=state?plan():null;const row=(keyHtml,text)=>`<div class="ctl-row"><div class="ctl-keys">${keyHtml}</div><span>${text}</span></div>`;const chips=list=>`<div class="rule-chips">${list.map(([a,b])=>`<div><strong>${a}</strong><span>${b}</span></div>`).join('')}</div>`;const key=name=>kbd(esc(keyLabel(keys[name])));
- const levels=data?.levels||{};
- const body=[
- ()=>`<p class="rule-lead">${t('hb.c.lead')}</p><div class="ctl-grid">${row(micon('drag'),t('hb.c.drag'))}${row(micon('scroll'),t('hb.c.scroll'))}${row(kbd('SPACE')+key('nextPlay'),t('hb.c.next'))}${row(key('playPause'),t('hb.c.watch'))}${row(key('timeout'),t('hb.c.timeout'))}${row(['camWide','camCourt','camFollow','camPlayer','camAuto'].map(key).join(''),t('hb.c.cams'))}${row(key('speed'),t('settings.controls.actions.speed'))}${row(key('sound'),t('settings.controls.actions.sound'))}${row(key('settings'),t('settings.controls.actions.settings'))}${row(key('rules'),t('hb.c.hb'))}${row(kbd('ESC'),t('hb.c.esc'))}${row(kbd('TAB')+kbd('ENTER'),t('hb.c.tab'))}${row(micon('tap'),t('hb.c.tap'))}</div><p class="muted">${t('hb.c.rebind')}</p>`,
- ()=>`<p class="rule-lead">${t('hb.g.lead')}</p>${chips(P?[[t('hb.g.ofCut',{need:P.need,cut:P.cut}),t('hb.g.early')],[t('hb.g.fourGames'),t('hb.g.run',{run:stages().run})],[String(P.n),t('hb.g.games')]]:[[t('hb.g.qualify'),t('hb.g.qualifyLine')],[t('hb.g.fourGames'),t('hb.g.finalRun')],['1',t('hb.g.champ')]])}<p>${t('hb.g.note')}</p>`,
- ()=>`<p class="rule-lead">${t('hb.d.lead')}</p>${chips(Object.entries(E.DIFFICULTIES).map(([k,d])=>[esc(teamName(d.level)),`${esc(t(`tier.${k}`))} · ${t('hb.d.scheduled',{n:levels[d.level]?.games.length||0})}`]))}<p>${t('hb.d.note')}</p>`,
- ()=>`<p class="rule-lead">${t('hb.r.lead')}</p>${chips([['5',t('hb.r.starters')],['15+',t('hb.r.energy')],['2.0+',t('hb.r.gpa')],['0',t('hb.r.injuries')]])}<p>${t('hb.r.tip',{button:`<b>${t('flow.bestFive')}</b>`})}</p>`,
- ()=>`<p class="rule-lead">${t('hb.p.lead')}</p>${chips([['3',t('hb.p.slots')],['+'+E.ECON.base,t('hb.p.tokens')],['+'+E.ECON.win,t('hb.p.bonus')],['15',t('hb.p.cap')],['1',t('hb.p.assistant')]])}<p>${t('hb.p.note')}</p><p>${t('hb.p.costs',{upkeep:E.ECON.upkeep,travel:E.ECON.travel})}</p>`,
- ()=>`<p class="rule-lead">${t('hb.gd.lead')}</p>${chips([['3',t('hb.gd.timeouts')],[t('bug.ot'),t('hb.gd.ot')],['1× 2× 4×',t('hb.gd.speed')]])}<p>${t('hb.gd.note')}</p>`,
- ()=>`<p class="rule-lead">${t('hb.cr.lead')}</p><ul class="rule-list">${list('hb.cr.list').map(([a,b])=>`<li><b>${a}</b> ${b}</li>`).join('')}</ul><p class="muted">${t('hb.cr.note',{link:link('https://www.nfhs.org/sports/basketball/rules',t('hb.cr.link'))})}</p>`,
- ()=>`<p class="rule-lead">${t('hb.ds.lead')}</p>${chips([[String(Object.values(levels).reduce((a,x)=>a+x.players.length,0)),t('hb.ds.players')],[String(Object.values(levels).reduce((a,x)=>a+x.games.length,0)),t('hb.ds.matchups')],[t('hb.ds.auto'),t('hb.ds.save')]])}<p>${t('hb.ds.note',{export:t('top.export'),import:t('landing.import')})}</p>`][RULE_BODY.indexOf(RULE_TABS[tab])];
- const name=i=>t(`hb.tabs.${RULE_TABS[i]}`);
- show(`<span class="eyebrow">${tu('rules.kicker')}</span><h1>${t('landing.howTo')}</h1><div class="rule-tabs" role="tablist" aria-label="${esc(t('hb.tabsAria'))}">${RULE_TABS.map((k,i)=>`<button role="tab" id="rtab-${i}" aria-selected="${i===tab}" aria-controls="rpanel" tabindex="${i===tab?0:-1}" class="${i===tab?'active':''}" data-action="rules" data-tab="${i}">${name(i)}</button>`).join('')}</div><section class="rule-panel" id="rpanel" role="tabpanel" aria-labelledby="rtab-${tab}" data-rules-tab="${tab}"><h2>${name(tab)}</h2>${body()}</section><div class="rule-nav">${btn(t('hb.prev'),'rules','secondary small',`data-tab="${tab-1}" ${tab===0?'disabled':''}`)}<div class="rule-dots" aria-hidden="true">${RULE_TABS.map((_,i)=>`<i class="${i===tab?'on':''}"></i>`).join('')}</div>${btn(tab===RULE_TABS.length-1?t('hb.done'):t('hb.next'),tab===RULE_TABS.length-1?'close':'rules','primary small',`data-tab="${tab+1}"`)}</div>`);
- modal.querySelector('.rule-tabs .active')?.focus({preventScroll:true});}
-function profile(id){const p=state.players.find(p=>p.id===+id);if(!p)return;
-const b=E.bio(p),r=E.ratings(p),g=E.statLine(state,p);show(`<div class="profile-head">${avatar(p,96)}<div><span class="eyebrow">${tu('profile.kicker',{n:esc(p.number)})}</span><h1>${esc(p.name)}${capBadge(p.id)}</h1><p>${esc(tv(b.position))} · ${esc(b.height)}${b.assigned?` (${t('profile.est')})`:''} · ${esc(tv(p.year))} · ${r.ovr} ${t('rv.ovr')} · ${esc(tv(r.archetype))}</p></div></div><div class="profile-stats">${[[t('roster.skill'),Math.round(p.skill)],[t('roster.energy'),Math.round(p.energy)],[t('roster.morale'),Math.round(p.morale)],[t('roster.gpa'),p.gpa.toFixed(2)],[g.est?`${t('stat.ppg')} (${t('profile.est')})`:t('stat.ppg'),f1(g.ppg)],[t('stat.rpg'),f1(g.rpg)],[t('stat.apg'),f1(g.apg)],[t('stat.spg'),f1(g.spg)],[t('stat.bpg'),f1(g.bpg)],[t('stat.fgp'),f1(g.fgp)],[t('profile.risk'),p.energy<45?t('profile.riskHigh'):t('profile.riskLow')]].map(([a,b])=>`<div><strong>${b}</strong><span>${a}</span></div>`).join('')}</div><p>${p.injury?t('profile.injured',{n:p.injury}):t('profile.healthy')}</p>${arcBlock(p)}<form id="rename-form" data-id="${p.id}"><label for="rename">${t('profile.rename')}</label><input id="rename" name="name" maxlength="36" value="${esc(p.name)}" required><button class="primary" ${state.match?'disabled':''}>${t('profile.save')}</button></form><small>${p.custom?t('profile.custom'):t('profile.sourceName',{name:esc(p.originalName)})} ${t('profile.renameNote')}</small><div class="modal-actions">${state.captain===p.id?'':btn(t('flow.makeCaptain'),'lk-captain','secondary',`data-id="${p.id}" ${state.match?'disabled':''}`)}${btn(t('profile.release'),'release','danger-button',`data-id="${p.id}" ${state.match?'disabled':''}`)}</div>`);}
-// Quarter break after possessions 16, 32 and 48: only a pause in the interface, the simulation is not touched. Watch live stops here and resumes on "Keep going".
-let breakSeen='',breakAuto=false;
-const fgPct=(a,b)=>b?`${a}/${b} · ${Math.round(100*a/b)}%`:'—';
-function maybeBreak(){const m=state?.match;if(!m||replayEvent||view!=='game'||modal.open||!E.BREAKS.includes(m.possession)||breakSeen===`${m.seedStart}|${m.possession}`)return;quarterBreak();}
-function quarterBreak(){const m=state.match,r=E.quarterReport(state);if(!m||!r)return;breakSeen=`${m.seedStart}|${m.possession}`;breakAuto=auto;auto=false;
- const o=E.opponent(state),H=r.teams.home,A=r.teams.away,us=esc(up(t('game.kangs'))),them=esc(up(o.opponent)),rows=[['fg',fgPct(H.fgm,H.fga),fgPct(A.fgm,A.fga)],['tp',fgPct(H.tpm,H.tpa),fgPct(A.tpm,A.tpa)],...['reb','ast','stl','blk'].map(k=>[k,H[k],A[k]])];
- const sg=r.suggestions.map(x=>{const pr={...x.p};if(x.tactic)pr.tactic=t(`tactic.${x.tactic}`);return `<button class="choice break-adjust" data-action="break-adjust" data-id="${x.id}"><strong>${t(`break.s.${x.id}`,pr)}</strong><span>${x.tactic?t('break.toTactic',{tactic:t(`tactic.${x.tactic}`)}):t('break.toPace',{pace:t(`pace.${x.pace}`)})}</span></button>`;}).join('');
- render();show(`<span class="eyebrow">${tu('break.kicker')}</span><h1>${t('break.title',{n:r.quarter})}</h1><h2 class="break-score">${us} <b>${r.home}</b>–<b>${r.away}</b> ${them}</h2><div class="table-wrap team-compare"><table><thead><tr><th scope="col">${t('stats.title')}</th><th scope="col">${us}</th><th scope="col">${them}</th></tr></thead><tbody>${rows.map(([k,a,b])=>`<tr><td>${t(`box.${k}`)}</td><td><b>${a}</b></td><td>${b}</td></tr>`).join('')}</tbody></table></div><h3>${t('break.suggested')}</h3>${sg||`<p>${t('break.none')}</p>`}${btn(t('break.keep'),'break-go','primary wide break-go')}`);}
-function resumeBreak(){arena.paused=false;if(breakAuto){auto=true;gap=0;}breakAuto=false;}
-// Player of the game card and the three best plays, each a replay button (the same "replay" action as the defining possessions below).
-function pogCard(r){if(!r.pog)return '';const p=state.players.find(x=>x.id===r.pog.id),l=r.line?.[r.pog.id],name=p?.name||t('result.former'),bits=[`${r.pog.pts} ${t('box.pts')}`,`${r.pog.reb} ${t('box.reb')}`,`${r.pog.ast} ${t('box.ast')}`,`${r.pog.stl} ${t('box.stl')}`,`${r.pog.blk} ${t('box.blk')}`];if(l)bits.push(`${l.fgm}-${l.fga} ${t('box.fg')}`);
- return `<section class="pog-card pog" role="group" aria-label="${esc(t('result.pog',{name,pts:r.pog.pts,reb:r.pog.reb,ast:r.pog.ast}))}"><span class="jersey" aria-hidden="true">${p?.number??''}</span><div><small>${tu('result.pogTitle')}</small><strong>${esc(name)}</strong><span class="pog-line">${bits.map(x=>`<span>${esc(x)}</span>`).join('')}</span></div></section>`;}
-function highlightStrip(r,index){const list=E.highlights(r.events);if(!list.length)return '';
- return `<h3>${t('hl.title')}</h3><p>${t('hl.note')}</p><div class="highlights">${list.map((h,n)=>{const kind=t(`hl.kind.${h.kind}`);return `<button class="choice hl-card ${h.kind}" data-action="replay" data-index="${index}" data-event="${h.i}" aria-label="${esc(t('hl.watch',{player:h.player,kind,home:h.home,away:h.away}))}"><i class="hl-rank" aria-hidden="true">${n+1}</i><span class="hl-body"><em class="hl-tag">${esc(kind)}</em><strong>${esc(h.player)}</strong><span>${esc(h.points?shot(h.shot):t(`hl.def.${h.kind}`))}</span></span><b class="hl-score" aria-hidden="true">${esc(up(t('game.kangs')))} ${h.home}–${h.away}</b></button>`;}).join('')}</div>`;}
-function result(index){const r=state.results[index];if(!r)return;show(`<span class="eyebrow">${tu('result.kicker',{outcome:r.won?t('result.win'):t('result.loss')})}</span><h1>${r.home}–${r.away}</h1><h2>${t('game.vs',{opp:esc(r.opponent)})}</h2><p>${esc(reasonText(r))}</p>${pogCard(r)}${highlightStrip(r,index)}<div class="modal-actions">${btn(t('inbox.continue'),'close','primary')}</div><details class="analysis-drawer"><summary>${t('flow.more')}</summary><h3>${t('result.before')}</h3>${r.ripples.map(x=>`<p class="notice">${esc(logText(x))}</p>`).join('')||`<p>${t('result.noPrep')}</p>`}<h3>${t('result.defining')}</h3>${r.events.slice(-5).map((e,i)=>`<button class="choice" data-action="replay" data-index="${index}" data-event="${r.events.length-5+i}"><strong>${esc(e.player)} · ${e.points?`+${e.points}`:esc(t(`outcome.${e.plays?.[0]?.outcome||'miss'}`))}</strong><span>${esc(explanationText(e))}${e.shotChance?` ${t('result.shotQuality',{n:e.shotChance})}`:''}</span><b aria-hidden="true">▶</b></button>`).join('')}<h3>${t('result.why')}</h3><p>${t('result.whyBody')}</p><div class="effect-list">${Object.entries(r.events.at(-1)?.impacts||{}).map(([key,n])=>`<span>${esc(has(`impact.${key}`)?t(`impact.${key}`):key)}: ${n>=0?'+':''}${n.toFixed(1)} pp</span>`).join('')}</div><h3>${t('game.boxScore')}</h3>${r.line?boxTable(r.line,`${up(t('game.kangs'))} ${r.home} · ${up(r.opponent)} ${r.away}`):Object.entries(r.box).filter(([,p])=>p>0).map(([id,points])=>`<div class="staff-row"><span>${esc(state.players.find(p=>p.id===+id)?.name||t('result.former'))}</span><b>${t('result.pts',{n:points})}</b></div>`).join('')}</details>`);}
-async function refresh(){try{const next=await fetch(`${import.meta.env.BASE_URL}data/kangs.json?t=${Date.now()}`,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error();return r.json();});if(!next.levels?.varsity?.players?.length)throw Error();data=next;previews={};render();notify(t('notify.checked',{date:formatDateTime(data.checkedAt)}),{type:'success',title:t('toast.dataChecked')});}catch{notify(t('notify.snapshotFailed'),{type:'error',title:t('toast.snapshotTitle')});}}
-// Sounds are chosen from the clip itself: made baskets swish, everything else has its own cue.
-function cueFor(c){return c.outcome==='made'?(c.three?'three':'swish'):c.outcome==='miss'?'rim':c.outcome;}
-// Read out each resolved play once, for screen-reader users who cannot follow the 3D scene.
-// The crowd reacts to big plays: it roars for the Kangs' threes, dunks and blocks, and groans for the visitors'.
-function crowdReaction(c){const big=c.outcome==='made'&&(c.three||isDunk(c.kind));if(c.team==='home'&&(big||(c.outcome==='steal')))play('cheer');else if(c.team==='away'&&big)play('groan');else if(c.outcome==='block')play(c.team==='away'?'cheer':'groan');}
-function reportPlay(p){const id=`${arena.run}|${p.index}`;if(cued===id)return;cued=id;play(cueFor(p.clip));crowdReaction(p.clip);const line=commentary(p.clip);const spoke=speak(line,{tag:localeTag(),muted:getSound().muted,rate:Math.min(1.5,.95+.15*Math.log2(Math.max(.5,arena.speed||1))+.1)});announce(spoke?t('a11y.score',{home:p.home,away:p.away}):`${line} ${t('a11y.score',{home:p.home,away:p.away})}`);}
-// The ambient crowd runs only during a live game.
-function syncCrowd(){if(view==='game'&&state?.match&&!replayEvent&&!modal.open)startCrowd();else stopCrowd();}
-function syncPresentation(p){
- if(!p)return;
- if($('#live-home'))$('#live-home').textContent=p.home;if($('#live-away'))$('#live-away').textContent=p.away;
- const banner=$('.live-action');if(banner)banner.textContent=`${p.clip.team==='home'?up(t('game.kangs')):up(t('game.visitors'))} · ${shot(p.clip)}`;
- const call=$('.play-call');if(call)call.textContent=p.resolved?commentary(p.clip):t('game.look',{player:p.clip.player,phase:phase(p.phase),contest:t(`contest.${p.clip.contest}`)});
- const feed=$('.play-feed');if(feed){const m=state.match||closingMatch;const rows=replayEvent?(p.index===1&&p.resolved?arena.clips.map(commentary).reverse():p.index===0&&!p.resolved?[]:[commentary(arena.clips[0])]):m?(p.index===1&&p.resolved?feedLines(m):p.index===0&&!p.resolved?feedLines(m).slice(2):feedLines(m).slice(1)):[];feed.innerHTML=rows.map((text,i)=>`<p class="${i===0?'new':''}">${esc(text)}</p>`).join('');}
- if(p.resolved&&p.clip?.impacts){lastWhy=whyHtml(p.clip);const w=$('#why-body');if(w)w.innerHTML=lastWhy;}
- const next=$('[data-action="step"]');if(next)next.disabled=arena.isPlaying()||!!closingMatch;
- if(p.done&&pendingResult!==null){const index=pendingResult;pendingResult=null;closingMatch=null;auto=false;arena.clear();render();play(state.results[index].won?'victory':'defeat');flowPending=!state.finished;result(index);announceKits(state.results[index].kits);}
- else if(p.done)maybeBreak();
-}
-let replayOpp='',lastWhy='';
-// "Why that shot?": how each factor moved the chance of the latest resolved play, in percentage points. The bars are decoration; the numbers carry the meaning.
-function whyHtml(c){const rows=Object.entries(c.impacts||{}),max=Math.max(8,...rows.map(([,v])=>Math.abs(v)));return `<p class="why-head">${esc(t('game.whyShot',{player:c.player,shot:shot(c),n:c.shotChance}))}</p><ul>${rows.map(([k,v])=>`<li><span>${esc(has(`impact.${k}`)?t(`impact.${k}`):k)}</span><b>${v>=0?'+':'−'}${Math.abs(v).toFixed(1)} pp</b><i aria-hidden="true" class="${v>=0?'up':'down'}" style="width:${Math.round(Math.abs(v)/max*100)}%"></i></li>`).join('')}</ul>`;}
-function fpHud(){try{const el=document.querySelector('.fp-hud');if(!el)return;const s=arena.fpActive?arena.fpSubject:null;let key='';if(s&&view==='game'){const pl=s.home?state?.players?.find(p=>p.id===s.id):null;const pos=s.home?(s.position&&s.position!=='Not listed'?s.position:pl?E.bio(pl).position:''):'';const opp=replayEvent?replayOpp:(closingMatch?state?.results?.at(-1)?.opponent:undefined)??state?.schedule?.[state.week]?.opponent;const tag=s.home?(pos?tv(pos):''):(opp||t('game.visitors'));key=`${s.number??''}|${s.name||''}|${tag}`;if(el.dataset.key!==key){el.dataset.key=key;el.innerHTML=`<b>${tu('stage.player')}</b><span>#${esc(String(s.number??''))} ${esc(s.name||'')}</span>${tag?`<em>${esc(String(tag).toUpperCase())}</em>`:''}`;}el.hidden=false;return;}if(el.dataset.key){el.dataset.key='';el.textContent='';}el.hidden=true;}catch{}}
-setInterval(fpHud,150);
-arena.onPresentation=p=>{if(p.resolved)reportPlay(p);syncPresentation(p);};
-function step(){
- if(!state.match||arena.isPlaying())return;
- closingMatch=state.match;const event=E.possession(state);arena.play(event);applyArena();save();gap=0;
- if(!state.match){pendingResult=state.results.length-1;auto=false;}else closingMatch=null;
- render();
-}
-// The first game is the tutorial and it counts. It goes one beat at a time: the game holds, the assistant says one thing, and only what they point at can be used. A beat opens when on() is true and closes when done() is; next:true waits for the Next button instead.
-let tour=null;
-const walkDefault=()=>{try{return !localStorage.getItem(TUTORIAL);}catch{return true;}};
-const hold=()=>{auto=false;arena.paused=true;render();},letGo=()=>{arena.paused=false;auto=true;gap=0;render();};
-const inGame=()=>!!state?.match&&view==='game'&&!modal.open;
-const BEATS=[
- {id:'home',spot:'.home-bar',lock:'.hb-go',act:'.hb-go',on:()=>view==='home',done:()=>view==='practice',say:()=>({opp:esc(E.opponent(state).opponent)})},
- {id:'pick',spot:'.prep-row:first-child',act:'[data-plan="shooting"]',on:()=>view==='practice',done:()=>practicePlan.includes('shooting'),say:()=>({name:t('plan.shooting.name')})},
- {id:'fill',spot:'.prep-list',lock:'.prep-row,.plan-x',on:()=>view==='practice',done:()=>practicePlan.length>=planCap()},
- {id:'run',spot:'[data-action="practice-start"]',act:'[data-action="practice-start"]',lock:'[data-action="practice-start"],.plan-x',on:()=>view==='practice',done:()=>!!practiceRun},
- {id:'retry',spot:'.prep-side',lock:'[data-action="practice-start"],.prep-go,.plan-x,.prep-row',act:'[data-action="practice-start"]',skip:()=>view==='game'||(view==='practice'&&!practiceRun&&!modal.open&&!(planCap()&&practicePlan.length)),on:()=>view==='practice'&&!practiceRun,done:()=>!!practiceRun||view==='game'},
- {id:'toGame',spot:'.prep-go',act:'.prep-go',on:()=>view==='practice'&&!practiceRun,done:()=>view==='game'},
- {id:'five',spot:'.right-rail',lock:'[data-action="start-match"]',act:'[data-action="start-match"]',on:()=>view==='game'&&!state.match,done:()=>!!state.match},
- {id:'watch',spot:'[data-action="auto"]',act:'[data-action="auto"]',game:true,on:inGame,done:()=>auto,say:()=>({btn:t('game.watch').replace(/^[^\p{L}]+/u,'')})},
- {id:'shot',game:true,next:true,keep:true,lock:'.coach-card',on:()=>{const p=arena.presentation();return inGame()&&state.match.possession>=3&&!!p?.resolved&&p.clip.team==='home'&&!!p.clip.shotChance;},enter:hold,leave:letGo,say:()=>{const c=arena.presentation()?.clip;return {player:esc(c?.player??''),n:c?.shotChance??0};}},
- {id:'timeout',spot:'[data-action="timeout"]',act:'[data-action="timeout"]',game:true,on:()=>inGame()&&state.match.possession>=9,enter:hold,leave:letGo,done:()=>state.match?.timeouts<E.TIMEOUTS},
- {id:'quarter',inline:true,game:true,on:()=>modal.open&&!!modal.querySelector('[data-action="break-go"]'),done:()=>!modal.open},
- {id:'speed',spot:'.playback-controls',game:true,next:true,keep:true,on:inGame,enter:hold,leave:letGo},
- {id:'press',inline:true,on:()=>modal.open&&!!modal.querySelector('.inbox-card.press'),done:()=>!modal.open||!modal.querySelector('.inbox-card.press')||!!state.press?.done},
- {id:'done',spot:'.home-bar',lock:'.hb-go',act:'.hb-go',last:true,on:()=>view==='home'&&!modal.open,done:()=>view!=='home',say:()=>({n:formatNumber(state.tokens),tokens:t('toast.tokens')})}
-];
-function startTour(){state.deferPre=true;tour={i:0,open:false};try{localStorage.setItem(TUTORIAL,'seen');}catch{}}
-function clearCoach(){document.querySelectorAll('.coach-card,.coach-ring,.coach-line').forEach(x=>x.remove());document.querySelectorAll('.coach-glow').forEach(x=>x.classList.remove('coach-glow'));}
-// The page redraws under the tutorial, so the glow is put back on every tick.
-function glowCoach(){const b=BEATS[tour.i],sel=b.act??(b.next?'.coach-card [data-action="tour-next"]':null);document.querySelectorAll('.coach-glow').forEach(x=>{if(!sel||!x.matches(sel))x.classList.remove('coach-glow');});if(sel)document.querySelectorAll(sel).forEach(x=>x.classList.add('coach-glow'));}
-// Skipping sits apart from the card, so it never reads as the next step.
-function skipButton(show){let el=$('.coach-skip');if(!show){el?.remove();return;}if(!el){el=document.createElement('button');el.type='button';el.className='coach-skip';el.dataset.action='tour-skip';el.textContent=t('tutorial.skip');document.body.append(el);}}
-function stopTour(){if(!tour)return;const b=BEATS[tour.i];if(tour.open&&b.enter){arena.paused=false;}tour=null;clearCoach();skipButton(false);if(state?.week===0&&state.deferPre){state.deferPre=false;save();}}
-function endTour(){tour=null;clearCoach();skipButton(false);}
-function coachLine(b){const text=t(`tutorial.b.${b.id}`,tour.say);return `<span class="coach-who">${t('tutorial.who')}</span><p>${text}</p>`;}
-function drawCoach(){const b=BEATS[tour.i];clearCoach();if(b.inline){const el=document.createElement('div');el.className='coach-line';el.dataset.beat=b.id;el.innerHTML=coachLine(b);modal.querySelector('.modal-content')?.prepend(el);return;}
- const card=document.createElement('div');card.className='coach-card';card.dataset.beat=b.id;card.setAttribute('role','status');card.innerHTML=`${coachLine(b)}${b.next?`<div class="coach-acts">${btn(t(b.last?'tutorial.finish':'tutorial.next'),'tour-next','primary small')}</div>`:''}`;document.body.append(card);
- if(b.spot){const ring=document.createElement('div');ring.className='coach-ring';document.body.append(ring);}placeCoach();}
-// The ring sits on the thing being talked about, and the card next to it. Both are re-placed on every tick, because the page redraws under them.
-function placeCoach(){const b=BEATS[tour.i],card=$('.coach-card');if(!card)return;const ring=$('.coach-ring'),el=b.spot?[...document.querySelectorAll(b.spot)].find(x=>x.getBoundingClientRect().width):null,r=el?.getBoundingClientRect(),w=card.offsetWidth,h=card.offsetHeight;if(ring){ring.hidden=!r;if(r)Object.assign(ring.style,{left:`${r.left-6}px`,top:`${r.top-6}px`,width:`${r.width+12}px`,height:`${r.height+12}px`});}
- if(!r||innerWidth<=760){card.style.left=`${Math.max(12,(innerWidth-w)/2)}px`;card.style.top=`${innerHeight-h-(innerWidth<=760?84:24)}px`;return;}
- // Below first, then to the left, and above only as a last resort: the top right is where notifications appear.
- const below=r.bottom+14+h<innerHeight-12,side=r.left-14-w>12,above=r.top-14-h>12;card.style.left=`${below||(!side&&above)?Math.max(12,Math.min(innerWidth-w-12,r.left)):side?r.left-14-w:Math.max(12,innerWidth-w-12)}px`;card.style.top=`${below?r.bottom+14:side?Math.max(12,Math.min(innerHeight-h-12,r.top)):above?r.top-14-h:Math.max(12,innerHeight-h-12)}px`;}
-function coachTick(){if(!tour)return;let b=BEATS[tour.i];skipButton(view!=='landing');if(view==='landing'){if(tour.open){tour.open=false;clearCoach();}return;}
- if(!tour.open&&((b.game&&!state?.match)||b.skip?.())){tour.i++;coachTick();return;}
- if(!tour.open){if(b.inline?!b.on():(modal.open||!b.on()))return;tour.open=true;tour.say=b.say?.()||{};b.enter?.();drawCoach();glowCoach();announce(document.querySelector('.coach-card p,.coach-line p')?.textContent||'');return;}
- if(b.inline&&modal.open&&!modal.querySelector('.coach-line'))drawCoach();glowCoach();
- if(!b.inline&&modal.open){$('.coach-card')?.setAttribute('hidden','');}else{$('.coach-card')?.removeAttribute('hidden');placeCoach();}
- if(b.done?.()||(b.game&&!state?.match&&!modal.open))nextBeat();}
-function nextBeat(){const b=BEATS[tour.i];clearCoach();if(state?.match)b.leave?.();if(b.last){endTour();return;}tour.i++;tour.open=false;coachTick();}
-// While a beat is open only the card and the thing it points at respond. The tutorial's own lines inside a dialog never get in the way.
-document.addEventListener('click',e=>{if(!tour?.open)return;const b=BEATS[tour.i];if(b.inline||modal.open||e.target.closest('.coach-card,.coach-skip,.confirm-dlg,.toast-card'))return;const ok=b.lock??b.spot;if(ok&&!e.target.closest(ok)){e.preventDefault();e.stopImmediatePropagation();play('error');}},true);
-const pageName=v=>v==='landing'?t('meta.title'):t(`nav.${v}`);
-function go(v){stopSpeech();lastWhy='';if(v==='landing'&&demo){leaveDemo();notify(t('demo.closed'),{type:'info',title:t('demo.jumpedTitle')});}view=v;auto=false;arena.clear();closingMatch=null;pendingResult=null;replayEvent=null;replayOpp='';$('#toast')?.querySelectorAll('.toast-card.error').forEach(c=>c.remove());render();window.scrollTo(0,0);if(v==='locker')arena.setView('court');else if(v==='staff')arena.setView('office');
-else arena.setView(v==='game'?(['player','follow','court'].includes(arena.mode)&&state?.match?arena.mode:'auto'):v==='landing'?'title':'broadcast');
- // Keyboard and screen-reader users land at the top of the new page instead of at the start of the document.
- $('main h1')?.focus({preventScroll:true});announce(t('a11y.pageOpened',{page:pageName(v)}));
-}
-app.addEventListener('submit',async e=>{e.preventDefault();if(e.target.id==='start-form'){if(launching)return;const f=new FormData(e.target);const raw=String(f.get('code')||'').trim(),code=raw?E.parseSeasonCode(raw):null;if(raw&&!code){notify(t('code.invalid'),{type:'error'});play('error');const d=$('#code')?.closest('details');if(d)d.open=true;$('#code')?.focus();return;}launching=true;try{if(state&&!await confirmDialog(t('confirm.replace'),{yes:t('confirm.replaceYes'),danger:true}))return;await leaveTitle();state=E.createGame(data,f.get('coach'),code?code.difficulty:f.get('difficulty'),code?code.seed:undefined);E.autoLineup(state);if(f.get('walk')==='on')startTour();save();play('whistle');view='home';render();arena.setView('broadcast');$('main h1')?.focus({preventScroll:true});}catch(err){restoreTitle();play('error');notify(translateError(err.message),{type:'error'});}finally{launching=false;}}});
-modal.addEventListener('close',()=>{arena.paused=false;syncCrowd();
- if(pressOpen){pressOpen=false;if(state?.press&&!state.press.done){P.skipPress(state);const pe=V.rollEvent(state);save();if(pe){render();setTimeout(showEvent,0);}else go('home');}}if(flowPending){flowPending=false;setTimeout(postGame,0);}if(practiceRun){practiceRun.cleanup?.();const run=practiceRun;practiceRun=null;practicePlan=practicePlan.filter(k=>!run.done.some(d=>d.key===k&&d.passed));render();}});
-/* Live-game drawers share one corner of the court: opening one closes the other so they never overlap. */
-document.addEventListener('toggle',e=>{const d=e.target;if(!d.open||!document.body.classList.contains('live-match')||!d.matches('.commentary-drawer,.box-drawer,.why-drawer'))return;document.querySelectorAll('.commentary-drawer[open],.box-drawer[open],.why-drawer[open]').forEach(o=>{if(o!==d)o.open=false;});},true);
-modal.addEventListener('keydown',e=>{if(!/^[1-3]$/.test(e.key)||e.ctrlKey||e.metaKey||e.altKey)return;const b=modal.querySelectorAll('[data-pick]')[+e.key-1];if(b&&!b.disabled){e.preventDefault();b.click();}});
-modal.addEventListener('submit',e=>{e.preventDefault();if(e.target.id==='rename-form'){const name=new FormData(e.target).get('name').trim();if(!name)return;state.players.find(p=>p.id===+e.target.dataset.id).name=name.slice(0,36);save();modal.close();render();play('confirm');}});
-// On phones the nav is a scrolling bottom tab bar: after each render keep the current page's tab in view.
-new MutationObserver(()=>{const n=$('.nav-item.active'),bar=n?.parentElement;if(bar&&bar.scrollWidth>bar.clientWidth)bar.scrollLeft=n.offsetLeft-(bar.clientWidth-n.offsetWidth)/2;}).observe(app,{childList:true});
-// "Watch live" waits while a field has focus so a drop-down is not rebuilt under the cursor, but only while it is in use: a pointer user's choice blurs it, and a keyboard user's focus stops mattering after a few idle seconds.
-let lastInteract=0,viaPointer=false;
-document.addEventListener('pointerdown',()=>{viaPointer=true;lastInteract=Date.now();},true);
-document.addEventListener('keydown',()=>{viaPointer=false;lastInteract=Date.now();},true);
-// The first key or pointer press on the title screen ends its entrance animation at once.
-for(const ev of ['pointerdown','keydown'])document.addEventListener(ev,()=>$('.landing:not(.entered)')?.classList.add('entered'),true);
-document.addEventListener('change',e=>{if(e.target.id==='difficulty'&&view==='landing'){if(!state)arena.update(titlePreview(e.target.value));return;}if(e.target.id==='gear-player'){gearPlayer=Number(e.target.value);render();return;}if(e.target.id==='jersey-player'&&state){jerseyId=+e.target.value;play('select');applyJerseyPlayer();return;}const el=e.target;try{if(el.matches('[data-starter]')){if(state.match)throw Error(t('notify.finishFirst'));E.setStarter(state,el.dataset.starter,el.checked);save();play('select');render();}if(el.matches('[data-minutes]')){if(state.match)throw Error(t('notify.finishFirst'));const n=Number(el.value);if(!Number.isInteger(n)||n<0||n>32)throw Error(t('notify.minutes'));state.players.find(p=>p.id===+el.dataset.minutes).minutes=n;save();render();play('select');}if(el.id==='training-target'){selected=el.value;play('select');render();}if(el.id==='tactic'&&state.match){state.match.tactic=el.value;save();play('select');if(viaPointer)el.blur();}if(el.id==='pace'&&state.match){state.match.pace=el.value;save();play('select');if(viaPointer)el.blur();}}catch(err){notify(translateError(err.message),{type:'error'});play('error');render();}});
-// Which sound confirms which action. Anything not listed is a plain interface click.
-const CUES={train:'confirm',recruit:'signing',hire:'signing',upgrade:'signing',talk:'confirm',scout:'confirm','auto-lineup':'confirm',huddle:'timeout','start-match':'whistle',kit:'select',camera:'select',speed:'select',release:'select',dismiss:'select'};
-document.addEventListener('click',async e=>{const el=e.target.closest('button[data-action],a[data-action],button[data-view]');if(!el)return;e.preventDefault();if(el.dataset.view){play('uiClick');go(el.dataset.view);return;}const a=el.dataset.action;const was=state?{tokens:state.tokens,actions:state.actions,chemistry:state.chemistry}:null;try{
- if(a==='settings'){play('uiClick');openSettings();return;}
- if(a==='close'){play('uiClick');modal.close();arena.paused=false;return;}if(a==='credits'){play('uiClick');credits();return;}if(a==='rules'){
-rules(+(el.dataset.tab||0));
-return;}
-if(a==='camera'){play('uiClick');setCamera(el.dataset.camera);
-return;}
- if(a==='copy-code'){play('uiClick');copyCode(el.dataset.code);return;}if(a==='model'){play('uiClick');modelPanel();return;}
- if(a==='title'){play('uiClick');if(modal.open)modal.close();go('landing');return;}if(a==='title-pause'){play('uiClick');titlePause={paused:!bgPaused(),rm:!!getA11y().reducedMotion};syncTitlePause();return;}if(a==='new-season-form'){play('uiClick');const f=$('#start-form'),open=!!f?.hidden;if(f)f.hidden=!open;el.setAttribute('aria-expanded',open);if(open)$('#coach')?.focus();return;}if(a==='continue'||a==='home'){if(launching)return;play('uiClick');try{if(a==='continue'){launching=true;await leaveTitle();}go('home');}catch(err){restoreTitle();throw err;}finally{launching=false;}if(a==='continue'&&lateKits.length){announceKits(lateKits);lateKits=[];}if(a==='continue'&&state?.pendingEvent)showEvent();return;}if(a==='game'){play('uiClick');go('game');return;}if(a==='rotation'){play('uiClick');go('roster');return;}if(a==='journal'){play('uiClick');go('season');return;}if(a==='new-season'){play('uiClick');go('landing');return;}if(a==='refresh'){await refresh();return;}
- if(a==='captain-set'){const p=E.setCaptain(state,el.dataset.id);play('confirm');notify(t('captain.set',{name:p.name}),{type:'success',icon:'staff'});}
- if(a==='inbox-open'){play('uiClick');showEvent();return;}if(a==='press-open'){play('uiClick');if(!state.press||state.press.week!==state.week)P.startPress(state,PRESS_MAX);save();if(!showPress())render();return;}
- if(a==='pick-event'){play('select');chooseEvent(+el.dataset.i);return;}if(a==='pick-press'){play('select');choosePress(+el.dataset.q,el.dataset.a);return;}if(a==='press-skip'){play('uiClick');pressOpen=false;P.skipPress(state);save();afterPress();return;}if(a==='inbox-done'){play('uiClick');modal.close();if(view==='game'&&!state.match)go('home');return;}if(a==='press-after'){play('uiClick');afterPress();return;}
- if(a==='report-save'){play('uiClick');saveReportCard();return;}if(a==='demo-start'){play('whistle');enterDemo();return;}if(a==='demo-next'){play('uiClick');demoStep(1);return;}if(a==='demo-back'){play('uiClick');demoStep(-1);return;}if(a==='demo-exit'){play('uiClick');exitDemo();return;}if(a==='demo-hide'||a==='demo-show'){play('uiClick');demo.hidden=a==='demo-hide';render();return;}if(a==='demo-jump'){play('uiClick');demoJump();return;}
- if(a==='tour-skip'){play('uiClick');if(!await confirmDialog(t('tutorial.skipAsk'),{yes:t('tutorial.skipYes'),no:t('tutorial.keep')}))return;stopTour();render();return;}if(a==='tour-next'){play('uiClick');nextBeat();return;}if(a==='break-done'){play('confirm');E.endBreak(state);save();go('home');return;}
- if(a==='export'){play('confirm');const blob=new Blob([E.exportJson(state)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='kangs-season.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notify(t('notify.exported'),{type:'success',title:t('toast.exportedTitle')});return;}
- if(a==='import'){play('uiClick');const input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.hidden=true;document.body.append(input);input.oncancel=()=>input.remove();input.onchange=async()=>{try{if(input.files[0].size>2e6)throw Error(t('notify.tooLarge'));const s=JSON.parse(await input.files[0].text());if(!E.validSave(s))throw Error(t('notify.badSave'));if(state&&!await confirmDialog(t('confirm.import'),{yes:t('confirm.importYes'),danger:true}))return;state=s;const early=E.updateKits(state);save();go('home');announceKits(early);}catch(err){notify(err.message,{type:'error',title:t('toast.importFailed')});play('error');}finally{input.remove();}};input.click();return;}
- if(a==='data-level'){play('select');dataLevel=el.dataset.key;render();return;}if(a==='roster-full'){play('uiClick');rosterFull=!rosterFull;render();return;}if(a==='player'){play('uiClick');profile(el.dataset.id);return;}if(a==='rv-select'){play('select');rosterSel=+el.dataset.id;render();return;}if(a==='rv-cycle'){cycleRoster(+el.dataset.step);return;}if(a==='result'){play('uiClick');result(+el.dataset.index);return;}if(a==='replay'){play('uiClick');const event=state.results[+el.dataset.index].events[+el.dataset.event];flowPending=false;modal.close();go('game');replayEvent=event;replayOpp=state.results[+el.dataset.index].opponent||'';arena.play(event,{replay:true});applyArena();render();return;}if(a==='replay-pause'){play('select');arena.paused=!arena.paused;render();return;}if(a==='replay-again'){play('select');arena.play(replayEvent,{replay:true});applyArena();render();return;}if(a==='speed'){play('select');playbackSpeed=Number(el.dataset.speed);applyArena();render();announce(t('a11y.speed',{speed:speedLabel(playbackSpeed)}));return;}
- if(a==='plan-toggle'){play('select');togglePlan(el.dataset.plan);return;}if(a==='practice-start'){play('whistle');startPractice();return;}if(a==='practice-next'){play('uiClick');nextDrill();return;}if(a==='train')E.train(state,el.dataset.plan,selected);
- if(a==='recruit')E.recruit(state,el.dataset.id);
- if(a==='scout-prospect'){E.scoutProspect(state,el.dataset.id);notify(logText(state.log[0]),{type:'success',icon:'film',title:t('scoutP.toastTitle'),chips:[signed(-E.SCOUT_COST,t('toast.tokens'))]});}
- if(a==='release'){if(!await confirmDialog(t('confirm.release'),{yes:t('confirm.releaseYes'),danger:true}))return;E.release(state,el.dataset.id);modal.close();}
- if(a==='gear-filter'){gearFilter=el.dataset.filter==='owned'?'owned':'all';render();return;}
- if(a==='skill-unlock'){const key=el.dataset.key,node=E.skillNode(key);E.unlockSkill(state,key);save();play('signing');const name=t(`shot.${key}`);notify(t('skills.unlockedMsg',{move:name}),{type:'success',icon:'ball',title:t('skills.unlockedTitle'),chips:[signed(-node.cost,t('toast.tokens'))]});announce(`${t('skills.unlockedTitle')}: ${name}`);render();$(`#skill-${key}`)?.focus({preventScroll:true});return;}
- if(a==='gear-buy'){E.buyGear(state,el.dataset.key);notify(t('gear.bought',{item:t(`gear.items.${el.dataset.key}`)}),{type:'success'});}
- if(a==='gear-equip'){E.equipGear(state,+el.dataset.id,el.dataset.key);notify(t('gear.equipDone',{item:t(`gear.items.${el.dataset.key}`),name:state.players.find(p=>p.id===+el.dataset.id).name}),{type:'success'});}
- if(a==='gear-remove')E.unequipGear(state,+el.dataset.id,el.dataset.slot);
- if(a==='hire')E.hire(state,el.dataset.key);
- if(a==='upgrade')E.buyUpgrade(state,el.dataset.key);
- if(a==='dismiss'){if(state.match)throw Error('Finish the current game first.');state.assistant=null;E.log(state,'Assistant dismissed. No refund.','dismiss');}
- if(a==='talk')E.talk(state,el.dataset.choice);
- if(a==='scout')E.scout(state);
- if(a==='auto-lineup')E.autoLineup(state);
- if(a==='kit'||a==='kit-locked'){wearKit(el.dataset.kit);return;}
- if(a==='jersey-step'){stepJerseyPlayer(+el.dataset.step);return;}
- if(a==='lk-pick'){play('select');captainPick=captainPick===+el.dataset.id?null:+el.dataset.id;render();return;}
- if(a==='lk-captain'){await makeCaptain(+el.dataset.id);return;}
- if(a==='start-match')tipOff();
- if(a==='pre-tip'||a==='pre-skip'){if(a==='pre-skip')G.skipPregame(state);modal.close();tipOff();play('whistle');save();render();return;}
- if(a==='pick-pre'){play('select');choosePregame(+el.dataset.q,el.dataset.a);return;}
- if(a==='auto'&&closingMatch){play('uiClick');arena.paused=!arena.paused;render();return;}
- if(a==='auto'){play('uiClick');auto=!auto;arena.paused=!auto;gap=0;if(auto&&!arena.isPlaying()){step();return;}}
- if(a==='step'){play('uiClick');auto=false;arena.paused=false;step();return;}
- if(a==='timeout'){play('uiClick');auto=false;show(`<span class="eyebrow">${tu('timeout.kicker')}</span><h1>${t('timeout.title')}</h1><p>${t('timeout.body')}</p>${btn(t('timeout.calm'),'huddle','primary wide','data-message="calm"')}${btn(t('timeout.belief'),'huddle','secondary wide','data-message="belief"')}`);return;}
- if(a==='break-go'){play('uiClick');modal.close();resumeBreak();render();return;}
- if(a==='break-adjust'){const e=E.applyAdjustment(state,el.dataset.id);save();modal.close();resumeBreak();play('confirm');notify(logText(e),{type:'success',title:t('break.applied')});render();return;}
- if(a==='huddle'){E.timeout(state,el.dataset.message);modal.close();arena.paused=false;}
- play(CUES[a]??'uiClick');save();render();if(['train','recruit','hire','upgrade','talk','scout','release','dismiss'].includes(a))actionToast(a,was);
- }catch(err){auto=false;play('error');notify(translateError(err.message),{type:'error'});lastError=err.message;}});
-// Keyboard shortcuts for the coaching controls. They act on the visible buttons, so a disabled control stays disabled.
-const press=sel=>{const b=document.querySelector(sel);if(b&&!b.disabled){b.click();return true;}return false;};
-const CAMERA_KEYS={camWide:'broadcast',camCourt:'court',camFollow:'follow',camPlayer:'player',camAuto:'auto'};
-document.addEventListener('keydown',e=>{
- if(e.defaultPrevented||e.repeat||e.ctrlKey||e.metaKey||e.altKey||e.isComposing)return;
- const tg=e.target;if(['INPUT','SELECT','TEXTAREA'].includes(tg?.tagName)||tg?.isContentEditable)return;
- if(tour?.open&&!BEATS[tour.i].inline&&!modal.open)return;
- const rulesTab=modal.open?modal.querySelector('[data-rules-tab]'):null;
- if(rulesTab&&(e.key==='ArrowRight'||e.key==='ArrowLeft')){e.preventDefault();rules(+rulesTab.dataset.rulesTab+(e.key==='ArrowRight'?1:-1));return;}
- if(modal.open)return;
- if(demo&&e.code==='KeyJ'){e.preventDefault();demoJump();return;}
- if(e.key==='?'){e.preventDefault();rules();return;}
- const action=ACTIONS.find(a=>keys[a]===e.code);
- if(!action){if(e.code==='Space'&&document.body.dataset.view==='game'&&!tg?.closest?.('button,a,summary')&&press('[data-action="step"]'))e.preventDefault();return;}
- e.preventDefault();
- if(action==='playPause')press('[data-action="auto"]')||press('[data-action="replay-pause"]');
- else if(action==='nextPlay')press('[data-action="step"]');
- else if(action==='timeout')press('[data-action="timeout"]');
- else if(CAMERA_KEYS[action]){if($('#arena')&&view!=='landing')setCamera(CAMERA_KEYS[action]);}/* the title gym keeps its own shot */
- else if(action==='speed'){const all=[...document.querySelectorAll('[data-action="speed"]')],i=all.findIndex(b=>b.getAttribute('aria-pressed')==='true');all[(i+1)%all.length]?.click();}
- else if(action==='sound')toggleSound();
- else if(action==='settings')openSettings();
- else if(action==='rules')rules();
+// Listeners are added in this order on purpose: the tutorial's click lock (capture) runs before any button.
+document.addEventListener('click', blockOutsideSpotlight, true);
+app.addEventListener('submit', e => {
+  e.preventDefault();
+  if (e.target.id === 'start-form') startSeason(e.target);
 });
-// Pace of "Watch live". With timing assist on, a short pause between possessions leaves time to read each play.
-setInterval(()=>{coachTick();if(arena.failed&&arena.event&&!arena.paused){arena.playTime=Math.min(CLIP_SECONDS*2,arena.playTime+.1*arena.speed);syncPresentation(arena.presentation());}if(auto&&view==='game'&&state?.match&&!modal.open&&!arena.isPlaying()&&!(['SELECT','INPUT'].includes(document.activeElement?.tagName)&&Date.now()-lastInteract<4000)){gap+=100;if(!getA11y().timingAssist||gap>=2500)step();}},100);
-onSettingsChange(type=>{applyArena();if(type==='a11y'&&view==='landing')syncTitlePause();if(type==='sound')syncCrowd();});
-window.addEventListener('kangs-language-changed',()=>{if(data)render();});
-try{data=await fetch(`${import.meta.env.BASE_URL}data/kangs.json`).then(r=>{if(!r.ok)throw Error('Data unavailable');return r.json();});try{const s=JSON.parse(localStorage.getItem(KEY));if(E.validSave(s)){state=s;lateKits=E.updateKits(state);if(lateKits.length)try{localStorage.setItem(saveKey,JSON.stringify(state));}catch{}}}catch{}view='landing';render();arena.setView('title');}catch(error){app.innerHTML=`<div class="error-screen"><h1>${t('error.title')}</h1><p>${t('error.body')}</p><button onclick="location.reload()">${t('error.reload')}</button></div>`;}
+// Closing any dialog: the gym runs again, a skipped press room moves on, a result starts the postgame,
+// and an unfinished practice run stops.
+modal.addEventListener('close', () => {
+  arena.paused = false;
+  syncCrowd();
+  pressClosed();
+  if (ui.flowPending) {
+    ui.flowPending = false;
+    setTimeout(postGame, 0);
+  }
+  endPracticeRun();
+});
+document.addEventListener('toggle', onDrawerToggle, true);
+modal.addEventListener('keydown', pickWithNumberKeys);
+modal.addEventListener('submit', e => {
+  e.preventDefault();
+  if (e.target.id === 'rename-form') renamePlayer(e.target);
+});
+new MutationObserver(keepNavTabInView).observe(app, { childList: true });
+const noteInput = viaPointer => {
+  ui.viaPointer = viaPointer;
+  ui.lastInteract = Date.now();
+};
+document.addEventListener('pointerdown', () => noteInput(true), true);
+document.addEventListener('keydown', () => noteInput(false), true);
+// The first key or pointer press on the title screen ends its entrance animation at once.
+for (const ev of ['pointerdown', 'keydown'])
+  document.addEventListener(
+    ev,
+    () => document.querySelector('.landing:not(.entered)')?.classList.add('entered'),
+    true,
+  );
+document.addEventListener('change', onChange);
+document.addEventListener('click', onAction);
+document.addEventListener('keydown', onShortcut);
+setInterval(() => {
+  coachTick();
+  watchTick();
+}, 100);
+onSettingsChange(type => {
+  applyArena();
+  if (type === 'a11y' && view === 'landing') syncTitlePause();
+  if (type === 'sound') syncCrowd();
+});
+window.addEventListener('kangs-language-changed', () => {
+  if (data) render();
+});
+
+// Load the team data and any saved season, then show the title screen.
+try {
+  setData(
+    await fetch(`${import.meta.env.BASE_URL}data/kangs.json`).then(r => {
+      if (!r.ok) throw Error('Data unavailable');
+      return r.json();
+    }),
+  );
+  restoreSave();
+  setView('landing');
+  render();
+  arena.setView('title');
+} catch (error) {
+  app.innerHTML = html`
+    <div class="error-screen">
+      <h1>${t('error.title')}</h1>
+      <p>${t('error.body')}</p>
+      <button onclick="location.reload()">${t('error.reload')}</button>
+    </div>`;
+}
 // Check the same-origin published snapshot periodically; no third-party browser scraping.
-setInterval(async()=>{try{const d=await fetch(`${import.meta.env.BASE_URL}data/kangs.json`,{cache:'no-store'}).then(r=>r.json());if(d.levels?.varsity?.players?.length){data=d;previews={};}}catch{}},300000);
-
-if(import.meta.env.PROD&&'serviceWorker' in navigator)navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(error=>console.warn('Browser offline cache unavailable; local offline bundle remains supported.',error.message));
-
-function setCamera(mode){arena.setView(mode);announce(t('a11y.camera',{view:document.querySelector(`[data-camera="${mode}"]`)?.textContent.trim()||mode}));document.querySelectorAll('[data-camera]').forEach(b=>{b.classList.toggle('active',b.dataset.camera===mode);b.setAttribute('aria-pressed',b.dataset.camera===mode);});}
-
-function cycleRoster(step){const list=state?.players||[];if(!list.length)return;const i=Math.max(0,list.findIndex(p=>p.id===rosterSel));rosterSel=list[(i+step+list.length)%list.length].id;play('select');render();document.querySelector(`.rv-arrow.${step>0?'next':'prev'}`)?.focus({preventScroll:true});}
-document.addEventListener('keydown',e=>{if(document.body.dataset.view!=='roster'||!rosterFull||modal.open||e.ctrlKey||e.metaKey||e.altKey)return;if(e.target.closest?.('input,select,textarea'))return;if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();cycleRoster(e.key==='ArrowRight'?1:-1);}});
-document.addEventListener('click',e=>{const tr=e.target.closest?.('tr[data-select]');if(!tr||e.target.closest('input,button,a,select'))return;rosterSel=+tr.dataset.select;play('select');render();});
-
-document.addEventListener('cameramode',e=>{document.querySelectorAll('[data-camera]').forEach(b=>{b.classList.toggle('active',b.dataset.camera===e.detail);b.setAttribute('aria-pressed',b.dataset.camera===e.detail);});});
+setInterval(async () => {
+  try {
+    const d = await fetch(`${import.meta.env.BASE_URL}data/kangs.json`, { cache: 'no-store' }).then(r =>
+      r.json(),
+    );
+    if (d.levels?.varsity?.players?.length) {
+      setData(d);
+      clearPreviews();
+    }
+  } catch {}
+}, 300000);
+if (import.meta.env.PROD && 'serviceWorker' in navigator)
+  navigator.serviceWorker
+    .register(`${import.meta.env.BASE_URL}sw.js`)
+    .catch(error =>
+      console.warn(
+        'Browser offline cache unavailable; local offline bundle remains supported.',
+        error.message,
+      ),
+    );
+document.addEventListener('keydown', onRosterKey);
+document.addEventListener('click', onRosterRowClick);
+document.addEventListener('cameramode', e => syncCameraButtons(e.detail));
