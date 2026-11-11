@@ -1,31 +1,92 @@
 // Plays many seeded seasons per level and strategy and prints title rate, win rate and skill. Usage: node scripts/balance.mjs [seasons per cell, default 200]
 import fs from 'node:fs';
 import * as E from '../src/engine.js';
-const data=JSON.parse(fs.readFileSync(new URL('../public/data/kangs.json',import.meta.url)));
-const N=+process.argv[2]||200;
+const data = JSON.parse(fs.readFileSync(new URL('../public/data/kangs.json', import.meta.url)));
+const N = +process.argv[2] || 200;
 // none: no practice. mix: recover when tired, study when grades slip, otherwise a team dinner or a shooting session. perfect: the same, with a perfect drill each time. focus: one-on-one shooting sessions with the weakest starters. scout: the mix strategy plus one scouting session each game (50 tokens, or free with the Film room). buyer: the mix strategy plus the useful purchases (a development assistant, then the Training facility, Nutrition plan, Tutor center and Film room as soon as the tokens allow, then, once those are owned, every skill-tree move it can afford each week (cheapest first), and one scouting session each game).
-function season(diff,seed,strat){
- const s=E.createGame(data,'Balance',diff,seed),skill=[],tokens=[];let guard=0;
- while(!s.finished&&guard++<s.schedule.length+1){
-  if(strat==='buyer'){if(!s.assistant&&s.tokens>=300)E.hire(s,'development');for(const k of ['facility','nutrition','tutor','film']){const u=E.UPGRADES.find(u=>u.key===k);if(!E.hasUpgrade(s,k)&&s.tokens>=u.cost)E.buyUpgrade(s,k);}
-   if(E.UPGRADES.every(u=>E.hasUpgrade(s,u.key)))for(let n;(n=Object.values(E.SKILL_TREE).flat().filter(n=>E.canUnlock(s,n.key).ok).sort((a,b)=>a.cost-b.cost)[0]);)E.unlockSkill(s,n.key);}
-  if((strat==='buyer'||strat==='scout')&&!s.scouted&&s.actions>0&&s.tokens>=50)E.scout(s);
-  if(strat!=='none'){
-   const perfect=strat==='perfect'||strat==='focus';
-   if(E.mean(s.players,'energy')<70&&s.actions>0)E.train(s,'recovery','all',{perfect});
-   if(E.mean(s.players,'gpa')<2.7&&s.actions>0)E.train(s,'study','all',{perfect});
-   if(strat==='focus'){let i=0;while(s.actions>0){if(s.chemistry<85&&i%2===0)E.train(s,'bond','all',{perfect});else{const st=s.players.filter(p=>p.starter).sort((a,b)=>a.skill-b.skill);E.train(s,'shooting',st[i%st.length].id,{perfect});}i++;}}
-   else while(s.actions>0)E.train(s,s.chemistry<85?'bond':'shooting','all',{perfect});
+function season(diff, seed, strat) {
+  const s = E.createGame(data, 'Balance', diff, seed),
+    skill = [],
+    tokens = [];
+  let guard = 0;
+  while (!s.finished && guard++ < s.schedule.length + 1) {
+    if (strat === 'buyer') {
+      if (!s.assistant && s.tokens >= 300) E.hire(s, 'development');
+      for (const k of ['facility', 'nutrition', 'tutor', 'film']) {
+        const u = E.UPGRADES.find(u => u.key === k);
+        if (!E.hasUpgrade(s, k) && s.tokens >= u.cost) E.buyUpgrade(s, k);
+      }
+      if (E.UPGRADES.every(u => E.hasUpgrade(s, u.key)))
+        for (
+          let n;
+          (n = Object.values(E.SKILL_TREE)
+            .flat()
+            .filter(n => E.canUnlock(s, n.key).ok)
+            .sort((a, b) => a.cost - b.cost)[0]);
+        )
+          E.unlockSkill(s, n.key);
+    }
+    if ((strat === 'buyer' || strat === 'scout') && !s.scouted && s.actions > 0 && s.tokens >= 50) E.scout(s);
+    if (strat !== 'none') {
+      const perfect = strat === 'perfect' || strat === 'focus';
+      if (E.mean(s.players, 'energy') < 70 && s.actions > 0) E.train(s, 'recovery', 'all', { perfect });
+      if (E.mean(s.players, 'gpa') < 2.7 && s.actions > 0) E.train(s, 'study', 'all', { perfect });
+      if (strat === 'focus') {
+        let i = 0;
+        while (s.actions > 0) {
+          if (s.chemistry < 85 && i % 2 === 0) E.train(s, 'bond', 'all', { perfect });
+          else {
+            const st = s.players.filter(p => p.starter).sort((a, b) => a.skill - b.skill);
+            E.train(s, 'shooting', st[i % st.length].id, { perfect });
+          }
+          i++;
+        }
+      } else while (s.actions > 0) E.train(s, s.chemistry < 85 ? 'bond' : 'shooting', 'all', { perfect });
+    }
+    E.autoLineup(s);
+    E.startMatch(s);
+    let k = 0;
+    while (s.match && k++ < 500) E.possession(s);
+    skill.push(E.mean(s.players, 'skill'));
+    tokens.push(s.tokens);
   }
-  E.autoLineup(s);E.startMatch(s);let k=0;while(s.match&&k++<500)E.possession(s);
-  skill.push(E.mean(s.players,'skill'));tokens.push(s.tokens);
- }
- return {champion:s.champion,wins:s.wins,games:s.wins+s.losses,skill8:skill[Math.min(7,skill.length-1)],skillEnd:skill.at(-1),tokens8:tokens[Math.min(7,tokens.length-1)]};
+  return {
+    champion: s.champion,
+    wins: s.wins,
+    games: s.wins + s.losses,
+    skill8: skill[Math.min(7, skill.length - 1)],
+    skillEnd: skill.at(-1),
+    tokens8: tokens[Math.min(7, tokens.length - 1)],
+  };
 }
-const table={};
-for(const [diff,label] of [['rookie','C Team'],['standard','JV'],['elite','Varsity']])for(const strat of ['none','mix','scout','buyer','perfect','focus']){
- let titles=0,wins=0,games=0,skill8=0,skillEnd=0,tokens8=0;
- for(let seed=1;seed<=N;seed++){const r=season(diff,seed,strat);titles+=r.champion?1:0;wins+=r.wins;games+=r.games;skill8+=r.skill8;skillEnd+=r.skillEnd;tokens8+=r.tokens8;}
- table[`${label} · ${strat}`]={'title %':Math.round(100*titles/N),'win %':Math.round(100*wins/games),'skill at game 8':+(skill8/N).toFixed(1),'skill at end':+(skillEnd/N).toFixed(1),'tokens at game 8':Math.round(tokens8/N)};
-}
+const table = {};
+for (const [diff, label] of [
+  ['rookie', 'C Team'],
+  ['standard', 'JV'],
+  ['elite', 'Varsity'],
+])
+  for (const strat of ['none', 'mix', 'scout', 'buyer', 'perfect', 'focus']) {
+    let titles = 0,
+      wins = 0,
+      games = 0,
+      skill8 = 0,
+      skillEnd = 0,
+      tokens8 = 0;
+    for (let seed = 1; seed <= N; seed++) {
+      const r = season(diff, seed, strat);
+      titles += r.champion ? 1 : 0;
+      wins += r.wins;
+      games += r.games;
+      skill8 += r.skill8;
+      skillEnd += r.skillEnd;
+      tokens8 += r.tokens8;
+    }
+    table[`${label} · ${strat}`] = {
+      'title %': Math.round((100 * titles) / N),
+      'win %': Math.round((100 * wins) / games),
+      'skill at game 8': +(skill8 / N).toFixed(1),
+      'skill at end': +(skillEnd / N).toFixed(1),
+      'tokens at game 8': Math.round(tokens8 / N),
+    };
+  }
 console.table(table);
