@@ -827,7 +827,8 @@ dialog:has(.settings) .modal-content {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
-.a11y-high-contrast .why-drawer {
+.a11y-high-contrast .court-drawer,
+.a11y-high-contrast .court-drawer .drawer-body {
   background: #000 !important;
   border: 2px solid #fff !important;
 }

@@ -188,11 +188,32 @@ function focusMemo() {
     }
   return n ? { sel, nth: [...app.querySelectorAll(sel)].indexOf(a) } : null;
 }
+// Open drawers (<details>) survive a re-render too, or the box score would close after every play.
+// Each is found again by its class list and its place among drawers with the same classes.
+function detailsKeys() {
+  const seen = {};
+  return [...app.querySelectorAll('details')].map(d => {
+    const k = d.className;
+    seen[k] = (seen[k] ?? -1) + 1;
+    return { d, key: `${k}#${seen[k]}` };
+  });
+}
 // Draws the current page. Break screens exist only during a break; otherwise they fall back to Home.
 export function render() {
   if (state && NAV.break.includes(view) && !E.breakDue(state)) setView('home');
   disposeProspectJerseys();
-  const keep = renderedView === view ? { focus: focusMemo(), y: window.scrollY } : null;
+  const keep =
+    renderedView === view
+      ? {
+          focus: focusMemo(),
+          y: window.scrollY,
+          open: new Set(
+            detailsKeys()
+              .filter(x => x.d.open)
+              .map(x => x.key),
+          ),
+        }
+      : null;
   renderedView = view;
   document.body.dataset.view = view;
   document.body.classList.toggle(
@@ -247,6 +268,7 @@ export function render() {
   if (demo && view !== 'landing') renderDemoGuide();
   if (arena.event) syncPresentation(arena.presentation());
   if (keep) {
+    for (const { d, key } of detailsKeys()) if (keep.open.has(key)) d.open = true;
     const f = keep.focus,
       el = f && [...app.querySelectorAll(f.sel)][Math.max(0, f.nth)];
     if (el && !el.disabled) el.focus({ preventScroll: true });

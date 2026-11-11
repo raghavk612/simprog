@@ -17,7 +17,6 @@ import { pressClosed, postGame } from './ui/postgame.js';
 import { endPracticeRun } from './ui/screens/prep.js';
 import { startSeason, syncTitlePause, clearPreviews } from './ui/screens/landing.js';
 import { renamePlayer, onRosterKey, onRosterRowClick } from './ui/screens/roster.js';
-import { onDrawerToggle } from './ui/screens/game.js';
 
 // The 3D gym follows the settings, shows the first-person player tag, and reports each play as it resolves.
 applyArena();
@@ -45,7 +44,6 @@ modal.addEventListener('close', () => {
   }
   endPracticeRun();
 });
-document.addEventListener('toggle', onDrawerToggle, true);
 modal.addEventListener('keydown', pickWithNumberKeys);
 modal.addEventListener('submit', e => {
   e.preventDefault();

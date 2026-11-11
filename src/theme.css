@@ -332,38 +332,88 @@ body[data-view='home'] #arena.home-arena {
 .home-arena .arena-bottom {
   display: none;
 }
-.home-drawers {
+/* ---- Drawers on the court (Game day): scouting and tip-off preview before the game; play-by-play, box score and
+   "Why that shot?" during it. One stack in the top right corner; only one is open at a time (<details name>), and
+   its body scrolls inside the drawer. On phones the summaries sit in one row and the open body drops down under it. ---- */
+.court-drawers {
   position: absolute;
   z-index: 3;
   top: 16px;
   right: 16px;
   display: grid;
   gap: 8px;
-  width: min(320px, calc(100% - 32px));
+  width: min(340px, calc(100% - 32px));
 }
-.home-drawer {
+.live-match .court-drawers {
+  top: 132px;
+  right: 24px;
+  width: min(360px, calc(100% - 48px));
+}
+.court-drawer {
   background: var(--panel);
   border: 1px solid var(--line-2);
   border-radius: 4px;
-  padding: 0 14px;
   color: var(--ink);
 }
-.home-drawer summary {
-  padding: 10px 0;
+.court-drawer summary {
+  padding: 10px 14px;
   font-weight: 600;
 }
-.home-drawer[open] {
-  max-height: min(48vh, 380px);
+.court-drawer .drawer-body {
+  max-height: min(52vh, 420px);
   overflow: auto;
-  padding-bottom: 12px;
+  margin: 0;
+  padding: 0 14px 12px;
+  border: 0;
+  background: none;
 }
-.home-drawer .card {
+.court-drawer .drawer-body > .eyebrow,
+.court-drawer .tipoff-card > .eyebrow {
+  display: none;
+}
+.court-drawer .tipoff-card {
   padding: 0;
   border: 0;
   background: none;
 }
-.home-drawer .card > .eyebrow {
-  display: none;
+@media (max-width: 760px) {
+  .court-drawers,
+  .live-match .court-drawers {
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    display: flex;
+    gap: 6px;
+  }
+  .live-match .court-drawers {
+    top: 80px; /* under the score bug */
+  }
+  .court-drawer {
+    flex: 1;
+    min-width: 0;
+  }
+  .court-drawer summary {
+    padding: 8px 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+  }
+  .court-drawer[open] summary {
+    background: var(--panel-3);
+  }
+  .court-drawer .drawer-body {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    max-height: 45vh;
+    padding-top: 12px;
+    background: var(--panel);
+    border: 1px solid var(--line-2);
+    border-radius: 4px;
+  }
 }
 .home-bar {
   flex: none;

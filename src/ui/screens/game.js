@@ -262,17 +262,34 @@ export function game() {
               ${scoreBug(m, o)}
               <p class="play-call" aria-live="polite"> ${esc(arena.presentation()?.clip ? shot(arena.presentation().clip) : t('game.choosePlay'))}
               </p>
-              <details class="commentary-drawer">
-                <summary>${t('game.playByPlay')}</summary>
-                <div class="play-feed">
-                  ${(arena.isPlaying() ? feedLines(m).slice(2) : feedLines(m)).map((x, i) => `<p class="${i === 0 ? 'new' : ''}">${esc(x)}</p>`).join('') || `<p>${t('game.crowdReady')}</p>`}
-                </div>
-              </details>`
+              <div class="court-drawers">
+                <details class="court-drawer commentary-drawer" name="court-drawers">
+                  <summary>${t('game.playByPlay')}</summary>
+                  <div class="drawer-body play-feed">
+                    ${(arena.isPlaying() ? feedLines(m).slice(2) : feedLines(m)).map((x, i) => `<p class="${i === 0 ? 'new' : ''}">${esc(x)}</p>`).join('') || `<p>${t('game.crowdReady')}</p>`}
+                  </div>
+                </details>
+                <details class="court-drawer box-drawer" name="court-drawers">
+                  <summary>${t('game.boxScore')}</summary>
+                  <div class="drawer-body">
+                    ${teamStats(m.stats, o.opponent)}
+                    ${boxTable(m.line, up(t('game.kangs')), true)}
+                  </div>
+                </details>
+                <details class="court-drawer why-drawer" name="court-drawers">
+                  <summary>${t('game.why')}</summary>
+                  <div class="drawer-body">
+                    <p class="muted">${t('result.whyBody')}</p>
+                    ${btn(t('tipoff.model'), 'model', 'secondary small')}
+                    <div id="why-body" aria-live="polite">${ui.lastWhy || `<p>${t('game.whyNone')}</p>`}</div>
+                  </div>
+                </details>
+              </div>`
             : html`
-              <div class="home-drawers">
-                <details class="home-drawer" name="game-drawers">
+              <div class="court-drawers">
+                <details class="court-drawer" name="court-drawers">
                   <summary>${tu('game.scouting')}</summary>
-                  <section class="card">
+                  <section class="drawer-body card">
                     <p> ${hasScore(o) ? t('game.reference', { a: o.points, b: o.against }) : t('game.upcoming', { when: `${esc(formatDate(o.date))}${o.time ? ` · ${esc(o.time)}` : ''}`, where: t(o.home ? 'game.homeGame' : 'game.awayGame'), venue: esc(o.venue) })}
                     </p> <div class="effect-list">
                       <span class="strength-badge ${strengthLevel(o.rating)}">${t('game.strength')} <b>${Math.round(o.rating)} · ${t(`game.strengthLevel.${strengthLevel(o.rating)}`)}</b></span><span>${t('game.style')} <b>${state.scouted ? t(`style.${o.style}`) : t('game.unscouted')}</b></span>
@@ -280,27 +297,11 @@ export function game() {
                     ${state.scouted ? `<p class="notice">${t(`game.advice.${o.style}`)} ${t('game.adviceNote')}</p>` : `<button class="secondary small" data-view="practice">${t('nudge.btn.scout')}</button>`}
                   </section>
                 </details>
-                <details class="home-drawer" name="game-drawers">
+                <details class="court-drawer" name="court-drawers">
                   <summary>${tu('tipoff.kicker')}</summary>
-                  ${tipoffCard()}
+                  <div class="drawer-body">${tipoffCard()}</div>
                 </details>
               </div>`
-        }
-        ${
-          m
-            ? html`
-              <details class="box-drawer">
-                <summary>${t('game.boxScore')}</summary>
-                ${teamStats(m.stats, o.opponent)}
-                ${boxTable(m.line, up(t('game.kangs')), true)}
-              </details>
-              <details class="why-drawer">
-                <summary>${t('game.why')}</summary>
-                <p class="muted">${t('result.whyBody')}</p>
-                ${btn(t('tipoff.model'), 'model', 'secondary small')}
-                <div id="why-body" aria-live="polite">${ui.lastWhy || `<p>${t('game.whyNone')}</p>`}</div>
-              </details>`
-            : ''
         }
       </div>
       <aside class="right-rail" aria-label="${esc(t('game.controls'))}">
@@ -380,17 +381,4 @@ export function whyHtml(c) {
         )
         .join('')}
     </ul>`;
-}
-// Live-game drawers share one corner of the court: opening one closes the others so they never overlap.
-export function onDrawerToggle(e) {
-  const d = e.target;
-  if (
-    !d.open ||
-    !document.body.classList.contains('live-match') ||
-    !d.matches('.commentary-drawer,.box-drawer,.why-drawer')
-  )
-    return;
-  document.querySelectorAll('.commentary-drawer[open],.box-drawer[open],.why-drawer[open]').forEach(o => {
-    if (o !== d) o.open = false;
-  });
 }

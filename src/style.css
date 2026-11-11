@@ -1591,19 +1591,6 @@ body.live-match .workspace > footer {
 .playback-controls button.selected {
   background: var(--accent);
 }
-.live-match .commentary-drawer,
-.live-match .box-drawer {
-  position: absolute;
-  right: 24px;
-  width: 280px;
-  z-index: 3;
-  background: var(--page);
-  padding: 0 14px;
-  border: 1px solid var(--line);
-}
-.live-match .commentary-drawer[open] {
-  z-index: 4;
-}
 .play-feed .new {
   background: var(--accent-soft);
   color: var(--ink);
@@ -1710,11 +1697,6 @@ body.live-match .workspace > footer {
     right: 12px;
     font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
   }
-  .live-match .commentary-drawer,
-  .live-match .box-drawer {
-    right: 12px;
-    width: 170px;
-  }
   .landing-content {
     display: block;
   }
@@ -1769,12 +1751,6 @@ body.live-match .workspace > footer {
     max-width: none;
   }
 }
-@media (max-width: 760px) {
-  .live-match .commentary-drawer[open] {
-    max-height: 45vh;
-    overflow: auto;
-  }
-}
 .live-match .replay-layout > .secondary {
   background: var(--panel);
   color: var(--ink);
@@ -1784,10 +1760,6 @@ body.live-match .workspace > footer {
   background: var(--panel);
   padding: 8px;
   border-radius: 4px;
-}
-.live-match .commentary-drawer[open] {
-  max-height: 45vh;
-  overflow: auto;
 }
 /* Season leaders (ESPN-style) */
 .leaders {
@@ -1949,16 +1921,6 @@ body.live-match .workspace > footer {
   font-size: calc(15px * var(--ts, 1) * var(--ls, 1));
   line-height: 1.6;
   margin: 0 0 12px;
-}
-@media (min-width: 900px) {
-  .live-match .box-drawer {
-    width: 340px;
-  }
-  .live-match .box-drawer[open] {
-    max-height: 60vh;
-    overflow: auto;
-    z-index: 4;
-  }
 }
 
 /* ---- v4 polish: type, sidebar, tracker, icons, notifications ---- */
@@ -3404,13 +3366,6 @@ button kbd.key.kw {
 .live-match .replay-layout .play-call {
   bottom: 22px;
 }
-.live-match .commentary-drawer,
-.live-match .box-drawer {
-  top: 132px;
-}
-.live-match .box-drawer {
-  top: 178px;
-}
 .live-match .game-arena .arena-top {
   top: 118px;
 }
@@ -3418,13 +3373,6 @@ button kbd.key.kw {
   .live-match .game-arena {
     height: calc(100svh - 120px) !important;
     min-height: 560px;
-  }
-  .live-match .commentary-drawer,
-  .live-match .box-drawer {
-    top: 118px;
-  }
-  .live-match .box-drawer {
-    top: 162px;
   }
   .live-match .play-call {
     bottom: 14px;
@@ -3464,6 +3412,10 @@ button kbd.key {
   }
   .bug2k .bug-name b {
     font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
+  }
+  /* The bug's right edge is slanted (clip-path): keep the opponent's name clear of it. */
+  .score-strip.bug2k > .bug-team.away {
+    padding-right: 16px;
   }
 }
 .live-match .court-panel {
@@ -4343,38 +4295,6 @@ img.opp-badge:not(.ph) {
 }
 
 /* ---- "Why that shot?" drawer, under the box score ---- */
-.live-match .why-drawer {
-  position: absolute;
-  top: 224px;
-  right: 24px;
-  width: 280px;
-  z-index: 3;
-  background: var(--page);
-  padding: 0 14px;
-  border: 1px solid var(--line);
-}
-@media (min-width: 900px) {
-  .live-match .why-drawer {
-    width: 340px;
-  }
-  .live-match .why-drawer[open] {
-    max-height: 60vh;
-    overflow: auto;
-    z-index: 4;
-  }
-}
-@media (max-width: 760px) {
-  .live-match .why-drawer {
-    top: 206px;
-    right: 12px;
-    width: 170px;
-  }
-}
-.why-drawer summary {
-  cursor: pointer;
-  font-weight: 700;
-  padding: 10px 0;
-}
 .why-drawer ul {
   list-style: none;
   padding: 0;
