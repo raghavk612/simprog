@@ -43,3 +43,5 @@ starts its own server and builds its own saves), then look at the screenshots fr
 touched. The live game and the drills are not covered by it: check those by hand in `npm run dev`, through the UI
 (title → Continue → the next-step button). The first-game walkthrough locks clicks outside its highlight, so start
 a season with "Walk me through the first game" unticked when testing something else.
+In `npm run dev` only, the backquote key (`` ` ``) toggles 64× playback, so a watched game takes about 30 s
+(quarter breaks still stop it); production builds drop the shortcut.

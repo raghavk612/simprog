@@ -1,7 +1,9 @@
 // Keyboard shortcuts (rebindable in Settings, see keys.js). They press the visible buttons, so a disabled control
 // stays disabled. ? opens Help, J jumps ahead in the judge demo, and 1–3 pick an answer in the press room and inbox.
+// In `npm run dev` only, ` (backquote) toggles 64× playback for testing whole games quickly; production builds drop it.
 import { ACTIONS } from '../keys.js';
-import { keys, view } from './store.js';
+import { keys, view, ui } from './store.js';
+import { setSpeed } from './playback.js';
 import { modal, $ } from './page.js';
 import { setCamera } from './shell.js';
 import { openSettings, toggleSound } from './dialogs.js';
@@ -49,6 +51,11 @@ export function onShortcut(e) {
   }
   const action = ACTIONS.find(a => keys[a] === e.code);
   if (!action) {
+    if (import.meta.env?.DEV && e.code === 'Backquote') {
+      e.preventDefault();
+      setSpeed(ui.playbackSpeed === 64 ? 1 : 64);
+      return;
+    }
     // Space is "Next play" on Game day, unless it is pressing a focused button.
     if (
       e.code === 'Space' &&
