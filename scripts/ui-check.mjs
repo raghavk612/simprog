@@ -31,7 +31,7 @@ const VIEWS = [
   'locker',
 ];
 const VIEWPORTS = { desktop: [1440, 900], phone: [390, 844] };
-const MIN_CONTRAST = 3; // WCAG AA for large text; body text should be well above it
+const MIN_CONTRAST = 4.5; // WCAG AA for normal text; large text needs 3 (see required() in lowContrast)
 
 // Saves to open: preseason (break pages open), and one game into the season.
 function fixtures() {
@@ -69,6 +69,13 @@ function lowContrast(min) {
     }
     return parse(getComputedStyle(document.body).backgroundColor);
   };
+  // The contrast a piece of text needs, from its computed style (cs.fontSize is like '14px', cs.fontWeight like '700').
+  // WCAG AA: large text (24px, or 18.66px bold) needs 3:1; anything smaller needs `min` (4.5:1 for full AA).
+  const required = cs => {
+    const px = parseFloat(cs.fontSize),
+      bold = +cs.fontWeight >= 700;
+    return px >= 24 || (bold && px >= 18.66) ? 3 : min;
+  };
   const found = new Map();
   for (const el of document.querySelectorAll('main *, .subnav *, .topbar *, dialog[open] *')) {
     if (![...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())) continue;
@@ -82,7 +89,7 @@ function lowContrast(min) {
     const [a, b] = [lum(fg), lum(bg)],
       ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
     const key = `${el.tagName.toLowerCase()}${[...el.classList].map(c => '.' + c).join('')}`;
-    if (ratio < min && !found.has(key))
+    if (ratio < required(cs) && !found.has(key))
       found.set(key, `${ratio.toFixed(2)}:1 "${el.textContent.trim().slice(0, 40)}"`);
   }
   return [...found].map(([k, v]) => `low contrast ${v} on ${k}`);
