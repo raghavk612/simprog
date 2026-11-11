@@ -42,8 +42,8 @@ export function recruit() {
       }
     </div>`;
 }
-// The skill tree (skillsView.js) has no route in the weekly flow yet; the skill-tree-ui branch is building it.
-function skillsView() {
+// The skill tree: unlock new moves with tokens (the tree itself is drawn by skillsView.js).
+export function skillsView() {
   return `${header(tu('skills.kicker'), t('nav.skills'))}${skillTreeCard(state)}`;
 }
 // Selecting a move shows it in the detail panel; focus follows so the tree stays one Tab stop.

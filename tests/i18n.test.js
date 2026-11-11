@@ -83,7 +83,18 @@ test('every static translation key used by the code exists in English', () => {
 });
 test('every key built at run time resolves to a string for each value it can take', () => {
   const need = [];
-  for (const v of ['home', 'roster', 'practice', 'recruit', 'staff', 'game', 'locker', 'season', 'data'])
+  for (const v of [
+    'home',
+    'roster',
+    'practice',
+    'recruit',
+    'staff',
+    'skills',
+    'game',
+    'locker',
+    'season',
+    'data',
+  ])
     need.push(`nav.${v}`);
   for (const k of Object.keys(plans)) need.push(`plan.${k}.name`, `plan.${k}.desc`);
   for (const a of staff) need.push(`staff.${a.key}.name`, `staff.${a.key}.detail`);

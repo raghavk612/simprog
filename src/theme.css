@@ -1323,9 +1323,6 @@ body[data-view='recruit'] .card h2 {
 .card.skill-tree {
   padding: 14px 18px;
 }
-.skill-tree .skill-intro {
-  margin-bottom: 6px;
-}
 
 /* ---- Team and Season: one job per tab ---- */
 .lk-stage-row {

@@ -93,7 +93,7 @@ test('the detail panel starts on the first move you can unlock and offers its Un
   assert.match(
     d,
     new RegExp(
-      `<button class="primary wide" data-action="skill-unlock" data-key="${root.key}"[^>]*>${t('skills.unlock', { cost: root.cost })}</button>`,
+      `<button class="secondary wide" data-action="skill-unlock" data-key="${root.key}"[^>]*>${t('skills.unlock', { cost: root.cost })}</button>`,
     ),
   );
 });
@@ -163,7 +163,7 @@ test('a move blocked by tokens, a live game, the inbox or a finished season keep
     assert.ok(label(html, 'corner').includes(why), why);
     assert.match(
       d,
-      /<button class="primary wide locked-action" data-action="skill-unlock" data-key="corner"[^>]*disabled/,
+      /<button class="secondary wide locked-action" data-action="skill-unlock" data-key="corner"[^>]*disabled/,
     );
     assert.ok(d.includes(why), why);
   }

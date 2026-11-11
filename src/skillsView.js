@@ -158,7 +158,7 @@ function detail(s, sel) {
       ? `<p class="skill-state"><span aria-hidden="true">✓</span> ${t('skills.owned')}</p>`
       : state === 'locked'
         ? `<p class="skill-state"><b>${t('skills.locked')}</b> · ${esc(w)}</p><small class="st-price">${cost}</small>`
-        : `<button class="primary wide${state === 'blocked' ? ' locked-action' : ''}" data-action="skill-unlock" data-key="${n.key}" aria-describedby="st-detail-name${state === 'blocked' ? ' st-detail-why' : ''}" ${state === 'blocked' ? 'disabled' : ''}>${t('skills.unlock', { cost: n.cost })}</button>${state === 'blocked' ? `<small id="st-detail-why">${esc(w)}</small>` : ''}`;
+        : `<button class="secondary wide${state === 'blocked' ? ' locked-action' : ''}" data-action="skill-unlock" data-key="${n.key}" aria-describedby="st-detail-name${state === 'blocked' ? ' st-detail-why' : ''}" ${state === 'blocked' ? 'disabled' : ''}>${t('skills.unlock', { cost: n.cost })}</button>${state === 'blocked' ? `<small id="st-detail-why">${esc(w)}</small>` : ''}`;
   return `<div class="st-detail ${state} b-${b}" role="region" aria-labelledby="st-detail-name"><div class="st-detail-top"><span class="st-medal" aria-hidden="true">${icon(n.key)}</span><div><span class="eyebrow">${esc(tu(`skills.branch.${b}`))} · ${t('skills.tier', { n: i + 1, total: SKILL_TREE[b].length })}</span><h3 id="st-detail-name">${esc(move(n.key))}</h3></div></div><p class="skill-hint" id="st-detail-hint">${t(`skills.hint.${n.key}`, { tactic: t('tactic.perimeter') })}</p>${body}</div><!--/detail-->`;
 }
 
@@ -168,7 +168,7 @@ export function skillTreeCard(s) {
     b =>
       `<div class="st-branch b-${b}" role="group" aria-labelledby="skill-branch-${b}"><h3 class="st-ribbon" id="skill-branch-${b}" style="--x:${pct(ax(b, RIBBON), VW)};--y:${pct(RIBBON, VH)};--r:${lean(b)}deg">${t(`skills.branch.${b}`)}</h3>${SKILL_TREE[b].map((n, i) => nodeButton(s, b, n, i, sel)).join('')}</div><!--/${b}-->`,
   ).join('');
-  return `<section class="card skill-tree game-tree" aria-labelledby="skill-tree-title"><div class="office-heading"><div><span class="eyebrow">${tu('skills.kicker')}</span><h2 id="skill-tree-title">${t('skills.title')}</h2></div><span class="pill">${t('skills.progress', { n: unlockedMoves(s).length, total: TOTAL })}</span></div><p class="skill-intro">${t('skills.intro')}</p>
+  return `<section class="card skill-tree game-tree" aria-label="${t('skills.title')}"><div class="skill-head"><p class="skill-intro">${t('skills.intro')}</p><span class="pill">${t('skills.progress', { n: unlockedMoves(s).length, total: TOTAL })}</span></div>
  <div class="st-board"><div class="st-stage" style="aspect-ratio:${VW}/${VH}">${BRANCHES.map(beam).join('')}<svg class="st-links" viewBox="0 0 ${VW} ${VH}" preserveAspectRatio="none" aria-hidden="true" focusable="false">${BRANCHES.map(b => links(s, b)).join('')}</svg>${branches}</div>${detail(s, sel)}</div>
  <div class="st-basics"><h3 class="skill-sub">${t('skills.basic')}</h3><ul class="skill-chips">${BASIC_MOVES.map(k => `<li class="skill-chip"><span class="sr-only">${t('skills.owned')}: </span><span aria-hidden="true">✓</span> ${move(k)}</li>`).join('')}</ul></div></section>`;
 }

@@ -6867,11 +6867,19 @@ dialog:has(.unlock-pop) {
 .skill-tree {
   margin-bottom: 28px;
 }
+.skill-head {
+  display: flex;
+  gap: 12px 18px;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
 .skill-intro {
   max-width: 780px;
   color: var(--muted);
   line-height: 1.6;
-  margin: -8px 0 20px;
+  margin: 0;
 }
 .skill-sub {
   font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
@@ -6900,7 +6908,7 @@ dialog:has(.unlock-pop) {
 }
 .game-tree .b-shooter {
   --c: #f5c451;
-  --c2: #a8741b;
+  --c2: #946616;
 }
 .game-tree .b-slasher {
   --c: #b07cff;

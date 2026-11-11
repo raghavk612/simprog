@@ -28,6 +28,7 @@ const VIEWS = [
   'data',
   'recruit',
   'staff',
+  'skills',
   'locker',
 ];
 const VIEWPORTS = { desktop: [1440, 900], phone: [390, 844] };
@@ -48,6 +49,12 @@ function fixtures() {
 // Runs in the page: visible text under MIN_CONTRAST against the nearest opaque background behind it.
 function lowContrast(min) {
   const parse = c => {
+    // color-mix() computes to color(srgb r g b / a) with channels from 0 to 1.
+    const s = /color\(srgb ([^)]+)\)/.exec(c);
+    if (s) {
+      const [r, g, b, a = 1] = s[1].split(/[ /]+/).filter(Boolean).map(Number);
+      return { r: r * 255, g: g * 255, b: b * 255, a };
+    }
     const m = /rgba?\(([^)]+)\)/.exec(c);
     if (!m) return null;
     const [r, g, b, a = 1] = m[1]

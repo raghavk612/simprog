@@ -20,7 +20,7 @@ import { landing, titlePreview, syncTitlePause } from './screens/landing.js';
 import { home } from './screens/home.js';
 import { roster } from './screens/roster.js';
 import { practice } from './screens/prep.js';
-import { recruit, staffView } from './screens/breaks.js';
+import { recruit, staffView, skillsView } from './screens/breaks.js';
 import { game } from './screens/game.js';
 import { journal, bracketView, standingsView, dataView } from './screens/season.js';
 import { demo, renderDemoGuide, leaveDemo } from './demo.js';
@@ -32,7 +32,7 @@ const NAV = {
   week: ['home', 'practice', 'game'],
   team: ['roster'],
   season: ['season', 'bracket', 'standings', 'data'],
-  break: ['recruit', 'staff', 'locker'],
+  break: ['recruit', 'staff', 'skills', 'locker'],
 };
 // The page each route draws.
 const PAGES = {
@@ -41,6 +41,7 @@ const PAGES = {
   practice,
   recruit,
   staff: staffView,
+  skills: skillsView,
   game,
   locker,
   season: journal,
@@ -332,9 +333,12 @@ export function syncCameraButtons(mode) {
   });
 }
 // On phones the nav is a scrolling bottom tab bar: after each render keep the current page's tab in view.
+// On a narrow screen the top tabs and the sub-tabs scroll sideways: keep the open one of each centred.
 export function keepNavTabInView() {
-  const n = $('.nav-item.active'),
-    bar = n?.parentElement;
-  if (bar && bar.scrollWidth > bar.clientWidth)
-    bar.scrollLeft = n.offsetLeft - (bar.clientWidth - n.offsetWidth) / 2;
+  for (const n of document.querySelectorAll('.nav-item.active, .sub-item.active')) {
+    const bar = n.parentElement;
+    if (bar.scrollWidth <= bar.clientWidth) continue;
+    const r = n.getBoundingClientRect();
+    bar.scrollLeft += r.left - bar.getBoundingClientRect().left - (bar.clientWidth - r.width) / 2;
+  }
 }

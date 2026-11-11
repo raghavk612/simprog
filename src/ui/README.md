@@ -34,7 +34,7 @@ write templates over as many lines as you like. Put text from the save or the da
 | `screens/results.js` | the result dialog after a game                                                |
 | `postgame.js`        | press room and coach's inbox                                                  |
 | `screens/roster.js`  | Team: lineup, full stats, player profile                                      |
-| `screens/breaks.js`  | break screens: Tryouts, Staff (and the unrouted skill tree)                   |
+| `screens/breaks.js`  | break screens: Tryouts, Staff, Skill tree                                     |
 | `screens/locker.js`  | break screen: Locker room, 3D jerseys, captain                                |
 | `screens/season.js`  | Season tab: journal, bracket, standings, data, report card                    |
 | `screens/landing.js` | title screen, starting and continuing a season                                |
