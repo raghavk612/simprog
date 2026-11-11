@@ -113,7 +113,6 @@ h3 {
 }
 .page-heading h1 {
   font-weight: 700;
-  font-size: calc(38px * var(--ts, 1) * var(--ls, 1));
 }
 p,
 small {
@@ -128,8 +127,7 @@ small {
   outline-offset: 2px;
 }
 .metrics strong,
-table,
-.game-tracker strong {
+table {
   font-variant-numeric: tabular-nums;
 }
 
@@ -250,9 +248,6 @@ dialog::backdrop {
   font: 500 calc(12px * var(--ts, 1) * var(--ls, 1)) var(--body);
   color: var(--ink-3);
 }
-.brand-logo {
-  width: 50px;
-}
 .nav-item {
   border-radius: 3px;
   color: var(--ink-2);
@@ -302,50 +297,6 @@ html.theme-light:not(.a11y-high-contrast) .on-dark {
 }
 
 /* ---- season tracker ---- */
-.game-tracker {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  box-shadow: none;
-}
-.gt-top {
-  color: var(--ink-3);
-  font: 500 calc(13px * var(--ts, 1) * var(--ls, 1)) var(--body);
-}
-.gt-top b {
-  font: 700 calc(20px * var(--ts, 1) * var(--ls, 1)) var(--display);
-  color: var(--ink);
-}
-.gt-top em {
-  color: var(--ink-3);
-  font: 500 calc(12px * var(--ts, 1) * var(--ls, 1)) var(--body);
-}
-.game-tracker strong {
-  font: 700 calc(46px * var(--ts, 1) * var(--ls, 1))/1 var(--display);
-  color: var(--score);
-}
-.game-tracker strong small {
-  font: 600 calc(22px * var(--ts, 1) * var(--ls, 1)) var(--display);
-  color: var(--ink-3);
-}
-.gt-foot {
-  color: var(--ink-3);
-  font: 500 calc(12px * var(--ts, 1) * var(--ls, 1)) var(--body);
-}
-.gt-ticks i {
-  background: var(--panel-3);
-  border-radius: 1px;
-}
-.gt-ticks i.w {
-  background: var(--good-solid);
-}
-.gt-ticks i.l {
-  background: var(--bad-solid);
-}
-.gt-ticks i.next {
-  background: var(--score);
-  box-shadow: none;
-}
 
 /* ---- Home: the gym fills the page; under it, the next step and a grey timeline of what follows ---- */
 body[data-view='home'] .workspace {
@@ -768,7 +719,6 @@ body.live-match .workspace {
 }
 .topbar {
   justify-content: flex-start;
-  flex-wrap: nowrap;
   gap: 24px;
   padding: 0 24px;
 }

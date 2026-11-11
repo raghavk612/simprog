@@ -30,8 +30,6 @@
   --ls: 1.1;
 }
 /* Letter-spacing breaks conjunct characters in Devanagari. */
-:lang(hi) * {
-}
 .a11y-font-modern {
   --body: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, var(--cjk);
   --display: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, var(--cjk);
@@ -186,7 +184,6 @@ kbd {
 .a11y-high-contrast .eyebrow {
   color: #ffe28a !important;
 }
-.a11y-high-contrast .sidebar-bottom button,
 .a11y-high-contrast .topbar > span,
 .a11y-high-contrast .topbar b,
 .a11y-high-contrast .brand,
@@ -237,17 +234,6 @@ kbd {
 .a11y-high-contrast .toast-chips span {
   background: #000 !important;
   border: 2px solid #fff;
-}
-.a11y-high-contrast .game-tracker {
-  background: #000 !important;
-  border: 2px solid #fff !important;
-  box-shadow: none !important;
-}
-.a11y-high-contrast .game-tracker * {
-  color: #fff !important;
-}
-.a11y-high-contrast .gt-ticks i {
-  outline: 1px solid #fff;
 }
 .a11y-high-contrast .box-score,
 .a11y-high-contrast .team-compare,
@@ -328,7 +314,6 @@ button.small,
 .rv-table tr.out td {
   opacity: 0.8;
 }
-.a11y-high-contrast .practice-plan,
 .a11y-high-contrast .rv-hero,
 .a11y-high-contrast .rule-panel,
 .a11y-high-contrast .rule-chips > div,
@@ -352,7 +337,6 @@ button.small,
 .a11y-high-contrast .plan-slot span,
 .a11y-high-contrast .plan-slot b,
 .a11y-high-contrast .plan-slot small,
-.a11y-high-contrast .plan-go small,
 .a11y-high-contrast .plan-x {
   color: #fff !important;
 }
@@ -361,14 +345,6 @@ button.small,
 }
 .a11y-high-contrast .plan-slot.filled * {
   color: #000 !important;
-}
-.a11y-high-contrast .card.in-plan {
-  border: 3px solid #ffe28a !important;
-}
-.a11y-high-contrast .drill-chip {
-  background: #000 !important;
-  border: 2px solid #ffe28a;
-  color: #ffe28a !important;
 }
 .a11y-high-contrast .rv-num {
   display: none;
@@ -513,13 +489,11 @@ button.small,
 
 /* ---- Simplified interface: only the essentials ---- */
 .a11y-simple .eyebrow,
-.a11y-simple .season-badge,
 .a11y-simple .season-ticket,
 .a11y-simple .arena-top,
 .a11y-simple .workspace > footer,
 .a11y-simple .landing > footer,
 .a11y-simple .page-heading > p,
-.a11y-simple .tutorial-arrow,
 .a11y-simple .right-rail .card:last-child:not(:only-child) p,
 .a11y-simple .notice,
 .a11y-simple .quick i,
@@ -835,16 +809,6 @@ dialog:has(.settings) .modal-content {
   }
 }
 /* First-time tour: the card sits beside the sidebar item it explains, and that item is outlined. */
-.tour-target {
-  box-shadow: 0 0 0 3px var(--score);
-  position: relative;
-  z-index: 21;
-}
-.tutorial.aimed .tutorial-arrow {
-  left: -34px;
-  top: 12px;
-  font-size: calc(34px * var(--ts, 1) * var(--ls, 1));
-}
 @media (max-width: 760px) {
   .tutorial.aimed {
     left: 15px !important;
@@ -977,7 +941,6 @@ dialog:has(.settings) .modal-content {
     mask-image: none;
   }
 }
-.a11y-high-contrast img.opp-logo,
 .a11y-high-contrast img.bug-logo,
 .a11y-high-contrast img.opp-badge {
   filter: drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff) drop-shadow(0 0 3px #fff);
@@ -1043,14 +1006,10 @@ dialog:has(.settings) .modal-content {
   fill: #fff !important;
 }
 .a11y-high-contrast .code-box,
-.a11y-high-contrast .model-list li,
-.a11y-high-contrast .nudge-card {
+.a11y-high-contrast .model-list li {
   border-color: #fff;
   background: #000;
   color: #fff;
-}
-.a11y-high-contrast .nudge-card {
-  border-left-width: 6px;
 }
 
 /* Locker room: the whiteboard and the steel locker wall read as plain high-contrast panels in high contrast. */
