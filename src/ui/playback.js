@@ -293,7 +293,7 @@ export function askTimeout() {
       <span class="eyebrow">${tu('timeout.kicker')}</span>
       <h1>${t('timeout.title')}</h1>
       <p>${t('timeout.body')}</p>
-      ${btn(t('timeout.calm'), 'huddle', 'primary wide', 'data-message="calm"')}
+      ${btn(t('timeout.calm'), 'huddle', 'secondary wide', 'data-message="calm"')}
       ${btn(t('timeout.belief'), 'huddle', 'secondary wide', 'data-message="belief"')}`,
   );
 }

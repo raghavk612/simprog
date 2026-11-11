@@ -97,15 +97,15 @@ function statusStrip() {
     item = (k, v) => `<span>${k} <b>${v}</b></span>`;
   return html`
     <div class="status-strip">
-      ${state.finished ? '' : `<span>${t('landing.nextGame', { n: Math.min(n, state.week + 1), total: n })}</span>`}
+      ${state.finished ? '' : `<span class="strip-game">${t('landing.nextGame', { n: Math.min(n, state.week + 1), total: n })}</span>`}
       ${item(t('metrics.record'), `${state.wins}–${state.losses}`)}
       ${item(t('metrics.tokens'), formatNumber(state.tokens))}
       ${item(cap1(t('toast.slots')), state.actions)}
     </div>`;
 }
-// The row under the top bar. Home has none. Prep and Game day show where the week has got to; a break and the Season tab have their own tabs.
+// The row under the top bar, with the status strip on every page. Prep and Game day show where the week has got to;
+// a break and the Season tab have their own tabs; Home and Team have only the strip.
 function subnav(group) {
-  if (view === 'home') return '';
   const pause = group === 'break' ? E.breakDue(state) : null,
     tabs =
       group === 'break' || group === 'season'
@@ -114,7 +114,7 @@ function subnav(group) {
             ${pause ? `<b class="break-name">${t(`flow.step.${pause}`)}</b>` : ''}
             ${NAV[group].map(v => `<button data-view="${v}" class="sub-item ${view === v ? 'active' : ''}" ${view === v ? 'aria-current="page"' : ''}>${t(`nav.${v}`)}</button>`).join('')}
           </nav>`
-        : group === 'week'
+        : group === 'week' && view !== 'home'
           ? weekTrack()
           : '<span></span>';
   return html`

@@ -1053,6 +1053,14 @@ body.live-match .topbar {
   outline-offset: 3px;
   animation: coach-pulse 1.6s ease-in-out infinite;
 }
+/* While a dialog is open it is the thing to act on: the ring and glow behind it go quiet (a glow inside it stays). */
+body:has(#modal[open]) .coach-ring {
+  display: none;
+}
+body:has(#modal[open]) .coach-glow:not(#modal *) {
+  outline: none;
+  animation: none;
+}
 @keyframes coach-pulse {
   0%,
   100% {
@@ -1532,7 +1540,15 @@ body[data-view='data'] .table-wrap {
   }
 }
 @media (max-width: 760px) {
+  /* On phones the row is too narrow for tabs and the strip: the strip shows only where there are no tabs (Home, Team). */
   .status-strip {
+    display: none;
+  }
+  .subnav:not(:has(nav, .week-track)) .status-strip {
+    display: flex;
+    gap: 14px;
+  }
+  .status-strip .strip-game {
     display: none;
   }
   .week-track li + li::before {
