@@ -30,6 +30,11 @@ export default {
     stateOpen: 'Prêt à débloquer',
     nodeLabel: '{{move}}, {{state}}, {{cost}}',
     tier: 'Niveau {{n}} sur {{total}}',
+    branchHint: {
+      shooter: 'Tirs à trois points et en suspension',
+      slasher: 'Pénétrations, lay-ups et dunks',
+      post: 'Près du panier',
+    },
   },
   gear: {
     kicker: 'Salle du matériel',

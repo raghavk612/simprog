@@ -29,6 +29,11 @@ export default {
     stateOpen: 'अनलॉक के लिए तैयार',
     nodeLabel: '{{move}}, {{state}}, {{cost}}',
     tier: 'स्तर {{n}} / {{total}}',
+    branchHint: {
+      shooter: 'तीन-पॉइंटर और जंप शॉट',
+      slasher: 'ड्राइव, लेअप और डंक',
+      post: 'बास्केट के पास',
+    },
   },
   gear: {
     kicker: 'उपकरण कक्ष',

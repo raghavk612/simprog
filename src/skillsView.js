@@ -1,7 +1,7 @@
-// Skill tree card on the Team Gear page, drawn like a game's skill tree: three coloured light fans (Shooter, Slasher, Post) rising
-// from ribbon banners, each move a round medallion on a connector line, and a detail panel for the selected move with its Unlock
-// button. Every node is a real button whose name says the move, its state (learned, ready, blocked and why, locked and what it
-// needs) and its cost, so colour and glow are never the only signal. The five basic moves are listed under the tree.
+// The skill tree (its own break page): three branches (Shooter, Slasher, Post), each a column of moves from tier 1 down,
+// joined by connectors that turn solid once both ends are learned, and a detail panel for the selected move with its Unlock
+// button. Every move is a real button whose name says the move, its state (learned, ready, blocked and why, locked and what
+// it needs) and its cost, so colour is never the only signal. The five basic moves are listed under the tree.
 import { BASIC_MOVES, SKILL_TREE, unlockedMoves, canUnlock } from './skills.js';
 import { t, tu } from './i18n/index.js';
 const BRANCHES = Object.keys(SKILL_TREE),
@@ -10,18 +10,6 @@ const BRANCHES = Object.keys(SKILL_TREE),
   move = k => t(`shot.${k}`);
 const esc = s =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-// Layout in stage units (the stage keeps this aspect ratio): each branch is a column, its label at the base and tier 1 just above it.
-const VW = 600,
-  VH = 500,
-  BASE = 470,
-  RIBBON = 440,
-  TIERS = [330, 205, 80],
-  AXIS = { shooter: [110, 110], slasher: [300, 300], post: [490, 490] };
-const ax = (b, y) => {
-    const [x0, x1] = AXIS[b];
-    return x0 + ((x1 - x0) * (BASE - y)) / BASE;
-  },
-  pct = (v, of) => `${+((v / of) * 100).toFixed(2)}%`;
 // Line icons (24×24, stroked in the state colour): what each move looks like on court.
 const ICONS = {
   corner: '<path d="M4 3v17h17"/><path d="M4 8a12 12 0 0 1 12 12"/><circle cx="8" cy="16" r="1.8"/>',
@@ -86,19 +74,19 @@ export function selectedSkill(s) {
   const by = st => ALL.find(n => info(s, n).state === st)?.key;
   return by('open') || by('blocked') || by('locked') || ALL.at(-1).key;
 }
-/* Arrow keys on the tree: up and down walk a branch, left and right step to the neighbouring branch on the same tier. */
+/* Arrow keys on the tree: down and up walk a branch (tier 1 is at the top), left and right step to the neighbouring branch on the same tier. */
 export function skillNeighbour(key, dir) {
   const w = where(key);
   if (!w) return null;
   if (dir === 'ArrowUp' || dir === 'ArrowDown')
-    return SKILL_TREE[w.b][w.i + (dir === 'ArrowUp' ? 1 : -1)]?.key || null;
+    return SKILL_TREE[w.b][w.i + (dir === 'ArrowDown' ? 1 : -1)]?.key || null;
   if (dir !== 'ArrowLeft' && dir !== 'ArrowRight') return null;
   return SKILL_TREE[BRANCHES[BRANCHES.indexOf(w.b) + (dir === 'ArrowRight' ? 1 : -1)]]?.[w.i]?.key || null;
 }
 
-function nodeButton(s, b, n, i, sel) {
+// One move: icon, name, and its cost (or "Unlocked") on a tile. The text is hidden from screen readers; aria-label says it all.
+function nodeButton(s, n, sel) {
   const { state, text } = info(s, n),
-    x = ax(b, TIERS[i]),
     on = n.key === sel;
   const label = t('skills.nodeLabel', {
     move: move(n.key),
@@ -106,28 +94,28 @@ function nodeButton(s, b, n, i, sel) {
     cost: t('skills.cost', { cost: n.cost }),
   });
   return (
-    `<button class="st-node ${state}" id="skill-${n.key}" data-action="skill-select" data-key="${n.key}" style="--x:${pct(x, VW)};--y:${pct(TIERS[i], VH)}" aria-pressed="${on}" tabindex="${on ? 0 : -1}" aria-label="${esc(label)}"${on ? ' aria-describedby="st-detail-hint"' : ''}>` +
+    `<button class="st-node ${state}" id="skill-${n.key}" data-action="skill-select" data-key="${n.key}" aria-pressed="${on}" tabindex="${on ? 0 : -1}" aria-label="${esc(label)}"${on ? ' aria-describedby="st-detail-hint"' : ''}>` +
     `<span class="st-medal" aria-hidden="true">${icon(n.key)}${state === 'locked' ? LOCK : state === 'owned' ? CHECK : ''}</span>` +
-    (state === 'owned' ? '' : `<span class="st-cost" aria-hidden="true">${n.cost}</span>`) +
-    `<span class="st-name" aria-hidden="true">${esc(move(n.key))}</span></button>`
+    `<span class="st-text" aria-hidden="true"><span class="st-name">${esc(move(n.key))}</span>` +
+    `<span class="st-meta">${state === 'owned' ? t('skills.owned') : `<span class="st-coin"></span>${t('skills.cost', { cost: n.cost })}`}</span></span></button>`
   );
 }
-// A connector from one move to the next: lit once both are learned, flowing toward a move that is next in line, dim and dashed otherwise.
-function links(s, b) {
+// The connector between two moves: solid once both ends are learned, dashed in the accent when it leads to the next move in line, dim otherwise.
+function link(own, from, to) {
+  const st = own.includes(from) && own.includes(to) ? 'lit' : own.includes(from) ? 'next' : 'locked';
+  return `<span class="st-link ${st}" data-from="${from}" data-to="${to}" aria-hidden="true"></span>`;
+}
+// A branch: its name, what it adds, how much of it is learned (a segment per move), then its moves top to bottom.
+function branch(s, b, sel) {
   const nodes = SKILL_TREE[b],
     own = unlockedMoves(s),
-    line = (from, to, x1, y1, x2, y2) => {
-      const st = own.includes(from) && own.includes(to) ? 'lit' : own.includes(from) ? 'next' : 'locked';
-      return `<line class="st-link ${st}" data-from="${from}" data-to="${to}" x1="${x1.toFixed(1)}" y1="${y1}" x2="${x2.toFixed(1)}" y2="${y2}"/>`;
-    };
-  // from the ribbon (the branch's base, always open) to its first move, then move to move
-  const base = `<line class="st-link ${own.includes(nodes[0].key) ? 'lit' : 'next'}" data-from="base" data-to="${nodes[0].key}" x1="${ax(b, RIBBON - 14).toFixed(1)}" y1="${RIBBON - 14}" x2="${ax(b, TIERS[0]).toFixed(1)}" y2="${TIERS[0]}"/>`;
+    done = nodes.filter(n => own.includes(n.key)).length;
   return (
-    base +
-    nodes
-      .slice(1)
-      .map((n, i) => line(nodes[i].key, n.key, ax(b, TIERS[i]), TIERS[i], ax(b, TIERS[i + 1]), TIERS[i + 1]))
-      .join('')
+    `<div class="st-branch" role="group" aria-labelledby="skill-branch-${b}"><div class="st-branch-head">` +
+    `<h3 id="skill-branch-${b}">${t(`skills.branch.${b}`)}</h3><p>${t(`skills.branchHint.${b}`)}</p>` +
+    `<div class="st-meter" aria-hidden="true">${nodes.map(n => `<i${own.includes(n.key) ? ' class="on"' : ''}></i>`).join('')}<span>${done}/${nodes.length}</span></div></div>` +
+    nodes.map((n, i) => (i ? link(own, nodes[i - 1].key, n.key) : '') + nodeButton(s, n, sel)).join('') +
+    `</div><!--/${b}-->`
   );
 }
 
@@ -147,11 +135,7 @@ function detail(s, sel) {
 
 export function skillTreeCard(s) {
   const sel = selectedSkill(s);
-  const branches = BRANCHES.map(
-    b =>
-      `<div class="st-branch" role="group" aria-labelledby="skill-branch-${b}"><h3 class="st-ribbon" id="skill-branch-${b}" style="--x:${pct(ax(b, RIBBON), VW)};--y:${pct(RIBBON, VH)}">${t(`skills.branch.${b}`)}</h3>${SKILL_TREE[b].map((n, i) => nodeButton(s, b, n, i, sel)).join('')}</div><!--/${b}-->`,
-  ).join('');
   return `<section class="card skill-tree" aria-label="${t('skills.title')}"><div class="skill-head"><p class="skill-intro">${t('skills.intro')}</p><span class="pill">${t('skills.progress', { n: unlockedMoves(s).length, total: TOTAL })}</span></div>
- <div class="st-board"><div class="st-stage" style="aspect-ratio:${VW}/${VH}"><svg class="st-links" viewBox="0 0 ${VW} ${VH}" preserveAspectRatio="none" aria-hidden="true" focusable="false">${BRANCHES.map(b => links(s, b)).join('')}</svg>${branches}</div>${detail(s, sel)}</div>
+ <div class="st-board"><div class="st-tree">${BRANCHES.map(b => branch(s, b, sel)).join('')}</div>${detail(s, sel)}</div>
  <div class="st-basics"><h3 class="skill-sub">${t('skills.basic')}</h3><ul class="skill-chips">${BASIC_MOVES.map(k => `<li class="skill-chip"><span class="sr-only">${t('skills.owned')}: </span><span aria-hidden="true">✓</span> ${move(k)}</li>`).join('')}</ul></div></section>`;
 }

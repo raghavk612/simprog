@@ -29,6 +29,11 @@ export default {
     stateOpen: 'Pronta da sbloccare',
     nodeLabel: '{{move}}, {{state}}, {{cost}}',
     tier: 'Livello {{n}} di {{total}}',
+    branchHint: {
+      shooter: 'Triple e tiri in sospensione',
+      slasher: 'Penetrazioni, terzi tempi e schiacciate',
+      post: 'Vicino al canestro',
+    },
   },
   gear: {
     kicker: 'Sala attrezzatura',

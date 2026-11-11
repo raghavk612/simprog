@@ -29,6 +29,11 @@ export default {
     stateOpen: '可以解锁',
     nodeLabel: '{{move}}，{{state}}，{{cost}}',
     tier: '第 {{n}} 级，共 {{total}} 级',
+    branchHint: {
+      shooter: '三分球和跳投',
+      slasher: '突破、上篮和扣篮',
+      post: '篮下进攻',
+    },
   },
   gear: {
     kicker: '装备室',

@@ -4,7 +4,7 @@
 //
 // changes.json maps a locale to dotted keys and their text:
 //   { "en": { "recruit.full": "Roster full" }, "es": { "recruit.full": "Plantilla completa" }, ... }
-// A key that exists has its value replaced; a missing key is added at the end of its block (the block must exist).
+// A key that exists has its value replaced; a missing key is added at the end of its block (missing blocks are created).
 // Use null as the value to delete a key. Run `npm run format` and `npm test` afterwards (tests/i18n.test.js checks
 // that every locale has the same keys and placeholders).
 import fs from 'node:fs';
@@ -71,7 +71,13 @@ function apply(file, changes) {
     let at = root;
     for (let d = 0; d < parts.length - 1; d++) {
       const f = findKey(lines, at, d + 1, parts[d]);
-      if (!f.block && f.start !== undefined && expandInline(lines, f.start)) f.block = true;
+      if (f.start === undefined) {
+        // A missing block is created empty at the end of its parent, then filled like any other.
+        const pad = ' '.repeat((d + 1) * 2);
+        lines.splice(f.end, 0, `${pad}${parts[d]}: {`, `${pad}},`);
+        Object.assign(f, { start: f.end, block: true });
+      }
+      if (!f.block && expandInline(lines, f.start)) f.block = true;
       if (!f.block) throw Error(`${file}: ${parts.slice(0, d + 1).join('.')} is not a block`);
       at = f.start;
     }

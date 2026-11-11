@@ -117,10 +117,10 @@ test('an unlocked move shows as learned, lights its link and opens the next move
   assert.ok(label(html, 'euro').includes(t('skills.owned')));
   assert.equal(stateOf(html, 'dunk'), 'open');
   assert.equal(stateOf(html, 'alley'), 'locked');
-  assert.match(html, /<line class="st-link next" data-from="euro" data-to="dunk"/);
-  assert.match(html, /<line class="st-link locked" data-from="dunk" data-to="alley"/);
+  assert.match(html, /<span class="st-link next" data-from="euro" data-to="dunk"/);
+  assert.match(html, /<span class="st-link locked" data-from="dunk" data-to="alley"/);
   E.unlockSkill(s, 'dunk');
-  assert.match(skillTreeCard(s), /<line class="st-link lit" data-from="euro" data-to="dunk"/);
+  assert.match(skillTreeCard(s), /<span class="st-link lit" data-from="euro" data-to="dunk"/);
   assert.equal(selectedSkill(s), 'corner', 'still the first move you can unlock');
   selectSkill('euro', s);
   assert.ok(detail(skillTreeCard(s)).includes(t('skills.owned')));
@@ -176,9 +176,9 @@ test('when every move is learned the panel shows the last one, and unknown selec
   assert.ok(skillTreeCard(s).includes(t('skills.progress', { n: 13, total: 13 })));
 });
 test('arrow keys walk up and down a branch and across branches on the same tier', () => {
-  assert.equal(skillNeighbour('corner', 'ArrowUp'), 'stepback');
-  assert.equal(skillNeighbour('stepback', 'ArrowDown'), 'corner');
-  assert.equal(skillNeighbour('corner', 'ArrowDown'), null);
+  assert.equal(skillNeighbour('corner', 'ArrowDown'), 'stepback');
+  assert.equal(skillNeighbour('stepback', 'ArrowUp'), 'corner');
+  assert.equal(skillNeighbour('corner', 'ArrowUp'), null);
   assert.equal(skillNeighbour('corner', 'ArrowRight'), 'euro');
   assert.equal(skillNeighbour('euro', 'ArrowRight'), 'hook');
   assert.equal(skillNeighbour('hook', 'ArrowRight'), null);

@@ -30,6 +30,11 @@ export default {
     stateOpen: 'Listo para desbloquear',
     nodeLabel: '{{move}}, {{state}}, {{cost}}',
     tier: 'Nivel {{n}} de {{total}}',
+    branchHint: {
+      shooter: 'Triples y tiros en suspensión',
+      slasher: 'Penetraciones, bandejas y mates',
+      post: 'Cerca del aro',
+    },
   },
   gear: {
     kicker: 'Sala de equipamiento',

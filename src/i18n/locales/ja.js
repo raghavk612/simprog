@@ -29,6 +29,11 @@ export default {
     stateOpen: '解放できます',
     nodeLabel: '{{move}}、{{state}}、{{cost}}',
     tier: 'ティア {{n}} / {{total}}',
+    branchHint: {
+      shooter: '3ポイントとジャンプシュート',
+      slasher: 'ドライブ、レイアップ、ダンク',
+      post: 'ゴール下',
+    },
   },
   gear: {
     kicker: '用具室',

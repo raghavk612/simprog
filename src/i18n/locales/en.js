@@ -337,6 +337,11 @@ export default {
     stateOpen: 'Ready to unlock',
     nodeLabel: '{{move}}, {{state}}, {{cost}}',
     tier: 'Tier {{n}} of {{total}}',
+    branchHint: {
+      shooter: 'Threes and jump shots',
+      slasher: 'Drives, layups and dunks',
+      post: 'Close to the basket',
+    },
   },
   office: {
     inboxFirst: 'Answer the coach’s inbox first.',
