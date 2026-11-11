@@ -775,7 +775,7 @@ export default {
     riskLow: 'Faible',
   },
   result: {
-    kicker: 'La salle vidéo · {{outcome}}',
+    kicker: 'Fin du match · {{outcome}}',
     win: 'Victoire',
     loss: 'Défaite',
     before: 'Ce que vous avez fait avant l’entre-deux',
@@ -1383,9 +1383,9 @@ export default {
       canvasBreathe:
         'Salle d’entraînement en 3D : un joueur s’étire sur un tapis pendant qu’un anneau grandit et rétrécit à chaque respiration.',
       canvasFilm: 'Salle vidéo en 3D : les joueurs regardent un écran qui affiche la question.',
-      keys: 'Glisser pour viser et régler l’arc · maintenir pour charger · relâcher sur le repère doré. Touches : ← → viser · ↑ ↓ arc · maintenir Espace.',
-      spot: 'Position : {{d}} pi. Faites glisser pour viser et régler l’arc, maintenez pour charger, relâchez sur le repère doré.',
-      line: 'Ligne : {{d}} pi. Faites glisser pour viser et régler l’arc, maintenez pour charger, relâchez sur le repère doré.',
+      keys: 'Touches : ← → viser · ↑ ↓ arc · maintenez Espace pour tirer.',
+      spot: 'Cette position : {{d}} pieds.',
+      line: 'Ligne des lancers francs : {{d}} pieds.',
       spots: {
         top: 'Haut de la raquette',
         slotL: 'Haut gauche',
@@ -1405,15 +1405,13 @@ export default {
       right: 'à droite',
       onLine: 'sur la ligne',
       srAim: 'Visée à {{a}} degrés {{side}} du panier. Arc de {{arc}} degrés.',
-      coKeys: 'Cliquez, touchez ou appuyez sur Espace quand l’anneau atteint la bande verte.',
-      coHelp:
-        'Regardez l’anneau se refermer sur le tireur. Appuyez quand il atteint la bande verte pour avoir la main levée à son lâcher.',
+      coKeys: 'Cliquez, touchez ou appuyez sur Espace.',
+      coHelp: 'Attendez la bande verte.',
       coEarly: 'Trop tôt : il vous a vu venir et vous a débordé.',
       coLate: 'Trop tard : il avait déjà tiré.',
       round: 'Manche {{n}} sur {{total}}',
-      brKeys: 'Cliquez, touchez ou appuyez sur Espace à l’expiration.',
-      brHelp:
-        'Respirez avec l’anneau. Appuyez à la deuxième expiration, quand il se resserre dans la bande verte.',
+      brKeys: 'Cliquez, touchez ou appuyez sur Espace.',
+      brHelp: 'Attendez la deuxième expiration.',
       breatheIn: 'Inspirez',
       breatheOut: 'Expirez',
       filmHead: 'Salle vidéo',

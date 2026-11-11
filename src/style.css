@@ -922,6 +922,14 @@ dialog {
   padding-top: 20px;
   margin-top: 20px;
 }
+/* A long dialog keeps its main button in view: it rests at the bottom edge until the coach scrolls past it. */
+.modal-actions.sticky {
+  position: sticky;
+  bottom: -1px;
+  z-index: 1;
+  padding-bottom: 16px;
+  background: var(--panel);
+}
 .tutorial {
   position: fixed;
   left: 235px;
@@ -6796,8 +6804,7 @@ dialog:has(.unlock-pop) {
   }
   .landing-copy {
     max-width: none;
-    padding: 0 0 20px;
-    margin-top: -10px;
+    padding: 16px 0 20px;
   }
   .landing-copy .eyebrow {
     margin-bottom: 10px;

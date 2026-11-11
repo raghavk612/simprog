@@ -56,7 +56,7 @@ export function result(index) {
       <p>${esc(reasonText(r))}</p>
       ${pogCard(r)}
       ${highlightStrip(r, index)}
-      <div class="modal-actions">${btn(t('inbox.continue'), 'close', 'primary')}</div>
+      <div class="modal-actions sticky">${btn(t('inbox.continue'), 'close', 'primary')}</div>
       <details class="analysis-drawer">
         <summary>${t('flow.more')}</summary>
         <h3>${t('result.before')}</h3>
