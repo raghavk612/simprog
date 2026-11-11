@@ -127,13 +127,9 @@ export default {
     theme: 'Thème clair',
   },
   side: {
-    sub: 'Opérations de basket-ball',
-    badge: 'Le projet du championnat',
     nav: 'Navigation du programme',
-    rules: 'Règlement et commandes',
     credits: 'Crédits et sources',
     coach: 'Entraîneur {{name}}',
-    footer: 'Toujours plus haut.',
     footerNote: 'Sauvegarde locale automatique · Simulation fictive / effectif public sourcé',
   },
   stage: {
@@ -151,7 +147,11 @@ export default {
     autoTitle: 'Caméra façon TV qui change à chaque action',
     playerTitle: 'Vue à la première personne du porteur du ballon',
   },
-  metrics: { record: 'Bilan', tokens: 'Jetons du programme', chemistry: 'Cohésion', fans: 'Supporters' },
+  metrics: {
+    record: 'Bilan',
+    tokens: 'Jetons du programme',
+    chemistry: 'Cohésion',
+  },
   level: { rookie: 'Équipe C', standard: 'JV', elite: 'Varsity' },
   difficulty: { rookie: 'Équipe C', standard: 'Junior Varsity (JV)', elite: 'Varsity' },
   landing: {
@@ -339,12 +339,12 @@ export default {
   recruit: {
     kicker: 'Trouvez le prochain joueur décisif',
     intro:
-      'Des candidats fictifs rejoignent votre simulation avec l’effectif réel. Le recrutement utilise des jetons du programme, jamais de l’argent réel.',
-    tokens: '{{n}} jetons disponibles',
+      'Recrutez des joueurs des détections pour remplir les places libres. Observez-les d’abord pour voir leur potentiel et leur éthique de travail. Uniquement des jetons, jamais d’argent réel.',
     tryout: 'Détection fictive · {{pos}}',
     sign: 'Recruter · {{cost}} jetons',
     signAria: 'Recruter {{name}} pour {{cost}} jetons',
     none: 'Tous les candidats des détections ont été recrutés.',
+    full: 'Effectif complet. Libérez un joueur dans Équipe pour en recruter un autre.',
   },
   office: {
     inboxFirst: 'Répondez d’abord à la boîte du coach.',
@@ -372,15 +372,14 @@ export default {
     academics: 'Point sur les études',
     academicsFx: '+0,18 de GPA simulé',
     assistantKicker: 'Un poste d’adjoint',
-    buildStaff: 'Constituez votre staff.',
+    buildStaff: 'Staff technique',
     assistantBody:
       'Les postes d’adjoint sont des choix de jeu fictifs. Leurs bonus s’appliquent à vos séances de préparation.',
     hired: 'Embauché',
     cost: '{{cost}} jetons',
     hireAria: 'Embaucher {{name}} pour {{cost}} jetons',
     dismiss: 'Renvoyer l’adjoint',
-    upgKicker: 'Améliorations du programme',
-    upgTitle: 'Investissez dans le programme.',
+    upgTitle: 'Améliorations du programme',
     upgBody:
       'Chaque amélioration s’achète une seule fois. Le prix et l’effet s’affichent avant l’achat. Les matchs coûtent aussi des jetons : l’entretien de l’adjoint et les déplacements à l’extérieur.',
     upgBudget:
@@ -514,7 +513,6 @@ export default {
     },
     streak: 'Série en cours : {{n}}.',
     locked: 'Verrouillé',
-    lockedPick: 'Le maillot {{kit}} est encore verrouillé. {{how}}',
     kitLabelLocked: '{{kit}}, verrouillé. {{how}}',
     unlockedTitle: 'Nouveau maillot débloqué',
     unlockedMsg: 'Le maillot {{kit}} est à vous. Choisissez-le à la prochaine pause.',
@@ -578,8 +576,7 @@ export default {
     kicker: 'Affichez votre identité',
     intro:
       'Choisissez la tenue que portent vos joueurs dans le gymnase 3D. Renommez les joueurs depuis leur profil dans l’effectif.',
-    issue: 'Tenue de l’équipe Kangs',
-    title: 'Faites-la vôtre.',
+    title: 'Tenue de l’équipe',
     kits: 'Tenues',
     home: 'Violet domicile',
     away: 'Blanc extérieur',
@@ -603,7 +600,7 @@ export default {
     newSeason: 'Commencer une nouvelle saison',
     export: 'Exporter cette saison',
     results: 'Vos résultats',
-    scoreboard: 'Le tableau d’affichage ne dit qu’une partie.',
+    scoreboard: 'Résultats',
     replay: 'Revoir',
     noGames: 'Jouez votre premier match pour commencer votre histoire.',
     standings: 'Classement du programme',
@@ -664,7 +661,7 @@ export default {
   },
   flow: {
     doneBadge: 'Fait',
-    next: 'PROCHAINES ÉTAPES :',
+    next: 'Prochaine étape',
     later: 'Ensuite',
     now: {
       pre: 'Présaison. Recrutez des joueurs et engagez votre staff.',
@@ -699,9 +696,10 @@ export default {
     makeCaptain: 'Nommer capitaine',
     walk: 'Guidez-moi pendant le premier match',
     more: 'Analyse complète',
+    breakNext: 'Suivant : {{tab}}',
+    breakHint: 'Tout ici est facultatif. Continuez quand vous êtes prêt.',
   },
   tutorial: {
-    label: 'Votre premier match',
     who: 'Entraîneur adjoint',
     next: 'Suivant',
     finish: 'C’est parti',
@@ -798,7 +796,6 @@ export default {
     checked: 'L’instantané KingCo du {{date}} est chargé.',
     snapshotFailed: 'Les dernières données vérifiées sont conservées.',
     finishFirst: 'Terminez d’abord le match.',
-    minutes: 'Saisissez des minutes entières entre 0 et 32.',
     exported: 'Enregistré sous kangs-season.json dans vos téléchargements.',
     tooLarge: 'Fichier de sauvegarde trop volumineux',
     badSave: 'Ce n’est pas un fichier de saison Kangs compatible.',
@@ -1208,18 +1205,7 @@ export default {
       desc: 'Change la langue de l’interface. Les noms des joueurs et des équipes restent tels que publiés.',
     },
   },
-  tracker: {
-    aria: 'Match {{cur}} sur {{n}}',
-    completeAria: 'Saison terminée',
-    complete: 'Saison terminée',
-    game: 'Match',
-    tick: 'Match {{n}}',
-    tickResult: 'Match {{n}} : {{outcome}} {{home}}–{{away}}',
-    played: '{{n}} joués',
-    left: '{{n}} restants',
-    eliminated: 'Éliminés',
-    out: 'Saison terminée après le match {{n}}',
-  },
+  tracker: {},
   toast: {
     info: 'À savoir',
     success: 'Fait',
@@ -1555,8 +1541,6 @@ export default {
     r: {
       lead: 'Réglez votre rotation avant chaque entre-deux.',
       starters: 'titulaires',
-      total: 'minutes au total',
-      max: 'max par joueur',
       energy: 'énergie pour jouer',
       gpa: 'moyenne pour être éligible',
       injuries: 'blessures actives',
@@ -1697,7 +1681,6 @@ export default {
     save: 'Enregistrer le bulletin (image)',
     saved: 'Bulletin enregistré en image.',
     failed: 'Votre navigateur n’a pas pu créer l’image.',
-    imageAlt: 'Bulletin de la saison de l’entraîneur {{name}} : note {{grade}}, bilan {{w}}–{{l}}.',
   },
   bracket: {
     kicker: 'Le tableau',
@@ -2039,7 +2022,6 @@ export default {
   scoutP: {
     btn: 'Observer · {{cost}}',
     aria: 'Observer {{name}} pour {{cost}} jetons et révéler potentiel et éthique de travail',
-    hidden: 'Potentiel et éthique de travail restent cachés tant que vous n’observez pas.',
     potential: 'Potentiel',
     work: 'Éthique de travail',
     workAria: 'Éthique de travail : {{k}} étoiles sur 5',
@@ -2093,16 +2075,6 @@ export default {
     allPlanned: 'Tous les créneaux sont prévus',
   },
   nudge: {
-    kicker: 'Que dois-je faire maintenant ?',
-    finished: 'La saison est terminée. Lisez le récit de votre saison et votre bulletin.',
-    live: 'Un match est en cours. Retournez sur le terrain.',
-    inbox: 'Votre boîte de réception contient des nouvelles. Répondez-y avant tout.',
-    press: 'La salle de presse vous attend après votre dernier match.',
-    issues: 'Des joueurs de votre rotation ne peuvent pas jouer ({{n}}). Corrigez la composition.',
-    practice: 'Créneaux de préparation libres : {{n}}. Planifiez l’entraînement avant l’entre-deux.',
-    scout: 'Repérez {{opp}} avant l’entre-deux pour affiner vos lectures tactiques.',
-    lineup: 'Votre rotation n’est pas prête. Il faut cinq titulaires et 160 minutes.',
-    tipoff: 'Tout est prêt. Affrontez {{opp}}.',
     btn: {
       finished: 'Ouvrir le journal de saison',
       live: 'Aller au jour de match',

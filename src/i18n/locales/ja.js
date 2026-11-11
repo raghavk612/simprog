@@ -126,13 +126,9 @@ export default {
     theme: 'ライトテーマ',
   },
   side: {
-    sub: 'バスケットボール運営',
-    badge: 'チャンピオンシッププロジェクト',
     nav: 'プログラムのナビゲーション',
-    rules: 'ルールブックと操作',
     credits: 'クレジットと出典',
     coach: '{{name}} コーチ',
-    footer: '常に高みへ。',
     footerNote: 'ローカルに自動保存 · 架空のシミュレーション / 出典付きの公開ロスター',
   },
   stage: {
@@ -150,7 +146,11 @@ export default {
     autoTitle: 'プレーごとに切り替わるテレビ風カメラ',
     playerTitle: 'ボールを持つ選手の一人称視点',
   },
-  metrics: { record: '成績', tokens: 'プログラムトークン', chemistry: 'チームワーク', fans: 'ファン' },
+  metrics: {
+    record: '成績',
+    tokens: 'プログラムトークン',
+    chemistry: 'チームワーク',
+  },
   level: { rookie: 'Cチーム', standard: 'JV', elite: 'バーシティ' },
   difficulty: { rookie: 'Cチーム', standard: 'ジュニアバーシティ（JV）', elite: 'バーシティ' },
   landing: {
@@ -322,12 +322,12 @@ export default {
   recruit: {
     kicker: '次の流れを変える選手を見つけよう',
     intro:
-      '架空の候補選手が、実在ロスターのシミュレーションに加わります。獲得にはプログラムトークンを使い、実際のお金は使いません。',
-    tokens: '利用可能なトークン {{n}}',
+      'トライアウトの選手と契約して、空いたロスター枠を埋めましょう。先にスカウトすると潜在能力と勤勉さが分かります。使うのはトークンだけで、本物のお金は使いません。',
     tryout: '架空のトライアウト · {{pos}}',
     sign: '契約 · {{cost}} トークン',
     signAria: '{{name}} を {{cost}} トークンで契約',
     none: 'トライアウトの候補はすべて契約済みです。',
+    full: 'ロスターが満員です。契約するには「チーム」で選手を放出してください。',
   },
   office: {
     inboxFirst: '先にコーチの受信箱に返信してください。',
@@ -355,14 +355,13 @@ export default {
     academics: '学業面談',
     academicsFx: '模擬GPA +0.18',
     assistantKicker: 'アシスタントは1枠',
-    buildStaff: 'コーチングスタッフを編成しよう。',
+    buildStaff: 'コーチングスタッフ',
     assistantBody: 'アシスタントの役割は架空のゲーム上の選択です。ボーナスは準備セッションに適用されます。',
     hired: '採用済み',
     cost: '{{cost}} トークン',
     hireAria: '{{name}} を {{cost}} トークンで採用',
     dismiss: 'アシスタントを解任',
-    upgKicker: 'プログラム強化',
-    upgTitle: 'プログラムに投資しよう。',
+    upgTitle: 'プログラム強化',
     upgBody:
       '各強化は一度だけ購入できます。購入前に価格と効果が表示されます。試合にもトークンがかかります。アシスタントの維持費とアウェー遠征費です。',
     upgBudget:
@@ -496,7 +495,6 @@ export default {
     },
     streak: '現在の連勝：{{n}}。',
     locked: 'ロック中',
-    lockedPick: '{{kit}}のユニフォームはまだロックされています。{{how}}',
     kitLabelLocked: '{{kit}}、ロック中。{{how}}',
     unlockedTitle: '新しいユニフォームを解放',
     unlockedMsg: '{{kit}}のユニフォームを着られるようになりました。次の休みで選べます。',
@@ -553,8 +551,7 @@ export default {
   locker: {
     kicker: '自分たちの個性をまとう',
     intro: '3D体育館で選手が着るユニフォームを選びます。選手の名前はロスターのプロフィールから変更できます。',
-    issue: 'Kangs チーム支給品',
-    title: '自分たちらしく。',
+    title: 'チームユニフォーム',
     kits: 'ユニフォーム',
     home: 'ホームのパープル',
     away: 'アウェイのホワイト',
@@ -577,7 +574,7 @@ export default {
     newSeason: '新しいシーズンを始める',
     export: 'このシーズンをエクスポート',
     results: 'あなたの試合結果',
-    scoreboard: 'スコアボードが語るのは一面だけ。',
+    scoreboard: '試合結果',
     replay: 'リプレイ',
     noGames: '最初の試合をプレーして、あなたの物語を始めましょう。',
     standings: 'プログラムの順位表',
@@ -637,7 +634,7 @@ export default {
   },
   flow: {
     doneBadge: '完了',
-    next: '次のステップ:',
+    next: '次のステップ',
     later: 'このあと',
     now: {
       pre: 'プレシーズン。選手を獲得し、スタッフを雇いましょう。',
@@ -672,9 +669,10 @@ export default {
     makeCaptain: 'キャプテンにする',
     walk: '最初の試合を案内してもらう',
     more: '詳しい分析',
+    breakNext: '次へ：{{tab}}',
+    breakHint: 'ここはすべて任意です。準備ができたら次へ進みましょう。',
   },
   tutorial: {
-    label: '最初の試合',
     who: 'アシスタントコーチ',
     next: '次へ',
     finish: '始めよう',
@@ -768,7 +766,6 @@ export default {
     checked: '{{date}} の KingCo スナップショットを読み込みました。',
     snapshotFailed: '最後に確認済みのデータを使い続けます。',
     finishFirst: '先に試合を終えてください。',
-    minutes: '0〜32の整数の分数を入力してください。',
     exported: 'ダウンロードフォルダに kangs-season.json として保存しました。',
     tooLarge: 'セーブファイルが大きすぎます',
     badSave: '互換性のある Kangs のシーズンファイルではありません。',
@@ -1148,18 +1145,7 @@ export default {
       desc: 'インターフェースの言語を変更します。選手名とチーム名は公表されているままです。',
     },
   },
-  tracker: {
-    aria: '全{{n}}試合中、第{{cur}}試合',
-    completeAria: 'シーズン終了',
-    complete: 'シーズン終了',
-    game: '試合',
-    tick: '第{{n}}戦',
-    tickResult: '第{{n}}戦：{{outcome}} {{home}}–{{away}}',
-    played: '消化 {{n}}',
-    left: '残り {{n}}',
-    eliminated: '敗退',
-    out: '第{{n}}戦でシーズン終了',
-  },
+  tracker: {},
   toast: {
     info: 'お知らせ',
     success: '完了',
@@ -1484,8 +1470,6 @@ export default {
     r: {
       lead: '毎回のティップオフ前にローテーションを設定しましょう。',
       starters: '先発',
-      total: '合計出場時間',
-      max: '1人あたりの上限',
       energy: '出場に必要なエネルギー',
       gpa: '出場資格に必要なGPA',
       injuries: '現在のケガ',
@@ -1623,7 +1607,6 @@ export default {
     save: '通知表を保存（画像）',
     saved: '通知表を画像として保存しました。',
     failed: 'ブラウザーで画像を作成できませんでした。',
-    imageAlt: '{{name}}コーチのシーズン通知表：評価 {{grade}}、成績 {{w}}–{{l}}。',
   },
   bracket: {
     kicker: 'トーナメント表',
@@ -1912,7 +1895,6 @@ export default {
   scoutP: {
     btn: 'スカウト · {{cost}}',
     aria: '{{cost}}トークンで{{name}}をスカウトし、潜在能力と勤勉さを確認',
-    hidden: '潜在能力と勤勉さはスカウトするまで分かりません。',
     potential: '潜在能力',
     work: '勤勉さ',
     workAria: '勤勉さ：5つ星中{{k}}',
@@ -1964,16 +1946,6 @@ export default {
     allPlanned: '全枠を計画済み',
   },
   nudge: {
-    kicker: '今、何をすればいい？',
-    finished: 'シーズンは終了しました。シーズンの物語と成績表を見てみましょう。',
-    live: '試合の最中です。コートに戻りましょう。',
-    inbox: '受信箱に知らせが届いています。まずそちらに対応しましょう。',
-    press: '前の試合後の記者会見が待っています。',
-    issues: 'ローテーションに出場できない選手がいます（{{n}}人）。ラインナップを直しましょう。',
-    practice: '空いている準備枠：{{n}}。ティップオフ前に練習を計画しましょう。',
-    scout: 'ティップオフ前に{{opp}}を偵察して、戦術の読みを磨きましょう。',
-    lineup: 'ローテーションが未設定です。先発5人と160分が必要です。',
-    tipoff: '準備完了です。{{opp}}との試合に臨みましょう。',
     btn: {
       finished: 'シーズンジャーナルを開く',
       live: '試合日へ',

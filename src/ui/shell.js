@@ -126,6 +126,20 @@ function subnav(group) {
       </div>
     </div>`;
 }
+// The foot of every break page: the break is optional, so it says so, and offers the next tab, or leaving the break on the last one.
+function breakNext() {
+  const pause = E.breakDue(state),
+    next = NAV.break[NAV.break.indexOf(view) + 1];
+  return html`
+    <div class="break-next">
+      <p>${t('flow.breakHint')}</p>
+      ${
+        next
+          ? `<button class="secondary" data-view="${next}">${t('flow.breakNext', { tab: t(`nav.${next}`) })} <span aria-hidden="true">→</span></button>`
+          : btn(t(`flow.done.${pause}`), 'break-done', 'primary')
+      }
+    </div>`;
+}
 function weekTrack() {
   const at = view === 'game' ? 1 : 0;
   return html`
@@ -212,6 +226,7 @@ export function render() {
           ${subnav(group)}
           <main class="content" id="main" tabindex="-1">
             ${(PAGES[view] || home)()}
+            ${group === 'break' ? breakNext() : ''}
           </main>
         </div>
       </div>`;

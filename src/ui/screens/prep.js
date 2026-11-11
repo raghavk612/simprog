@@ -84,7 +84,7 @@ export function practice() {
       </li>`;
   };
   return html`
-    ${header(tu('practice.kicker'), state.finished ? t('nav.practice') : t('prep.title', { opp }), t('prep.slots', { n: state.actions }))}
+    ${header(tu('practice.kicker'), state.finished ? t('nav.practice') : t('prep.title', { opp }), t('prep.slots', { n: cap - practicePlan.length }))}
     <div class="prep-grid">
       <section class="card prep-list"><ul>${PREP.map(row).join('')}</ul></section>
       <section class="prep-side">

@@ -385,9 +385,11 @@ body[data-view='home'] #arena.home-arena {
   outline: 0;
   overflow-wrap: anywhere;
 }
+/* "Next step" is a small label above the step itself, read as part of the heading. */
 .home-next h1 b {
-  margin-right: 10px;
-  font-weight: 700;
+  display: block;
+  margin-bottom: 4px;
+  font: 600 calc(13px * var(--ts, 1) * var(--ls, 1)) / 1.3 var(--body);
   color: var(--score);
 }
 .hb-go {
@@ -898,6 +900,35 @@ body.live-match .topbar {
   display: flex;
   gap: 8px;
 }
+.toolbar-note {
+  flex: 1;
+  color: var(--ink-2);
+  font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
+}
+/* Foot of a break page: "optional" on the left, the way on (next tab, or leave the break) on the right. */
+.break-next {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.break-next p {
+  margin: 0;
+  color: var(--ink-3);
+}
+.break-next button {
+  flex: none;
+  min-width: 200px;
+}
+@media (max-width: 620px) {
+  .break-next {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
 /* ---- First-game tutorial: a ring on the thing being talked about, everything else dimmed, and one line from the assistant ---- */
 .coach-ring {
   position: fixed;
@@ -994,7 +1025,7 @@ body.live-match .topbar {
     transform: none;
   }
 }
-.walk-check {
+.landing .walk-check {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1004,7 +1035,7 @@ body.live-match .topbar {
   color: var(--ink-2);
   text-transform: none;
 }
-.walk-check input {
+.landing .walk-check input {
   width: 18px;
   height: 18px;
   margin: 0;

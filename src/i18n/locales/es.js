@@ -127,13 +127,9 @@ export default {
     theme: 'Tema claro',
   },
   side: {
-    sub: 'Operaciones de baloncesto',
-    badge: 'El proyecto del campeonato',
     nav: 'Navegación del programa',
-    rules: 'Reglamento y controles',
     credits: 'Créditos y fuentes',
     coach: 'Entrenador {{name}}',
-    footer: 'Siempre en ascenso.',
     footerNote: 'Guardado automático local · Simulación ficticia / plantilla pública con fuentes',
   },
   stage: {
@@ -151,7 +147,11 @@ export default {
     autoTitle: 'Cámara estilo TV que cambia con cada jugada',
     playerTitle: 'Vista en primera persona del jugador con el balón',
   },
-  metrics: { record: 'Récord', tokens: 'Fichas del programa', chemistry: 'Química', fans: 'Aficionados' },
+  metrics: {
+    record: 'Récord',
+    tokens: 'Fichas del programa',
+    chemistry: 'Química',
+  },
   level: { rookie: 'Equipo C', standard: 'JV', elite: 'Varsity' },
   difficulty: { rookie: 'Equipo C', standard: 'Junior Varsity (JV)', elite: 'Varsity' },
   landing: {
@@ -339,12 +339,12 @@ export default {
   recruit: {
     kicker: 'Encuentra al próximo jugador diferencial',
     intro:
-      'Los candidatos ficticios se suman a tu simulación con la plantilla real. El reclutamiento usa fichas del programa, nunca dinero real.',
-    tokens: '{{n}} fichas disponibles',
+      'Ficha jugadores de las pruebas para llenar las plazas libres. Ojea primero para ver su potencial y ética de trabajo. Solo fichas, nunca dinero real.',
     tryout: 'Prueba ficticia · {{pos}}',
     sign: 'Fichar · {{cost}} fichas',
     signAria: 'Fichar a {{name}} por {{cost}} fichas',
     none: 'Ya se fichó a todos los candidatos de las pruebas.',
+    full: 'Plantilla completa. Da de baja a un jugador en Equipo para fichar a otro.',
   },
   office: {
     inboxFirst: 'Responde primero al buzón del entrenador.',
@@ -372,15 +372,14 @@ export default {
     academics: 'Revisión académica',
     academicsFx: '+0,18 de GPA simulado',
     assistantKicker: 'Un puesto de asistente',
-    buildStaff: 'Forma tu cuerpo técnico.',
+    buildStaff: 'Cuerpo técnico',
     assistantBody:
       'Los puestos de asistente son opciones ficticias del juego. Sus bonificaciones se aplican a tus sesiones de preparación.',
     hired: 'Contratado',
     cost: '{{cost}} fichas',
     hireAria: 'Contratar a {{name}} por {{cost}} fichas',
     dismiss: 'Despedir al asistente',
-    upgKicker: 'Mejoras del programa',
-    upgTitle: 'Invierte en el programa.',
+    upgTitle: 'Mejoras del programa',
     upgBody:
       'Cada mejora se compra una sola vez. El precio y el efecto se muestran antes de comprar. Los partidos también cuestan fichas: el mantenimiento del asistente y los viajes a partidos fuera.',
     upgBudget:
@@ -514,7 +513,6 @@ export default {
     },
     streak: 'Racha actual: {{n}}.',
     locked: 'Bloqueada',
-    lockedPick: 'La camiseta {{kit}} sigue bloqueada. {{how}}',
     kitLabelLocked: '{{kit}}, bloqueada. {{how}}',
     unlockedTitle: 'Nueva camiseta desbloqueada',
     unlockedMsg: 'Ya puedes lucir la camiseta {{kit}}. Elígela en el próximo parón.',
@@ -578,8 +576,7 @@ export default {
     kicker: 'Viste tu identidad',
     intro:
       'Elige la equipación que llevan tus jugadores en el gimnasio 3D. Cambia el nombre de los jugadores desde sus perfiles de la plantilla.',
-    issue: 'Equipación del equipo Kangs',
-    title: 'Hazla tuya.',
+    title: 'Equipación',
     kits: 'Equipaciones',
     home: 'Morada de local',
     away: 'Blanca de visitante',
@@ -603,7 +600,7 @@ export default {
     newSeason: 'Empezar una nueva temporada',
     export: 'Exportar esta temporada',
     results: 'Tus resultados',
-    scoreboard: 'El marcador cuenta solo una parte.',
+    scoreboard: 'Resultados',
     replay: 'Repetir',
     noGames: 'Juega tu primer partido para empezar tu historia.',
     standings: 'Clasificación del programa',
@@ -664,7 +661,7 @@ export default {
   },
   flow: {
     doneBadge: 'Hecho',
-    next: 'PRÓXIMOS PASOS:',
+    next: 'Siguiente paso',
     later: 'Después',
     now: {
       pre: 'Pretemporada. Ficha jugadores y contrata a tu cuerpo técnico.',
@@ -699,9 +696,10 @@ export default {
     makeCaptain: 'Nombrar capitán',
     walk: 'Guíame en el primer partido',
     more: 'Análisis completo',
+    breakNext: 'Siguiente: {{tab}}',
+    breakHint: 'Todo aquí es opcional. Sigue cuando quieras.',
   },
   tutorial: {
-    label: 'Tu primer partido',
     who: 'Entrenador asistente',
     next: 'Siguiente',
     finish: 'A entrenar',
@@ -797,7 +795,6 @@ export default {
     checked: 'Se cargó la instantánea de KingCo del {{date}}.',
     snapshotFailed: 'Se conservan los últimos datos verificados.',
     finishFirst: 'Termina primero el partido.',
-    minutes: 'Escribe minutos enteros entre 0 y 32.',
     exported: 'Guardado como kangs-season.json en tus descargas.',
     tooLarge: 'El archivo de guardado es demasiado grande',
     badSave: 'Este no es un archivo de temporada de Kangs compatible.',
@@ -1189,18 +1186,7 @@ export default {
       desc: 'Cambia el idioma de la interfaz. Los nombres de jugadores y equipos se mantienen como se publicaron.',
     },
   },
-  tracker: {
-    aria: 'Partido {{cur}} de {{n}}',
-    completeAria: 'Temporada completa',
-    complete: 'Temporada completa',
-    game: 'Partido',
-    tick: 'Partido {{n}}',
-    tickResult: 'Partido {{n}}: {{outcome}} {{home}}–{{away}}',
-    played: '{{n}} jugados',
-    left: '{{n}} por jugar',
-    eliminated: 'Eliminados',
-    out: 'Temporada terminada tras el partido {{n}}',
-  },
+  tracker: {},
   toast: {
     info: 'Atención',
     success: 'Hecho',
@@ -1525,8 +1511,6 @@ export default {
     r: {
       lead: 'Prepara tu rotación antes de cada salto inicial.',
       starters: 'titulares',
-      total: 'minutos totales',
-      max: 'máx. por jugador',
       energy: 'energía para jugar',
       gpa: 'GPA para ser elegible',
       injuries: 'lesiones activas',
@@ -1667,7 +1651,6 @@ export default {
     save: 'Guardar boletín (imagen)',
     saved: 'Boletín guardado como imagen.',
     failed: 'Tu navegador no pudo crear la imagen.',
-    imageAlt: 'Boletín de la temporada del entrenador {{name}}: nota {{grade}}, récord {{w}}–{{l}}.',
   },
   bracket: {
     kicker: 'El cuadro',
@@ -1982,7 +1965,6 @@ export default {
   scoutP: {
     btn: 'Ojear · {{cost}}',
     aria: 'Ojear a {{name}} por {{cost}} fichas para ver su potencial y su ética de trabajo',
-    hidden: 'Potencial y ética de trabajo siguen ocultos hasta que ojees.',
     potential: 'Potencial',
     work: 'Ética de trabajo',
     workAria: 'Ética de trabajo: {{k}} de 5 estrellas',
@@ -2032,16 +2014,6 @@ export default {
     allPlanned: 'Todos los espacios están planificados',
   },
   nudge: {
-    kicker: '¿Qué debería hacer ahora?',
-    finished: 'La temporada terminó. Lee la historia de tu temporada y tu boletín.',
-    live: 'Hay un partido en curso. Vuelve a la cancha.',
-    inbox: 'Tu bandeja tiene noticias pendientes. Respóndelas antes que nada.',
-    press: 'La sala de prensa te espera tras el último partido.',
-    issues: 'Hay jugadores de tu rotación que no pueden jugar ({{n}}). Arregla la alineación.',
-    practice: 'Turnos de preparación libres: {{n}}. Planifica el entrenamiento antes del salto inicial.',
-    scout: 'Explora a {{opp}} antes del salto inicial para afinar tus lecturas tácticas.',
-    lineup: 'Tu rotación no está lista. Necesitas cinco titulares y 160 minutos.',
-    tipoff: 'Todo está listo. Enfréntate a {{opp}}.',
     btn: {
       finished: 'Abrir el diario de temporada',
       live: 'Ir al día de partido',

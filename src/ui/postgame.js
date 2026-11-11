@@ -184,6 +184,7 @@ export function postGame() {
   }
   P.startPress(state, PRESS_MAX);
   save();
-  render();
+  if (view === 'home') render();
+  else go('home');
   if (!showPress()) afterPress();
 }

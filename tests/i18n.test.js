@@ -199,7 +199,7 @@ test('every key built at run time resolves to a string for each value it can tak
     need.push(`hb.tabs.${v}`);
   for (const u of UPGRADES) need.push(`upg.${u.key}.name`, `upg.${u.key}.fx`);
   for (const v of ['finished', 'live', 'inbox', 'press', 'issues', 'practice', 'scout', 'lineup', 'tipoff'])
-    need.push(`nudge.${v}`, `nudge.btn.${v}`);
+    need.push(`nudge.btn.${v}`); // the button on Home's next step
   for (const v of ['upgrade', 'budget']) need.push(`log.${v}`);
   need.push('toast.titles.upgrade');
   for (const v of ['shooting', 'bond', 'defense', 'recovery', 'study'])

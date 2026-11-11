@@ -175,8 +175,8 @@ export function syncPresentation(p) {
     ui.pendingResult = null;
     ui.closingMatch = null;
     ui.auto = false;
-    arena.clear();
-    render();
+    // The game is over and Game day already shows the next opponent, so the result and the postgame open over Home.
+    go('home');
     play(state.results[index].won ? 'victory' : 'defeat');
     ui.flowPending = !state.finished;
     result(index);

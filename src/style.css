@@ -5743,8 +5743,8 @@ img.opp-badge:not(.ph) {
   gap: 10px;
   align-items: flex-start;
   margin: 6px 0 4px;
-  font-size: 15px;
-  color: #ddd3ea;
+  font-size: calc(15px * var(--ts, 1) * var(--ls, 1));
+  color: var(--ink-2);
   line-height: 1.45;
 }
 .lk-kits .kit-hint svg {
@@ -5752,7 +5752,7 @@ img.opp-badge:not(.ph) {
   width: 22px;
   height: 22px;
   fill: none;
-  stroke: #c9a8ff;
+  stroke: var(--accent-ink);
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -5760,11 +5760,12 @@ img.opp-badge:not(.ph) {
 }
 .lk-kits .kit-wearing {
   margin: 4px 0 14px;
-  font: 700 14px var(--display);
-  color: #a996c0;
+  font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
+  color: var(--ink-2);
 }
 .lk-kits .kit-wearing b {
-  color: #fff;
+  font-weight: 600;
+  color: var(--ink);
 }
 dialog:has(.unlock-pop) {
   width: min(470px, calc(100vw - 24px));

@@ -1,6 +1,6 @@
 // The coach's inbox: mid-season events that need a decision. Pure game logic (no page code), so it can be tested on its own.
 // Roughly one game in three ends with an event; none before the second game, none twice in a row, and each choice shows what it does before it is made.
-import { cap, log, hashStr, eligible, addMods, addWalkOn, captainCalm } from './engine.js';
+import { cap, log, hashStr, eligible, addMods, addWalkOn, captainCalm, ROSTER_MAX } from './engine.js';
 import en from './i18n/locales/en.js';
 
 const WALKON_NAMES = [
@@ -21,7 +21,7 @@ const byHash = (list, h) => list[h % list.length];
 const starters = s => s.players.filter(p => p.starter);
 const lowest = (list, key) =>
   list.reduce((b, p) => (!b || p[key] < b[key] || (p[key] === b[key] && p.id < b.id) ? p : b), null);
-const open = s => s.players.length < 15;
+const open = s => s.players.length < ROSTER_MAX;
 const freeNames = s => WALKON_NAMES.filter(n => !s.players.some(p => p.name === n));
 const name = (s, id) => s.players.find(p => p.id === id)?.name ?? '';
 

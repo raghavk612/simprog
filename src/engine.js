@@ -38,6 +38,7 @@ export const staff = [
   { name: 'Culture builder', cost: 250, detail: '+3 morale and chemistry on team dinners', key: 'culture' },
 ];
 export const TIMEOUTS = 3;
+export const ROSTER_MAX = 15; // players a team may carry (tryouts, walk-ons and transfers stop here)
 export const eligible = p => p.gpa >= 2 && p.injury === 0 && p.energy >= 15;
 /* Display names for the three difficulty keys. Keys stay the same so existing saves still load. */
 export const DIFFICULTIES = {
@@ -297,7 +298,7 @@ export function train(s, type, id = 'all', opts = {}) {
 export function recruit(s, id) {
   const p = s.pool.find(p => p.id === +id);
   if (!p) throw Error('Prospect unavailable');
-  if (s.players.length >= 15) throw Error('Roster full: release a player before signing.');
+  if (s.players.length >= ROSTER_MAX) throw Error('Roster full: release a player before signing.');
   spend(s, p.cost, false);
   s.players.push({ ...p, ...prospectTraits(s.seed, p.id) });
   s.pool = s.pool.filter(x => x.id !== p.id);
@@ -439,7 +440,7 @@ export function autoLineup(s) {
 /* A fictional walk-on or transfer joins the roster (up to 15). Ids 110 and up never clash with the tryout pool (100–105). */
 export function addWalkOn(s, name, skill = 62) {
   if (typeof name !== 'string' || !name.trim() || name.length > 36) throw Error('Choose a player');
-  if (s.players.length >= 15) throw Error('Roster full: release a player before signing.');
+  if (s.players.length >= ROSTER_MAX) throw Error('Roster full: release a player before signing.');
   let id = 110;
   while (s.players.some(p => p.id === id) || s.pool.some(p => p.id === id)) id++;
   const used = new Set(s.players.map(p => p.number));

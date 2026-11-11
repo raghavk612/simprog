@@ -1,5 +1,5 @@
 // Break screens (preseason, midseason, playoffs): Tryouts and Staff. The locker room is in locker.js.
-import { tu, t, formatNumber } from '../../i18n/index.js';
+import { tu, t } from '../../i18n/index.js';
 import { tv } from '../../narrative.js';
 import { skillTreeCard } from '../../skillsView.js';
 import * as E from '../../engine.js';
@@ -11,11 +11,13 @@ import { render } from '../shell.js';
 import { notify } from '../toast.js';
 import { $ } from '../page.js';
 
+// Tryouts. Each card's buttons are secondary: the page's one primary action is leaving the break (top right).
 export function recruit() {
+  const full = state.players.length >= E.ROSTER_MAX;
   return html`
     ${header(tu('recruit.kicker'), t('nav.recruit'), t('recruit.intro'))}
     <div class="toolbar">
-      ${pill(t('roster.spots', { n: state.players.length }))}<span>${t('recruit.tokens', { n: formatNumber(state.tokens) })}</span>
+      ${pill(t('roster.spots', { n: state.players.length }))}${full ? `<span class="toolbar-note">${t('recruit.full')}</span>` : ''}
     </div>
     <div class="cards three">
       ${
@@ -32,7 +34,8 @@ export function recruit() {
                   <span>${t('roster.skill')} <b>${p.skill}</b></span><span>${t('roster.energy')} <b>${p.energy}</b></span><span>${t('roster.gpa')} <b>${p.gpa}</b></span>
                 </div>
                 ${scoutRow(p)}
-                ${btn(t('recruit.sign', { cost: p.cost }), 'recruit', 'primary wide', `data-id="${p.id}" aria-label="${esc(t('recruit.signAria', { name: p.name, cost: p.cost }))}" ${state.players.length >= 15 || state.tokens < p.cost || state.finished || state.match ? 'disabled' : ''}`)}
+                ${btn(t('recruit.sign', { cost: p.cost }), 'recruit', 'secondary wide', `data-id="${p.id}" aria-label="${esc(t('recruit.signAria', { name: p.name, cost: p.cost }))}" ${full || state.tokens < p.cost || state.finished || state.match ? 'disabled' : ''}`)}
+                ${!full && state.tokens < p.cost ? `<small>${t('office.needTokens', { n: p.cost - state.tokens })}</small>` : ''}
               </section>`,
           )
           .join('') || `<section class="card">${t('recruit.none')}</section>`
@@ -92,7 +95,7 @@ export function staffView() {
                 ${officeIcon(a.key)}
                 <h3>${t(`staff.${a.key}.name`)}</h3>
                 <p>${t(`staff.${a.key}.detail`)}</p>
-                ${btn(hired ? '✓ ' + t('office.hired') : t('office.hireCost', { cost: a.cost }), 'hire', 'primary wide', `data-key="${a.key}" ${reason ? 'disabled' : ''}`)}
+                ${btn(hired ? '✓ ' + t('office.hired') : t('office.hireCost', { cost: a.cost }), 'hire', 'secondary wide', `data-key="${a.key}" ${reason ? 'disabled' : ''}`)}
                 ${reason ? `<small>${reason}</small>` : ''}
               </article>`;
           })
@@ -108,7 +111,7 @@ function upgradesCard() {
   return html`
     <section class="card office-section">
       <div class="office-heading">
-        <div><span class="eyebrow">${tu('office.upgKicker')}</span><h2>${t('office.upgTitle')}</h2></div>
+        <h2>${t('office.upgTitle')}</h2>
         ${pill(t('office.permanent'))}
       </div>
       <div class="office-grid upgrades-grid">
@@ -156,6 +159,5 @@ function scoutRow(p) {
       </div>`;
   }
   return html`
-    <p class="muted scout-hidden">${t('scoutP.hidden')}</p>
     ${btn(t('scoutP.btn', { cost: E.SCOUT_COST }), 'scout-prospect', 'secondary small wide', `data-id="${p.id}" aria-label="${esc(t('scoutP.aria', { name: p.name, cost: E.SCOUT_COST }))}" ${state.tokens < E.SCOUT_COST || state.finished || state.match ? 'disabled' : ''}`)}`;
 }

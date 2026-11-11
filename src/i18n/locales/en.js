@@ -67,13 +67,9 @@ export default {
     theme: 'Light theme',
   },
   side: {
-    sub: 'Basketball operations',
-    badge: 'The championship project',
     nav: 'Program navigation',
-    rules: 'Rulebook & controls',
     credits: 'Credits & sources',
     coach: 'Coach {{name}}',
-    footer: 'Always rising.',
     footerNote: 'Auto-saved locally · Fictional simulation / sourced public roster',
   },
   stage: {
@@ -91,7 +87,11 @@ export default {
     autoTitle: 'TV-style camera that changes with each play',
     playerTitle: 'First-person view from the ball handler',
   },
-  metrics: { record: 'Record', tokens: 'Program tokens', chemistry: 'Chemistry', fans: 'Fans' },
+  metrics: {
+    record: 'Record',
+    tokens: 'Program tokens',
+    chemistry: 'Chemistry',
+  },
   level: { rookie: 'C Team', standard: 'JV', elite: 'Varsity' },
   difficulty: { rookie: 'C Team', standard: 'Junior Varsity (JV)', elite: 'Varsity' },
   landing: {
@@ -268,12 +268,12 @@ export default {
   recruit: {
     kicker: 'Find the next difference maker',
     intro:
-      'Fictional candidates join your real-roster simulation. Recruiting uses program tokens, never real money.',
-    tokens: '{{n}} tokens available',
+      'Sign tryout players to fill open roster spots. Scout first to see potential and work ethic. Tokens only, never real money.',
     tryout: 'Fictional tryout · {{pos}}',
     sign: 'Sign · {{cost}} tokens',
     signAria: 'Sign {{name}} for {{cost}} tokens',
     none: 'All tryout candidates have been signed.',
+    full: 'Roster full. Release a player on the Team page to sign someone.',
   },
   gear: {
     kicker: 'Equipment room',
@@ -361,15 +361,14 @@ export default {
     academics: 'Academic check-in',
     academicsFx: '+0.18 simulated GPA',
     assistantKicker: 'One assistant slot',
-    buildStaff: 'Build your coaching staff.',
+    buildStaff: 'Coaching staff',
     assistantBody:
       'Assistant roles are fictional game choices. Their bonuses apply to your preparation sessions.',
     hired: 'Hired',
     cost: '{{cost}} tokens',
     hireAria: 'Hire {{name}} for {{cost}} tokens',
     dismiss: 'Dismiss assistant',
-    upgKicker: 'Program upgrades',
-    upgTitle: 'Invest in the program.',
+    upgTitle: 'Program upgrades',
     upgBody:
       'Each upgrade is bought once. Price and effect are shown before you buy. Games cost tokens too: assistant upkeep and travel to away games.',
     upgBudget:
@@ -503,7 +502,6 @@ export default {
     },
     streak: 'Current streak: {{n}}.',
     locked: 'Locked',
-    lockedPick: 'The {{kit}} jersey is still locked. {{how}}',
     kitLabelLocked: '{{kit}}, locked. {{how}}',
     unlockedTitle: 'New jersey unlocked',
     unlockedMsg: 'The {{kit}} jersey is yours to wear. Pick it at the next break.',
@@ -561,8 +559,7 @@ export default {
   locker: {
     kicker: 'Wear your identity',
     intro: 'Choose the kit your players wear in the 3D gym. Rename players through their roster profiles.',
-    issue: 'Kangs team issue',
-    title: 'Make it yours.',
+    title: 'Team kit',
     kits: 'Jersey kits',
     home: 'Home purple',
     away: 'Away white',
@@ -585,7 +582,7 @@ export default {
     newSeason: 'Start a new season',
     export: 'Export this season',
     results: 'Your results',
-    scoreboard: 'The scoreboard tells one part.',
+    scoreboard: 'Results',
     replay: 'Replay',
     noGames: 'Play your opening game to start your story.',
     standings: 'Program standings',
@@ -645,7 +642,7 @@ export default {
   },
   flow: {
     doneBadge: 'Done',
-    next: 'NEXT STEPS:',
+    next: 'Next step',
     later: 'After that',
     now: {
       pre: 'Preseason. Sign players and hire your staff.',
@@ -680,9 +677,10 @@ export default {
     makeCaptain: 'Make captain',
     walk: 'Walk me through the first game',
     more: 'Full breakdown',
+    breakNext: 'Next: {{tab}}',
+    breakHint: 'Everything here is optional. Move on whenever you’re ready.',
   },
   tutorial: {
-    label: 'Your first game',
     who: 'Assistant coach',
     next: 'Next',
     finish: 'Let’s coach',
@@ -777,7 +775,6 @@ export default {
     checked: 'KingCo snapshot from {{date}} is loaded.',
     snapshotFailed: 'Keeping the last verified data.',
     finishFirst: 'Finish the game first.',
-    minutes: 'Enter whole minutes between 0 and 32.',
     exported: 'Saved as kangs-season.json in your downloads.',
     tooLarge: 'Save file too large',
     badSave: 'This is not a compatible Kangs season file.',
@@ -1020,18 +1017,7 @@ export default {
       desc: 'Change the language of the interface. Player and team names stay as published.',
     },
   },
-  tracker: {
-    aria: 'Game {{cur}} of {{n}}',
-    completeAria: 'Season complete',
-    complete: 'Season complete',
-    game: 'Game',
-    tick: 'Game {{n}}',
-    tickResult: 'Game {{n}}: {{outcome}} {{home}}–{{away}}',
-    played: '{{n}} played',
-    left: '{{n}} left',
-    eliminated: 'Eliminated',
-    out: 'Season ended after game {{n}}',
-  },
+  tracker: {},
   toast: {
     info: 'Heads up',
     success: 'Done',
@@ -1351,8 +1337,6 @@ export default {
     r: {
       lead: 'Set your rotation before every tip-off.',
       starters: 'starters',
-      total: 'total minutes',
-      max: 'max per player',
       energy: 'energy to play',
       gpa: 'GPA to be eligible',
       injuries: 'active injuries',
@@ -1493,7 +1477,6 @@ export default {
     save: 'Save report card (image)',
     saved: 'Report card saved as an image.',
     failed: 'Your browser could not make the image.',
-    imageAlt: 'Season report card for Coach {{name}}: grade {{grade}}, record {{w}}–{{l}}.',
   },
   bracket: {
     kicker: 'The bracket',
@@ -1786,7 +1769,6 @@ export default {
   scoutP: {
     btn: 'Scout · {{cost}}',
     aria: 'Scout {{name}} for {{cost}} tokens to reveal potential and work ethic',
-    hidden: 'Potential and work ethic stay hidden until you scout.',
     potential: 'Potential',
     work: 'Work ethic',
     workAria: 'Work ethic: {{k}} of 5 stars',
@@ -1836,16 +1818,6 @@ export default {
     allPlanned: 'All slots are planned',
   },
   nudge: {
-    kicker: 'What should I do now?',
-    finished: 'The season is over. Read your season story and report card.',
-    live: 'A game is in progress. Head back to the court.',
-    inbox: 'Your inbox has news waiting. Answer it before anything else.',
-    press: 'The press room is waiting after your last game.',
-    issues: 'Some players in your rotation cannot play ({{n}}). Fix the lineup.',
-    practice: 'Preparation slots free: {{n}}. Plan practice before tip-off.',
-    scout: 'Scout {{opp}} before tip-off to sharpen your tactical reads.',
-    lineup: 'Your rotation is not set. You need five starters and 160 minutes.',
-    tipoff: 'Everything is ready. Take on {{opp}}.',
     btn: {
       finished: 'Open the season journal',
       live: 'Go to game day',
