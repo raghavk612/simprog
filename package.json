@@ -9,7 +9,8 @@
     "test": "node --test tests/*.test.js",
     "refresh-data": "python3 scripts/refresh-data.py",
     "players:lods": "node scripts/player_lods.mjs",
-    "format": "prettier --write src/main.js \"src/ui/**/*.js\""
+    "format": "prettier --write \"src/**/*.{js,css}\" \"tests/*.js\" \"scripts/*.mjs\"",
+    "format:check": "prettier --check \"src/**/*.{js,css}\" \"tests/*.js\" \"scripts/*.mjs\""
   },
   "dependencies": {
     "three": "^0.180.0"

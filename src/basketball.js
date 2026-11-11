@@ -1,137 +1,482 @@
 // Shared, deterministic basketball presentation. No rendering or wall-clock RNG here.
-export const CLIP_SECONDS=4.4;   // one side's play; the run between plays happens before it (Arena.startTransit)
-export const SHOTS={
- catch:{label:'Catch-and-shoot three',three:true,base:-.035,finish:[4.2,5.5],arc:3.8},
- pullup:{label:'Pull-up jumper',three:false,base:.015,finish:[7,2.7],arc:3},
- stepback:{label:'Step-back three',three:true,base:-.075,finish:[3.8,3.8],arc:4},
- drive:{label:'Crossover layup',three:false,base:.13,finish:[11.5,1],arc:1},
- floater:{label:'Running floater',three:false,base:.045,finish:[9.5,1.8],arc:2.3},
- hook:{label:'Post hook',three:false,base:.055,finish:[10,1.8],arc:2.1},
- dunk:{label:'Fast-break dunk',three:false,base:.20,finish:[12,0],arc:.25},
- roll:{label:'Pick-and-roll finish',three:false,base:.11,finish:[11.2,.8],arc:1.2},
- // Variations: 'like' names the move whose animation and special cases they share.
- euro:{label:'Euro-step layup',three:false,base:.10,finish:[11.2,1.3],arc:1.1,like:'drive'},
- fadeaway:{label:'Fadeaway jumper',three:false,base:-.02,finish:[8,2.6],arc:3.2,like:'pullup'},
- alley:{label:'Alley-oop dunk',three:false,base:.19,finish:[12,0],arc:.3,like:'dunk'},
- corner:{label:'Corner three',three:true,base:-.07,finish:[4.6,6.3],arc:3.8,like:'catch'},
- spin:{label:'Spin-move finish',three:false,base:.06,finish:[10.4,1.7],arc:1.9,like:'hook'}
+export const CLIP_SECONDS = 4.4; // one side's play; the run between plays happens before it (Arena.startTransit)
+export const SHOTS = {
+  catch: { label: 'Catch-and-shoot three', three: true, base: -0.035, finish: [4.2, 5.5], arc: 3.8 },
+  pullup: { label: 'Pull-up jumper', three: false, base: 0.015, finish: [7, 2.7], arc: 3 },
+  stepback: { label: 'Step-back three', three: true, base: -0.075, finish: [3.8, 3.8], arc: 4 },
+  drive: { label: 'Crossover layup', three: false, base: 0.13, finish: [11.5, 1], arc: 1 },
+  floater: { label: 'Running floater', three: false, base: 0.045, finish: [9.5, 1.8], arc: 2.3 },
+  hook: { label: 'Post hook', three: false, base: 0.055, finish: [10, 1.8], arc: 2.1 },
+  dunk: { label: 'Fast-break dunk', three: false, base: 0.2, finish: [12, 0], arc: 0.25 },
+  roll: { label: 'Pick-and-roll finish', three: false, base: 0.11, finish: [11.2, 0.8], arc: 1.2 },
+  // Variations: 'like' names the move whose animation and special cases they share.
+  euro: { label: 'Euro-step layup', three: false, base: 0.1, finish: [11.2, 1.3], arc: 1.1, like: 'drive' },
+  fadeaway: {
+    label: 'Fadeaway jumper',
+    three: false,
+    base: -0.02,
+    finish: [8, 2.6],
+    arc: 3.2,
+    like: 'pullup',
+  },
+  alley: { label: 'Alley-oop dunk', three: false, base: 0.19, finish: [12, 0], arc: 0.3, like: 'dunk' },
+  corner: { label: 'Corner three', three: true, base: -0.07, finish: [4.6, 6.3], arc: 3.8, like: 'catch' },
+  spin: { label: 'Spin-move finish', three: false, base: 0.06, finish: [10.4, 1.7], arc: 1.9, like: 'hook' },
 };
 /* The move whose animation a shot shares, and whether it finishes with a dunk. */
-export const family=kind=>SHOTS[kind]?.like||kind;
-export const isDunk=kind=>family(kind)==='dunk';
-const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
-const lerp=(a,b,t)=>a+(b-a)*clamp(t);
-const smooth=t=>{t=clamp(t);return t*t*(3-2*t);};
+export const family = kind => SHOTS[kind]?.like || kind;
+export const isDunk = kind => family(kind) === 'dunk';
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const lerp = (a, b, t) => a + (b - a) * clamp(t);
+const smooth = t => {
+  t = clamp(t);
+  return t * t * (3 - 2 * t);
+};
 /* A point along a route at fraction t of its length: an even speed through the waypoints (no stop at each corner), so the
    overall run curve alone decides how a player speeds up and slows down. */
-function path(points,t){
- const seg=points.slice(1).map((q,i)=>Math.hypot(q[0]-points[i][0],q[1]-points[i][1])),total=seg.reduce((a,b)=>a+b,0)||1;let d=clamp(t)*total,i=0;
- while(i<seg.length-1&&d>seg[i]){d-=seg[i];i++;}const u=seg[i]?Math.min(1,d/seg[i]):1;
- return [lerp(points[i][0],points[i+1][0],u),lerp(points[i][1],points[i+1][1],u)];
+function path(points, t) {
+  const seg = points.slice(1).map((q, i) => Math.hypot(q[0] - points[i][0], q[1] - points[i][1])),
+    total = seg.reduce((a, b) => a + b, 0) || 1;
+  let d = clamp(t) * total,
+    i = 0;
+  while (i < seg.length - 1 && d > seg[i]) {
+    d -= seg[i];
+    i++;
+  }
+  const u = seg[i] ? Math.min(1, d / seg[i]) : 1;
+  return [lerp(points[i][0], points[i + 1][0], u), lerp(points[i][1], points[i + 1][1], u)];
 }
 /* The moves a tactic and pace call for: the perimeter bag, the fast bag, or the steady bag. choosePlay draws from it unless the caller passes a narrower bag (the Kangs' bag is limited to the moves they have learned, see skills.js). */
-export const moveBag=(tactic,pace)=>tactic==='perimeter'?['catch','catch','corner','stepback','pullup','fadeaway','drive','euro','roll']:pace==='fast'?['dunk','alley','drive','euro','roll','catch','floater','pullup']:['catch','pullup','stepback','corner','drive','euro','floater','hook','spin','fadeaway','roll'];
-export function choosePlay(rng,tactic,pace,last,bag=moveBag(tactic,pace)){
- let kind=bag[Math.floor(rng()*bag.length)];if(kind===last)kind=bag[(bag.indexOf(kind)+1+Math.floor(rng()*(bag.length-1)))%bag.length];return kind;
+export const moveBag = (tactic, pace) =>
+  tactic === 'perimeter'
+    ? ['catch', 'catch', 'corner', 'stepback', 'pullup', 'fadeaway', 'drive', 'euro', 'roll']
+    : pace === 'fast'
+      ? ['dunk', 'alley', 'drive', 'euro', 'roll', 'catch', 'floater', 'pullup']
+      : [
+          'catch',
+          'pullup',
+          'stepback',
+          'corner',
+          'drive',
+          'euro',
+          'floater',
+          'hook',
+          'spin',
+          'fadeaway',
+          'roll',
+        ];
+export function choosePlay(rng, tactic, pace, last, bag = moveBag(tactic, pace)) {
+  let kind = bag[Math.floor(rng() * bag.length)];
+  if (kind === last) kind = bag[(bag.indexOf(kind) + 1 + Math.floor(rng() * (bag.length - 1))) % bag.length];
+  return kind;
 }
 // English commentary templates. Other languages provide the same structure under "cm" in their locale file; {{name}}-style slots are filled from the play.
 // Announcer-style lines (after how play-by-play is really called: short phrases, present tense, where on the floor, the
 // shooter's name up front, inversions like "up goes the shot", and calls that rise on the finish). The ellipses and dashes are
 // pauses for the spoken commentary. Every language has the same number of variants (tests/i18n.test.js).
-export const COMMENTARY={
- join:' ',
- side:{right:'right',left:'left'},
- lead:{
-  catch:['{{helper}} swings it to {{name}}, {{side}} wing…','{{name}} drifts to the {{side}} wing… {{helper}} finds him.','Ball movement… {{helper}} to {{name}}, catch and shoot…','{{name}}, wide open on the {{side}} side… lets it go…'],
-  pullup:['{{name}} stops on a dime at the elbow… pull-up…','{{name}}, the hesitation… rises from fifteen…','{{name}} into the lane, stops short… up goes the jumper…','{{name}} with the step-in, pulls up…'],
-  stepback:['{{name}} crosses… steps back… from deep…','{{name}} sells the drive… step-back three…','{{name}} isolates on {{def}}… step-back, fires…','{{name}} creates space on {{def}}… lets it fly…'],
-  drive:['{{name}}, right hand, left hand… past {{def}}…','{{name}} attacks the gap… crossover, gets downhill…','{{name}} blows by {{def}}… to the rim…','{{name}}, first step… he’s in the lane…'],
-  floater:['{{name}} snakes into the lane… floater…','{{name}} over the help… the runner…','{{name}} into the teeth of the defense… lofts it…','{{name}} gets a step on {{def}}… throws up the teardrop…'],
-  hook:['{{name}} backs down {{def}}… turns over the shoulder…','{{name}} seals on the block… jump hook…','{{name}} on the left block… drop step, hook shot…','Post feed to {{name}}… one dribble, the hook…'],
-  dunk:['Steal, and {{name}} is gone… nobody back…','{{helper}} with the outlet… {{name}} in transition…','{{name}} out in the open floor… all alone…','Long rebound… {{name}} takes off…'],
-  roll:['{{helper}} sets the pick… {{name}} rolls hard…','Pick-and-roll… {{name}} turns the corner…','{{name}} comes off {{helper}}’s screen… downhill…','{{helper}} slips the screen… pocket pass to {{name}}…'],
-  euro:['{{name}}, the euro step around {{def}}…','{{name}} with two long strides… euro step…','{{name}} goes left… back right… the euro…','{{name}} splits the defense… gather, euro step…'],
-  fadeaway:['{{name}} on the baseline… fades away…','{{name}} turns on {{def}}… leaning fadeaway…','{{name}} over the top of {{def}}… the fadeaway…','{{name}} faces up… a jab, falling away…'],
-  alley:['{{name}} cuts backdoor… the lob is up…','{{helper}} looks… lobs it for {{name}}…','Alley-oop look… {{helper}} to {{name}}…','{{name}} sneaks behind {{def}}… here comes the lob…'],
-  corner:['{{helper}} kicks it to {{name}} in the corner…','{{name}} spotting up in the {{side}} corner…','Drive and kick… {{name}}, corner three…','{{name}} lifts to the corner… catch… shot…'],
-  spin:['{{name}} spins off {{def}} on the block…','{{name}}, the spin move… goes up strong…','{{name}} fakes left, spins right…','{{name}} with the reverse pivot… up and under…']
- },
- steal:['Picked off! {{def}} strips {{name}}… turnover.','{{def}} reads it… pokes it away from {{name}}!','{{name}} loses the handle… {{def}} scoops it up.','Swiped! {{def}} takes it right from {{name}}.'],
- block:['Up goes the shot… and {{def}} sends it back!','Rejected! {{def}} meets it at the top!','{{def}} rotates over… blocked!','Get that out of here! {{def}} with the swat!'],
- loose:['{{rebounder}} chases down the loose ball.','Loose ball… {{rebounder}} comes up with it.','{{rebounder}} dives on it.'],
- finish:{
-  three:['Got it! Three!','Bang! From downtown!','Nothing but net… three!','Splash! Knocks it down from deep!','Count it! Three-pointer!'],
-  dunk:['Throws it down! Slam!','Two hands… flush!','Oh, he hammered that one home!','Rises… and slams it!'],
-  two:['Good! Two.','Soft touch… in.','Drops! Two points.','Puts it in off the glass.','Gets the roll… good!'],
-  miss:['No good… off the rim.','Short… front rim.','In and out!','Off the back iron.','Won’t fall.']
- },
- assist:['Nice dish from {{helper}}.','{{helper}} with the assist.','Great feed by {{helper}}.'],
- rebound:['{{rebounder}} pulls down the board.','Rebound… {{rebounder}}.','{{rebounder}} cleans it up.']
+export const COMMENTARY = {
+  join: ' ',
+  side: { right: 'right', left: 'left' },
+  lead: {
+    catch: [
+      '{{helper}} swings it to {{name}}, {{side}} wing…',
+      '{{name}} drifts to the {{side}} wing… {{helper}} finds him.',
+      'Ball movement… {{helper}} to {{name}}, catch and shoot…',
+      '{{name}}, wide open on the {{side}} side… lets it go…',
+    ],
+    pullup: [
+      '{{name}} stops on a dime at the elbow… pull-up…',
+      '{{name}}, the hesitation… rises from fifteen…',
+      '{{name}} into the lane, stops short… up goes the jumper…',
+      '{{name}} with the step-in, pulls up…',
+    ],
+    stepback: [
+      '{{name}} crosses… steps back… from deep…',
+      '{{name}} sells the drive… step-back three…',
+      '{{name}} isolates on {{def}}… step-back, fires…',
+      '{{name}} creates space on {{def}}… lets it fly…',
+    ],
+    drive: [
+      '{{name}}, right hand, left hand… past {{def}}…',
+      '{{name}} attacks the gap… crossover, gets downhill…',
+      '{{name}} blows by {{def}}… to the rim…',
+      '{{name}}, first step… he’s in the lane…',
+    ],
+    floater: [
+      '{{name}} snakes into the lane… floater…',
+      '{{name}} over the help… the runner…',
+      '{{name}} into the teeth of the defense… lofts it…',
+      '{{name}} gets a step on {{def}}… throws up the teardrop…',
+    ],
+    hook: [
+      '{{name}} backs down {{def}}… turns over the shoulder…',
+      '{{name}} seals on the block… jump hook…',
+      '{{name}} on the left block… drop step, hook shot…',
+      'Post feed to {{name}}… one dribble, the hook…',
+    ],
+    dunk: [
+      'Steal, and {{name}} is gone… nobody back…',
+      '{{helper}} with the outlet… {{name}} in transition…',
+      '{{name}} out in the open floor… all alone…',
+      'Long rebound… {{name}} takes off…',
+    ],
+    roll: [
+      '{{helper}} sets the pick… {{name}} rolls hard…',
+      'Pick-and-roll… {{name}} turns the corner…',
+      '{{name}} comes off {{helper}}’s screen… downhill…',
+      '{{helper}} slips the screen… pocket pass to {{name}}…',
+    ],
+    euro: [
+      '{{name}}, the euro step around {{def}}…',
+      '{{name}} with two long strides… euro step…',
+      '{{name}} goes left… back right… the euro…',
+      '{{name}} splits the defense… gather, euro step…',
+    ],
+    fadeaway: [
+      '{{name}} on the baseline… fades away…',
+      '{{name}} turns on {{def}}… leaning fadeaway…',
+      '{{name}} over the top of {{def}}… the fadeaway…',
+      '{{name}} faces up… a jab, falling away…',
+    ],
+    alley: [
+      '{{name}} cuts backdoor… the lob is up…',
+      '{{helper}} looks… lobs it for {{name}}…',
+      'Alley-oop look… {{helper}} to {{name}}…',
+      '{{name}} sneaks behind {{def}}… here comes the lob…',
+    ],
+    corner: [
+      '{{helper}} kicks it to {{name}} in the corner…',
+      '{{name}} spotting up in the {{side}} corner…',
+      'Drive and kick… {{name}}, corner three…',
+      '{{name}} lifts to the corner… catch… shot…',
+    ],
+    spin: [
+      '{{name}} spins off {{def}} on the block…',
+      '{{name}}, the spin move… goes up strong…',
+      '{{name}} fakes left, spins right…',
+      '{{name}} with the reverse pivot… up and under…',
+    ],
+  },
+  steal: [
+    'Picked off! {{def}} strips {{name}}… turnover.',
+    '{{def}} reads it… pokes it away from {{name}}!',
+    '{{name}} loses the handle… {{def}} scoops it up.',
+    'Swiped! {{def}} takes it right from {{name}}.',
+  ],
+  block: [
+    'Up goes the shot… and {{def}} sends it back!',
+    'Rejected! {{def}} meets it at the top!',
+    '{{def}} rotates over… blocked!',
+    'Get that out of here! {{def}} with the swat!',
+  ],
+  loose: [
+    '{{rebounder}} chases down the loose ball.',
+    'Loose ball… {{rebounder}} comes up with it.',
+    '{{rebounder}} dives on it.',
+  ],
+  finish: {
+    three: [
+      'Got it! Three!',
+      'Bang! From downtown!',
+      'Nothing but net… three!',
+      'Splash! Knocks it down from deep!',
+      'Count it! Three-pointer!',
+    ],
+    dunk: [
+      'Throws it down! Slam!',
+      'Two hands… flush!',
+      'Oh, he hammered that one home!',
+      'Rises… and slams it!',
+    ],
+    two: [
+      'Good! Two.',
+      'Soft touch… in.',
+      'Drops! Two points.',
+      'Puts it in off the glass.',
+      'Gets the roll… good!',
+    ],
+    miss: ['No good… off the rim.', 'Short… front rim.', 'In and out!', 'Off the back iron.', 'Won’t fall.'],
+  },
+  assist: ['Nice dish from {{helper}}.', '{{helper}} with the assist.', 'Great feed by {{helper}}.'],
+  rebound: ['{{rebounder}} pulls down the board.', 'Rebound… {{rebounder}}.', '{{rebounder}} cleans it up.'],
 };
-const fill=(text,p)=>text.replace(/\{\{(\w+)\}\}/g,(m,k)=>p[k]??m);
+const fill = (text, p) => text.replace(/\{\{(\w+)\}\}/g, (m, k) => p[k] ?? m);
 // Builds the commentary for a play from template choices (cm). Returns null if a choice does not exist in the template set, so callers can fall back to the stored English text.
-export function renderCommentary(c,cm,T=COMMENTARY){
- if(!Array.isArray(cm)||!T?.lead)return null;
- const p={name:c.player,def:c.defender,helper:c.helper,rebounder:c.rebounder,side:c.lane>0?T.side?.right:T.side?.left},f=t=>typeof t==='string'?fill(t,p):null,join=T.join??' ';
- // one-line tags (assist, loose ball, rebound) vary by the play itself, without extra random draws
- const at=(list,i)=>Array.isArray(list)?list[i]:undefined;   // out of range (an old save): null, so callers show the stored text
- const h=[...String(c.player)+String(c.kind)+String(c.lane)].reduce((a,ch)=>(a*31+ch.charCodeAt(0))>>>0,7),tag=x=>Array.isArray(x)?x[h%x.length]:x;
- let parts;
- if(c.outcome==='steal')parts=[f(at(T.steal,cm[0]))];
- else if(c.outcome==='block')parts=[f(at(T.lead[c.kind],cm[0])),f(at(T.block,cm[1])),f(tag(T.loose))];
- else{
-  const group=c.points?(c.three?'three':isDunk(c.kind)?'dunk':'two'):'miss';
-  parts=[f(at(T.lead[c.kind],cm[1])),f(at(T.finish?.[group],cm[0])),c.points?(c.assisted?f(tag(T.assist)):''):f(tag(T.rebound))];
- }
- return parts.some(x=>x===null)?null:parts.filter(Boolean).join(join);
+export function renderCommentary(c, cm, T = COMMENTARY) {
+  if (!Array.isArray(cm) || !T?.lead) return null;
+  const p = {
+      name: c.player,
+      def: c.defender,
+      helper: c.helper,
+      rebounder: c.rebounder,
+      side: c.lane > 0 ? T.side?.right : T.side?.left,
+    },
+    f = t => (typeof t === 'string' ? fill(t, p) : null),
+    join = T.join ?? ' ';
+  // one-line tags (assist, loose ball, rebound) vary by the play itself, without extra random draws
+  const at = (list, i) => (Array.isArray(list) ? list[i] : undefined); // out of range (an old save): null, so callers show the stored text
+  const h = [...(String(c.player) + String(c.kind) + String(c.lane))].reduce(
+      (a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0,
+      7,
+    ),
+    tag = x => (Array.isArray(x) ? x[h % x.length] : x);
+  let parts;
+  if (c.outcome === 'steal') parts = [f(at(T.steal, cm[0]))];
+  else if (c.outcome === 'block')
+    parts = [f(at(T.lead[c.kind], cm[0])), f(at(T.block, cm[1])), f(tag(T.loose))];
+  else {
+    const group = c.points ? (c.three ? 'three' : isDunk(c.kind) ? 'dunk' : 'two') : 'miss';
+    parts = [
+      f(at(T.lead[c.kind], cm[1])),
+      f(at(T.finish?.[group], cm[0])),
+      c.points ? (c.assisted ? f(tag(T.assist)) : '') : f(tag(T.rebound)),
+    ];
+  }
+  return parts.some(x => x === null) ? null : parts.filter(Boolean).join(join);
 }
 // Picks the template variants with the same random draws, in the same order, as the original single-language version, so seeded games are unchanged.
-export function describePlay(c,rng){
- const idx=n=>Math.floor(rng()*n);let cm;
- if(c.outcome==='steal')cm=[idx(COMMENTARY.steal.length)];
- else if(c.outcome==='block'){const lead=idx(COMMENTARY.lead[c.kind].length),block=idx(COMMENTARY.block.length);cm=[lead,block];}
- else{const finish=idx(COMMENTARY.finish[c.points?(c.three?'three':isDunk(c.kind)?'dunk':'two'):'miss'].length),lead=idx(COMMENTARY.lead[c.kind].length);cm=[finish,lead];}
- return {text:renderCommentary(c,cm),cm};
+export function describePlay(c, rng) {
+  const idx = n => Math.floor(rng() * n);
+  let cm;
+  if (c.outcome === 'steal') cm = [idx(COMMENTARY.steal.length)];
+  else if (c.outcome === 'block') {
+    const lead = idx(COMMENTARY.lead[c.kind].length),
+      block = idx(COMMENTARY.block.length);
+    cm = [lead, block];
+  } else {
+    const finish = idx(
+        COMMENTARY.finish[c.points ? (c.three ? 'three' : isDunk(c.kind) ? 'dunk' : 'two') : 'miss'].length,
+      ),
+      lead = idx(COMMENTARY.lead[c.kind].length);
+    cm = [finish, lead];
+  }
+  return { text: renderCommentary(c, cm), cm };
 }
 // Sample any point in a recorded clip. Same clip + time always gives the same pose.
 // Coordinates are mirrored for the visitors, so both baskets are used.
-export function sampleClip(c,time){
- const fam=family(c.kind),t=clamp(time/CLIP_SECONDS),side=c.team==='home'?1:-1,lane=c.lane||1,spec=SHOTS[c.kind]||SHOTS.pullup;
- const end=[spec.finish[0],spec.finish[1]*lane],start=[fam==='dunk'?-1.5:2.2,4.7*lane];   // the fast break starts at half court: the transition run brings him there
- const route=fam==='stepback'?[start,[6,2.5*lane],[7,2*lane],end]:fam==='hook'?[[8,3*lane],[9.8,2.8*lane],[10.5,1.5*lane],end]:fam==='catch'?[[4,6.5*lane],[2,6*lane],end]:fam==='dunk'?[start,[1,2.5*lane],[6,1.4*lane],end]:[start,[5,4.6*lane],[6.6,1.5*lane],[8.2,3*lane],end];
- const hop=u=>(u>=.48&&u<=.78)?Math.sin((u-.48)/.30*Math.PI)*(fam==='dunk'?1.2:fam==='drive'||fam==='roll'?.65:.8):0;
- const m0=clamp(t/.5),movement=.35*m0+.65*smooth(m0),at=path(route,movement),   // an even run with a gentle start and finish (peak speed 1.3x the average)
- gather=clamp((t-.43)/.14),jump=hop(t);
- const offense=c.team==='home'?0:5,defense=c.team==='home'?5:0;
- const actors=Array.from({length:10},(_,i)=>{const k=i%5;const off=i>=offense&&i<offense+5;const base=[[2,4.7],[3,-5.5],[8,5.7],[9,-4.4],[6,0]][k];return {x:(base[0]+(off?Math.sin(t*3+k)*.7:.9))*side,y:0,z:base[1]+(off?0:.8),yaw:side*Math.PI/2,run:off?.35:.25,arms:off?'run':'defend',jump:0};});
- // Every value below is continuous in t: actors and ball ease between beats instead of snapping.
- const shooter=actors[offense],marker=actors[defense];Object.assign(shooter,{x:at[0]*side,y:jump,z:at[1],run:1-smooth((t-.42)/.08),arms:t<.43?'dribble':t<.8?(fam==='hook'?'hook':'shoot'):'relax',yaw:Math.atan2((12.15-at[0])*side,-at[1])});
- const separation=c.contest==='open'?1.9:c.contest==='tight'?.45:1;
- marker.x=(at[0]+separation)*side;marker.z=at[1]+.5*lane;marker.yaw=-side*Math.PI/2;marker.run=.85-.75*smooth((t-.45)/.08);
- const defenseJump=t>=.5&&t<=.81?Math.sin((t-.5)/.31*Math.PI)*(c.outcome==='block'?1.05:c.contest==='open'?.22:.7):0;marker.y=defenseJump;marker.arms=t>.48&&t<.82?'block':'defend';
- if(fam==='drive'||fam==='floater'||fam==='roll'){marker.z+=Math.sin(t*12)*.7;marker.x-=Math.sin(t*Math.PI)*side*.6;}
- // A second defender slides from the weak side to help at the basket.
- const help=actors[defense+2];help.x=lerp(9,11,t)*side;help.z=lerp(-4*lane,-.9*lane,smooth(t/.6));help.arms=t>.48&&t<.8?'block':'defend';help.y=defenseJump*.6;
- const screen=actors[offense+1];if(fam==='roll'){screen.x=5.8*side;screen.z=3*lane;screen.run=0;screen.arms='screen';}
- // The dunk outlet comes from deep in the backcourt; the passer then trails the play up the floor.
- if(fam==='dunk'){const q=smooth((t-.12)/.5);screen.x=lerp(-4.5*side,screen.x,q);screen.z=lerp(3*lane,screen.z,q);screen.run=.35+.65*Math.sin(q*Math.PI);if(t<.2)screen.arms='pass';}
- // Off-ball cuts and closeouts: players do not just oscillate in place.
- actors[offense+2].x=lerp(4,10,smooth(t))*side;actors[offense+2].z=lerp(-5,3,smooth(t))*lane;
- actors[defense+3].x=lerp(9,5,t)*side;actors[defense+3].z=-5*lane;
- const mix=(a,b,w)=>({x:lerp(a.x,b.x,w),y:lerp(a.y,b.y,w),z:lerp(a.z,b.z,w)});
- let ball={x:shooter.x+.38*side,y:.3+Math.abs(Math.sin(t*45))*.95,z:shooter.z+.15};
- if(fam==='catch'){const q=smooth(t/.3);ball=mix({x:lerp(3,at[0],q)*side,y:1.4+Math.sin(q*Math.PI)*.35,z:lerp(-5.5,at[1],q)},ball,smooth((t-.25)/.1));if(t<.3)screen.arms='pass';}
- if(fam==='dunk'){const q=smooth(t/.2);ball=mix({x:lerp(-10,at[0],q)*side,y:1.6+Math.sin(q*Math.PI)*.7,z:lerp(3*lane,at[1],q)},ball,smooth((t-.17)/.08));}
- const pickup=.3+Math.abs(Math.sin(.43*45))*.95;
- if(t>=.43&&t<.61){ball={x:shooter.x+lerp(.38,.28,gather)*side,y:lerp(pickup,2.3,gather)+jump,z:shooter.z+lerp(.15,0,gather)};}
- const release={x:(end[0]+.28)*side,y:2.3+hop(.61),z:end[1]},flight=u=>{const q=clamp((u-.61)/.25);return {x:lerp(release.x,12.15*side,q),y:lerp(release.y,3.28,q)+Math.sin(q*Math.PI)*spec.arc,z:lerp(release.z,0,q)};};
- if(t>=.61)ball=flight(t);
- // A make drops through the net, hits the floor and bounces out; a miss caroms off the rim.
- if(t>.86){const q=clamp((t-.86)/.14);if(c.points){const f=clamp(q/.5),u=clamp((q-.5)/.5);ball={x:(12.15-1.1*smooth(u))*side,y:q<.5?3.28-2.98*f*f:.3+Math.sin(u*Math.PI)*.7,z:.35*lane*smooth(u)};}else ball={x:lerp(12.15,9,q)*side,y:3.28-Math.sin(q*Math.PI/2)*1.8,z:lerp(0,-2*lane,q)};}
- const land=c.outcome==='block'?{x:7*side,y:1.3,z:-3*lane}:{x:9*side,y:3.28-1.8,z:-2*lane};
- if(c.outcome==='block'){const w=smooth((t-.52)/.13);marker.x=lerp(marker.x,(end[0]+.4)*side,w);marker.z=lerp(marker.z,end[1],w);if(t>.65){const from=flight(.65),q=clamp((t-.65)/.35);ball={x:lerp(from.x,land.x,q),y:lerp(from.y,land.y,q)+Math.sin(q*Math.PI)*.8,z:lerp(from.z,land.z,q)};}}
- if(c.outcome==='steal'){const q=clamp((t-.32)/.68),w=smooth((t-.27)/.09);marker.x=lerp(marker.x,lerp(at[0]+.4,-3,q)*side,w);marker.z=lerp(marker.z,lerp(at[1],-2*lane,q),w);marker.y=lerp(marker.y,0,w);marker.run=lerp(marker.run,1,w);if(t>.3){marker.arms='dribble';shooter.y=0;shooter.arms='defend';}ball=mix(ball,{x:marker.x-.35*side,y:.3+Math.abs(Math.sin(t*45))*.9,z:marker.z},w);}
- // The rebounder reads the shot and arrives where the ball comes down rather than appearing there.
- const rebounder=actors[defense+(c.team==='home'?4:0)];if(!c.points&&c.outcome!=='steal'){const w=smooth((t-.64)/.22);rebounder.x=lerp(rebounder.x,land.x,w);rebounder.z=lerp(rebounder.z,land.z,w);rebounder.run=Math.max(rebounder.run,Math.sin(w*Math.PI)*.9);if(t>.84)rebounder.arms='rebound';}
- return {actors,ball,phase:t<.43?(fam==='catch'?'Pass & relocate':'Attack & dribble'):t<.61?'Gather & contest':t<.86?(c.outcome==='block'?'Shot blocked':c.outcome==='steal'?'Turnover':'Shot in flight'):c.points?'Basket':'Rebound',resolved:t>=.86,net:c.points&&t>.86?Math.sin((t-.86)*Math.PI/.14)*.12:0};
+export function sampleClip(c, time) {
+  const fam = family(c.kind),
+    t = clamp(time / CLIP_SECONDS),
+    side = c.team === 'home' ? 1 : -1,
+    lane = c.lane || 1,
+    spec = SHOTS[c.kind] || SHOTS.pullup;
+  const end = [spec.finish[0], spec.finish[1] * lane],
+    start = [fam === 'dunk' ? -1.5 : 2.2, 4.7 * lane]; // the fast break starts at half court: the transition run brings him there
+  const route =
+    fam === 'stepback'
+      ? [start, [6, 2.5 * lane], [7, 2 * lane], end]
+      : fam === 'hook'
+        ? [[8, 3 * lane], [9.8, 2.8 * lane], [10.5, 1.5 * lane], end]
+        : fam === 'catch'
+          ? [[4, 6.5 * lane], [2, 6 * lane], end]
+          : fam === 'dunk'
+            ? [start, [1, 2.5 * lane], [6, 1.4 * lane], end]
+            : [start, [5, 4.6 * lane], [6.6, 1.5 * lane], [8.2, 3 * lane], end];
+  const hop = u =>
+    u >= 0.48 && u <= 0.78
+      ? Math.sin(((u - 0.48) / 0.3) * Math.PI) *
+        (fam === 'dunk' ? 1.2 : fam === 'drive' || fam === 'roll' ? 0.65 : 0.8)
+      : 0;
+  const m0 = clamp(t / 0.5),
+    movement = 0.35 * m0 + 0.65 * smooth(m0),
+    at = path(route, movement), // an even run with a gentle start and finish (peak speed 1.3x the average)
+    gather = clamp((t - 0.43) / 0.14),
+    jump = hop(t);
+  const offense = c.team === 'home' ? 0 : 5,
+    defense = c.team === 'home' ? 5 : 0;
+  const actors = Array.from({ length: 10 }, (_, i) => {
+    const k = i % 5;
+    const off = i >= offense && i < offense + 5;
+    const base = [
+      [2, 4.7],
+      [3, -5.5],
+      [8, 5.7],
+      [9, -4.4],
+      [6, 0],
+    ][k];
+    return {
+      x: (base[0] + (off ? Math.sin(t * 3 + k) * 0.7 : 0.9)) * side,
+      y: 0,
+      z: base[1] + (off ? 0 : 0.8),
+      yaw: (side * Math.PI) / 2,
+      run: off ? 0.35 : 0.25,
+      arms: off ? 'run' : 'defend',
+      jump: 0,
+    };
+  });
+  // Every value below is continuous in t: actors and ball ease between beats instead of snapping.
+  const shooter = actors[offense],
+    marker = actors[defense];
+  Object.assign(shooter, {
+    x: at[0] * side,
+    y: jump,
+    z: at[1],
+    run: 1 - smooth((t - 0.42) / 0.08),
+    arms: t < 0.43 ? 'dribble' : t < 0.8 ? (fam === 'hook' ? 'hook' : 'shoot') : 'relax',
+    yaw: Math.atan2((12.15 - at[0]) * side, -at[1]),
+  });
+  const separation = c.contest === 'open' ? 1.9 : c.contest === 'tight' ? 0.45 : 1;
+  marker.x = (at[0] + separation) * side;
+  marker.z = at[1] + 0.5 * lane;
+  marker.yaw = (-side * Math.PI) / 2;
+  marker.run = 0.85 - 0.75 * smooth((t - 0.45) / 0.08);
+  const defenseJump =
+    t >= 0.5 && t <= 0.81
+      ? Math.sin(((t - 0.5) / 0.31) * Math.PI) *
+        (c.outcome === 'block' ? 1.05 : c.contest === 'open' ? 0.22 : 0.7)
+      : 0;
+  marker.y = defenseJump;
+  marker.arms = t > 0.48 && t < 0.82 ? 'block' : 'defend';
+  if (fam === 'drive' || fam === 'floater' || fam === 'roll') {
+    marker.z += Math.sin(t * 12) * 0.7;
+    marker.x -= Math.sin(t * Math.PI) * side * 0.6;
+  }
+  // A second defender slides from the weak side to help at the basket.
+  const help = actors[defense + 2];
+  help.x = lerp(9, 11, t) * side;
+  help.z = lerp(-4 * lane, -0.9 * lane, smooth(t / 0.6));
+  help.arms = t > 0.48 && t < 0.8 ? 'block' : 'defend';
+  help.y = defenseJump * 0.6;
+  const screen = actors[offense + 1];
+  if (fam === 'roll') {
+    screen.x = 5.8 * side;
+    screen.z = 3 * lane;
+    screen.run = 0;
+    screen.arms = 'screen';
+  }
+  // The dunk outlet comes from deep in the backcourt; the passer then trails the play up the floor.
+  if (fam === 'dunk') {
+    const q = smooth((t - 0.12) / 0.5);
+    screen.x = lerp(-4.5 * side, screen.x, q);
+    screen.z = lerp(3 * lane, screen.z, q);
+    screen.run = 0.35 + 0.65 * Math.sin(q * Math.PI);
+    if (t < 0.2) screen.arms = 'pass';
+  }
+  // Off-ball cuts and closeouts: players do not just oscillate in place.
+  actors[offense + 2].x = lerp(4, 10, smooth(t)) * side;
+  actors[offense + 2].z = lerp(-5, 3, smooth(t)) * lane;
+  actors[defense + 3].x = lerp(9, 5, t) * side;
+  actors[defense + 3].z = -5 * lane;
+  const mix = (a, b, w) => ({ x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), z: lerp(a.z, b.z, w) });
+  let ball = { x: shooter.x + 0.38 * side, y: 0.3 + Math.abs(Math.sin(t * 45)) * 0.95, z: shooter.z + 0.15 };
+  if (fam === 'catch') {
+    const q = smooth(t / 0.3);
+    ball = mix(
+      { x: lerp(3, at[0], q) * side, y: 1.4 + Math.sin(q * Math.PI) * 0.35, z: lerp(-5.5, at[1], q) },
+      ball,
+      smooth((t - 0.25) / 0.1),
+    );
+    if (t < 0.3) screen.arms = 'pass';
+  }
+  if (fam === 'dunk') {
+    const q = smooth(t / 0.2);
+    ball = mix(
+      { x: lerp(-10, at[0], q) * side, y: 1.6 + Math.sin(q * Math.PI) * 0.7, z: lerp(3 * lane, at[1], q) },
+      ball,
+      smooth((t - 0.17) / 0.08),
+    );
+  }
+  const pickup = 0.3 + Math.abs(Math.sin(0.43 * 45)) * 0.95;
+  if (t >= 0.43 && t < 0.61) {
+    ball = {
+      x: shooter.x + lerp(0.38, 0.28, gather) * side,
+      y: lerp(pickup, 2.3, gather) + jump,
+      z: shooter.z + lerp(0.15, 0, gather),
+    };
+  }
+  const release = { x: (end[0] + 0.28) * side, y: 2.3 + hop(0.61), z: end[1] },
+    flight = u => {
+      const q = clamp((u - 0.61) / 0.25);
+      return {
+        x: lerp(release.x, 12.15 * side, q),
+        y: lerp(release.y, 3.28, q) + Math.sin(q * Math.PI) * spec.arc,
+        z: lerp(release.z, 0, q),
+      };
+    };
+  if (t >= 0.61) ball = flight(t);
+  // A make drops through the net, hits the floor and bounces out; a miss caroms off the rim.
+  if (t > 0.86) {
+    const q = clamp((t - 0.86) / 0.14);
+    if (c.points) {
+      const f = clamp(q / 0.5),
+        u = clamp((q - 0.5) / 0.5);
+      ball = {
+        x: (12.15 - 1.1 * smooth(u)) * side,
+        y: q < 0.5 ? 3.28 - 2.98 * f * f : 0.3 + Math.sin(u * Math.PI) * 0.7,
+        z: 0.35 * lane * smooth(u),
+      };
+    } else
+      ball = {
+        x: lerp(12.15, 9, q) * side,
+        y: 3.28 - Math.sin((q * Math.PI) / 2) * 1.8,
+        z: lerp(0, -2 * lane, q),
+      };
+  }
+  const land =
+    c.outcome === 'block'
+      ? { x: 7 * side, y: 1.3, z: -3 * lane }
+      : { x: 9 * side, y: 3.28 - 1.8, z: -2 * lane };
+  if (c.outcome === 'block') {
+    const w = smooth((t - 0.52) / 0.13);
+    marker.x = lerp(marker.x, (end[0] + 0.4) * side, w);
+    marker.z = lerp(marker.z, end[1], w);
+    if (t > 0.65) {
+      const from = flight(0.65),
+        q = clamp((t - 0.65) / 0.35);
+      ball = {
+        x: lerp(from.x, land.x, q),
+        y: lerp(from.y, land.y, q) + Math.sin(q * Math.PI) * 0.8,
+        z: lerp(from.z, land.z, q),
+      };
+    }
+  }
+  if (c.outcome === 'steal') {
+    const q = clamp((t - 0.32) / 0.68),
+      w = smooth((t - 0.27) / 0.09);
+    marker.x = lerp(marker.x, lerp(at[0] + 0.4, -3, q) * side, w);
+    marker.z = lerp(marker.z, lerp(at[1], -2 * lane, q), w);
+    marker.y = lerp(marker.y, 0, w);
+    marker.run = lerp(marker.run, 1, w);
+    if (t > 0.3) {
+      marker.arms = 'dribble';
+      shooter.y = 0;
+      shooter.arms = 'defend';
+    }
+    ball = mix(
+      ball,
+      { x: marker.x - 0.35 * side, y: 0.3 + Math.abs(Math.sin(t * 45)) * 0.9, z: marker.z },
+      w,
+    );
+  }
+  // The rebounder reads the shot and arrives where the ball comes down rather than appearing there.
+  const rebounder = actors[defense + (c.team === 'home' ? 4 : 0)];
+  if (!c.points && c.outcome !== 'steal') {
+    const w = smooth((t - 0.64) / 0.22);
+    rebounder.x = lerp(rebounder.x, land.x, w);
+    rebounder.z = lerp(rebounder.z, land.z, w);
+    rebounder.run = Math.max(rebounder.run, Math.sin(w * Math.PI) * 0.9);
+    if (t > 0.84) rebounder.arms = 'rebound';
+  }
+  return {
+    actors,
+    ball,
+    phase:
+      t < 0.43
+        ? fam === 'catch'
+          ? 'Pass & relocate'
+          : 'Attack & dribble'
+        : t < 0.61
+          ? 'Gather & contest'
+          : t < 0.86
+            ? c.outcome === 'block'
+              ? 'Shot blocked'
+              : c.outcome === 'steal'
+                ? 'Turnover'
+                : 'Shot in flight'
+            : c.points
+              ? 'Basket'
+              : 'Rebound',
+    resolved: t >= 0.86,
+    net: c.points && t > 0.86 ? Math.sin(((t - 0.86) * Math.PI) / 0.14) * 0.12 : 0,
+  };
 }

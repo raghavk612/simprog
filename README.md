@@ -15,7 +15,7 @@ npm run build
 
 Open the URL Vite prints. Production files are in `dist/`; serve them over HTTP, not `file://`. Everything needed for gameplay is bundled locally. The production service worker caches the app after the first successful visit for offline replay. Export a season from the header to keep a portable save.
 
-The interface code is in `src/ui/` (see [src/ui/README.md](src/ui/README.md) for where each part lives); `src/engine.js` is the season simulation. `npm run format` formats the interface files with Prettier.
+The interface code is in `src/ui/` (see [src/ui/README.md](src/ui/README.md) for where each part lives); `src/engine.js` is the season simulation. `npm run format` formats all source, tests and scripts with Prettier (`npm run format:check` only checks).
 
 ## Implemented
 
