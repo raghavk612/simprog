@@ -605,7 +605,8 @@ body[data-view='home'] #arena.home-arena {
   font-weight: 500;
   color: var(--ink-3);
 }
-.gear-filters [aria-pressed='true'] {
+/* Selected stays selected under the pointer: this outranks .secondary:hover (a phone keeps hover after a tap). */
+.gear-filters button[aria-pressed='true']:not(:disabled) {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--on-accent);
@@ -1426,7 +1427,8 @@ body[data-view='recruit'] .card h2 {
   gap: 6px;
   margin: 12px 0;
 }
-.level-tabs [aria-pressed='true'] {
+/* Selected stays selected under the pointer: this outranks .secondary:hover (a phone keeps hover after a tap). */
+.level-tabs button[aria-pressed='true']:not(:disabled) {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--on-accent);

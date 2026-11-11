@@ -10,6 +10,8 @@ Read that first for any interface change.
 npm run dev            # http://127.0.0.1:5173
 npm test               # node --test, ~2 s; must stay green
 npm run format         # Prettier over src, tests and scripts (format:check only reports)
+npm run check:ui       # every page in Chrome, dark/light, desktop/phone: script errors, low contrast, overflow
+npm run check:ui -- --shots   # same, plus a screenshot of each page in ui-shots/ to look at
 node scripts/i18n-set.mjs changes.json   # set, add or delete (null) keys in all 7 locales at once
 ```
 
@@ -36,8 +38,8 @@ node scripts/i18n-set.mjs changes.json   # set, add or delete (null) keys in all
 
 ## Checking a change in the browser
 
-`npm test` does not render anything. For interface work, run the dev server and look at the pages you touched at
-1440×900 and 390×844, in dark and light (Settings → Accessibility), including the live game if it is affected.
-Pages are reached through the UI (title → Continue → the next-step button); the first-game walkthrough locks
-clicks outside its highlight, so start a season with "Walk me through the first game" unticked when testing
-something else.
+`npm test` does not render anything. For interface work run `npm run check:ui` (it needs Google Chrome; it
+starts its own server and builds its own saves), then look at the screenshots from `--shots` for the pages you
+touched. The live game and the drills are not covered by it: check those by hand in `npm run dev`, through the UI
+(title → Continue → the next-step button). The first-game walkthrough locks clicks outside its highlight, so start
+a season with "Walk me through the first game" unticked when testing something else.
