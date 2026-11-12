@@ -282,7 +282,7 @@ export const BALL = {
   g: 32.2 * 0.328, // gravity in game units per second squared
   floor: 0.3, // the ball's centre when it touches the floor (the plays place the classic ball, see Arena.settleBall)
   rim: 3.28,
-  bounce: 0.75, // a basketball keeps about three quarters of its speed off a hardwood floor
+  bounce: 0.82, // speed kept off a hardwood floor: a ball dropped from 6 ft comes back to about 49-54 in (sqrt 51/72 = 0.84)
   arrive: 0.86, // fraction of the clip at which every shot reaches the rim (the score is shown then)
   hand: 2.3, // shooting pocket height before the jump
 };
@@ -312,6 +312,44 @@ export const launch = (p, q, T) => ({
   y: (q.y - p.y + 0.5 * BALL.g * T * T) / T,
   z: (q.z - p.z) / T,
 });
+/* ---- The dribble: the hand leads, the ball follows physics ----
+   The hand makes one smooth loop per bounce: a push down from `top` through 2 x `reach`, then a slow rise back to the top.
+   Both strokes start and end gently (smootherstep: no sudden snap at the top and no hard stop at the bottom). The ball
+   rides the hand from the top and leaves it `at` of the way through the push, at the hand's speed; the hand eases to a stop
+   while the ball falls on under gravity, bounces off the floor (BALL.bounce) and comes back up into the hand as the hand
+   reaches the top again, slowly (`arrive` units/s), so the catch is soft. The push is only as quick as it has to be for
+   that: its length and the rhythm (DRIBBLE.period) are worked out from the bounce, not picked.
+   Heights are ball-centre heights; the hand height is where the ball's centre is when the hand is on it. */
+export const DRIBBLE = { top: 1.0, reach: 0.11, at: 0.6, arrive: 0.6 };
+const smoother = s => s * s * s * (s * (6 * s - 15) + 10), // 0..1 with zero speed and acceleration at both ends
+  smootherSpeed = s => 30 * s * s * (1 - s) * (1 - s);
+{
+  const D = DRIBBLE,
+    g = BALL.g,
+    travel = 2 * D.reach;
+  D.releaseY = D.top - travel * smoother(D.at);
+  // the speed the ball must leave the hand with to bounce back up to the top arriving at `arrive`
+  const upOff = Math.sqrt(D.arrive ** 2 + 2 * g * (D.top - BALL.floor)),
+    hit = upOff / BALL.bounce;
+  D.releaseV = Math.sqrt(hit * hit - 2 * g * (D.releaseY - BALL.floor));
+  D.push = (travel * smootherSpeed(D.at)) / D.releaseV; // seconds for the whole down stroke
+  D.release = D.at * D.push;
+  D.period = D.release + (hit - D.releaseV) / g + (upOff - D.arrive) / g;
+}
+/* Ball and hand heights at a point in the dribble (phase in bounces: 0..1 is one, starting with the hand at the top and the
+   ball arriving in it; any number works). contact: the ball is in the hand; progress: 0..1 through that part. */
+export function dribbleAt(phase) {
+  const D = DRIBBLE,
+    t = (phase - Math.floor(phase)) * D.period,
+    travel = 2 * D.reach,
+    hand =
+      t < D.push
+        ? D.top - travel * smoother(t / D.push) // the push down
+        : D.top - travel + travel * smoother((t - D.push) / (D.period - D.push)); // the slow rise back to the top
+  if (t < D.release) return { ball: hand, hand, contact: true, progress: t / D.release };
+  const ball = fly({ x: 0, y: D.releaseY, z: 0 }, { x: 0, y: -D.releaseV, z: 0 }, t - D.release).y;
+  return { ball, hand, contact: false, progress: (t - D.release) / (D.period - D.release) };
+}
 /* A shot's timeline as fractions of the clip. The ball rises `rise` above the rim (higher arcs for jump shots, almost none
    for a dunk), so its flight time follows from gravity; the release comes that long before the ball reaches the rim, at the
    top of the jump, and the run, the gather and the jump are placed around it. */
@@ -458,7 +496,8 @@ export function sampleClip(c, time) {
     z: lerp(-1.8 * lane, actors[defense + 3].z, smooth(t)),
   });
   const mix = (a, b, w) => ({ x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), z: lerp(a.z, b.z, w) });
-  let ball = { x: shooter.x + 0.38 * side, y: 0.3 + Math.abs(Math.sin(t * 45)) * 0.95, z: shooter.z + 0.15 };
+  const bounce = (t * CLIP_SECONDS) / DRIBBLE.period; // the dribble's clock, in bounces
+  let ball = { x: shooter.x + 0.38 * side, y: dribbleAt(bounce).ball, z: shooter.z + 0.15 };
   if (fam === 'catch') {
     const q = smooth(t / 0.3);
     ball = mix(
@@ -476,7 +515,7 @@ export function sampleClip(c, time) {
       smooth((t - 0.17) / 0.08),
     );
   }
-  const pickup = 0.3 + Math.abs(Math.sin(T.gather * 45)) * 0.95;
+  const pickup = dribbleAt((T.gather * CLIP_SECONDS) / DRIBBLE.period).ball;
   if (t >= T.gather && t < rel) {
     ball = {
       x: shooter.x + lerp(0.38, 0.28, gather) * side,
@@ -534,11 +573,7 @@ export function sampleClip(c, time) {
       shooter.y = 0;
       shooter.arms = 'defend';
     }
-    ball = mix(
-      ball,
-      { x: marker.x - 0.35 * side, y: 0.3 + Math.abs(Math.sin(t * 45)) * 0.9, z: marker.z },
-      w,
-    );
+    ball = mix(ball, { x: marker.x - 0.35 * side, y: dribbleAt(bounce).ball, z: marker.z }, w);
   }
   // The rebounder reads the shot and arrives where the ball comes down rather than appearing there.
   const rebounder = actors[defense + (c.team === 'home' ? 4 : 0)];
@@ -577,6 +612,7 @@ export function sampleClip(c, time) {
             : c.points
               ? 'Basket'
               : 'Rebound',
+    bounce, // the dribble's clock (dribbleAt), for the dribbling hand
     resolved: t >= BALL.arrive,
     flying: c.outcome !== 'steal' && t >= rel && (c.outcome === 'block' ? t < rel + 0.04 : t < BALL.arrive),
     net: c.points && t > BALL.arrive ? Math.sin(((t - BALL.arrive) * Math.PI) / 0.14) * 0.12 : 0,

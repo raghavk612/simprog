@@ -229,7 +229,8 @@ function rest(body) {
   return (body.motionRest = { legs, pelvis, arms });
 }
 
-/* Called by the Arena after its own pose for an athlete. ctx = {dt, motion, ball (world position or null)}. */
+/* Called by the Arena after its own pose for an athlete. ctx = {dt, motion, ball (world position or null), holder,
+   dribbleHand (the dribbling hand height, basketball.js dribbleAt)}. */
 export function animateAthlete(player, pose, ctx) {
   const u = player.userData,
     body = u.body,
@@ -363,7 +364,9 @@ function jumpLegs(arms, family, side) {
 
 /* Arms for the athletes (the classic figure keeps the Arena's own arm poses). Each arm eases toward the pose for the play
    situation; the ball handler's hands reach the ball with arm IK: one hand on top while dribbling, both hands while
-   holding, gathering and shooting. When the ball leaves (a shot or pass), the IK fades and the follow-through takes over. */
+   holding, gathering and shooting. When the ball leaves (a shot or pass), the IK fades and the follow-through takes over.
+   The dribbling hand leads the ball rather than chasing it: it follows the dribble's hand height (ctx.dribbleHand), the
+   forearm turns the palm down onto the ball and the wrist works on the dribble's beat (dribbleWrist). */
 function animateArms(player, pose, ctx, m, R, run, dt) {
   const u = player.userData,
     b = u.body.bones,
@@ -428,7 +431,10 @@ function animateArms(player, pose, ctx, m, R, run, dt) {
     const S = a.position;
     if (n && rest) {
       chest.updateWorldMatrix(true, false);
-      T = chest.worldToLocal(ball.clone().add(n.clone().multiplyScalar(r + 0.07)));
+      // the dribbling hand goes where the dribble puts it (ctx.dribbleHand, basketball.js dribbleAt), over the ball: on it
+      // in the push, waiting above it while it bounces. Every other hand on the ball goes to the ball.
+      const at = arms === 'dribble' && ctx.dribbleHand != null ? ball.clone().setY(ctx.dribbleHand) : ball;
+      T = chest.worldToLocal(at.add(n.clone().multiplyScalar(r + 0.07)));
       if (T.distanceTo(S) < (rest.L1 + rest.L2) * 1.2) {
         want = 1;
         m.ikT[j] = T.clone();
@@ -439,9 +445,11 @@ function animateArms(player, pose, ctx, m, R, run, dt) {
     if (rest && T && m.ik[j] > 0.01) {
       {
         const pole =
-          T.y > S.y + 0.1
-            ? new THREE.Vector3(side * 0.45, -0.1, 1)
-            : new THREE.Vector3(side * 0.6, -0.25, -1);
+          arms === 'dribble'
+            ? new THREE.Vector3(side * 0.3, -0.2, -1) // dribbling: the elbow points back, close to the body
+            : T.y > S.y + 0.1
+              ? new THREE.Vector3(side * 0.45, -0.1, 1)
+              : new THREE.Vector3(side * 0.6, -0.25, -1);
         const sol = solveArm(S, T, rest.L1, rest.L2, pole.normalize());
         if (sol) {
           quatFrom(rest.u0, rest.b0, sol.u, sol.b, _q);
@@ -451,5 +459,22 @@ function animateArms(player, pose, ctx, m, R, run, dt) {
         }
       }
     }
+    // the dribbling hand: forearm turned palm-down, wrist cocked to receive and snapping down through the push
+    const wrist = b[j ? 'wrist_L' : 'wrist_R'],
+      dribbling = arms === 'dribble' && n && ctx.dribble ? m.ik[j] : 0;
+    if (wrist) {
+      wrist.rotation.order = 'YZX';
+      wrist.rotation.set(0, 0, dribbling ? -side * dribbleWrist(ctx.dribble) * dribbling : 0);
+    }
+    if (dribbling) a.userData.elbow.rotation.y = -side * 1.35 * dribbling; // pronation (palms face the body at rest)
   });
+}
+/* Wrist flex while dribbling (radians, + = toward the palm), from a dribbleAt result. The wrist stays cocked back so the
+   palm lies on the ball, with a small flick (about 15 degrees) through the push, easing back while the ball bounces. */
+export function dribbleWrist(d) {
+  const s = (a, b, x) => {
+    const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
+    return t * t * (3 - 2 * t);
+  };
+  return d.contact ? -0.7 + 0.25 * s(0, 1, d.progress) : -0.45 - 0.25 * s(0, 0.5, d.progress);
 }

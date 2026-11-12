@@ -11,6 +11,8 @@ import {
   launch,
   shotTiming,
   smoothRoute,
+  dribbleAt,
+  DRIBBLE,
 } from '../src/basketball.js';
 const data = JSON.parse(fs.readFileSync(new URL('../public/data/kangs.json', import.meta.url)));
 function match(seed) {
@@ -152,4 +154,30 @@ test('routes are rounded through their waypoints instead of turning on the spot'
     return Math.abs(Math.atan2(Math.sin(b - a), Math.cos(b - a)));
   });
   assert.ok(Math.max(...turns) < Math.PI / 4);
+});
+test('the dribble: hand and ball move together in the push, the ball bounces off the floor and is back in the hand on the beat', () => {
+  let prev = dribbleAt(0),
+    fastest = 0,
+    lowest = 9,
+    handLowest = 9;
+  for (let i = 1; i <= 2000; i++) {
+    const d = dribbleAt(i / 1000);
+    if (d.contact) assert.equal(d.ball, d.hand);
+    fastest = Math.max(fastest, Math.abs(d.ball - prev.ball) / (DRIBBLE.period / 1000));
+    lowest = Math.min(lowest, d.ball);
+    handLowest = Math.min(handLowest, d.hand);
+    prev = d;
+  }
+  assert.ok(Math.abs(lowest - BALL.floor) < 0.01); // it reaches the floor
+  assert.ok(handLowest > DRIBBLE.top - 2 * DRIBBLE.reach - 1e-9); // the hand never follows it down to the floor
+  // the hand's loop is smooth: its speed never jumps (no kick as it takes or lets go of the ball)
+  for (let i = 1; i < 1000; i++) {
+    const h = k => dribbleAt(k / 1000).hand,
+      v0 = h(i) - h(i - 1),
+      v1 = h(i + 1) - h(i);
+    assert.ok(Math.abs(v1 - v0) < 0.004, `hand speed jumps at ${i / 1000}`);
+  }
+  assert.ok(DRIBBLE.arrive < 1.5); // the ball comes back into the hand slowly: a soft catch
+  assert.ok(fastest < 8); // about 19 ft/s at most: a real dribble, no jumps where the phases meet
+  assert.ok(Math.abs(dribbleAt(1).ball - dribbleAt(0).ball) < 1e-9);
 });

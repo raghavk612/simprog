@@ -1,7 +1,17 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { CLIP_SECONDS, SHOTS, sampleClip, isDunk, family, shotTiming, guardSpot } from './basketball.js';
+import {
+  CLIP_SECONDS,
+  SHOTS,
+  sampleClip,
+  isDunk,
+  family,
+  shotTiming,
+  guardSpot,
+  dribbleAt,
+  DRIBBLE,
+} from './basketball.js';
 import {
   drawScoreboard,
   scoreboardData,
@@ -596,6 +606,16 @@ export class Arena {
       this.ballSpinner.position.y = 0;
     }
   }
+  /* Where the idle dribbler bounces the ball: at his right side and a little ahead, turning with him. It is calibrated so that
+     facing the title camera (heroYaw) it is the spot it always was (+0.4 x, +0.25 z). */
+  dribbleSpot(player) {
+    const k = heroYaw(),
+      lx = 0.4 * Math.cos(k) - 0.25 * Math.sin(k), // the spot in his own frame
+      lz = 0.4 * Math.sin(k) + 0.25 * Math.cos(k),
+      y = player.rotation.y,
+      p = player.position;
+    return { x: p.x + lx * Math.cos(y) + lz * Math.sin(y), z: p.z - lx * Math.sin(y) + lz * Math.cos(y) };
+  }
   /* Turns the ball the way a real one turns, from how it moved since the last frame: backspin on a shot (about two turns a
      second, top spinning back toward the shooter), rolling when it runs along the floor, and slowed by the hands while a
      player holds or dribbles it. In the air with nobody touching it, it keeps the spin it had. */
@@ -635,7 +655,7 @@ export class Arena {
     if (!this.ballReal || !this.ball) return;
     const s = this.ball.scale.x,
       y = this.ball.position.y,
-      drop = (0.28 - 0.13) * Math.max(0, Math.min(1, 1 - (y - 0.28) / 1.2));
+      drop = (0.28 - 0.13) * Math.max(0, Math.min(1, 1 - (y - 0.28) / 0.45)); // near the floor only: none in the hand
     this.ballSpinner.position.y = -drop / s;
   }
   /* Gives one player the body the current setting asks for: classic, or the athlete variant for his position. */
@@ -1382,7 +1402,8 @@ export class Arena {
         elbow = -0.1;
       }
       if (pose.arms === 'dribble') {
-        x = j ? -0.25 + Math.sin(t * 18) * 0.25 : -0.6;
+        // the dribbling arm rides the dribble's hand (dribbleAt): up as it meets the ball, a push down, then waiting
+        x = j ? -0.25 - (this.dribbleHand - DRIBBLE.mid) * 2.4 : -0.6;
         elbow = j ? -0.15 : -0.8;
       }
       const r = arm.rotation,
@@ -1398,6 +1419,8 @@ export class Arena {
         ball: this.ball?.position,
         ballRadius: 0.13,
         holder: player === this.holder,
+        dribbleHand: this.dribbleHand,
+        dribble: this.dribble,
         family: this.clipFamily || '',
       });
   }
@@ -1462,6 +1485,9 @@ export class Arena {
     this.gait =
       (this.gait || 0) +
       (this.motion && !(this.event && this.paused) && !still ? dt * (this.event ? this.speed : 1) : 0);
+    // the dribbling hand (dribbleAt) on the gait clock: between plays and in the idle gym; a play sets its own below
+    this.dribble = dribbleAt(this.gait / DRIBBLE.period);
+    this.dribbleHand = this.dribble.hand;
     if (this.event) {
       // Between clips the play clock waits while everyone runs to the next play at a game pace (see startTransit).
       if (!this.paused) {
@@ -1497,8 +1523,12 @@ export class Arena {
         } else this.snapshot(clipTime);
       } else if (this.motion !== this.blendMotion) this.snapshot(clipTime);
       this.blendMotion = this.motion;
-      const pose = sampleClip(clip, this.motion ? clipTime : presentation.resolved ? CLIP_SECONDS : 0),
-        u = clipTime / CLIP_SECONDS,
+      const pose = sampleClip(clip, this.motion ? clipTime : presentation.resolved ? CLIP_SECONDS : 0);
+      if (!this.transit) {
+        this.dribble = dribbleAt(pose.bounce); // in a play the hand keeps the play's beat
+        this.dribbleHand = this.dribble.hand;
+      }
+      const u = clipTime / CLIP_SECONDS,
         o = clip.team === 'home' ? 0 : 5,
         ease = !this.motion ? 1 : this.paused ? 0 : 1 - Math.exp(-dt * this.speed * 22);
       const tr = this.transit;
@@ -1533,14 +1563,14 @@ export class Arena {
       // in transition the new ball handler dribbles it up the floor (after a short pass to him if it is elsewhere)
       const h = this.people[o],
         hy = h.rotation.y,
-        dribbleAt = {
+        carried = {
           x: h.position.x - Math.cos(hy) * 0.38 + Math.sin(hy) * 0.3,
-          y: 0.3 + Math.abs(Math.sin(this.gait * 6)) * 0.9,
+          y: dribbleAt(this.gait / DRIBBLE.period).ball,
           z: h.position.z + Math.sin(hy) * 0.38 + Math.cos(hy) * 0.3,
         };
       const ball = this.blendBall(
         tr
-          ? dribbleAt
+          ? carried
           : {
               x: pose.ball.x + (a[0] + (b[0] - a[0]) * st) * hold,
               y: pose.ball.y,
@@ -1623,7 +1653,7 @@ export class Arena {
       });
       // paused title: the ball holds in the hero's dribble (and the next blend starts from there)
       const p = this.people[2].position,
-        at = { x: p.x + 0.4, y: 0.3 + Math.abs(Math.sin(this.gait * 6)) * 0.9, z: p.z + 0.25 },
+        at = { ...this.dribbleSpot(this.people[2]), y: dribbleAt(this.gait / DRIBBLE.period).ball },
         b = still
           ? ((this.ballFrom = { ...at, t0: this.idleClock }), at)
           : this.blendBall(at, this.idleClock);
