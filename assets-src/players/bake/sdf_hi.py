@@ -102,6 +102,7 @@ class PlayerSDF:
         self.head_c, self.head_r = self._head_bound()
         self.detail = detail
         self.local_parts = {}        # name -> LocalPart (hands, sneakers, the clump afro; see add_local_part)
+        self.overrides = {}          # name -> base SDF of body points, replacing a built-in part (see add_override)
         self.shoes = shoe_frames(self.H)
         # landmarks the detail functions read for parts in their own frame (detail.HandLayout / ShoeLayout); the
         # current shoes get theirs here, D1's parts get theirs from add_local_part
@@ -118,6 +119,12 @@ class PlayerSDF:
         if layout is not None:
             self.layouts[name] = layout
         return self.local_parts[name]
+
+    def add_override(self, name, sdf_body):
+        """Replaces the base SDF of a part that stays in body coordinates (so its detail keeps reading body fractions), or
+        adds a new one: e.g. the arms reshaped into D1's wrist (cloudmesh.arm_sdf), the union of D1's sneakers as the AO
+        occluder 'shoes', or the jersey trim tube. sdf_body(P) takes body points (..., 3) and returns metres."""
+        self.overrides[name] = sdf_body
 
     def _head_bound(self):
         """A sphere containing the whole head block, measured by sampling the head SDF on a coarse grid."""
@@ -250,6 +257,7 @@ class PlayerSDF:
         if part in self.local_parts:
             lp = self.local_parts[part]
             return lp.sdf_local(lp.to_local(P))
+        if part in self.overrides: return self.overrides[part](P)
         if part == 'core': return self.core(P)
         if part in ('arm_L', 'arm_R'): return self.body_part(P, part)
         return self.garment(P, part)
@@ -306,7 +314,7 @@ class PlayerSDF:
         for part in parts:
             if part == 'core' or part in ('jersey', 'shorts', 'hair_afro', 'sleeve_leg'):
                 core = self._join_head(P, body, self.head) if core is None else core
-            if part in self.local_parts: s = self.sdf(part, P)
+            if part in self.local_parts or part in self.overrides: s = self.sdf(part, P)
             elif part == 'core': s = core
             elif part in ('arm_L', 'arm_R'): s = self.body_part(P, part)
             else: s = self.garment(P, part, core=core)

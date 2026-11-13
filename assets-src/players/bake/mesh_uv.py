@@ -130,20 +130,24 @@ class Unwrapped:
         self.P = mesh.P[src]; self.N = mesh.N[src]; self.G = mesh.G[src]; self.pid = mesh.pid[src]
         self.tg = mesh.tg; self.hidden = mesh.hidden; self.face = mesh.face; self.groups = mesh.groups
 
-def _generate(meshes, size, padding, tpu, chart_iters):
+def _generate(meshes, size, padding, tpu, chart_iters, max_cost=None, brute=False):
     import xatlas
     atlas = xatlas.Atlas()
     for pos, idx, nrm in meshes:
         atlas.add_mesh(pos.astype(np.float32), idx.astype(np.uint32), nrm.astype(np.float32))
     co = xatlas.ChartOptions(); co.max_iterations = chart_iters
+    if max_cost is not None: co.max_cost = max_cost
     po = xatlas.PackOptions(); po.resolution = size; po.padding = padding; po.bilinear = True
-    po.rotate_charts = True; po.texels_per_unit = tpu
+    po.rotate_charts = True; po.texels_per_unit = tpu; po.bruteForce = bool(brute)
     atlas.generate(co, po)
     return atlas
 
-def unwrap(mesh, size=2048, padding=4, hidden_scale=HIDDEN_SCALE, chart_iters=1, groups=None, log=print):
+def unwrap(mesh, size=2048, padding=4, hidden_scale=HIDDEN_SCALE, chart_iters=1, groups=None, log=print, max_cost=None,
+           brute=False):
     """xatlas over every group (visible and hidden faces as separate meshes, hidden ones scaled down), packed into ONE
-    size x size atlas: starts from xatlas's own density estimate and lowers it until everything fits one atlas."""
+    size x size atlas: starts from xatlas's own density estimate and lowers it until everything fits one atlas.
+    max_cost: xatlas's chart growth limit (default 2; larger = fewer, bigger charts, less padding); brute: xatlas's
+    brute-force packing (denser, ~10x slower)."""
     groups = groups or mesh.groups
     parts = []   # (triangle ids, scale)
     for g in groups:
@@ -156,18 +160,18 @@ def unwrap(mesh, size=2048, padding=4, hidden_scale=HIDDEN_SCALE, chart_iters=1,
         meshes.append((mesh.P[used] * s, inv.reshape(-1, 3), mesh.N[used])); local.append(used)
     t0 = time.time(); tries = 0
     fits = lambda a: a.atlas_count == 1 and a.width <= size and a.height <= size
-    atlas = _generate(meshes, size, padding, 0.0, chart_iters); tries += 1   # xatlas's own estimate
+    atlas = _generate(meshes, size, padding, 0.0, chart_iters, max_cost, brute); tries += 1   # xatlas's own estimate
     if not fits(atlas):
         hi = atlas.texels_per_unit; tpu = hi
         while True:   # step down until it fits, then bisect between the last miss and the fit
             tpu *= .93
-            atlas = _generate(meshes, size, padding, tpu, chart_iters); tries += 1
+            atlas = _generate(meshes, size, padding, tpu, chart_iters, max_cost, brute); tries += 1
             if fits(atlas): break
             hi = tpu
         lo, best = tpu, atlas
         for _ in range(3):
             mid = .5 * (lo + hi)
-            a = _generate(meshes, size, padding, mid, chart_iters); tries += 1
+            a = _generate(meshes, size, padding, mid, chart_iters, max_cost, brute); tries += 1
             if fits(a): lo, best = mid, a
             else: hi = mid
         atlas = best

@@ -1,9 +1,22 @@
 """Turns the Houdini player meshes (OBJ) into rigged glTF bodies for the game.
 
 Houdini Apprentice can only export OBJ, so the skeleton and skin weights are added here, from the same
-body_shapes.json the Houdini builder used (assets-src/players/). Output: public/models/players/<variant>.glb
+body_shapes.json the Houdini builder used (assets-src/players/). Output: public/models/players/<variant>.glb and, with
+--bake, the variant's normal + AO maps in public/models/players/maps/ (see assets-src/players/bake/atlas_bake.py).
 
-  python3 scripts/build_players.py            # all variants (needs numpy)
+Full rebuild (deterministic: the same inputs give the same files):
+  pip install numpy scipy pillow scikit-image xatlas fast-simplification --break-system-packages
+  python3 scripts/build_players.py --bake guard     # each variant ~6-8 min and ~1 GB RAM on 2 cores; one at a time
+  python3 scripts/build_players.py --bake forward
+  python3 scripts/build_players.py --bake center
+  node scripts/player_lods.mjs                      # adds the far meshes (LOD1) to the GLBs just written
+  npm test                                          # checks the GLBs carry the UV layout the maps were baked for
+Without --bake only the GLBs are written; that is enough after a change that keeps the triangles (weights, extras), and
+the build warns when the UV layout no longer matches the maps (any geometry change: re-bake).
+
+Pipeline per variant: geometry (the OBJ + the cloud parts - buried faces, openings clipped, trim) -> unwrap (three
+atlases: skin, kit, gear) -> bake (normal + AO from the high-detail SDF, in the tangent frames of the unwrap) -> rig ->
+GLB with TEXCOORD_0 = (u, 1 - v) and TANGENT exactly as baked (never recomputed).
 
 What is in each .glb (one scene, game units, y up, +z forward, feet at y=0):
   * a skeleton whose bones rest with no rotation (so the game's hip/knee/shoulder/elbow swings work unchanged):
@@ -11,7 +24,9 @@ What is in each .glb (one scene, game units, y up, +z forward, feet at y=0):
   * skinned meshes sharing that skeleton: "body_mesh" and "head_mesh" (skin), "jersey_mesh" and "shorts_mesh" (kit, recoloured
     per team), "shoes_mesh" (shoes, sole), four hair styles "hair_buzz/crop/afro/rows_mesh", and the options "headband_mesh",
     "sleeve_arm_mesh" (right arm) and "sleeve_leg_mesh" (left leg). The game keeps one hair style and the options it wants.
+  * every primitive has POSITION, NORMAL, TANGENT, TEXCOORD_0 (the atlas of its material: skin, kit or gear), JOINTS_0, WEIGHTS_0
   * scene extras: decal anchors (chest number, back nameplate, captain badge) relative to the chest bone, and the height;
+    maps.uvHash, the fingerprint of the UV layout (the maps' manifest.json carries the one they were baked for);
     the painted face: "face" (frame centre relative to the head bone), "faceSize" (absolute: heads do not scale with height)
     and "faceMarks" (brow, eye, nose, mouth and chin rows as fractions of the frame from its top; pupil, mouth and nose
     half-widths as fractions of its width), measured on the head SDF (assets-src/players/head_landmarks.py)
@@ -228,15 +243,17 @@ def smooth_openings(P, tris, groups=('jersey', 'shorts'), iterations=10):
             for i in members[w]: P[i] = pos[w]
     return P
 
-def add_trim(P, N, UV, JI, JW, G, tris, H, groups=('jersey', 'shorts'), radius=.0042, sides=5, step=.028):
+def add_trim(P, N, G, tris, H, groups=('jersey', 'shorts'), radius=.0042, sides=5, step=.028):
     """Binding round every opening of the jersey (neck, armholes) and shorts (legs, waist): a thin tube swept along each
-    open edge loop, smoothed and resampled, skinned like the fabric under it. Covers the uneven cut edge and adds the trim
-    real jerseys have; it is drawn in the team's lettering colour (material 'trim')."""
+    open edge loop, smoothed and resampled, skinned like the fabric under it (rig copies the weights of src). Covers the
+    uneven cut edge and adds the trim real jerseys have; it is drawn in the team's lettering colour (material 'trim').
+    Returns P, N, G, tris, src (the fabric vertex each new vertex follows) and the tubes (centre line, closed, radius) the
+    bake makes its round SDF from."""
     key = {}; wid = np.empty(len(P), int)
     for i, p in enumerate(np.round(P, 6)): wid[i] = key.setdefault(tuple(p), len(key))
     rep = {}
     for i, w in enumerate(wid): rep.setdefault(w, i)
-    add_p, add_n, add_src, new = [], [], [], []
+    add_p, add_n, add_src, new, tubes = [], [], [], [], []
     base = len(P)
     for g in groups:
         count, nsum = {}, {}
@@ -278,10 +295,11 @@ def add_trim(P, N, UV, JI, JW, G, tris, H, groups=('jersey', 'shorts'), radius=.
             M = max(6, int(total / (step * H)))
             at = np.linspace(0, total, M, endpoint=not closed); idx = np.minimum(np.searchsorted(cum, at, side='right') - 1, len(pts) - 1); f = (at - cum[idx]) / np.maximum(seg[idx], 1e-9)
             q = pts[idx] + (nxt[idx] - pts[idx]) * np.clip(f, 0, 1)[:, None]; qn = nrm[idx]
-            r = radius * H; start = base + len(add_p)
+            r = radius * H; start = base + len(add_p); centres = []
             for i in range(M):
                 t = q[(i + 1) % M if closed else min(i + 1, M - 1)] - q[i - 1 if closed else max(i - 1, 0)]; t /= max(np.linalg.norm(t), 1e-9)
                 n = qn[i] - t * (qn[i] @ t); n /= max(np.linalg.norm(n), 1e-9); b = np.cross(t, n); c = q[i] + n * r * .6
+                centres.append(c)
                 for k in range(sides):
                     a = 2 * np.pi * k / sides; d = np.cos(a) * n + np.sin(a) * b
                     add_p.append(c + d * r); add_n.append(d); add_src.append(rep[loop[idx[i]]])
@@ -290,7 +308,8 @@ def add_trim(P, N, UV, JI, JW, G, tris, H, groups=('jersey', 'shorts'), radius=.
                     a = start + i * sides + k; b2 = start + i * sides + (k + 1) % sides
                     c2 = start + ((i + 1) % M) * sides + k; d2 = start + ((i + 1) % M) * sides + (k + 1) % sides
                     new += [([a, c2, b2], 'trim'), ([b2, c2, d2], 'trim')]
-    if not add_p: return P, N, UV, JI, JW, G, tris
+            tubes.append((np.array(centres), closed, r))
+    if not add_p: return P, N, G, tris, np.zeros(0, int), tubes
     add_p, add_n, src = np.array(add_p), np.array(add_n), np.array(add_src)
     allP = np.vstack([P, add_p])
     # wind every trim triangle so it faces outward (along the tube normal)
@@ -299,8 +318,7 @@ def add_trim(P, N, UV, JI, JW, G, tris, H, groups=('jersey', 'shorts'), radius=.
         a, b, c = allP[tri]; fn = np.cross(b - a, c - a)
         nn = add_n[tri[0] - base] + add_n[tri[1] - base] + add_n[tri[2] - base]
         fixed.append((tri if fn @ nn >= 0 else [tri[0], tri[2], tri[1]], g))
-    return (allP, np.vstack([N, add_n]), np.vstack([UV, np.zeros((len(add_p), 2))]), np.vstack([JI, JI[src]]), np.vstack([JW, JW[src]]),
-            np.concatenate([G, np.array(['trim'] * len(add_p))]), tris + fixed)
+    return allP, np.vstack([N, add_n]), np.concatenate([G, np.array(['trim'] * len(add_p))]), tris + fixed, src, tubes
 
 def opening_shapes(H, SH):
     """The jersey and shorts openings as smooth shapes, the same ones the Houdini recipe carves (GARMENT_VEX), a little
@@ -316,16 +334,17 @@ def opening_shapes(H, SH):
     shorts = [above(.334 * H), below(.572 * H)]   # the inseam stays as Houdini carved it (each leg stays a closed tube)
     return {'jersey': jersey, 'shorts': shorts}
 
-def clip_openings(P, N, UV, G, tris, shapes):
+def clip_openings(P, N, G, tris, shapes):
     """Cuts each garment along its opening shapes: triangles are clipped exactly where a shape's value crosses zero
-    (new vertices interpolated along the edges), so every neckline, armhole and hem is a smooth edge."""
-    P, N, UV, G = list(P), list(N), list(UV), list(G); cache = {}; out = []
+    (new vertices interpolated along the edges), so every neckline, armhole and hem is a smooth edge. (UVs and tangents
+    come later, from the unwrap of the final triangles, so there is nothing else to carry.)"""
+    P, N, G = list(P), list(N), list(G); cache = {}; out = []
     def cut(a, b, fa, fb, g, k):
         key = (min(a, b), max(a, b), k)
         if key not in cache:
             t = fa / (fa - fb)
             P.append(P[a] + (P[b] - P[a]) * t); n = N[a] + (N[b] - N[a]) * t; N.append(n / max(np.linalg.norm(n), 1e-9))
-            UV.append(UV[a] + (UV[b] - UV[a]) * t); G.append(g); cache[key] = len(P) - 1
+            G.append(g); cache[key] = len(P) - 1
         return cache[key]
     for tri, g in tris:
         polys = [list(tri)]
@@ -344,14 +363,19 @@ def clip_openings(P, N, UV, G, tris, shapes):
             polys = nxt
         for poly in polys:
             for i in range(1, len(poly) - 1): out.append(([poly[0], poly[i], poly[i + 1]], g))
-    return np.array(P), np.array(N), np.array(UV), np.array(G), out
+    return np.array(P), np.array(N), np.array(G), out
 
-def build_variant(name, spec, objpath):
+def geometry(name, spec, objpath):
+    """Stage 1: the final triangles. The Houdini OBJ, the cloud-meshed sneakers, afro and hands, the forearm reshaped into
+    the wrist, the openings clipped, buried and covered faces dropped, the trim added and the headband's normals averaged
+    (before the bake, which must see the normals the GLB carries). Returns the vertex arrays (P, N, G), the triangles
+    [(indices, group)], the trim's weight sources and centre lines, and the joints."""
     v = spec['variants'][name]; H = v['height_m']
     J = joints_for(spec, v)
     J['top'] = np.array([0, H, 0]); J['hand_L'] = J['hand_end_L']; J['hand_R'] = J['hand_end_R']
     pos, uv, nrm, faces = read_obj(objpath)
-    # unique render vertices (position/uv/normal triples) per part group
+    # unique render vertices (position/normal pairs) per part group; the OBJ's own point UVs are not used (they fold
+    # every island over itself; bake/README: the atlas comes from the unwrap below)
     key_index, verts, groups = {}, [], []
     tris = []
     for (a, b, c, g) in faces:
@@ -365,7 +389,6 @@ def build_variant(name, spec, objpath):
         tris.append((tri, g))
     P = np.array([pos[k[0]] for k in verts])
     N = np.array([k[2] if isinstance(k[2], tuple) else [0, 1, 0] for k in verts], float); N /= np.linalg.norm(N, axis=1, keepdims=True)
-    UV = np.array([uv[k[1]] if uv is not None and k[1] >= 0 else [0, 0] for k in verts])
     G = np.array(groups, dtype=object)
     cm = cloud()
     # the sneakers and the afro are cloud-meshed (cloudmesh): their Houdini groups go, the new meshes come in under the same
@@ -376,7 +399,7 @@ def build_variant(name, spec, objpath):
         gname = np.where(m['mat'] == 'sole', 'shoes_sole', m['group'])
         vg = np.full(len(m['V']), m['group'], dtype=object)
         for f, gg in zip(m['F'], gname): vg[f] = gg
-        P = np.vstack([P, m['V']]); N = np.vstack([N, m['N']]); UV = np.vstack([UV, np.zeros((len(m['V']), 2))])
+        P = np.vstack([P, m['V']]); N = np.vstack([N, m['N']])
         G = np.concatenate([G, vg])
         tris += [([base + int(a), base + int(b), base + int(c)], str(gg)) for (a, b, c), gg in zip(m['F'], gname)]
     G = G.astype(str)
@@ -387,8 +410,48 @@ def build_variant(name, spec, objpath):
         o, R = cm.part_frame(name, 'hand_' + side)
         shapes['arm_' + side] = [lambda p, o=o, ax=R[:, 1]: cm.ARM_CUT * H - (p - o) @ ax]
     # clean openings: cut the jersey and shorts along smooth neckline, armhole, hem and waistband shapes, the arms at the hand
-    P, N, UV, G, tris = clip_openings(P, N, UV, G, tris, shapes)
+    P, N, G, tris = clip_openings(P, N, G, tris, shapes)
+    # hands: the anatomical cloud-meshed hand (palm, fingers, thumb), rigid on the wrist bone (rig), over the end of the forearm
+    for side in ('L', 'R'):
+        m = cm.part_mesh(name, 'hand_' + side); base = len(P); n = len(m['V'])
+        P = np.vstack([P, m['V']]); N = np.vstack([N, m['N']])
+        G = np.concatenate([G, np.array([m['group']] * n)])
+        tris += [([base + int(a), base + int(b), base + int(c)], m['group']) for a, b, c in m['F']]
+    # faces nobody sees: the feet inside the shoes, the short-hair caps and the afro's cut inside the skull, the headband's
+    # cut caps, the hand's cap inside the forearm and the forearm's end under the hand
+    low = np.where(P[:, 1] < .2 * H)[0]; covered = np.zeros(len(P), bool); covered[low] = cm.shoe_covers(name, P[low])
+    drop = {ti for ti, (tri, g) in enumerate(tris) if g == 'core' and covered[tri].all()}
+    if os.path.join(SRC, 'bake') not in sys.path: sys.path.insert(0, os.path.join(SRC, 'bake'))
+    import sdf_hi
+    S = sdf_hi.PlayerSDF(spec, name)
+    rules = {g: S.core for g in ('hair_buzz', 'hair_crop', 'hair_rows', 'hair_afro', 'headband')}
+    for side in ('L', 'R'):
+        rules['hand_' + side] = lambda X, side=side: cm.arm_sdf(name, side, X)
+        rules['arm_' + side] = lambda X, side=side: cm.hand_sdf(name, side, X)
+    drop |= buried(P, tris, rules)
+    # skin hidden under the jersey and shorts is removed (no poke-through, fewer triangles)
+    drop |= inside_body(P, N, G, tris, H)
+    hidden = covered_body(P, N, G, tris, H, .81 * H, drop)   # skin below the old neck height only (the collar stays)
+    tris = [(tri, g) for ti, (tri, g) in enumerate(tris) if ti not in drop and not (g == 'core' and hidden[tri].all())]
+    n_before_trim = len(P)
+    P, N, G, tris, trim_src, tubes = add_trim(P, N, G, tris, H)
+    # the headband is pushed out along its normals in the game (materials.js inflate); with split normals at its edges the
+    # pieces part and open dark cracks, so every corner at one position gets the same, averaged normal
+    band = np.where(G == 'headband')[0]
+    if len(band):
+        groups = {}
+        for i in band: groups.setdefault(tuple(np.round(P[i], 5)), []).append(i)
+        for ids in groups.values():
+            n = N[ids].sum(0); N[ids] = n / max(np.linalg.norm(n), 1e-9)
+    return {'name': name, 'v': v, 'H': H, 'J': J, 'P': P, 'N': N, 'G': G, 'tris': tris,
+            'trim_first': n_before_trim, 'trim_src': trim_src, 'trim_tubes': tubes}
 
+def rig(geo):
+    """Stage 4: skin weights (4 influences) for every vertex of the geometry: arms down the chest > shoulder > elbow >
+    wrist chain, legs, the torso chain and the head, garments and hair copying the skin under them, the hands rigid on the
+    wrist and the trim following the fabric it binds. Weights depend only on position and group, so a vertex split by a UV
+    seam gets the same weights on both sides."""
+    v, H, J, P, G = geo['v'], geo['H'], geo['J'], geo['P'], geo['G']
     W = np.zeros((len(P), len(BONES)))
     # arms: chest > shoulder > elbow > wrist
     for side in ('L', 'R'):
@@ -451,43 +514,33 @@ def build_variant(name, spec, objpath):
                 top = sorted(w.items(), key=lambda kv: -kv[1])[:4]
                 JI[vi] = [t[0] for t in top] + [0] * (4 - len(top)); JW[vi] = [t[1] for t in top] + [0] * (4 - len(top))
                 JW[vi] /= max(JW[vi].sum(), 1e-9)
-        # cylindrical UVs round the body axis (or the limb) so a fabric pattern can tile on them
-        c = P[m].mean(0)
-        UV[m, 0] = np.arctan2(P[m, 0] - c[0], P[m, 2] - c[2]) / (2 * np.pi) + .5
-        UV[m, 1] = P[m, 1] / H * 4
+    # hands: rigid on the wrist bone
+    for side in ('L', 'R'):
+        m = G == 'hand_' + side
+        JI[m] = [BI['wrist_' + side], 0, 0, 0]; JW[m] = [1.0, 0, 0, 0]
+    # the trim follows the fabric vertex it was swept from
+    t0 = geo['trim_first']
+    if len(geo['trim_src']):
+        JI[t0:] = JI[geo['trim_src']]; JW[t0:] = JW[geo['trim_src']]
+    return JI, JW
 
-    # hands: the anatomical cloud-meshed hand (palm, fingers, thumb), rigid on the wrist bone, over the end of the forearm
-    for side in ('L', 'R'):
-        m = cm.part_mesh(name, 'hand_' + side); base = len(P); n = len(m['V'])
-        P = np.vstack([P, m['V']]); N = np.vstack([N, m['N']]); UV = np.vstack([UV, np.zeros((n, 2))])
-        JI = np.vstack([JI, np.tile([BI[m['weight']], 0, 0, 0], (n, 1))]); JW = np.vstack([JW, np.tile([1.0, 0, 0, 0], (n, 1))])
-        G = np.concatenate([G, np.array([m['group']] * n)])
-        tris += [([base + int(a), base + int(b), base + int(c)], m['group']) for a, b, c in m['F']]
-    # faces nobody sees: the feet inside the shoes, the short-hair caps and the afro's cut inside the skull, the headband's
-    # cut caps, the hand's cap inside the forearm and the forearm's end under the hand
-    low = np.where(P[:, 1] < .2 * H)[0]; covered = np.zeros(len(P), bool); covered[low] = cm.shoe_covers(name, P[low])
-    drop = {ti for ti, (tri, g) in enumerate(tris) if g == 'core' and covered[tri].all()}
+def layout(geo, log=print):
+    """Stage 2: the unwrap of the final triangles into the skin, kit and gear atlases (bake/atlas_bake.py)."""
     if os.path.join(SRC, 'bake') not in sys.path: sys.path.insert(0, os.path.join(SRC, 'bake'))
-    import sdf_hi
-    S = sdf_hi.PlayerSDF(spec, name)
-    rules = {g: S.core for g in ('hair_buzz', 'hair_crop', 'hair_rows', 'hair_afro', 'headband')}
-    for side in ('L', 'R'):
-        rules['hand_' + side] = lambda X, side=side: cm.arm_sdf(name, side, X)
-        rules['arm_' + side] = lambda X, side=side: cm.hand_sdf(name, side, X)
-    drop |= buried(P, tris, rules)
-    # skin hidden under the jersey and shorts is removed (no poke-through, fewer triangles)
-    drop |= inside_body(P, N, G, tris, H)
-    hidden = covered_body(P, N, G, tris, H, .81 * H, drop)   # skin below the old neck height only (the collar stays)
-    tris = [(tri, g) for ti, (tri, g) in enumerate(tris) if ti not in drop and not (g == 'core' and hidden[tri].all())]
-    P, N, UV, JI, JW, G, tris = add_trim(P, N, UV, JI, JW, G, tris, H)
-    # the headband is pushed out along its normals in the game (materials.js inflate); with split normals at its edges the
-    # pieces part and open dark cracks, so every corner at one position gets the same, averaged normal
-    band = np.where(G == 'headband')[0]
-    if len(band):
-        groups = {}
-        for i in band: groups.setdefault(tuple(np.round(P[i], 5)), []).append(i)
-        for ids in groups.values():
-            n = N[ids].sum(0); N[ids] = n / max(np.linalg.norm(n), 1e-9)
+    import atlas_bake
+    T = np.array([t for t, _ in geo['tris']], np.int64); g = np.array([gg for _, gg in geo['tris']])
+    return atlas_bake.unwrap(geo['P'], geo['N'], geo['G'], T, g, geo['name'], log=log)
+
+def build_variant(name, spec, objpath, do_bake=False, jobs=None, log=print):
+    geo = geometry(name, spec, objpath)
+    lay = layout(geo, log)
+    import atlas_bake
+    if do_bake:   # stage 3: normal + AO maps from the high-detail SDF, in the tangent frames written below
+        atlas_bake.bake(name, geo['P'], geo['N'], geo['G'], lay, geo['trim_tubes'], jobs=jobs, log=log)
+    elif atlas_bake.manifest().get(name, {}).get('uvHash') != lay.uv_hash():
+        log('  WARNING: %s: the maps in public/models/players/maps were baked for another UV layout; run with --bake' % name)
+    JI, JW = rig(geo)   # stage 4
+    v, H, J, P, N, G = geo['v'], geo['H'], geo['J'], geo['P'], geo['N'], geo['G']
     core = G == 'core'
     # materials and meshes by region (heights as fractions of H)
     y = lambda f: f * H
@@ -499,10 +552,9 @@ def build_variant(name, spec, objpath):
         if g == 'core' and above_seam(head_local(c, v)): return ('head', 'skin')   # the fine Houdini head piece
         return ('body', 'skin')
     meshes = {}
-    for tri, g in tris:
+    for (tri, g), utri in zip(geo['tris'], lay.tris):
         mesh, mat = region(tri, g)
-        if mesh is None: continue
-        meshes.setdefault(mesh, {}).setdefault(mat, []).append(tri)
+        meshes.setdefault(mesh, {}).setdefault(mat, []).append(utri.tolist())   # indices into the unwrapped vertices
 
     S = UNITS_PER_M
     chest = J['chest']
@@ -513,7 +565,8 @@ def build_variant(name, spec, objpath):
               'number': [0, (y(.705) - chest[1]) * S, (z_front - chest[2] + .009) * S],
               'nameplate': [0, (y(.775) - chest[1]) * S, (z_back - chest[2] - .003) * S],
               'capBadge': [-.06 * H * S, (y(.792) - chest[1]) * S, (z_back - chest[2] - .006) * S],
-              'decalScale': H * S / 2.15}
+              'decalScale': H * S / 2.15,
+              'maps': {'uvHash': lay.uv_hash()}}
     # face: where the painted face sits on the head (relative to the head bone, game units), its size (absolute: heads do not
     # grow with height) and the landmark rows the painted features line up with (fractions of the frame, from the top)
     fl = face_layout(spec, v)
@@ -530,9 +583,14 @@ def build_variant(name, spec, objpath):
         band = P[(np.abs(P[:, 1] - yy) < .01 * H) & jersey]
         a = np.abs(band[:, 0]).max(); zs = band[:, 2]; b = (zs.max() - zs.min()) / 2
         extras[key] = float(a * a / max(b, 1e-3) * S * .8)  # a little tighter than the fabric so the edges never float
-    return write_glb(os.path.join(OUT, name + '.glb'), P * S, N, UV, JI, JW, meshes, {k: J[BONES[i][2]] * S for i, (k, _, _) in enumerate(BONES)}, extras)
+    # stage 5: the GLB, per unwrapped vertex. glTF UVs run down the image: TEXCOORD_0 = (u, 1 - v) of the atlas (v up)
+    s = lay.src
+    UV = np.stack([lay.uv[:, 0], 1 - lay.uv[:, 1]], 1)
+    TAN = np.concatenate([lay.T, lay.w[:, None]], 1)
+    return write_glb(os.path.join(OUT, name + '.glb'), P[s] * S, N[s], UV, TAN, JI[s], JW[s], meshes,
+                     {k: J[BONES[i][2]] * S for i, (k, _, _) in enumerate(BONES)}, extras)
 
-def write_glb(path, P, N, UV, JI, JW, meshes, joint_pos, extras):
+def write_glb(path, P, N, UV, TAN, JI, JW, meshes, joint_pos, extras):
     blob = bytearray(); views, accessors = [], []
     def add(arr, comp, typ, target=None, minmax=False):
         data = arr.tobytes(); off = len(blob); blob.extend(data)
@@ -574,6 +632,7 @@ def write_glb(path, P, N, UV, JI, JW, meshes, joint_pos, extras):
                 materials.append({'name': mat, 'pbrMetallicRoughness': {'baseColorFactor': col, 'metallicFactor': 0, 'roughnessFactor': rough}})
             attrs = {'POSITION': add(P[u].astype(np.float32), 5126, 'VEC3', 34962, True),
                      'NORMAL': add(N[u].astype(np.float32), 5126, 'VEC3', 34962),
+                     'TANGENT': add(TAN[u].astype(np.float32), 5126, 'VEC4', 34962),
                      'TEXCOORD_0': add(UV[u].astype(np.float32), 5126, 'VEC2', 34962),
                      'JOINTS_0': add(JI[u].astype(np.uint8), 5121, 'VEC4', 34962),
                      'WEIGHTS_0': add(JW[u].astype(np.float32), 5126, 'VEC4', 34962)}
@@ -593,6 +652,12 @@ def write_glb(path, P, N, UV, JI, JW, meshes, joint_pos, extras):
     return {'file': os.path.relpath(path, ROOT), 'bytes': len(out), 'verts': int(len(P)), 'tris': {m: sum(len(t) for t in d.values()) for m, d in meshes.items()}}
 
 if __name__ == '__main__':
+    import argparse
+    ap = argparse.ArgumentParser(description='Build the rigged player GLBs (and, with --bake, their normal + AO maps).')
+    ap.add_argument('variants', nargs='*')
+    ap.add_argument('--bake', action='store_true', help='also bake public/models/players/maps/<variant>_<atlas>.png (~6 min/variant)')
+    ap.add_argument('--jobs', type=int, default=None, help='worker processes for the bake (default: the CPU count)')
+    a = ap.parse_args()
     spec = json.load(open(os.path.join(SRC, 'body_shapes.json')))
-    for name in (sys.argv[1:] or list(spec['variants'])):
-        print(build_variant(name, spec, os.path.join(SRC, 'houdini', 'export', 'kangs_%s.obj' % name)))
+    for name in (a.variants or list(spec['variants'])):
+        print(build_variant(name, spec, os.path.join(SRC, 'houdini', 'export', 'kangs_%s.obj' % name), a.bake, a.jobs))
