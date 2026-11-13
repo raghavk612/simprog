@@ -28,6 +28,10 @@ export const mapFile = (variant, atlas, level) =>
    fades the baked AO under the painted face). */
 export const AO_INTENSITY = { medium: 0.8, high: 0.55 };
 export const NORMAL_SCALE = { skin: 1, kit: 1, gear: 1 };
+/* The procedural bump detail (materials.js) that stays on with the maps, by material: the hair's strands are baked into the
+   gear map, so the tiling strand bump drops to a trace (on top of the map it scratched the hair); the skin's pores and the
+   kit's mesh perforation are finer than the maps and stay. */
+export const DETAIL_BUMP_WITH_MAPS = { hair: 0.35 };
 
 const BASE = `${import.meta.env?.BASE_URL ?? '/'}models/players/maps/`;
 /* Data textures straight from the file: no premultiplied alpha (the AO in A would crush the normal in RGB), no colour
@@ -118,5 +122,7 @@ export function setMaterialMaps(material, tex, level, atlas) {
     material.normalScale.set(s, s);
     material.aoMapIntensity = AO_INTENSITY[level] ?? 1;
   }
+  const k = material.userData.kDetail;
+  if (k?.bumpU) k.bumpU.value = k.bump * (tex ? (DETAIL_BUMP_WITH_MAPS[material.name] ?? 1) : 1);
   if (had !== !!tex) material.needsUpdate = true;
 }

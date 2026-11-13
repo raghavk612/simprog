@@ -156,13 +156,15 @@ function patch(
       kPrintMinY: { value: 0 },
       kPrintOn: { value: 0 },
     };
-  material.userData.kDetail = { map, scale, bump, wrap };
+  // bumpU is live: the baked detail maps (src/playerMaps.js) scale it down where they carry the same detail
+  const bumpU = { value: bump };
+  material.userData.kDetail = { map, scale, bump, wrap, bumpU };
   if (face) material.userData.face = face;
   material.onBeforeCompile = shader => {
     Object.assign(shader.uniforms, {
       kDetailMap: { value: map },
       kDetailScale: { value: scale },
-      kDetailBump: { value: bump },
+      kDetailBump: bumpU,
       kFadeFar: { value: fadeFar },
     });
     if (face)

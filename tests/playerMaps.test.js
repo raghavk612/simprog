@@ -10,6 +10,7 @@ import {
   mapsOn,
   AO_INTENSITY,
   NORMAL_SCALE,
+  DETAIL_BUMP_WITH_MAPS,
 } from '../src/playerMaps.js';
 import { athleteBody, disposeBody, BODY_VARIANTS } from '../src/players.js';
 
@@ -158,6 +159,12 @@ test('athlete maps: on Medium and High, the right skin size per level, none on L
       if (!mapsOn(level)) {
         assert.equal(m.normalMap, null, `${level}: no normal map on ${key}`);
         assert.equal(m.aoMap, null, `${level}: no AO map on ${key}`);
+        if (m.userData.kDetail)
+          assert.equal(
+            m.userData.kDetail.bumpU.value,
+            m.userData.kDetail.bump,
+            'full procedural bump without maps',
+          );
         continue;
       }
       assert.equal(m.normalMap?.name, mapFile('guard', atlas, level), `${level}: ${key} reads ${atlas}`);
@@ -168,6 +175,13 @@ test('athlete maps: on Medium and High, the right skin size per level, none on L
         [NORMAL_SCALE[atlas], NORMAL_SCALE[atlas]],
         'TANGENT in the GLB: no y flip',
       );
+      const k = m.userData.kDetail;
+      if (k)
+        assert.equal(
+          k.bumpU.value,
+          k.bump * (DETAIL_BUMP_WITH_MAPS[m.name] ?? 1),
+          `${key}: procedural bump with maps`,
+        );
     }
   };
   assert.ok(mats.size >= 9, `${mats.size} materials`);
