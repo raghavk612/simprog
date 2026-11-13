@@ -330,3 +330,38 @@ test('looks: the same player always gets the same hair and options, and players 
   assert.equal(hair.size, 4, 'every hair style is used');
   assert.ok(keys.size > 8, 'plenty of different looks');
 });
+test('athlete hands: rigid on the wrist, and the fingers stay off the ball when dribbling, holding and shooting', async () => {
+  // the game's own animation (motion.js animateAthlete) with the ball where the Arena puts it; the hand is skinned to the
+  // wrist bone only, so its vertices are found by weight. The rule (motion.js): wrist at ball radius .13 + .07 from the centre.
+  const { loadBody, drive, POSES, BALL_RADIUS } =
+    await import('../assets-src/players/cloudmesh/ball_samples.mjs');
+  const { BODY_VARIANTS } = await import('../src/players.js');
+  for (const v of BODY_VARIANTS) {
+    const { body, player } = await loadBody(v);
+    let mesh;
+    body.root.traverse(o => {
+      if (o.isSkinnedMesh && o.name === 'body_mesh') mesh = o;
+    });
+    const sk = mesh.skeleton,
+      wrists = ['wrist_R', 'wrist_L'].map(n => sk.bones.findIndex(b => b.name === n)),
+      ji = mesh.geometry.attributes.skinIndex,
+      jw = mesh.geometry.attributes.skinWeight,
+      hand = [];
+    for (let i = 0; i < ji.count; i++) if (jw.getX(i) > 0.999 && wrists.includes(ji.getX(i))) hand.push(i);
+    assert.ok(hand.length > 600, `${v}: ${hand.length} rigid hand vertices`);
+    const p = new THREE.Vector3();
+    for (const pose of Object.keys(POSES)) {
+      let closest = Infinity,
+        f = 0;
+      drive(player, pose, ball => {
+        if (f++ % 2) return;
+        sk.update();
+        for (const i of hand) {
+          mesh.getVertexPosition(i, p).applyMatrix4(mesh.matrixWorld);
+          closest = Math.min(closest, p.distanceTo(ball) - BALL_RADIUS);
+        }
+      });
+      assert.ok(closest > 0.002, `${v} ${pose}: hand ${closest.toFixed(4)} from the ball`);
+    }
+  }
+});
