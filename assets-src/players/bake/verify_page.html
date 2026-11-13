@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Bake check</title>
+<style>
+  body { margin: 0; background: #111; }
+</style>
+<script type="importmap">
+  { "imports": { "three": "./three/build/three.module.js", "three/addons/": "./three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<script type="module">
+// Test page for assets-src/players/bake/verify.py. It loads player.glb (the baked OBJ: POSITION, NORMAL, glTF
+// TEXCOORD_0, TANGENT), ref.glb (marching cubes of the high-detail SDF) and the baked PNGs, and assigns the maps the way
+// the game would: separate textures, flipY = false (glTF UVs), the normal map linear, AO from the red channel.
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true });
+renderer.setPixelRatio(1);
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, 1, 0.05, 20);
+const hemi = new THREE.HemisphereLight(0xdfe6ff, 0x3a3030, 0.55);
+const key = new THREE.DirectionalLight(0xffffff, 2.6);
+scene.add(hemi, key, key.target);
+let H = 2;
+window.setHeight = h => (H = h);
+
+const tex = url =>
+  new Promise((ok, no) =>
+    new THREE.TextureLoader().load(url, t => {
+      t.flipY = false; // glTF UVs: v = 0 is the top row of the PNG
+      t.colorSpace = THREE.NoColorSpace; // data, not colour
+      t.anisotropy = 4;
+      ok(t);
+    }, undefined, no),
+  );
+const glb = url => new Promise((ok, no) => new GLTFLoader().load(url, ok, undefined, no));
+
+const COLORS = { skin: 0x8a5a3e, kit: 0x6a33aa, shoes: 0xe8e8e8, hair: 0x1c1612, ref: 0x8a5a3e };
+const matKey = name =>
+  /^(core|arm_)/.test(name) ? 'skin' : /^(jersey|shorts|sleeve|headband)/.test(name) ? 'kit' : /^shoes/.test(name) ? 'shoes' : 'hair';
+
+let meshes = {}, refs = {}, normalMap, aoMap;
+try {
+  const [p, r, n, a] = await Promise.all([glb('player.glb'), glb('ref.glb'), tex('normal.png'), tex('ao.png')]);
+  normalMap = n;
+  aoMap = a;
+  p.scene.traverse(o => o.isMesh && (meshes[o.name] = o));
+  r.scene.traverse(o => o.isMesh && (refs[o.name] = o));
+  for (const o of Object.values(meshes)) {
+    o.userData.withTangent = o.geometry;
+    const g = o.geometry.clone();
+    g.deleteAttribute('tangent');
+    o.userData.noTangent = g;
+  }
+  window.ready = true;
+} catch (e) {
+  window.failed = String(e && e.stack ? e.stack : e);
+}
+
+// mode: before | after (normal map, TANGENT) | after_ao | ao_only | derivative (no TANGENT, normalScale.y = -1) |
+//       wrong (no TANGENT, normalScale.y = +1: green inverted) | reference (ref meshes where they exist)
+function material(name, mode, normals) {
+  const p = {};
+  const useMap = ['after', 'after_ao', 'derivative', 'wrong'].includes(mode);
+  if (useMap) {
+    p.normalMap = normalMap;
+    p.normalScale = new THREE.Vector2(1, mode === 'derivative' ? -1 : 1);
+  }
+  if (normals) return new THREE.MeshNormalMaterial(p);
+  if (mode === 'after_ao' || mode === 'ao_only') p.aoMap = aoMap;
+  const color = mode === 'ao_only' ? 0xdddddd : COLORS[matKey(name)];
+  return new THREE.MeshStandardMaterial({ color, roughness: 0.62, ...p });
+}
+
+const VIEWS = {
+  // name: [meshes, ref meshes (replace the meshes of the same group), camera position, target] in units of H
+  torso: [['core', 'core_hidden', 'arm_L', 'arm_R'], ['core', 'arm_L', 'arm_R'], [0.0, 0.73, 0.5], [0, 0.705, 0.03]],
+  jersey: [['jersey', 'core', 'arm_L', 'arm_R', 'shorts'], ['jersey'], [0.2, 0.71, 0.36], [0.045, 0.68, 0.03]],
+  full: [['core', 'arm_L', 'arm_R', 'jersey', 'shorts', 'shoes', 'hair_crop'], [], [0.55, 0.62, 1.55], [0, 0.5, 0]],
+  full_back: [['core', 'arm_L', 'arm_R', 'jersey', 'shorts', 'shoes', 'hair_crop'], [], [-0.55, 0.62, -1.55], [0, 0.5, 0]],
+  face: [['core', 'jersey', 'hair_crop', 'arm_L', 'arm_R'], [], [0.12, 0.9, 0.36], [0, 0.89, 0]],
+};
+
+function stage(view, mode, normals) {
+  for (const c of [...scene.children]) if (c.isMesh) scene.remove(c);
+  const [names, refNames, cam, tgt] = VIEWS[view];
+  for (const name of names) {
+    const ref = mode === 'reference' && refNames.includes(name.replace('_hidden', ''));
+    if (ref) {
+      if (name.endsWith('_hidden')) continue;
+      const o = refs['ref_' + name];
+      if (!o) continue;
+      scene.add(new THREE.Mesh(o.geometry, normals ? new THREE.MeshNormalMaterial() : material(name, 'before')));
+      continue;
+    }
+    const o = meshes[name];
+    if (!o) continue;
+    const m = mode === 'reference' ? 'before' : mode;
+    const geo = m === 'derivative' || m === 'wrong' ? o.userData.noTangent : o.userData.withTangent;
+    scene.add(new THREE.Mesh(geo, material(name, m, normals)));
+  }
+  camera.position.set(cam[0] * H, cam[1] * H, cam[2] * H);
+  camera.lookAt(tgt[0] * H, tgt[1] * H, tgt[2] * H);
+}
+
+window.render = cfg => {
+  const size = cfg.size || 400;
+  renderer.setSize(size, size);
+  stage(cfg.view, cfg.mode, cfg.normals);
+  const [lx, ly, lz] = cfg.light || [-1, 0.4, 0.6];
+  key.position.set(lx, ly, lz).multiplyScalar(3).add(new THREE.Vector3(0, H * 0.6, 0));
+  key.target.position.set(0, H * 0.6, 0);
+  key.intensity = cfg.mode === 'ao_only' ? 0 : 2.6;
+  hemi.intensity = cfg.mode === 'ao_only' ? 2.2 : 0.55;
+  renderer.setClearColor(0x1e1e24, 1);
+  renderer.render(scene, camera);
+  return renderer.domElement.toDataURL('image/png');
+};
+
+// View-space normals of each mode against the reference, per pixel (render target: linear values, no output transform).
+window.normalCheck = view => {
+  const S = 512;
+  const rt = new THREE.WebGLRenderTarget(S, S);
+  renderer.setSize(S, S);
+  const read = mode => {
+    stage(view, mode, true);
+    renderer.setRenderTarget(rt);
+    renderer.setClearColor(0x000000, 0);
+    renderer.clear();
+    renderer.render(scene, camera);
+    const px = new Uint8Array(S * S * 4);
+    renderer.readRenderTargetPixels(rt, 0, 0, S, S, px);
+    renderer.setRenderTarget(null);
+    return px;
+  };
+  const ref = read('reference');
+  const base = read('before');
+  const dec = (px, i) => {
+    const x = (px[i] / 255) * 2 - 1, y = (px[i + 1] / 255) * 2 - 1, z = (px[i + 2] / 255) * 2 - 1;
+    const l = Math.hypot(x, y, z) || 1;
+    return [x / l, y / l, z / l];
+  };
+  const ang = (a, b) => (Math.acos(Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2]))) * 180) / Math.PI;
+  const stats = arr => {
+    if (!arr.length) return null;
+    arr.sort((a, b) => a - b);
+    const q = f => +arr[Math.min(arr.length - 1, Math.floor(f * arr.length))].toFixed(2);
+    return { pixels: arr.length, mean: +(arr.reduce((s, v) => s + v, 0) / arr.length).toFixed(2), median: q(0.5), p90: q(0.9) };
+  };
+  const out = {};
+  for (const mode of ['before', 'after', 'derivative', 'wrong']) {
+    const px = mode === 'before' ? base : read(mode);
+    const all = [], detail = [];
+    for (let i = 0; i < S * S * 4; i += 4) {
+      if (ref[i + 3] < 255 || px[i + 3] < 255 || base[i + 3] < 255) continue;
+      const r = dec(ref, i), e = ang(dec(px, i), r);
+      all.push(e);
+      // "detail" pixels: where the reference bends away from the plain low-poly normal by more than 4 degrees
+      if (ang(dec(base, i), r) > 4) detail.push(e);
+    }
+    out[mode] = { all: stats(all), detail: stats(detail) };
+  }
+  rt.dispose();
+  return out;
+};
+</script>
+</body>
+</html>
