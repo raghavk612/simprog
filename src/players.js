@@ -21,6 +21,7 @@ import {
   faceTexture,
   KIT_INFLATE,
 } from './materials.js';
+import { AthleteMaps, ATLAS_OF, mapsOn, setMaterialMaps } from './playerMaps.js';
 
 export const PLAYER_STYLES = ['classic', 'realistic'];
 export const BODY_PARTS = ['jersey', 'head', 'hair', 'number', 'nameplate', 'capBadge', 'legs', 'arms'];
@@ -172,6 +173,7 @@ export function attachBody(player, body) {
 /* Frees what only this body owns (geometry, materials and their canvas textures). Shared materials are listed in keep. */
 export function disposeBody(body, keep = new Set()) {
   if (!body) return;
+  body.disposed = true; // a detail map arriving later is not put on its (freed) materials
   const mats = new Set();
   body.root.traverse(o => {
     if (o.isMesh) {
@@ -233,7 +235,9 @@ export function lookFor(seed) {
 }
 export const lookKey = l =>
   l ? `${l.hair}${l.headband ? '+band' : ''}${l.armSleeve ? '+arm' : ''}${l.legSleeve ? '+leg' : ''}` : '';
-/* The three rigged bodies, loaded once and shared by the gym and the practice drills (about 1 MB). */
+/* The three rigged bodies, loaded once and shared by the gym and the practice drills (about 3 MB), each with its baked
+   detail maps (gltf.maps, src/playerMaps.js): the kit and gear atlases start loading with the bodies, the skin atlas in the
+   size the first body asks for. Bodies do not wait for the maps; they put them on when they arrive. */
 let athleteTemplates = null,
   athleteLoading = null;
 export const loadedAthletes = () => athleteTemplates;
@@ -241,9 +245,11 @@ export function loadAthletes() {
   if (athleteTemplates) return Promise.resolve(athleteTemplates);
   return (athleteLoading ??= Promise.all(
     BODY_VARIANTS.map(v =>
-      new GLTFLoader()
-        .loadAsync(`${import.meta.env?.BASE_URL ?? '/'}models/players/${v}.glb`)
-        .then(g => [v, g]),
+      new GLTFLoader().loadAsync(`${import.meta.env?.BASE_URL ?? '/'}models/players/${v}.glb`).then(g => {
+        g.maps = new AthleteMaps(v);
+        g.maps.prefetch('high', ['kit', 'gear']);
+        return [v, g];
+      }),
     ),
   )
     .then(list => (athleteTemplates = Object.fromEntries(list)))
@@ -251,6 +257,19 @@ export function loadAthletes() {
       athleteLoading = null;
       throw e;
     }));
+}
+/* Frees the templates and their detail maps (bodies made from them must be disposed first). */
+export function disposeAthleteTemplates(templates = athleteTemplates) {
+  for (const g of Object.values(templates || {})) {
+    g.maps?.dispose();
+    g.scene?.traverse(o => {
+      if (o.isMesh) {
+        o.geometry?.dispose();
+        o.material?.dispose?.();
+      }
+    });
+  }
+  if (templates === athleteTemplates) athleteTemplates = athleteLoading = null;
 }
 
 /* The locker-room lettering for one side of the jersey, transparent round the letters, in the same layout and colours as
@@ -345,8 +364,9 @@ export function kitLettering(kitKey, side, number, name) {
 
 /* template = a loaded glTF (public/models/players/<variant>.glb). Bones rest unrotated, so the Arena's hip/knee/shoulder/elbow
    swings work exactly as on the classic figure; legs and arms are listed in the same order (x<0 side first).
-   Geometry stays shared with the template (only materials and decals belong to the body). */
-export function athleteBody(template, kit, i, color, variant, look = lookFor(i)) {
+   Geometry stays shared with the template (only materials and decals belong to the body).
+   level: the graphics level the body starts at ('medium' / 'high' put the baked detail maps on; setDetail changes it). */
+export function athleteBody(template, kit, i, color, variant, look = lookFor(i), { level = null } = {}) {
   const root = cloneSkinned(template.scene),
     bones = {},
     objs = {};
@@ -474,9 +494,38 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i))
       const c = new THREE.Color(hex);
       return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
     };
+  // baked detail maps (src/playerMaps.js), shared with every body of this variant: on Medium and High, off on the far mesh
+  const store = template.maps || null,
+    detail = { level, lod: 0 },
+    body = {};
+  const applyMaps = () => {
+    const on = !!store && mapsOn(detail.level) && detail.lod === 0;
+    for (const [key, m] of Object.entries(pick)) {
+      const atlas = ATLAS_OF[key];
+      let tex = on ? store.get(atlas, detail.level) : null;
+      if (on && !tex) {
+        const want = detail.level;
+        store.request(atlas, want).then(t => {
+          if (t && !body.disposed && detail.level === want && detail.lod === 0)
+            setMaterialMaps(m, t, want, atlas);
+        });
+        tex = m.normalMap; // keep what it has (the other size) until the new one lands
+      }
+      setMaterialMaps(m, tex, detail.level, atlas);
+    }
+  };
+  const setDetail = lvl => {
+    detail.level = lvl;
+    applyMaps();
+  };
   const setLod = level => {
     for (const m of lodMeshes) if (m.parent) m.geometry = m.userData.lods[level ? 1 : 0];
+    if (detail.lod !== (level ? 1 : 0)) {
+      detail.lod = level ? 1 : 0;
+      applyMaps();
+    }
   };
+  applyMaps();
   // the team's locker-room design (kit lettering front and back), made on first use; visitors keep the plain number and name
   // Lettering is printed into the jersey fabric (projected in the rest pose by the jersey's shader), so it moves and folds
   // with the jersey and never sinks into the chest. The Kangs wear their locker-room design; visitors a plain number and name.
@@ -516,7 +565,7 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i))
     }
     U.kPrintOn.value = 1;
   };
-  return {
+  return Object.assign(body, {
     root,
     bones,
     parts: { jersey, head: objs.head_mesh, hair, number, nameplate, capBadge, legs, arms },
@@ -528,6 +577,7 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i))
     sharedGeometry: true,
     setLettering,
     setLod,
+    setDetail,
     lodMeshes,
-  };
+  });
 }

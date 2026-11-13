@@ -105,6 +105,28 @@ vec3 kPerturb(vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDir){
  vec3 vGrad = sign(fDet) * (dHdxy.x * R1 + dHdxy.y * R2);
  return normalize(abs(fDet) * surf_norm - vGrad);
 }`;
+/* Baked detail maps (src/playerMaps.js) hold the normal in RGB and the ambient occlusion in A of one texture, which is both
+   normalMap and aoMap; three's aomap_fragment reads R, so every athlete material reads A instead. kAoFade (0..1) lets the
+   painted face take over from the baked AO where it already paints the shadows. */
+const AO_ALPHA = THREE.ShaderChunk.aomap_fragment.replace(
+  'float ambientOcclusion = ( texture2D( aoMap, vAoMapUv ).r - 1.0 ) * aoMapIntensity + 1.0;',
+  'float ambientOcclusion = ( texture2D( aoMap, vAoMapUv ).a - 1.0 ) * aoMapIntensity * ( 1.0 - kAoFade ) + 1.0;',
+);
+const FACE_AO_FADE = 0.8; // how much of the baked AO the painted face replaces
+const aoAlpha = frag =>
+  frag
+    .replace('#include <map_fragment>', '#include <map_fragment>\n float kAoFade = 0.0;')
+    .replace('#include <aomap_fragment>', AO_ALPHA);
+/* For materials without the detail patch (shoes, sole): only the AO-in-alpha read. */
+function withAoAlpha(material) {
+  material.onBeforeCompile = shader => {
+    shader.fragmentShader = aoAlpha(shader.fragmentShader);
+  };
+  material.customProgramCacheKey = () => 'kangs-ao-alpha';
+  return material;
+}
+/* strands: the hair's anisotropic highlight runs along the head's up direction (as it did on the old cylindrical UVs). The
+   GLB's tangents now follow the atlas charts, which point anywhere, so the direction is the skinned rest-pose up instead. */
 /* inflate (game units): clothing is pushed out along its normals after skinning starts, so the skin under it never pokes
    through when joints bend (the rest-pose gap is only about a centimetre). */
 /* print: lettering printed into the fabric. Two textures (front and back) projected in the rest pose, so the print moves
@@ -121,6 +143,7 @@ function patch(
     face = null,
     inflate = 0,
     print = false,
+    strands = false,
   } = {},
 ) {
   if (print)
@@ -150,7 +173,22 @@ function patch(
       });
     if (print) Object.assign(shader.uniforms, material.userData.print);
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vKRest; varying vec3 vKRestN;')
+      .replace(
+        '#include <common>',
+        '#include <common>\nvarying vec3 vKRest; varying vec3 vKRestN;' +
+          (strands ? ' varying vec3 vKUp;' : ''),
+      )
+      .replace(
+        '#include <skinnormal_vertex>',
+        strands
+          ? `#include <skinnormal_vertex>
+ vec3 kUp = vec3(0.0, 1.0, 0.0);
+ #ifdef USE_SKINNING
+  kUp = (skinMatrix * vec4(kUp, 0.0)).xyz;
+ #endif
+ vKUp = normalize((modelViewMatrix * vec4(kUp, 0.0)).xyz);`
+          : '#include <skinnormal_vertex>',
+      )
       .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\nvKRestN = objectNormal;')
       .replace(
         '#include <begin_vertex>',
@@ -162,6 +200,7 @@ function patch(
         '#include <common>',
         '#include <common>\n' +
           PARS +
+          (strands ? '\nvarying vec3 vKUp;' : '') +
           (face ? '\nuniform sampler2D kFaceMap; uniform vec3 kFaceCenter; uniform vec2 kFaceSize;' : '') +
           (print
             ? '\nuniform sampler2D kPrintF; uniform sampler2D kPrintB; uniform vec2 kPrintFC; uniform vec2 kPrintBC; uniform vec2 kPrintSize; uniform float kPrintMinY; uniform float kPrintOn;'
@@ -191,6 +230,8 @@ function patch(
   float inFront = step(kFaceCenter.z - 0.12, vKRest.z);
   float front = smoothstep(0.15, 0.55, fn.z) * inFront, down = smoothstep(0.3, 0.75, -fn.y) * inFront;
   if (front + down > 0.0 && fuv.x > 0.0 && fuv.x < 1.0 && fuv.y > 0.0 && fuv.y < 1.0) {
+   float edge = smoothstep(0.0, 0.15, fuv.x) * smoothstep(1.0, 0.85, fuv.x) * smoothstep(0.0, 0.12, fuv.y) * smoothstep(1.0, 0.88, fuv.y);
+   kAoFade = ${FACE_AO_FADE.toFixed(2)} * clamp(front + down, 0.0, 1.0) * edge;
    vec4 f = texture2D(kFaceMap, vec2(fuv.x, 0.5 + fuv.y * 0.5));
    diffuseColor.rgb = mix(diffuseColor.rgb, f.rgb, f.a * front);
    vec4 d = texture2D(kFaceMap, vec2(fuv.x, fuv.y * 0.5));
@@ -212,6 +253,22 @@ function patch(
   if (bm > 0.0) { vec4 f = texture2D(kPrintB, bu); diffuseColor.rgb = mix(diffuseColor.rgb, f.rgb, f.a * bm); }
  }`,
       );
+    if (strands)
+      frag = frag.replace(
+        '#include <lights_physical_fragment>',
+        `#include <lights_physical_fragment>
+ #ifdef USE_ANISOTROPY
+ {
+  vec3 kB = vKUp - normal * dot(vKUp, normal);
+  kB = dot(kB, kB) > 1e-6 ? normalize(kB) : normalize(cross(normal, vec3(1.0, 0.0, 0.0)));
+  vec3 kT = normalize(cross(kB, normal));
+  vec2 kA = anisotropyVector / max(length(anisotropyVector), 1e-4);
+  material.anisotropyT = kT * kA.x + kB * kA.y;
+  material.anisotropyB = kB * kA.x - kT * kA.y;
+ }
+ #endif`,
+      );
+    frag = aoAlpha(frag);
     if (wrap > 0)
       frag = frag.replace(
         '#include <lights_fragment_end>',
@@ -227,7 +284,7 @@ function patch(
     shader.fragmentShader = frag;
   };
   material.customProgramCacheKey = () =>
-    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}`;
+    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}-${strands ? 1 : 0}`;
   return material;
 }
 
@@ -266,14 +323,17 @@ export function clothMaterial(color) {
 }
 // Shoes: smooth leather-like upper with a little gloss; matte rubber sole.
 export const shoeMaterial = color =>
-  new THREE.MeshPhysicalMaterial({
-    color,
-    roughness: 0.36,
-    clearcoat: 0.55,
-    clearcoatRoughness: 0.22,
-    name: 'shoes',
-  });
-export const soleMaterial = color => new THREE.MeshStandardMaterial({ color, roughness: 0.75, name: 'sole' });
+  withAoAlpha(
+    new THREE.MeshPhysicalMaterial({
+      color,
+      roughness: 0.36,
+      clearcoat: 0.55,
+      clearcoatRoughness: 0.22,
+      name: 'shoes',
+    }),
+  );
+export const soleMaterial = color =>
+  withAoAlpha(new THREE.MeshStandardMaterial({ color, roughness: 0.75, name: 'sole' }));
 // Hair: soft highlight that runs round the head (anisotropic), fine strands.
 export function hairMaterial(color) {
   return patch(
@@ -286,7 +346,7 @@ export function hairMaterial(color) {
       sheenColor: new THREE.Color(0.35, 0.3, 0.28),
       name: 'hair',
     }),
-    { map: MAPS.strands(), scale: 14, bump: 0.8, fadeFar: 6 },
+    { map: MAPS.strands(), scale: 14, bump: 0.8, fadeFar: 6, strands: true },
   );
 }
 // Sleeves and headband: compression fabric, smoother and a touch shinier than the jersey.

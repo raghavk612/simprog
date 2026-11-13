@@ -214,12 +214,18 @@ def bake_part(group, P0):
 
 OCCLUDERS = ('core', 'arm_L', 'arm_R', 'jersey', 'shorts', 'shoes')
 
+STILL = ('core', 'jersey', 'shorts', 'shoes')   # what stays put relative to itself in every pose
+
 def ao_parts(part):
-    """What occludes a texel of `part` (the part itself with its detail, for cavity AO). A hand only by itself and its
-    forearm (it is posed anywhere in the game, not at the thigh); a sneaker by both sneakers and the leg above them."""
+    """What occludes a texel of `part` (the part itself with its detail, for cavity AO). The arms and hands swing freely in
+    the game, so they occlude only themselves: baked from the rest pose they would print an arm and a hand on the shorts
+    and the jersey's sides, and darken the inside of the arm against the torso, whatever the pose (GTAO adds the contact
+    shadows that really are there on High). A sneaker is occluded by both sneakers and the leg above them."""
     if part.startswith('hand_'): return (part, 'arm_' + part[-1])
-    if part.startswith('shoe_'): return ('legs', 'arm_L', 'arm_R', 'jersey', 'shorts', 'shoe_L', 'shoe_R')
-    return OCCLUDERS + (() if part in OCCLUDERS else (part,))
+    if part in ('arm_L', 'arm_R'): return (part, 'jersey')
+    if part == 'sleeve_arm': return ('arm_R', 'jersey', part)
+    if part.startswith('shoe_'): return ('legs', 'jersey', 'shorts', 'shoe_L', 'shoe_R')
+    return STILL + (() if part in STILL else (part,))
 
 
 # --- worker pool ----------------------------------------------------------------------------------------------------------
