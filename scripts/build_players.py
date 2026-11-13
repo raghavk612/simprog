@@ -536,7 +536,9 @@ def build_variant(name, spec, objpath, do_bake=False, jobs=None, log=print):
     lay = layout(geo, log)
     import atlas_bake
     if do_bake:   # stage 3: normal + AO maps from the high-detail SDF, in the tangent frames written below
-        atlas_bake.bake(name, geo['P'], geo['N'], geo['G'], lay, geo['trim_tubes'], jobs=jobs, log=log)
+        stats = atlas_bake.bake(name, geo['P'], geo['N'], geo['G'], lay, geo['trim_tubes'], jobs=jobs, log=log)
+        with open(os.path.join(SRC, 'bake', 'out', 'kangs_%s_atlas_bake.json' % name), 'w') as fh:   # timings, density, misses
+            json.dump(stats, fh, indent=1); fh.write('\n')
     elif atlas_bake.manifest().get(name, {}).get('uvHash') != lay.uv_hash():
         log('  WARNING: %s: the maps in public/models/players/maps were baked for another UV layout; run with --bake' % name)
     JI, JW = rig(geo)   # stage 4

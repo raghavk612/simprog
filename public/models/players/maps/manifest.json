@@ -1,0 +1,53 @@
+{
+ "center": {
+  "files": {
+   "center_gear.png": 1408992,
+   "center_kit.png": 790243,
+   "center_skin.png": 2021313,
+   "center_skin_1k.png": 812982
+  },
+  "sizes": {
+   "gear": 1024,
+   "kit": 1024,
+   "skin": 2048
+  },
+  "small": {
+   "skin": 1024
+  },
+  "uvHash": "728d674f854fbdcc"
+ },
+ "forward": {
+  "files": {
+   "forward_gear.png": 1397151,
+   "forward_kit.png": 811960,
+   "forward_skin.png": 2034729,
+   "forward_skin_1k.png": 820062
+  },
+  "sizes": {
+   "gear": 1024,
+   "kit": 1024,
+   "skin": 2048
+  },
+  "small": {
+   "skin": 1024
+  },
+  "uvHash": "6975e5506569ae75"
+ },
+ "guard": {
+  "files": {
+   "guard_gear.png": 1412085,
+   "guard_kit.png": 812562,
+   "guard_skin.png": 2078857,
+   "guard_skin_1k.png": 829109
+  },
+  "sizes": {
+   "gear": 1024,
+   "kit": 1024,
+   "skin": 2048
+  },
+  "small": {
+   "skin": 1024
+  },
+  "uvHash": "0c005c2e1969f41d"
+ }
+}

@@ -339,7 +339,14 @@ def bake(variant, P, N, G, layout, trim_tubes=None, out=MAPS, jobs=None, use_det
         facing = (n_hi * N0).sum(1)
         bad = ~ok_hit | (facing < MIN_FACING)
         n_use = np.where(bad[:, None], N0, n_hi)
-        rgb = raster.to_rgb8(raster.encode(n_use, r['T'], r['B'], N0))
+        # a sliver texel whose interpolated frame is degenerate (T, B, N nearly coplanar) gets the flat (0, 0, 1), which
+        # three decodes to the vertex normal whatever the frame
+        Tt, Bt = r['T'].copy(), r['B'].copy()
+        det = np.linalg.det(np.stack([raster._unit(Tt), raster._unit(Bt), N0], -1))
+        flat = np.abs(det) < 1e-3
+        if flat.any():
+            Tt[flat], Bt[flat] = proto.frame(N0[flat]); n_use[flat] = N0[flat]
+        rgb = raster.to_rgb8(raster.encode(n_use, Tt, Bt, N0))
         img = np.zeros((size, size, 3), np.uint8); img[:] = (128, 128, 255); img[r['mask']] = rgb
         img = raster.dilate(img, r['mask'])
         a = R[name]['ao']; s2 = slice(cut2[k], cut2[k + 1]); sz = size // AO_DIV
@@ -355,6 +362,7 @@ def bake(variant, P, N, G, layout, trim_tubes=None, out=MAPS, jobs=None, use_det
         stats['atlases'][name] = {
             'px': size, 'texels': int(r['mask'].sum()), 'coverage': round(float(r['mask'].mean()), 3),
             'search_miss': round(float((~ok_hit).mean()), 5), 'flat_fallback': round(float(bad.mean()), 5),
+            'degenerate_frames': int(flat.sum()),
             'offset_mm_p50_p99': [round(float(np.percentile(np.abs(tt[s][vis]) * 1000, q)), 2) for q in (50, 99)],
             'deviation_deg_p50_p99': [round(float(np.percentile(np.degrees(np.arccos(np.clip(facing, -1, 1))), q)), 2) for q in (50, 99)],
             'ao_px': sz, 'ao_mean_p5_p50': [round(float(x), 3) for x in (ao[s2].mean(), np.percentile(ao[s2], 5), np.percentile(ao[s2], 50))],
