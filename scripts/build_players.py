@@ -17,6 +17,10 @@ What is in each .glb (one scene, game units, y up, +z forward, feet at y=0):
     half-widths as fractions of its width), measured on the head SDF (assets-src/players/head_landmarks.py)
   * head rig: the head joint sits at the top of the spine, head-local (0, -35, -10) mm, the neck joint at the base of the
     neck; the head mesh is the fine Houdini head piece (above the H2 seam plane) and moves rigidly above the jaw line
+  * hands, sneakers and the afro are not Houdini's: they come from assets-src/players/cloudmesh (SDFs meshed here; needs
+    scikit-image and fast-simplification). The Houdini shoes and afro groups are replaced, the paddle hand is cut off and
+    the forearm reshaped into the new wrist, and faces buried inside another part (feet in the shoes, the short-hair caps
+    and the afro's cut inside the skull, the headband's cut caps) are dropped
 """
 import json, math, os, struct, sys
 import numpy as np
@@ -25,6 +29,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, 'assets-src', 'players')
 OUT = os.path.join(ROOT, 'public', 'models', 'players')
 UNITS_PER_M = 0.3306 / 0.3048  # the court is drawn at 0.3306 units per foot
+BURIED = .0015   # a face whose corners and centroid all lie this far inside another part is never seen (bake/mesh_uv.py)
 
 BONES = [  # name, parent, joint key in body_shapes.json
     ('pelvis', None, 'pelvis'), ('spine', 'pelvis', 'spine'), ('chest', 'spine', 'chest'), ('neck', 'chest', 'neck'), ('head', 'neck', 'head'),
@@ -36,7 +41,10 @@ BI = {b[0]: i for i, b in enumerate(BONES)}
 # Clothing and hair from Houdini (OBJ group -> body part its skin weights are copied from, material).
 GARMENTS = {'jersey': ('core', 'kit'), 'shorts': ('core', 'kit'), 'shoes': ('core', 'shoes'),
             'hair_buzz': ('core', 'hair'), 'hair_crop': ('core', 'hair'), 'hair_afro': ('core', 'hair'), 'hair_rows': ('core', 'hair'),
-            'headband': ('core', 'band'), 'sleeve_arm': ('arm_R', 'sleeve'), 'sleeve_leg': ('core', 'sleeve')}
+            'headband': ('core', 'band'), 'sleeve_arm': ('arm_R', 'sleeve'), 'sleeve_leg': ('core', 'sleeve'),
+            'shoes_sole': ('core', 'sole')}   # the sneaker's midsole: drawn in the shoes mesh with the sole material
+CLOUD = ('shoe_L', 'shoe_R', 'hair_afro')   # cloud-meshed parts that replace an OBJ group (the hands come after the rig)
+REPLACED = ('shoes', 'hair_afro')
 
 def read_obj(path):
     v, vt, vn, faces, group = [], [], [], [], ''
@@ -119,44 +127,43 @@ def chain_weights(P, joints_xyz, bones, widths):
         W[:, i - 1] *= (1 - w)
     return W
 
-def blob(center, ax, ay, az, ra, rb, rc, segs=8, rings=6, e=.7):
-    """A rounded box / ellipsoid (superellipsoid with exponent e) along the unit axes ax (length ra), ay (rb), az (rc).
-    Returns points, normals and triangles (local indices)."""
-    pts, nrms, tris = [], [], []
-    f = lambda w, m: np.sign(w) * np.abs(w) ** m
-    for i in range(rings + 1):
-        v = -np.pi / 2 + np.pi * i / rings
-        for j in range(segs):
-            u = 2 * np.pi * j / segs
-            cv, sv, cu, su = np.cos(v), np.sin(v), np.cos(u), np.sin(u)
-            x, y, z = f(sv, e) * ra, f(cv, e) * f(cu, e) * rb, f(cv, e) * f(su, e) * rc
-            nx, ny, nz = f(sv, 2 - e) / ra, f(cv, 2 - e) * f(cu, 2 - e) / rb, f(cv, 2 - e) * f(su, 2 - e) / rc
-            pts.append(center + ax * x + ay * y + az * z)
-            nv = ax * nx + ay * ny + az * nz; nrms.append(nv / max(np.linalg.norm(nv), 1e-9))
-    for i in range(rings):
-        for j in range(segs):
-            a, b = i * segs + j, i * segs + (j + 1) % segs
-            c, d = a + segs, b + segs
-            tris += [(a, c, b), (b, c, d)]
-    return np.array(pts), np.array(nrms), tris
+def cloud():
+    if SRC not in sys.path: sys.path.insert(0, SRC)
+    import cloudmesh
+    return cloudmesh
 
-def hand_parts(J, side, H):
-    """A relaxed hand hanging from the wrist: palm, four slightly curled fingers and a thumb (metres).
-    Palms face the body, thumbs point forward, as in the rest pose."""
-    W = J['wrist_' + side]; down = J['hand_end_' + side] - W; down /= np.linalg.norm(down)
-    inward = np.array([-1.0 if side == 'L' else 1.0, 0, 0]); inward -= down * (inward @ down); inward /= np.linalg.norm(inward)
-    fwd = np.cross(down, inward); fwd *= np.sign(fwd[2]) if fwd[2] else 1
-    unit = lambda v: v / np.linalg.norm(v)
-    # palm: starts inside the end of the forearm so the wrist blends, a little thicker at the heel of the hand
-    parts = [blob(W + down * .032 * H, down, fwd, inward, .042 * H, .0215 * H, .0122 * H, 10, 8, .6)]
-    for k, (off, length) in enumerate(((.0126, .038), (.0042, .042), (-.0042, .04), (-.0124, .032))):
-        curl = .36 + .025 * k                     # fingers side by side, curling gently toward the palm
-        axis = unit(down * np.cos(curl) + inward * np.sin(curl))
-        base = W + down * .064 * H + fwd * off * H + inward * .003 * H
-        parts.append(blob(base + axis * length * H * .5, axis, fwd, np.cross(axis, fwd), length * H * .5, .0047 * H, .0056 * H, 8, 6, .85))
-    taxis = unit(down * .8 + fwd * .35 + inward * .5)   # thumb along the front of the palm, tip toward the fingers
-    parts.append(blob(W + down * .024 * H + fwd * .017 * H + inward * .006 * H + taxis * .02 * H, taxis, fwd, np.cross(taxis, fwd), .022 * H, .006 * H, .0064 * H, 8, 6, .8))
-    return parts
+def reshape_wrists(P, N, G, variant):
+    """The Houdini forearm swells into a paddle hand past the wrist. Its vertices from cloudmesh.ARM_BLEND on are moved onto
+    cloudmesh.arm_sdf (the forearm blending into the anatomical wrist by the joint), sunk cloudmesh.arm_inset under where
+    the hand will be, with normals from the same SDF (Newton steps along the gradient)."""
+    cm = cloud(); H = cm._v(variant)['height_m']
+    for side in ('L', 'R'):
+        o, R = cm.part_frame(variant, 'hand_' + side)
+        m = np.where((G == 'arm_' + side) & (((P - o) @ R[:, 1]) > cm.ARM_BLEND * H))[0]
+        if not len(m): continue
+        f = lambda X: cm.arm_sdf(variant, side, X) + cm.arm_inset(variant, side, X)
+        X = P[m].copy()
+        for _ in range(6):
+            d = f(X); g = np.zeros_like(X); e = 1e-4
+            for k in range(3):
+                dx = np.zeros(3); dx[k] = e; g[:, k] = (f(X + dx) - f(X - dx)) / (2 * e)
+            X = X - g * (d / np.maximum((g * g).sum(1), 1e-9))[:, None]
+        P[m] = X; N[m] = g / np.maximum(np.linalg.norm(g, axis=1, keepdims=True), 1e-9)
+    return P, N
+
+def buried(P, tris, rules):
+    """Triangles (indices into tris) whose corners and centroid all lie more than BURIED inside another part. rules: group ->
+    function giving the other parts' SDF at points (n x 3)."""
+    out = set()
+    for g, sdf in rules.items():
+        ids = [ti for ti, (tri, gg) in enumerate(tris) if gg == g]
+        if not ids: continue
+        T = np.array([tris[ti][0] for ti in ids]); C = P[T].mean(1)
+        d = sdf(np.vstack([P[T].reshape(-1, 3), C]))
+        inside = d < -BURIED
+        hit = inside[:3 * len(ids)].reshape(-1, 3).all(1) & inside[3 * len(ids):]
+        out |= {ids[k] for k in np.where(hit)[0]}
+    return out
 
 def covered_body(P, N, G, tris, H, neck_y, gone=()):
     """Skin vertices hidden under the jersey or shorts: fabric lies directly over them (within a few centimetres along the
@@ -354,9 +361,28 @@ def build_variant(name, spec, objpath):
     P = np.array([pos[k[0]] for k in verts])
     N = np.array([k[2] if isinstance(k[2], tuple) else [0, 1, 0] for k in verts], float); N /= np.linalg.norm(N, axis=1, keepdims=True)
     UV = np.array([uv[k[1]] if uv is not None and k[1] >= 0 else [0, 0] for k in verts])
-    G = np.array(groups)
-    # clean openings: cut the jersey and shorts along smooth neckline, armhole, hem and waistband shapes
-    P, N, UV, G, tris = clip_openings(P, N, UV, G, tris, opening_shapes(H, v['shoulder']))
+    G = np.array(groups, dtype=object)
+    cm = cloud()
+    # the sneakers and the afro are cloud-meshed (cloudmesh): their Houdini groups go, the new meshes come in under the same
+    # group names (the midsole as 'shoes_sole') and take their skin weights from the body under them like any garment
+    tris = [(t, g) for t, g in tris if g not in REPLACED]
+    for part in CLOUD:
+        m = cm.part_mesh(name, part); base = len(P)
+        gname = np.where(m['mat'] == 'sole', 'shoes_sole', m['group'])
+        vg = np.full(len(m['V']), m['group'], dtype=object)
+        for f, gg in zip(m['F'], gname): vg[f] = gg
+        P = np.vstack([P, m['V']]); N = np.vstack([N, m['N']]); UV = np.vstack([UV, np.zeros((len(m['V']), 2))])
+        G = np.concatenate([G, vg])
+        tris += [([base + int(a), base + int(b), base + int(c)], str(gg)) for (a, b, c), gg in zip(m['F'], gname)]
+    G = G.astype(str)
+    # the forearm ends in the new wrist, and is cut cleanly just past the joint, where the hand takes over
+    P, N = reshape_wrists(P, N, G, name)
+    shapes = opening_shapes(H, v['shoulder'])
+    for side in ('L', 'R'):
+        o, R = cm.part_frame(name, 'hand_' + side)
+        shapes['arm_' + side] = [lambda p, o=o, ax=R[:, 1]: cm.ARM_CUT * H - (p - o) @ ax]
+    # clean openings: cut the jersey and shorts along smooth neckline, armhole, hem and waistband shapes, the arms at the hand
+    P, N, UV, G, tris = clip_openings(P, N, UV, G, tris, shapes)
 
     W = np.zeros((len(P), len(BONES)))
     # arms: chest > shoulder > elbow > wrist
@@ -425,19 +451,25 @@ def build_variant(name, spec, objpath):
         UV[m, 0] = np.arctan2(P[m, 0] - c[0], P[m, 2] - c[2]) / (2 * np.pi) + .5
         UV[m, 1] = P[m, 1] / H * 4
 
-    # hands: the Houdini hand is a thin rounded paddle; replace it with a modelled hand (palm, fingers, thumb) on the wrist
-    drop = set()
+    # hands: the anatomical cloud-meshed hand (palm, fingers, thumb), rigid on the wrist bone, over the end of the forearm
     for side in ('L', 'R'):
-        wr = J['wrist_' + side]; ax = J['hand_end_' + side] - wr; ax /= np.linalg.norm(ax)
-        beyond = ((P - wr) @ ax > .02 * H) & (G == 'arm_' + side)   # keep the end of the forearm; the palm covers it
-        for ti, (tri, g) in enumerate(tris):
-            if g == 'arm_' + side and beyond[tri].all(): drop.add(ti)
-        for pts, nrms, ptris in hand_parts(J, side, H):
-            base = len(P)
-            P = np.vstack([P, pts]); N = np.vstack([N, nrms]); UV = np.vstack([UV, np.zeros((len(pts), 2))])
-            JI = np.vstack([JI, np.tile([BI['wrist_' + side], 0, 0, 0], (len(pts), 1))]); JW = np.vstack([JW, np.tile([1.0, 0, 0, 0], (len(pts), 1))])
-            G = np.concatenate([G, np.array(['hand_' + side] * len(pts))])
-            tris += [([base + a, base + b, base + c], 'hand_' + side) for a, b, c in ptris]
+        m = cm.part_mesh(name, 'hand_' + side); base = len(P); n = len(m['V'])
+        P = np.vstack([P, m['V']]); N = np.vstack([N, m['N']]); UV = np.vstack([UV, np.zeros((n, 2))])
+        JI = np.vstack([JI, np.tile([BI[m['weight']], 0, 0, 0], (n, 1))]); JW = np.vstack([JW, np.tile([1.0, 0, 0, 0], (n, 1))])
+        G = np.concatenate([G, np.array([m['group']] * n)])
+        tris += [([base + int(a), base + int(b), base + int(c)], m['group']) for a, b, c in m['F']]
+    # faces nobody sees: the feet inside the shoes, the short-hair caps and the afro's cut inside the skull, the headband's
+    # cut caps, the hand's cap inside the forearm and the forearm's end under the hand
+    low = np.where(P[:, 1] < .2 * H)[0]; covered = np.zeros(len(P), bool); covered[low] = cm.shoe_covers(name, P[low])
+    drop = {ti for ti, (tri, g) in enumerate(tris) if g == 'core' and covered[tri].all()}
+    if os.path.join(SRC, 'bake') not in sys.path: sys.path.insert(0, os.path.join(SRC, 'bake'))
+    import sdf_hi
+    S = sdf_hi.PlayerSDF(spec, name)
+    rules = {g: S.core for g in ('hair_buzz', 'hair_crop', 'hair_rows', 'hair_afro', 'headband')}
+    for side in ('L', 'R'):
+        rules['hand_' + side] = lambda X, side=side: cm.arm_sdf(name, side, X)
+        rules['arm_' + side] = lambda X, side=side: cm.hand_sdf(name, side, X)
+    drop |= buried(P, tris, rules)
     # skin hidden under the jersey and shorts is removed (no poke-through, fewer triangles)
     drop |= inside_body(P, N, G, tris, H)
     hidden = covered_body(P, N, G, tris, H, .81 * H, drop)   # skin below the old neck height only (the collar stays)
@@ -457,12 +489,9 @@ def build_variant(name, spec, objpath):
     def region(tri, g):
         if g == 'trim': return ('trim', 'trim')
         c = P[tri].mean(0)
-        if g in GARMENTS:
-            mat = GARMENTS[g][1]
-            if g == 'shoes' and c[1] < y(.011): mat = 'sole'
-            return (g, mat)
+        if g == 'shoes_sole': return ('shoes', 'sole')
+        if g in GARMENTS: return (g, GARMENTS[g][1])
         if g == 'core' and above_seam(head_local(c, v)): return ('head', 'skin')   # the fine Houdini head piece
-        if g == 'core' and c[1] < y(.07) and 'shoes' in GARMENTS and (G == 'shoes').any(): return (None, None)  # feet are inside the shoes
         return ('body', 'skin')
     meshes = {}
     for tri, g in tris:
