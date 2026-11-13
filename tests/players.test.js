@@ -333,9 +333,8 @@ test('looks: the same player always gets the same hair and options, and players 
 test('athlete hands: rigid on the wrist, and the fingers stay off the ball when dribbling, holding and shooting', async () => {
   // the game's own animation (motion.js animateAthlete) with the ball where the Arena puts it; the hand is skinned to the
   // wrist bone only, so its vertices are found by weight. The rule (motion.js): wrist at ball radius .13 + .07 from the centre.
-  const { loadBody, drive, POSES, BALL_RADIUS } = await import(
-    '../assets-src/players/cloudmesh/ball_samples.mjs'
-  );
+  const { loadBody, drive, POSES, BALL_RADIUS } =
+    await import('../assets-src/players/cloudmesh/ball_samples.mjs');
   const { BODY_VARIANTS } = await import('../src/players.js');
   for (const v of BODY_VARIANTS) {
     const { body, player } = await loadBody(v);

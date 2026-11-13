@@ -214,11 +214,12 @@ def _hand_target(variant):
 
 @functools.lru_cache(maxsize=None)
 def _hand_part(variant):
-    """The hand without its cap and dive inside the forearm (faces buried in arm_sdf)."""
-    o, R = part_frame(variant, 'hand_L')
+    """The hand without its cap and dive inside the forearm (faces buried in arm_sdf). Normals are the anatomical hand's
+    (without the dive), the same field the forearm's reshaped end takes its normals from, so the seam does not shade."""
+    o, R = part_frame(variant, 'hand_L'); H = _v(variant)['height_m']
     V, F, N = _hand_local_mesh(variant, _hand_target(variant))
     keep = ~buried_mask(V, F, lambda Q: arm_sdf(variant, 'L', to_world(Q, o, R)))
-    return V, F[keep], N
+    return V, F[keep], gradient(lambda Q: hand.hand_local_sdf(Q, H), V)
 
 
 @functools.lru_cache(maxsize=None)

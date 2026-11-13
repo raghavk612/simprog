@@ -29,7 +29,12 @@ export async function loadBody(v) {
   const gltf = await new Promise((res, rej) =>
     new GLTFLoader().parse(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), '', res, rej),
   );
-  const body = athleteBody(gltf, kit, 3, 0x6832ab, v, { hair: 'buzz', headband: false, armSleeve: false, legSleeve: false });
+  const body = athleteBody(gltf, kit, 3, 0x6832ab, v, {
+    hair: 'buzz',
+    headband: false,
+    armSleeve: false,
+    legSleeve: false,
+  });
   const player = new THREE.Group();
   attachBody(player, body);
   return { body, player };
@@ -42,16 +47,20 @@ export function drive(player, pose, visit, frames = 240) {
     const t = f / 60,
       d = dribbleAt(t / DRIBBLE.period),
       ball = POSES[pose](t, d);
-    animateAthlete(player, { arms: ARMS[pose], y: 0 }, {
-      dt: 1 / 60,
-      motion: true,
-      ball: ball.clone(),
-      ballRadius: BALL_RADIUS,
-      holder: true,
-      dribbleHand: d.hand,
-      dribble: d,
-      family: '',
-    });
+    animateAthlete(
+      player,
+      { arms: ARMS[pose], y: 0 },
+      {
+        dt: 1 / 60,
+        motion: true,
+        ball: ball.clone(),
+        ballRadius: BALL_RADIUS,
+        holder: true,
+        dribbleHand: d.hand,
+        dribble: d,
+        family: '',
+      },
+    );
     if (f >= 60) {
       player.updateMatrixWorld(true);
       visit(ball, t);

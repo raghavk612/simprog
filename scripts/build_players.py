@@ -135,8 +135,14 @@ def cloud():
 def reshape_wrists(P, N, G, variant):
     """The Houdini forearm swells into a paddle hand past the wrist. Its vertices from cloudmesh.ARM_BLEND on are moved onto
     cloudmesh.arm_sdf (the forearm blending into the anatomical wrist by the joint), sunk cloudmesh.arm_inset under where
-    the hand will be, with normals from the same SDF (Newton steps along the gradient)."""
+    the hand will be (Newton steps along the gradient), with normals from arm_sdf without the inset: the field the hand's
+    normals come from, so the seam where the hand comes out from under the forearm does not shade."""
     cm = cloud(); H = cm._v(variant)['height_m']
+    def grad(f, X, e=1e-4):
+        g = np.zeros_like(X)
+        for k in range(3):
+            dx = np.zeros(3); dx[k] = e; g[:, k] = (f(X + dx) - f(X - dx)) / (2 * e)
+        return g
     for side in ('L', 'R'):
         o, R = cm.part_frame(variant, 'hand_' + side)
         m = np.where((G == 'arm_' + side) & (((P - o) @ R[:, 1]) > cm.ARM_BLEND * H))[0]
@@ -144,10 +150,9 @@ def reshape_wrists(P, N, G, variant):
         f = lambda X: cm.arm_sdf(variant, side, X) + cm.arm_inset(variant, side, X)
         X = P[m].copy()
         for _ in range(6):
-            d = f(X); g = np.zeros_like(X); e = 1e-4
-            for k in range(3):
-                dx = np.zeros(3); dx[k] = e; g[:, k] = (f(X + dx) - f(X - dx)) / (2 * e)
+            d = f(X); g = grad(f, X)
             X = X - g * (d / np.maximum((g * g).sum(1), 1e-9))[:, None]
+        g = grad(lambda Y: cm.arm_sdf(variant, side, Y), X)
         P[m] = X; N[m] = g / np.maximum(np.linalg.norm(g, axis=1, keepdims=True), 1e-9)
     return P, N
 
