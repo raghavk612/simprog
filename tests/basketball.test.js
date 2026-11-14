@@ -181,3 +181,38 @@ test('the dribble: hand and ball move together in the push, the ball bounces off
   assert.ok(fastest < 8); // about 19 ft/s at most: a real dribble, no jumps where the phases meet
   assert.ok(Math.abs(dribbleAt(1).ball - dribbleAt(0).ball) < 1e-9);
 });
+test('in-game jump shots use the title jumper form: a real jump, released at its top, hands moving smoothly', () => {
+  for (const kind of ['catch', 'pullup', 'stepback', 'corner', 'fadeaway']) {
+    const c = { team: 'home', kind, lane: 1, contest: 'tight', outcome: 'made', points: 3 },
+      T = shotTiming(kind),
+      dt = 1 / 240;
+    assert.ok(T.jumper, kind);
+    // the shooter is highest at the release, and the jump is a parabola under gravity (hang time from the height)
+    const at = t => sampleClip(c, t * CLIP_SECONDS).actors[0].y;
+    assert.ok(Math.abs(at(T.release) - T.jump) < 1e-6, kind);
+    assert.ok(Math.abs(T.hang * CLIP_SECONDS - 2 * Math.sqrt((2 * T.jump) / BALL.g)) < 1e-9);
+    let prev = null,
+      seen = 0;
+    for (let t = 0; t <= CLIP_SECONDS; t += dt) {
+      const h = sampleClip(c, t).shotHands;
+      if (h) {
+        seen++;
+        if (prev)
+          for (const s of ['R', 'L']) {
+            const d = Math.hypot(...h[s].p.map((v, i) => v - prev[s].p[i]));
+            assert.ok(
+              d < 14 * dt + 1e-3,
+              `${kind} ${s} hand jumps ${d.toFixed(3)} at ${(t / CLIP_SECONDS).toFixed(3)}`,
+            );
+          }
+      }
+      prev = h;
+    }
+    assert.ok(seen > 50, kind);
+  }
+  assert.equal(
+    sampleClip({ team: 'home', kind: 'drive', lane: 1, contest: 'tight', outcome: 'made', points: 2 }, 2)
+      .shotHands,
+    null,
+  );
+});

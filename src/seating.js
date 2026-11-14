@@ -8,10 +8,10 @@ export const RISE = 0.5,
   CAMERA_CLEAR = 0.8;
 /* axis 'z' = a sideline stand (rows step out along z, seats run along x), 'x' = a baseline stand. from/to bound the seats' run; id seeds each seat's look. */
 export const SECTIONS = [
-  { axis: 'z', side: -1, front: 10.2, back: 16, rows: 6, from: -13, to: 13, aisles: [13, 26], id: -1000 },
-  { axis: 'z', side: 1, front: 10.2, back: 16, rows: 6, from: -13, to: 13, aisles: [13, 26], id: 1000 },
-  { axis: 'x', side: 1, front: 16.1, back: 19.5, rows: 4, from: -3.6, to: 9.6, id: 3000 }, // +x: stops short of the office corner, whose camera hangs over z -6
-  { axis: 'x', side: -1, front: 16.1, back: 19.5, rows: 4, from: -3.6, to: 9.6, id: 4000 },
+  { axis: 'z', side: -1, front: 10.3, back: 16, rows: 6, from: -13, to: 13, aisles: [13, 26], id: -1000 },
+  { axis: 'z', side: 1, front: 10.3, back: 16, rows: 6, from: -13, to: 13, aisles: [13, 26], id: 1000 },
+  { axis: 'x', side: 1, front: 16.2, back: 19.5, rows: 4, from: -3.6, to: 9.6, id: 3000 }, // +x: stops short of the office corner, whose camera hangs over z -6
+  { axis: 'x', side: -1, front: 16.2, back: 19.5, rows: 4, from: -3.6, to: 9.6, id: 4000 },
 ]; // -x: the mirror image (the locker camera would see a stand further toward -z); its wall bars, ball rack and cones stand in the near corner past z 10
 /* Stable 0..1 hash per seat number: which seats are empty, each fan's jitter, and (in arena.js) shirt and skin colours. */
 export const hash = n => {
@@ -19,13 +19,19 @@ export const hash = n => {
     return s - Math.floor(s);
   },
   R = hash;
-/* A seated fan's torso and head boxes (the head's box bounds its sphere); baseline fans turn side-on, so their torso box turns with them. */
-export function fanBoxes({ x, y, z, h, axis }) {
-  const t = axis === 'x' ? [0.28, 0.56, 0.42] : [0.42, 0.56, 0.28];
-  return [
-    [...t, x, y + 0.28 + h, z],
-    [0.34, 0.34, 0.34, x, y + 0.75 + h, z],
-  ];
+/* Boxes [w, h, d, x, y, z] that bound a seated fan (src/crowd.js), at the largest a fan is drawn (1.08x) with room for
+   the small turn each fan has: his body and arms, his head and hair (up and leaning toward the court), and his legs, down
+   over the step in front. ry turns him to face the court (axis-aligned: every stand faces along x or z). */
+export function fanBoxes({ x, y, z, h, ry = 0 }) {
+  const fx = Math.round(Math.sin(ry)),
+    fz = Math.round(Math.cos(ry)),
+    // [width across him, height, depth toward the court, centre forward, centre up]
+    parts = [
+      [0.66, 0.86, 0.63, 0.185, 0.37], // body and arms (back 0.13 behind the seat), forearms on the knees
+      [0.36, 0.34, 0.38, 0.08, 0.88], // head and hair (the hair tops out at 1.05)
+      [0.42, 0.8, 0.52, 0.55, -0.17], // shins over the step, feet on the row below (toes reach 0.81)
+    ];
+  return parts.map(([w, hh, d, f, up]) => [fx ? d : w, hh, fx ? w : d, x + fx * f, y + h + up, z + fz * f]);
 }
 /* stations: camera positions [x,y,z] the stands must keep clear; a seat with any part of its fan closer than CAMERA_CLEAR to one stays empty. */
 export function seatLayout(stations = []) {
@@ -62,7 +68,7 @@ export function seatLayout(stations = []) {
         const k = id + r * 50 + i,
           [sx, sz] = put(
             from + off + i * PITCH + (R(k + 0.5) - 0.5) * 0.1,
-            side * (front + r * DEEP + DEEP * 0.55),
+            side * (front + r * DEEP + DEEP * 0.72), // seated toward the back of the step: the legs hang over its front edge
           ),
           s = {
             x: sx,

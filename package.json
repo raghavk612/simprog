@@ -11,7 +11,9 @@
     "players:lods": "node scripts/player_lods.mjs",
     "format": "prettier --write \"src/**/*.{js,css}\" \"tests/*.js\" \"scripts/*.mjs\"",
     "format:check": "prettier --check \"src/**/*.{js,css}\" \"tests/*.js\" \"scripts/*.mjs\"",
-    "check:ui": "node scripts/ui-check.mjs"
+    "check:ui": "node scripts/ui-check.mjs",
+    "moves:check": "node scripts/moves-check.mjs",
+    "moves:sheet": "node scripts/moves-sheet.mjs"
   },
   "dependencies": {
     "three": "^0.180.0"
