@@ -651,7 +651,7 @@ export class Arena {
       out = { gait: true, body: {}, feet: {}, look: null, hands: {} };
     for (const h of ['R', 'L']) {
       const H = hands[h];
-      out.hands[h] = { ...H, p: V(H.p), pole: H.pole ? V(H.pole) : null };
+      if (H) out.hands[h] = { ...H, p: V(H.p), pole: H.pole ? V(H.pole) : null };
     }
     return out;
   }
@@ -670,7 +670,7 @@ export class Arena {
         weights: { handle: 1, show: 3 }, // the showtime moves come up most on the title screen
         ctx: this.titleCtx(base),
         entrance: { from },
-        dribbleChance: 0.3,
+        dribbleChance: 0.15, // mostly moves back to back, a plain dribble now and then
       });
       this.heroClock = 0;
     }
@@ -1319,6 +1319,9 @@ export class Arena {
               commentary: 'Visitors complete their possession.',
             },
           ];
+    // after a steal the stealer already has the ball: the next play starts with him, not with a pass in to him
+    // (otherwise he dribbles up the floor and then the ball goes back to the passer)
+    if (this.clips[0]?.outcome === 'steal') this.clips[1] = { ...this.clips[1], afterSteal: true };
   }
   clear() {
     this.endFly();
@@ -1658,11 +1661,18 @@ export class Arena {
               : SPACE.min,
         });
       // a jump shooter's arms take the shot's form (basketball.js shotHands: the title jumper's), his legs their own jump
-      const shooterArms = pose.shotHands && !tr ? this.shotPerform(pose.shotHands) : null;
+      const shooterArms = pose.shotHands && !tr ? this.shotPerform(pose.shotHands) : null,
+        blockerArm = pose.blockHands && !tr ? this.shotPerform(pose.blockHands) : null;
       wanted.forEach((w, i) =>
         this.posePlayer(
           this.people[i],
-          { ...w, x: kept[i].x, z: kept[i].z, ...(i === o && shooterArms ? { perform: shooterArms } : {}) },
+          {
+            ...w,
+            x: kept[i].x,
+            z: kept[i].z,
+            ...(i === o && shooterArms ? { perform: shooterArms } : {}),
+            ...(i === mk && blockerArm ? { perform: blockerArm } : {}),
+          },
           this.gait,
           ease,
         ),

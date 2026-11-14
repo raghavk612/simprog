@@ -12,7 +12,7 @@ export const betweenLegs = {
   id: 'betweenLegs',
   label: 'Between the legs',
   family: 'handle',
-  weight: 3, // between the legs comes up three times as often as the other handles (as often as the showtime moves)
+  weight: 1.5, // between the legs comes up a little more often than the other handles
   start: 'R',
   end: 'L',
   duration: 0.95,
@@ -83,7 +83,7 @@ export const betweenLegs = {
 /* Between the legs and back: through the legs right to left, and straight back left to right, the other foot forward
    (the mirrored move): the "tween" series. */
 export const tweenBack = combo(
-  { id: 'tweenBack', label: 'Between the legs and back', family: 'handle', weight: 3 },
+  { id: 'tweenBack', label: 'Between the legs and back', family: 'handle', weight: 1.5 },
   [betweenLegs, betweenLegs],
 );
 
@@ -106,7 +106,7 @@ export const figure8 = {
   id: 'figure8',
   label: 'Figure eight',
   family: 'handle',
-  weight: 3, // between the legs comes up three times as often as the other handles (as often as the showtime moves)
+  weight: 1.5, // between the legs comes up a little more often than the other handles
   start: 'R',
   end: 'R',
   duration: 2.0,

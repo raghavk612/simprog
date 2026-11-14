@@ -30,10 +30,12 @@ const JUMPERS = new Set(['catch', 'pullup', 'stepback']);
 export const CUTS = new Set(['baseline', 'freeThrow', 'replayClose', 'player']);
 
 /* Which angle at a point in a possession (ct = 0..1 through the clip). */
-export function pickShot(ct, { team = 'home', kind = 'pullup', replay = false } = {}) {
+export function pickShot(ct, { team = 'home', kind = 'pullup', replay = false, outcome = '' } = {}) {
   if (ct < 0.26) return 'wide';
   if (ct < 0.58) return 'track';
   if (ct < 0.86) {
+    // a block is seen side-on: from behind the shooter (or through his eyes) the blocker is hidden behind him
+    if (outcome === 'block' && !replay) return 'track';
     if (replay) return 'replayClose';
     if (JUMPERS.has(family(kind))) return 'freeThrow';
     return team === 'home' ? 'player' : 'baseline';
@@ -229,7 +231,9 @@ export class Director {
       }
     }
     this.last = { x: f.x, z: f.z };
-    const shot = follow ? 'track' : pickShot(ct, { team: clip.team, kind: clip.kind, replay: a.replaying });
+    const shot = follow
+      ? 'track'
+      : pickShot(ct, { team: clip.team, kind: clip.kind, replay: a.replaying, outcome: clip.outcome });
     const cut = shot !== this.shot && (this.shot === null || CUTS.has(shot) || CUTS.has(this.shot));
     if (shot !== this.shot) {
       if (this.shot === 'player' && a.fpLook) a.controls.target.copy(a.fpLook);
@@ -251,9 +255,13 @@ export class Director {
         [f.x, 0, f.z],
         [f.x, 2.3 + (f.y || 0), f.z],
       ];
-      // the hoop: the ring and the top corners of the backboard behind it
-      const bx = (RIM_X + 0.41) * dir;
-      pts.push([RIM_X * dir, 3.28, 0], [bx, 4.28, 0.99], [bx, 4.28, -0.99]);
+      // the hoop: the ring and the top corners of the backboard behind it; on a block, the blocker instead (the duel
+      // fills the frame, the hoop can wait)
+      const bx = (RIM_X + 0.41) * dir,
+        blocker =
+          clip.outcome === 'block' && ct > 0.4 ? a.people[clip.team === 'home' ? 5 : 0]?.position : null;
+      if (blocker) pts.push([blocker.x, 0, blocker.z], [blocker.x, 3.4 + blocker.y, blocker.z]);
+      else pts.push([RIM_X * dir, 3.28, 0], [bx, 4.28, 0.99], [bx, 4.28, -0.99]);
       const b = a.ball?.position;
       if (b && ct > 0.4) pts.push([b.x, b.y, b.z]);
       fr = frameShot(shot, dir, f, this.lead, a.w / Math.max(1, a.h), pts, lens);

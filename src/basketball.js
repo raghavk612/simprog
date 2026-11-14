@@ -583,7 +583,7 @@ export function sampleClip(c, time) {
     screen.x = lerp(-4.5 * side, screen.x, q);
     screen.z = lerp(3 * lane, screen.z, q);
     screen.run = 0.35 + 0.65 * Math.sin(q * Math.PI);
-    if (t < 0.2) screen.arms = 'pass';
+    if (t < 0.2 && !c.afterSteal) screen.arms = 'pass';
   }
   // Off-ball cuts and closeouts: players do not just oscillate in place.
   actors[offense + 2].x = lerp(4, 10, smooth(t)) * side;
@@ -596,7 +596,8 @@ export function sampleClip(c, time) {
   const mix = (a, b, w) => ({ x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), z: lerp(a.z, b.z, w) });
   const bounce = (t * CLIP_SECONDS) / DRIBBLE.period; // the dribble's clock, in bounces
   let ball = { x: shooter.x + 0.38 * side, y: dribbleAt(bounce).ball, z: shooter.z + 0.15 };
-  if (fam === 'catch') {
+  // c.afterSteal: the shooter stole the ball on the play before, so he already has it (no pass in to him)
+  if (fam === 'catch' && !c.afterSteal) {
     const q = smooth(t / 0.3);
     ball = mix(
       { x: lerp(3, at[0], q) * side, y: 1.4 + Math.sin(q * Math.PI) * 0.35, z: lerp(-5.5, at[1], q) },
@@ -605,10 +606,11 @@ export function sampleClip(c, time) {
     );
     if (t < 0.3) screen.arms = 'pass';
   }
-  if (fam === 'dunk') {
+  if (fam === 'dunk' && !c.afterSteal) {
+    // the outlet: thrown from the passer's hands (he starts deep in the backcourt) up to the man running the break
     const q = smooth(t / 0.2);
     ball = mix(
-      { x: lerp(-10, at[0], q) * side, y: 1.6 + Math.sin(q * Math.PI) * 0.7, z: lerp(3 * lane, at[1], q) },
+      { x: lerp(-4.5, at[0], q) * side, y: 1.6 + Math.sin(q * Math.PI) * 0.7, z: lerp(3 * lane, at[1], q) },
       ball,
       smooth((t - 0.17) / 0.08),
     );
@@ -669,7 +671,8 @@ export function sampleClip(c, time) {
   }
   // A block: the blocker's hand meets the ball just out of the shooter's hand, at the top of his jump, and swats it down
   // and away toward a teammate; it bounces once and he takes it on the rise.
-  let blockCatch = null;
+  let blockCatch = null,
+    blockHands = null;
   if (c.outcome === 'block') {
     const contact = flight(HIT),
       rimX = 12.15 * side,
@@ -713,6 +716,28 @@ export function sampleClip(c, time) {
       CATCH = HIT + catchTau / CLIP_SECONDS,
       at = fly(contact, v, catchTau);
     blockCatch = { k: defense + near.k, at, CATCH };
+    // his blocking hand (the one on the ball's side): up as the shooter lets go, the palm onto the top-front of the ball
+    // at the contact, then through it down and away with the swat; his own arm again once he lands
+    {
+      const h = lane > 0 ? 'R' : 'L',
+        n = unit([-toRim.x * 0.75, 0.66, -toRim.z * 0.75]), // from the ball to his palm: above it, on his side
+        onBall = q => [q.x + n[0] * PALM_OFF, q.y + n[1] * PALM_OFF, q.z + n[2] * PALM_OFF],
+        sec = (t - HIT) * CLIP_SECONDS,
+        reachUp = [marker.x + toRim.x * 0.05, 2.25 + marker.y, marker.z + toRim.z * 0.05], // arm up, waiting
+        sw = unit([v.x, v.y, v.z]),
+        k = smooth((t - (HIT - 0.05)) / 0.05);
+      let p = null,
+        wgt = 0;
+      if (t > HIT - 0.12 && sec < 0.45) {
+        if (t <= HIT) p = mixV(reachUp, onBall(flight(Math.min(t + 0.004, HIT))), k);
+        else {
+          const f = Math.min(1, sec / 0.16);
+          p = onBall(contact).map((x, i) => x + sw[i] * 0.55 * Math.sin((f * Math.PI) / 2));
+        }
+        wgt = smooth((t - (HIT - 0.12)) / 0.04) * (1 - smooth((sec - 0.3) / 0.15));
+      }
+      blockHands = p ? { [h]: { p, flex: t > HIT ? 0.9 : -0.3, pron: 1.0, pole: null, w: wgt } } : null;
+    }
     // the teammate reads it and gets there as it comes up off the floor, the ball in front of his chest
     const meet = { x: at.x + toMate.x * 0.3, z: at.z + toMate.z * 0.3 },
       wm = smooth((t - HIT + 0.02) / (CATCH - HIT + 0.02));
@@ -776,6 +801,8 @@ export function sampleClip(c, time) {
               ? 'Basket'
               : 'Rebound',
     bounce, // the dribble's clock (dribbleAt), for the dribbling hand
+    // the blocker's hand (world) on a block, for his arm (as shotHands), or null
+    blockHands,
     // the jump shooter's hands (world), for his arms (motion.js plays them like a move's), or null
     shotHands:
       T.jumper && c.outcome !== 'steal'

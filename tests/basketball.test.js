@@ -216,3 +216,21 @@ test('in-game jump shots use the title jumper form: a real jump, released at its
     null,
   );
 });
+test('after a steal the stealer keeps the ball into the next play; an outlet pass comes from the passer, not past him', () => {
+  for (const kind of ['dunk', 'alley', 'catch', 'corner']) {
+    const c = { team: 'away', kind, lane: 1, contest: 'open', outcome: 'made', points: 2 },
+      after = { ...c, afterSteal: true },
+      s0 = sampleClip(after, 0),
+      handler = s0.actors[5];
+    // the ball starts with him (dribbling at his side), not out at the passer
+    assert.ok(Math.hypot(s0.ball.x - handler.x, s0.ball.z - handler.z) < 0.6, kind);
+    if (kind === 'dunk' || kind === 'alley') {
+      const p = sampleClip(c, 0),
+        passer = p.actors[6];
+      assert.ok(
+        Math.hypot(p.ball.x - passer.x, p.ball.z - passer.z) < 1,
+        `${kind}: the outlet leaves the passer's hands`,
+      );
+    }
+  }
+});
