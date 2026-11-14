@@ -12,6 +12,7 @@ import {
   dribbleAt,
   DRIBBLE,
   ballDrop,
+  blockHit,
 } from './basketball.js';
 import {
   drawScoreboard,
@@ -644,6 +645,20 @@ export class Arena {
       this.ball.scale.setScalar(1);
       this.ballSpinner.position.y = 0;
     }
+  }
+  /* Broadcast slow motion around a block's contact (so the swat can be seen at any playback speed): the play slows to a
+     quarter of the playback speed (and never faster than real time) for about half a second either side, easing in and
+     out. 1 otherwise, and with reduced motion. */
+  slowMo() {
+    if (!this.motion || !this.clips) return 1;
+    const i = Math.min(1, Math.floor(this.playTime / CLIP_SECONDS)),
+      c = this.clips[i];
+    if (c?.outcome !== 'block') return 1;
+    const u = (this.playTime - i * CLIP_SECONDS) / CLIP_SECONDS,
+      d = Math.abs(u - blockHit(c.kind)) * CLIP_SECONDS, // seconds of play from the contact
+      k = Math.max(0, Math.min(1, (d - 0.12) / 0.4)),
+      slow = Math.min(0.25, 1 / Math.max(1, this.speed || 1));
+    return slow + (1 - slow) * k * k * (3 - 2 * k);
   }
   /* A hands-only performance (motion.js ctx.perform) from a play's shot hands (world arrays): legs keep their gait. */
   shotPerform(hands) {
@@ -1585,14 +1600,16 @@ export class Arena {
       this.time += dt;
       if (titled && !still) this.titleClock = (this.titleClock || 0) + dt;
     }
-    this.frameDt = this.event && this.paused ? 0 : dt * (this.event ? this.speed || 1 : 1);
+    this.frameDt = this.event && this.paused ? 0 : dt * (this.event ? (this.speed || 1) * this.slowMo() : 1);
     // the crowd breathes and sways, and bounces for a few seconds after a Kangs basket (still with reduced motion)
     this.cheer = this.motion ? (this.cheer || 0) * Math.exp(-dt * 0.7) : 0;
     this.fans?.update(this.motion ? dt : 0, Math.min(1, this.cheer * 1.6));
     // One continuous stride/dribble clock, so legs and arms never jump when a clip restarts.
     this.gait =
       (this.gait || 0) +
-      (this.motion && !(this.event && this.paused) && !still ? dt * (this.event ? this.speed : 1) : 0);
+      (this.motion && !(this.event && this.paused) && !still
+        ? dt * (this.event ? this.speed * this.slowMo() : 1)
+        : 0);
     // the dribbling hand (dribbleAt) on the gait clock: between plays and in the idle gym; a play sets its own below
     this.dribble = dribbleAt(this.gait / DRIBBLE.period);
     this.dribbleHand = this.dribble.hand;
@@ -1607,7 +1624,7 @@ export class Arena {
             const b = this.ball.position;
             this.ballFrom = { x: b.x, y: b.y, z: b.z, t0: 0 };
           }
-        } else this.playTime = Math.min(CLIP_SECONDS * 2, this.playTime + dt * this.speed);
+        } else this.playTime = Math.min(CLIP_SECONDS * 2, this.playTime + dt * this.speed * this.slowMo());
       }
       let presentation = this.presentation(),
         clip = presentation.clip,

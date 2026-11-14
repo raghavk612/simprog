@@ -462,6 +462,8 @@ function shotHands(t, T, at, ballW) {
   out.L = { p: l, flex: 0, pron: 0, pole: null, w: fade };
   return out;
 }
+/* When a block meets the ball (clip fraction): just out of the shooter's hand. */
+export const blockHit = kind => shotTiming(kind).release + 0.015;
 /* ---- Spacing (game units; 1 ft = 0.33) ---- */
 /* A defender's spot for a man at {x,z}: `gap` units from him toward the rim. Without a gap: a third of the way to the rim,
    at least 4 ft and at most 8 ft off him, the way an off-ball defender sits between his man and the basket. */
@@ -551,7 +553,7 @@ export function sampleClip(c, time) {
   marker.run = 0.85 - 0.75 * smooth((t - 0.45 - d) / 0.08);
   // the contest: a real jump under gravity, at its top just as the ball leaves the shooter's hand (a block is timed to
   // the ball itself, below)
-  const HIT = rel + 0.015, // when a block meets the ball: just out of the shooter's hand
+  const HIT = blockHit(c.kind), // when a block meets the ball: just out of the shooter's hand
     leap = (u, H, peakU) => {
       const tau = (u - peakU) * CLIP_SECONDS;
       return Math.max(0, H - 0.5 * BALL.g * tau * tau);
