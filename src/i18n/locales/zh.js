@@ -854,6 +854,16 @@ export default {
       '拿走！{{def}}一记大火锅！',
     ],
     loose: ['{{rebounder}}追到了地板球。', '球滚出来了……{{rebounder}}抢到了！', '{{rebounder}}飞身扑球！'],
+    putbackMade: [
+      '{{helper}}抢到地板球，立刻二次起跳……进了！',
+      '地板球……{{helper}}第一个赶到，得分！',
+      '{{helper}}拼抢到手，上篮命中！',
+    ],
+    putbackMiss: [
+      '{{helper}}抢到地板球，再次起跳……没进。',
+      '{{helper}}赢下拼抢，但补篮弹框而出。',
+      '{{helper}}获得二次进攻机会……打铁。',
+    ],
     finish: {
       three: [
         '进了！三分！',

@@ -25,7 +25,8 @@ test('plays cover shot families, blocks, steals and varied chance without contra
   const kinds = new Set(),
     outcomes = new Set(),
     chances = new Set(),
-    lines = new Set();
+    lines = new Set(),
+    recoveries = { offense: 0, defense: 0 };
   let clips = 0;
   // The Kangs start with the five basic moves (skills.js); with the whole tree learned, these games show every move.
   for (let seed = 1; seed <= 15; seed++) {
@@ -44,9 +45,16 @@ test('plays cover shot families, blocks, steals and varied chance without contra
         outcomes.add(c.outcome);
         chances.add(c.shotChance);
         lines.add(c.commentary);
-        assert.equal(c.points, c.outcome === 'made' ? (c.three ? 3 : 2) : 0);
+        assert.equal(c.points, c.outcome === 'made' ? (c.three ? 3 : 2) : c.putback === 'made' ? 2 : 0);
+        // only a block has a loose ball, and only the shooting team's recovery has a putback
+        assert.equal(c.recovery !== undefined, c.outcome === 'block');
+        assert.equal(c.putback !== undefined, c.recovery === 'offense');
+        if (c.recovery) recoveries[c.recovery]++;
         assert.ok(c.commentary.includes(c.player));
-        assert.equal(c.assisted, !!c.points && ['catch', 'dunk'].includes(SHOTS[c.kind].like || c.kind));
+        assert.equal(
+          c.assisted,
+          !!c.points && c.outcome === 'made' && ['catch', 'dunk'].includes(SHOTS[c.kind].like || c.kind),
+        );
         assert.ok(!c.commentary.includes('shot quality'));
       }
     }
@@ -55,6 +63,12 @@ test('plays cover shot families, blocks, steals and varied chance without contra
   assert.deepEqual([...outcomes].sort(), ['block', 'made', 'miss', 'steal']);
   assert.ok(chances.size > 30);
   assert.ok(lines.size > clips * 0.5);
+  // after a block either side can come up with the ball, the defense more often
+  const share = recoveries.offense / (recoveries.offense + recoveries.defense);
+  assert.ok(
+    share > 0.12 && share < 0.45,
+    `the shooting team kept ${(share * 100).toFixed(0)}% of blocked shots`,
+  );
 });
 test('recorded poses are finite, bounded, mirrored, and contain actual jumps and contests', () => {
   for (const kind of Object.keys(SHOTS))

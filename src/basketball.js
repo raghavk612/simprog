@@ -199,6 +199,16 @@ export const COMMENTARY = {
     'Loose ball… {{rebounder}} comes up with it.',
     '{{rebounder}} dives on it.',
   ],
+  putbackMade: [
+    '{{helper}} grabs the loose ball and puts it right back up… good!',
+    'Loose ball… {{helper}} gets there first and scores!',
+    '{{helper}} hustles it down and lays it in!',
+  ],
+  putbackMiss: [
+    '{{helper}} grabs the loose ball, goes back up… no good.',
+    '{{helper}} wins the scramble, but the putback rims out.',
+    'Second chance for {{helper}}… off the iron.',
+  ],
   finish: {
     three: [
       'Got it! Three!',
@@ -248,7 +258,12 @@ export function renderCommentary(c, cm, T = COMMENTARY) {
   let parts;
   if (c.outcome === 'steal') parts = [f(at(T.steal, cm[0]))];
   else if (c.outcome === 'block')
-    parts = [f(at(T.lead[c.kind], cm[0])), f(at(T.block, cm[1])), f(tag(T.loose))];
+    parts = [
+      f(at(T.lead[c.kind], cm[0])),
+      f(at(T.block, cm[1])),
+      // the loose ball: the defense comes up with it, or the shooting team keeps it and goes back up
+      f(tag(c.recovery === 'offense' ? (c.putback === 'made' ? T.putbackMade : T.putbackMiss) : T.loose)),
+    ];
   else {
     const group = c.points ? (c.three ? 'three' : isDunk(c.kind) ? 'dunk' : 'two') : 'miss';
     parts = [
@@ -671,85 +686,159 @@ export function sampleClip(c, time) {
             );
     else ball = fly(rim, launch(rim, land, (1 - BALL.arrive) * sec), tau);
   }
-  // A block: the blocker's hand meets the ball just out of the shooter's hand, at the top of his jump, and swats it down
-  // and away toward a teammate; it bounces once and he takes it on the rise.
-  let blockCatch = null,
-    blockHands = null;
+  // A block (c.recovery / c.putback from the engine): the blocker explodes up and swings his hand through the ball just
+  // out of the shooter's hand; it is knocked hard to the side, bounces loose, and the nearest player from each team goes
+  // for it. The side the engine chose comes up with it: the defense turns up the floor; the shooting team goes straight
+  // back up (the putback), in time for the ball to land before the play ends.
+  let blockHands = null,
+    blockEnd = null;
   if (c.outcome === 'block') {
-    const contact = flight(HIT),
+    const S = CLIP_SECONDS,
+      contact = flight(HIT),
       rimX = 12.15 * side,
-      toRim = (() => {
-        const dx = rimX - contact.x,
-          dz = -contact.z,
-          l = Math.hypot(dx, dz) || 1;
-        return { x: dx / l, z: dz / l };
-      })(),
-      // the blocker: just past the ball on the rim side, up as high as he needs (standing, his fingers reach about 2.4)
-      H = clamp(contact.y - 2.4, 0.35, 0.9),
-      spot = { x: contact.x + toRim.x * 0.18, z: contact.z + toRim.z * 0.18 },
-      hang = Math.sqrt((2 * H) / BALL.g) / CLIP_SECONDS,
-      w = smooth((t - (HIT - hang - 0.12)) / 0.1); // he is there before he takes off
+      flat = (x, z) => {
+        const l = Math.hypot(x, z) || 1;
+        return { x: x / l, z: z / l };
+      },
+      toRim = flat(rimX - contact.x, -contact.z),
+      // higher than he needs: his fingers (2.4 standing) get above the ball and come down through it
+      H = clamp(contact.y - 2.4 + 0.15, 0.55, 1.05),
+      spot = { x: contact.x + toRim.x * 0.22, z: contact.z + toRim.z * 0.22 },
+      hang = Math.sqrt((2 * H) / BALL.g) / S,
+      w = smooth((t - (HIT - hang - 0.1)) / 0.08); // in place before he takes off
     marker.x = lerp(marker.x, spot.x, w);
     marker.z = lerp(marker.z, spot.z, w);
     marker.y = leap(t, H, HIT);
-    // who recovers it: the nearest teammate to the block (from where they stand in this play), not the blocker
-    const near = [1, 2, 3, 4]
-        .map(k => {
-          const g = guardSpot({ x: SPOTS[k][0] * side, z: SPOTS[k][1] }, side);
-          return { k, d: Math.hypot(g.x - contact.x, g.z - contact.z), g };
-        })
-        .sort((a, b) => a.d - b.d)[0],
-      mate = actors[defense + near.k];
-    // the swat: down hard, away from the rim and toward him; the bounce then carries it up into his hands
-    const toMate = (() => {
-        const dx = near.g.x - contact.x,
-          dz = near.g.z - contact.z,
-          l = Math.hypot(dx, dz) || 1;
-        return { x: dx / l, z: dz / l };
-      })(),
-      vy = -4.5,
-      down = (vy + Math.sqrt(vy * vy + 2 * BALL.g * (contact.y - BALL.floor))) / BALL.g,
-      upV = (BALL.g * down - vy) * BALL.bounce,
+    // the swat: to the side (the near sideline of the play), a little back toward the shooter, and down
+    const sideZ = lane >= 0 ? 1 : -1;
+    let perp = { x: -toRim.z, z: toRim.x };
+    if (perp.z * sideZ < 0) perp = { x: -perp.x, z: -perp.z };
+    const dir = flat(perp.x * 0.85 - toRim.x * 0.45, perp.z * 0.85 - toRim.z * 0.45),
+      kept = c.recovery === 'offense',
+      // the time it may take to come up with it: time to spare for the putback (or to turn up the floor) after
+      endTau = (0.995 - HIT) * S,
+      want = clamp(endTau - (kept ? 0.62 : 0.2), 0.3, 0.62),
       chest = 1.15,
-      rise = (upV - Math.sqrt(Math.max(0, upV * upV - 2 * BALL.g * (chest - BALL.floor)))) / BALL.g,
-      catchTau = down + rise,
-      speed = clamp((near.d * 0.55) / catchTau, 1.5, 4),
-      v = { x: toMate.x * speed, y: vy, z: toMate.z * speed },
-      CATCH = HIT + catchTau / CLIP_SECONDS,
+      tauFor = vy => {
+        const down = (vy + Math.sqrt(vy * vy + 2 * BALL.g * (contact.y - BALL.floor))) / BALL.g,
+          up = (BALL.g * down - vy) * BALL.bounce;
+        return down + (up - Math.sqrt(Math.max(0, up * up - 2 * BALL.g * (chest - BALL.floor)))) / BALL.g;
+      };
+    // a harder swat down reaches the floor sooner: find the one that comes up into his hands when it should
+    let lo = -14,
+      hi = -1.5;
+    for (let i = 0; i < 40; i++) {
+      const mid = (lo + hi) / 2;
+      if (tauFor(mid) > want) hi = mid;
+      else lo = mid;
+    }
+    const vy = (lo + hi) / 2,
+      catchTau = tauFor(vy),
+      // as hard as 4.8 units/s across, but it is won inbounds (inside the sidelines and the baseline)
+      room = Math.min(
+        dir.z ? (7.3 - Math.sign(dir.z) * contact.z) / Math.abs(dir.z) : Infinity,
+        dir.x ? (13.2 - Math.sign(dir.x) * contact.x) / Math.abs(dir.x) : Infinity,
+      ),
+      speed = clamp(Math.min(4.8, room / catchTau), 1.2, 4.8),
+      CATCH = HIT + catchTau / S;
+    let v = { x: dir.x * speed, y: vy, z: dir.z * speed },
       at = fly(contact, v, catchTau);
-    blockCatch = { k: defense + near.k, at, CATCH };
-    // his blocking hand (the one on the ball's side): up as the shooter lets go, the palm onto the top-front of the ball
-    // at the contact, then through it down and away with the swat; his own arm again once he lands
+    // the scramble: each team's nearest player goes for it, from where he is at the block (the same play unblocked moves
+    // everyone else the same way)
+    const there = sampleClip(
+        { ...c, outcome: 'made', points: 2, recovery: undefined, putback: undefined },
+        HIT * S,
+      ).actors,
+      nearest = list =>
+        list.map(o => ({ ...o, d: Math.hypot(o.p.x - at.x, o.p.z - at.z) })).sort((a, b) => a.d - b.d)[0],
+      offP = nearest([1, 2, 3, 4].map(k => ({ i: offense + k, p: there[offense + k] }))),
+      defP = nearest([1, 2, 3, 4].map(k => ({ i: defense + k, p: there[defense + k] }))),
+      win0 = kept ? offP : defP;
+    // a real sprint (6.5 units/s) must get the winner there: if he could not, the swat goes more his way
+    {
+      const reach = 6.5 * catchTau,
+        far = Math.hypot(win0.p.x - at.x, win0.p.z - at.z);
+      if (far > reach) {
+        const k = (far - reach * 0.9) / far, // how far along from the ball's spot toward him it must come down
+          tx = at.x + (win0.p.x - at.x) * k,
+          tz = at.z + (win0.p.z - at.z) * k;
+        v = { x: (tx - contact.x) / catchTau, y: vy, z: (tz - contact.z) / catchTau };
+        at = fly(contact, v, catchTau);
+      }
+    }
+    const win = win0,
+      lose = kept ? defP : offP,
+      W = actors[win.i],
+      Lp = actors[lose.i],
+      meet = { x: at.x + dir.x * 0.3, z: at.z + dir.z * 0.3 },
+      fromL = flat(lose.p.x - at.x, lose.p.z - at.z),
+      beaten = { x: at.x + fromL.x * 0.8, z: at.z + fromL.z * 0.8 },
+      wm = smooth((t - HIT + 0.01) / (CATCH - HIT + 0.01));
+    W.x = lerp(W.x, meet.x, wm);
+    W.z = lerp(W.z, meet.z, wm);
+    W.run = Math.max(W.run, Math.sin(wm * Math.PI) * 0.95);
+    W.yaw = Math.atan2(at.x - meet.x, at.z - meet.z);
+    Lp.x = lerp(Lp.x, beaten.x, wm);
+    Lp.z = lerp(Lp.z, beaten.z, wm);
+    Lp.run = Math.max(Lp.run, Math.sin(wm * Math.PI) * 0.95);
+    Lp.yaw = Math.atan2(at.x - beaten.x, at.z - beaten.z);
+    if (t > CATCH - 0.04) {
+      W.arms = 'rebound';
+      Lp.arms = 'rebound';
+    }
+    // the putback: he rises straight away and lays it up at the rim; made goes through the net, missed comes off the iron
+    let putback = null;
+    if (kept) {
+      const rimP = { x: rimX, y: BALL.rim, z: 0 },
+        spare = (0.997 - CATCH) * S,
+        GO = CATCH + Math.min(0.22, spare * 0.3) / S, // gathers it up into his shooting hands
+        lift = 0.45,
+        from = { x: at.x, y: 2.35 + lift, z: at.z },
+        ARR = Math.min(0.997, GO + Math.max(0.42, Math.hypot(rimP.x - at.x, rimP.z) / 7.5) / S);
+      putback = { GO, ARR, from, v: launch(from, rimP, (ARR - GO) * S), rimP };
+      blockEnd = ARR;
+      if (t > CATCH) {
+        W.yaw = Math.atan2(rimX - W.x, -W.z);
+        W.arms = t < ARR ? 'shoot' : 'relax';
+        W.y = leap(t, lift, GO);
+      }
+    } else if (t > CATCH + 0.03) W.yaw = Math.atan2(-side, 0); // the defense has it: he turns up the floor
+    if (t > HIT) {
+      if (t < CATCH) ball = fly(contact, v, (t - HIT) * S);
+      else if (!putback) ball = { x: at.x, y: chest, z: at.z };
+      else if (t < putback.GO) {
+        const k = smooth((t - CATCH) / (putback.GO - CATCH));
+        ball = { x: at.x, y: lerp(chest, putback.from.y, k), z: at.z };
+      } else if (t < putback.ARR) ball = fly(putback.from, putback.v, (t - putback.GO) * S);
+      else {
+        const tau = (t - putback.ARR) * S;
+        ball =
+          c.putback === 'made'
+            ? { x: rimX, y: Math.max(BALL.floor, BALL.rim - 3 * tau), z: 0 } // through the net
+            : fly(putback.rimP, { x: -toRim.x * 2.2, y: 2.4, z: -toRim.z * 2.2 }, tau); // off the iron
+      }
+    }
+    // the blocker's hand: cocked high on his side of the ball, a fast swing down through it at the contact, and on
+    // through after the ball; his own arm again once he comes down
     {
       const h = lane > 0 ? 'R' : 'L',
-        n = unit([-toRim.x * 0.75, 0.66, -toRim.z * 0.75]), // from the ball to his palm: above it, on his side
-        onBall = q => [q.x + n[0] * PALM_OFF, q.y + n[1] * PALM_OFF, q.z + n[2] * PALM_OFF],
-        sec = (t - HIT) * CLIP_SECONDS,
-        reachUp = [marker.x + toRim.x * 0.05, 2.25 + marker.y, marker.z + toRim.z * 0.05], // arm up, waiting
-        sw = unit([v.x, v.y, v.z]),
-        k = smooth((t - (HIT - 0.05)) / 0.05);
-      let p = null,
-        wgt = 0;
-      if (t > HIT - 0.12 && sec < 0.45) {
-        if (t <= HIT) p = mixV(reachUp, onBall(flight(Math.min(t + 0.004, HIT))), k);
-        else {
-          const f = Math.min(1, sec / 0.16);
-          p = onBall(contact).map((x, i) => x + sw[i] * 0.55 * Math.sin((f * Math.PI) / 2));
-        }
-        wgt = smooth((t - (HIT - 0.12)) / 0.04) * (1 - smooth((sec - 0.3) / 0.15));
+        n = unit([toRim.x * 0.72, 0.7, toRim.z * 0.72]), // from the ball to his palm: on top, on his side
+        onBall = [contact.x + n[0] * PALM_OFF, contact.y + n[1] * PALM_OFF, contact.z + n[2] * PALM_OFF],
+        cocked = [onBall[0] + toRim.x * 0.3, onBall[1] + 0.25, onBall[2] + toRim.z * 0.3],
+        through = unit([v.x, v.y, v.z]),
+        since = (t - HIT) * S;
+      if (t > HIT - 0.12 && since < 0.45) {
+        const swing = smooth((t - (HIT - 0.03)) / 0.03),
+          p =
+            t <= HIT
+              ? mixV(cocked, onBall, swing)
+              : onBall.map(
+                  (x, i) => x + through[i] * 0.6 * Math.sin((Math.min(1, since / 0.12) * Math.PI) / 2),
+                ),
+          wgt = smooth((t - (HIT - 0.12)) / 0.04) * (1 - smooth((since - 0.3) / 0.15));
+        blockHands = { [h]: { p, flex: t > HIT ? 1.0 : -0.4, pron: 1.1, pole: null, w: wgt } };
       }
-      blockHands = p ? { [h]: { p, flex: t > HIT ? 0.9 : -0.3, pron: 1.0, pole: null, w: wgt } } : null;
     }
-    // the teammate reads it and gets there as it comes up off the floor, the ball in front of his chest
-    const meet = { x: at.x + toMate.x * 0.3, z: at.z + toMate.z * 0.3 },
-      wm = smooth((t - HIT + 0.02) / (CATCH - HIT + 0.02));
-    mate.x = lerp(mate.x, meet.x, wm);
-    mate.z = lerp(mate.z, meet.z, wm);
-    mate.run = Math.max(mate.run, Math.sin(wm * Math.PI) * 0.9);
-    mate.yaw = Math.atan2(at.x - meet.x, at.z - meet.z);
-    if (t > CATCH - 0.03) mate.arms = 'rebound';
-    if (t > HIT)
-      ball = t < CATCH ? fly(contact, v, (t - HIT) * CLIP_SECONDS) : { x: at.x, y: chest, z: at.z };
   }
   if (c.outcome === 'steal') {
     const q = clamp((t - 0.32) / 0.68),
@@ -799,9 +888,11 @@ export function sampleClip(c, time) {
               : c.outcome === 'steal'
                 ? 'Turnover'
                 : 'Shot in flight'
-            : c.points
-              ? 'Basket'
-              : 'Rebound',
+            : blockEnd && t < blockEnd
+              ? 'Putback'
+              : c.points
+                ? 'Basket'
+                : 'Rebound',
     bounce, // the dribble's clock (dribbleAt), for the dribbling hand
     // the blocker's hand (world) on a block, for his arm (as shotHands), or null
     blockHands,
@@ -810,7 +901,7 @@ export function sampleClip(c, time) {
       T.jumper && c.outcome !== 'steal'
         ? shotHands(t, T, me, ball && t < rel ? [ball.x, ball.y, ball.z] : null)
         : null,
-    resolved: t >= BALL.arrive,
+    resolved: t >= (blockEnd ?? BALL.arrive), // a putback after a block resolves when it lands
     flying: c.outcome !== 'steal' && t >= rel && (c.outcome === 'block' ? t < HIT : t < BALL.arrive),
     net: c.points && t > BALL.arrive ? Math.sin(((t - BALL.arrive) * Math.PI) / 0.14) * 0.12 : 0,
   };

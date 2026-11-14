@@ -928,6 +928,16 @@ export default {
       'Ballon qui traîne… {{rebounder}} le récupère.',
       '{{rebounder}} plonge dessus !',
     ],
+    putbackMade: [
+      '{{helper}} récupère le ballon perdu et remonte aussitôt… dedans !',
+      'Ballon perdu… {{helper}} arrive le premier et marque !',
+      '{{helper}} s’arrache pour le récupérer et le dépose !',
+    ],
+    putbackMiss: [
+      '{{helper}} récupère le ballon perdu, remonte… raté.',
+      '{{helper}} gagne la bataille, mais la claquette ressort.',
+      'Deuxième chance pour {{helper}}… sur le cercle.',
+    ],
     finish: {
       three: [
         'Dedans ! Trois points !',
