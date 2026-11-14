@@ -11,7 +11,9 @@ import {
   AO_INTENSITY,
   NORMAL_SCALE,
   DETAIL_BUMP_WITH_MAPS,
+  useImageBitmap,
 } from '../src/playerMaps.js';
+import { precacheList } from '../scripts/precache.mjs';
 import { athleteBody, disposeBody, BODY_VARIANTS } from '../src/players.js';
 
 const kit = { capMat: new THREE.MeshBasicMaterial() };
@@ -209,7 +211,13 @@ test('athlete maps: on Medium and High, the right skin size per level, none on L
   const other = athleteBody(gltf, kit, 4, 0x111111, 'guard', { ...look, hair: 'rows' }, { level: 'high' });
   await tick();
   assert.equal(materials(other).get('kit').normalMap, mats.get('kit').normalMap);
-  assert.equal(new Set(calls).size, calls.length, `each file loaded once: ${calls}`);
+  // kit and gear are loaded once; the 2k skin a second time, as it was freed while the body was on Medium
+  assert.deepEqual(
+    [...calls].sort(),
+    ['guard_gear.png', 'guard_kit.png', 'guard_skin.png', 'guard_skin.png', 'guard_skin_1k.png'],
+    `loads: ${calls}`,
+  );
+  assert.equal(materials(other).get('skin').normalMap, mats.get('skin').normalMap, 'skin shared too');
   // disposing a body leaves the shared maps alone
   let freed = 0;
   mats.get('kit').normalMap.addEventListener('dispose', () => freed++);
@@ -230,4 +238,59 @@ test('athlete maps: on Medium and High, the right skin size per level, none on L
   delete gltf.maps;
   const plain = athleteBody(gltf, kit, 7, 0x444444, 'guard', look, { level: 'high' });
   assert.equal(materials(plain).get('skin').normalMap, null);
+});
+
+test('AthleteMaps: once a level has its skin, the other skin size is freed (kit and gear stay)', async () => {
+  const { load, calls } = stubLoader(),
+    maps = new AthleteMaps('guard', { base: '/m/', load });
+  maps.use('high');
+  await maps.prefetch('high');
+  const big = maps.get('skin', 'high');
+  let freed = 0;
+  big.addEventListener('dispose', () => freed++);
+  maps.use('medium'); // the 1k skin is not loaded yet: the 2k stays on screen until it lands
+  assert.equal(maps.get('skin', 'high'), big);
+  await maps.request('skin', 'medium');
+  assert.equal(freed, 1, '2k skin disposed once the 1k is in');
+  assert.equal(maps.get('skin', 'high'), null);
+  assert.ok(maps.get('kit', 'medium') && maps.get('gear', 'medium'), 'shared atlases kept');
+  // back to High with the 1k loaded: the 2k is fetched again, and the 1k is freed when it lands
+  maps.use('high');
+  await maps.request('skin', 'high');
+  assert.equal(maps.get('skin', 'medium'), null);
+  assert.equal(calls.filter(u => u.endsWith('guard_skin.png')).length, 2);
+});
+
+test('athlete bodies tell their maps which level is in use', async () => {
+  const tpl = await loadGlb('guard'),
+    { load } = stubLoader();
+  tpl.maps = new AthleteMaps('guard', { base: '/m/', load });
+  const body = athleteBody(tpl, kit, 0, 0x6a3fd0, 'guard', look, { level: 'high' });
+  assert.equal(tpl.maps.level, 'high');
+  body.setDetail('medium');
+  assert.equal(tpl.maps.level, 'medium');
+  disposeBody(body);
+});
+
+test('map textures use ImageBitmap only where three trusts its premultiply option (as GLTFLoader decides)', () => {
+  const chrome =
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
+  const safari = v =>
+    `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${v}.1 Safari/605.1.15`;
+  const firefox = v => `Mozilla/5.0 (X11; Linux x86_64; rv:${v}.0) Gecko/20100101 Firefox/${v}.0`;
+  assert.equal(useImageBitmap(chrome, true), true);
+  assert.equal(useImageBitmap(safari(17), true), true);
+  assert.equal(useImageBitmap(safari(16), true), false);
+  assert.equal(useImageBitmap(firefox(98), true), true);
+  assert.equal(useImageBitmap(firefox(97), true), false);
+  assert.equal(useImageBitmap(chrome, false), false, 'no createImageBitmap');
+});
+
+test('offline install leaves the player maps out of the precache (they cache on first use)', () => {
+  const files = [
+    'dist/index.html',
+    'dist/models/players/guard.glb',
+    'dist/models/players/maps/guard_skin.png',
+  ];
+  assert.deepEqual(precacheList(files), ['dist/index.html', 'dist/models/players/guard.glb']);
 });

@@ -499,6 +499,7 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
     detail = { level, lod: 0 },
     body = {};
   const applyMaps = () => {
+    store?.use(detail.level);
     const on = !!store && mapsOn(detail.level) && detail.lod === 0;
     for (const [key, m] of Object.entries(pick)) {
       const atlas = ATLAS_OF[key];

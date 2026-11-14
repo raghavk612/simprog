@@ -36,8 +36,19 @@ export const DETAIL_BUMP_WITH_MAPS = { hair: 0.35 };
 const BASE = `${import.meta.env?.BASE_URL ?? '/'}models/players/maps/`;
 /* Data textures straight from the file: no premultiplied alpha (the AO in A would crush the normal in RGB), no colour
    management, no flip (glTF UVs). */
+/* ImageBitmap decoding is used where three's GLTFLoader uses it: Safari before 17 and Firefox before 98 do not reliably honour
+   premultiplyAlpha 'none', and a premultiplied map would multiply the normal (RGB) by the AO (A). */
+export function useImageBitmap(
+  ua = globalThis.navigator?.userAgent ?? '',
+  has = typeof createImageBitmap === 'function',
+) {
+  const safari = /^((?!chrome|android).)*safari/i.test(ua),
+    safariVersion = safari ? +(ua.match(/Version\/(\d+)/)?.[1] ?? -1) : -1,
+    firefoxVersion = ua.includes('Firefox') ? +(ua.match(/Firefox\/(\d+)\./)?.[1] ?? -1) : -1;
+  return has && !(safari && safariVersion < 17) && !(firefoxVersion >= 0 && firefoxVersion < 98);
+}
 export function loadMapTexture(url) {
-  if (typeof createImageBitmap === 'function') {
+  if (useImageBitmap()) {
     const loader = new THREE.ImageBitmapLoader();
     loader.setOptions({ imageOrientation: 'none', premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
     return loader.loadAsync(url).then(bmp => new THREE.Texture(bmp));
@@ -66,6 +77,20 @@ export class AthleteMaps {
     this.load = load;
     this.files = new Map(); // file -> { texture, promise }
     this.disposed = false;
+    this.level = null; // the level the bodies show now (use)
+  }
+  /* The bodies are now on this level. Only one skin size is kept: once this level's skin is loaded the other size is freed
+     (until then it stays, so bodies keep showing it while the new one loads). Kit and gear are the same file on both levels. */
+  use(level) {
+    this.level = level;
+    if (mapsOn(level) && this.get('skin', level)) this.release('skin', level === 'high' ? 'medium' : 'high');
+  }
+  release(atlas, level) {
+    const file = mapFile(this.variant, atlas, level),
+      e = this.files.get(file);
+    if (!e?.texture) return; // not loaded (or still loading: request() frees it on arrival if the level moved on)
+    this.files.delete(file);
+    e.texture.dispose();
   }
   get(atlas, level) {
     return this.files.get(mapFile(this.variant, atlas, level))?.texture ?? null;
@@ -84,7 +109,9 @@ export class AthleteMaps {
             return null;
           }
           t.name ||= file;
-          return (e.texture = prepare(t));
+          e.texture = prepare(t);
+          if (atlas === 'skin' && this.level === level) this.use(level); // the other skin size can go now
+          return e.texture;
         })
         .catch(err => {
           this.warn(`Player map ${file} unavailable`, err);
