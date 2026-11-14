@@ -22,6 +22,8 @@ import { onSkillKey } from './ui/screens/breaks.js';
 // The 3D gym follows the settings, shows the first-person player tag, and reports each play as it resolves.
 applyArena();
 setInterval(fpHud, 150);
+// dev builds only: the gym for checking plays by hand (window.__kangsArena.clips[0].outcome = 'block', ...)
+if (import.meta.env?.DEV) window.__kangsArena = arena;
 arena.onPresentation = p => {
   if (p.resolved) reportPlay(p);
   syncPresentation(p);

@@ -114,6 +114,66 @@ export function framing(shot, dir, focus, lead = { x: 0, z: 0 }) {
   return null;
 }
 
+/* The part of the frame the interface leaves clear, in normalised screen units (-1..1): the score bar and the play
+   panels sit along the top and down the top-right, the camera buttons and the play caption along the bottom. */
+export const SAFE = { left: -0.88, right: 0.62, bottom: -0.62, top: 0.58 };
+/* Turns the camera (target) and, if it must, widens the lens until every point is inside the safe area. The camera does
+   not move, so a cut or a spring still lands where the angle put it. Returns {target, fov}. */
+export function fitFrame(position, target, fov, aspect, points, safe = SAFE, maxFov = fov * 1.45) {
+  const cam = new THREE.PerspectiveCamera(fov, aspect, 0.1, 300),
+    P = new THREE.Vector3(...position),
+    T = new THREE.Vector3(...target),
+    v = new THREE.Vector3();
+  cam.position.copy(P);
+  let f = fov;
+  for (let it = 0; it < 12; it++) {
+    cam.fov = f;
+    cam.lookAt(T);
+    cam.updateMatrixWorld();
+    cam.updateProjectionMatrix();
+    let x0 = Infinity,
+      x1 = -Infinity,
+      y0 = Infinity,
+      y1 = -Infinity;
+    for (const p of points) {
+      v.set(...p).project(cam);
+      if (v.z > 1) continue; // behind the camera: leave it out
+      x0 = Math.min(x0, v.x);
+      x1 = Math.max(x1, v.x);
+      y0 = Math.min(y0, v.y);
+      y1 = Math.max(y1, v.y);
+    }
+    if (!Number.isFinite(x0)) break;
+    const w = (safe.right - safe.left) / 2,
+      h = (safe.top - safe.bottom) / 2,
+      // how far the points' box sticks out of the safe area on each axis (0 when inside)
+      dx = x0 < safe.left ? x0 - safe.left : x1 > safe.right ? x1 - safe.right : 0,
+      dy = y0 < safe.bottom ? y0 - safe.bottom : y1 > safe.top ? y1 - safe.top : 0,
+      tooBig = Math.max((x1 - x0) / (2 * w), (y1 - y0) / (2 * h));
+    if (!dx && !dy && tooBig <= 1) return { target: T.toArray(), fov: f, ok: true };
+    if (tooBig > 1 && f < maxFov) {
+      f = Math.min(maxFov, f * Math.min(1.25, tooBig * 1.04));
+      continue;
+    }
+    // turn the aim by the overshoot: dy (or dx) screen units is about atan(d * tan(fov / 2)) radians
+    const tanV = Math.tan(THREE.MathUtils.degToRad(f / 2)),
+      dist = P.distanceTo(T),
+      up = new THREE.Vector3(0, 1, 0).applyQuaternion(cam.quaternion),
+      right = new THREE.Vector3(1, 0, 0).applyQuaternion(cam.quaternion);
+    T.addScaledVector(up, dy * 1.05 * tanV * dist).addScaledVector(right, dx * 1.05 * tanV * aspect * dist);
+  }
+  return { target: T.toArray(), fov: f, ok: false };
+}
+/* An angle's camera with everything that matters in the clear (fitFrame). An angle that cannot hold it all (the rim-corner
+   replay camera with a shooter out at the arc) falls back to the sideline tracking camera. Returns {shot, position,
+   target, fov}. */
+export function frameShot(shot, dir, focus, lead, aspect, points, lens) {
+  const fr = framing(shot, dir, focus, lead),
+    fit = fitFrame(fr.position, fr.target, lens(shot), aspect, points);
+  if (fit.ok || shot === 'track') return { shot, position: fr.position, target: fit.target, fov: fit.fov };
+  return frameShot('track', dir, focus, lead, aspect, points, lens);
+}
+
 /* Unity-style SmoothDamp: a critically damped spring that reaches the target in about smoothTime, frame-rate independent. */
 export function smoothDamp(cur, target, vel, smoothTime, dt) {
   const o = 2 / Math.max(1e-4, smoothTime),
@@ -180,9 +240,25 @@ export class Director {
       this.dof = 0;
       return shot;
     }
-    const fr = framing(shot, dir, f, this.lead),
-      tall = a.w / a.h < 0.8,
-      fov = Math.min(80, LENS[shot] * (tall ? 1.5 : 1));
+    const tall = a.w / a.h < 0.8,
+      lens = s => Math.min(80, LENS[s] * (tall ? 1.5 : 1));
+    let fr = framing(shot, dir, f, this.lead),
+      fov = lens(shot);
+    // keep what matters out from under the interface: the ball handler head to toe, the hoop he attacks, and from the
+    // gather on the ball in the air (shot by shot, so a cut lands on a good frame)
+    if (shot !== 'wide') {
+      const pts = [
+        [f.x, 0, f.z],
+        [f.x, 2.3 + (f.y || 0), f.z],
+      ];
+      // the hoop: the ring and the top corners of the backboard behind it
+      const bx = (RIM_X + 0.41) * dir;
+      pts.push([RIM_X * dir, 3.28, 0], [bx, 4.28, 0.99], [bx, 4.28, -0.99]);
+      const b = a.ball?.position;
+      if (b && ct > 0.4) pts.push([b.x, b.y, b.z]);
+      fr = frameShot(shot, dir, f, this.lead, a.w / Math.max(1, a.h), pts, lens);
+      fov = Math.min(80, fr.fov);
+    }
     if (cut) {
       this.pos.fromArray(fr.position);
       this.tgt.fromArray(fr.target);

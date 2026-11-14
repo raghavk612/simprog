@@ -44,7 +44,8 @@ export function footAt(phase, stride, lift) {
 const damp = (cur, target, rate, dt) => cur + (target - cur) * (1 - Math.exp(-rate * dt));
 
 /* ---- Personal space: players keep about 3 ft apart, and go round each other instead of through ---- */
-export const SPACE = { min: 0.95, contest: 0.85 }; // game units centre to centre (1 ft = 0.33); a shot contest comes closer
+export const SPACE = { min: 0.95, contest: 0.85, block: 0.5 }; // game units centre to centre (1 ft = 0.33); a shot
+// contest comes closer, and a shot-blocker jumps right at the shooter
 /* One frame of keeping players apart. desired = where the play puts each player ([{x, z}]); state = {drawn, off} from the
    previous frame (or a new {}); pinned = indexes that never move (the player with the ball); gap(i, j) = the distance
    two players keep. Returns where to draw them.

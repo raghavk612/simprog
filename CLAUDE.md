@@ -50,3 +50,5 @@ touched. The live game and the drills are not covered by it: check those by hand
 a season with "Walk me through the first game" unticked when testing something else.
 In `npm run dev` only, the backquote key (`` ` ``) toggles 64× playback, so a watched game takes about 30 s
 (quarter breaks still stop it); production builds drop the shortcut.
+Also in dev only, `window.__kangsArena` is the gym: during a watched game you can stage a play, e.g.
+`a.play({ ...a.event, plays: [{ ...a.clips[0], kind: 'pullup', outcome: 'block' }, a.clips[1]] })`.

@@ -549,11 +549,14 @@ export function sampleClip(c, time) {
   const separation = c.contest === 'open' ? 2.5 : c.contest === 'tight' ? 1 : 1.5;
   Object.assign(marker, guardSpot(shooter, side, separation));
   marker.run = 0.85 - 0.75 * smooth((t - 0.45 - d) / 0.08);
-  const defenseJump =
-    t >= 0.5 + d && t <= 0.81 + d
-      ? Math.sin(((t - 0.5 - d) / 0.31) * Math.PI) *
-        (c.outcome === 'block' ? 1.05 : c.contest === 'open' ? 0.22 : 0.7)
-      : 0;
+  // the contest: a real jump under gravity, at its top just as the ball leaves the shooter's hand (a block is timed to
+  // the ball itself, below)
+  const HIT = rel + 0.015, // when a block meets the ball: just out of the shooter's hand
+    leap = (u, H, peakU) => {
+      const tau = (u - peakU) * CLIP_SECONDS;
+      return Math.max(0, H - 0.5 * BALL.g * tau * tau);
+    };
+  const defenseJump = c.outcome === 'block' ? 0 : leap(t, c.contest === 'open' ? 0.22 : 0.62, HIT);
   marker.y = defenseJump;
   marker.arms = t > 0.48 + d && t < 0.82 + d ? 'block' : 'defend';
   if (fam === 'drive' || fam === 'floater' || fam === 'roll') {
@@ -664,17 +667,62 @@ export function sampleClip(c, time) {
             );
     else ball = fly(rim, launch(rim, land, (1 - BALL.arrive) * sec), tau);
   }
+  // A block: the blocker's hand meets the ball just out of the shooter's hand, at the top of his jump, and swats it down
+  // and away toward a teammate; it bounces once and he takes it on the rise.
+  let blockCatch = null;
   if (c.outcome === 'block') {
-    const w = smooth((t - 0.52 - d) / 0.13),
-      hit = rel + 0.04; // the block meets the ball just after the release and swats it down and away
-    const up = guardSpot(shooter, side, 0.85); // right up on the shooter to reach the ball
-    marker.x = lerp(marker.x, up.x, w);
-    marker.z = lerp(marker.z, up.z, w);
-    if (t > hit) {
-      const from = flight(hit),
-        span = (1 - hit) * sec;
-      ball = fly(from, { x: (land.x - from.x) / span, y: -2, z: (land.z - from.z) / span }, (t - hit) * sec);
-    }
+    const contact = flight(HIT),
+      rimX = 12.15 * side,
+      toRim = (() => {
+        const dx = rimX - contact.x,
+          dz = -contact.z,
+          l = Math.hypot(dx, dz) || 1;
+        return { x: dx / l, z: dz / l };
+      })(),
+      // the blocker: just past the ball on the rim side, up as high as he needs (standing, his fingers reach about 2.4)
+      H = clamp(contact.y - 2.4, 0.35, 0.9),
+      spot = { x: contact.x + toRim.x * 0.18, z: contact.z + toRim.z * 0.18 },
+      hang = Math.sqrt((2 * H) / BALL.g) / CLIP_SECONDS,
+      w = smooth((t - (HIT - hang - 0.12)) / 0.1); // he is there before he takes off
+    marker.x = lerp(marker.x, spot.x, w);
+    marker.z = lerp(marker.z, spot.z, w);
+    marker.y = leap(t, H, HIT);
+    // who recovers it: the nearest teammate to the block (from where they stand in this play), not the blocker
+    const near = [1, 2, 3, 4]
+        .map(k => {
+          const g = guardSpot({ x: SPOTS[k][0] * side, z: SPOTS[k][1] }, side);
+          return { k, d: Math.hypot(g.x - contact.x, g.z - contact.z), g };
+        })
+        .sort((a, b) => a.d - b.d)[0],
+      mate = actors[defense + near.k];
+    // the swat: down hard, away from the rim and toward him; the bounce then carries it up into his hands
+    const toMate = (() => {
+        const dx = near.g.x - contact.x,
+          dz = near.g.z - contact.z,
+          l = Math.hypot(dx, dz) || 1;
+        return { x: dx / l, z: dz / l };
+      })(),
+      vy = -4.5,
+      down = (vy + Math.sqrt(vy * vy + 2 * BALL.g * (contact.y - BALL.floor))) / BALL.g,
+      upV = (BALL.g * down - vy) * BALL.bounce,
+      chest = 1.15,
+      rise = (upV - Math.sqrt(Math.max(0, upV * upV - 2 * BALL.g * (chest - BALL.floor)))) / BALL.g,
+      catchTau = down + rise,
+      speed = clamp((near.d * 0.55) / catchTau, 1.5, 4),
+      v = { x: toMate.x * speed, y: vy, z: toMate.z * speed },
+      CATCH = HIT + catchTau / CLIP_SECONDS,
+      at = fly(contact, v, catchTau);
+    blockCatch = { k: defense + near.k, at, CATCH };
+    // the teammate reads it and gets there as it comes up off the floor, the ball in front of his chest
+    const meet = { x: at.x + toMate.x * 0.3, z: at.z + toMate.z * 0.3 },
+      wm = smooth((t - HIT + 0.02) / (CATCH - HIT + 0.02));
+    mate.x = lerp(mate.x, meet.x, wm);
+    mate.z = lerp(mate.z, meet.z, wm);
+    mate.run = Math.max(mate.run, Math.sin(wm * Math.PI) * 0.9);
+    mate.yaw = Math.atan2(at.x - meet.x, at.z - meet.z);
+    if (t > CATCH - 0.03) mate.arms = 'rebound';
+    if (t > HIT)
+      ball = t < CATCH ? fly(contact, v, (t - HIT) * CLIP_SECONDS) : { x: at.x, y: chest, z: at.z };
   }
   if (c.outcome === 'steal') {
     const q = clamp((t - 0.32) / 0.68),
@@ -692,7 +740,7 @@ export function sampleClip(c, time) {
   }
   // The rebounder reads the shot and arrives where the ball comes down rather than appearing there.
   const rebounder = actors[defense + (c.team === 'home' ? 4 : 0)];
-  if (!c.points && c.outcome !== 'steal') {
+  if (!c.points && c.outcome !== 'steal' && c.outcome !== 'block') {
     const w = smooth((t - 0.64) / 0.22);
     rebounder.x = lerp(rebounder.x, land.x, w);
     rebounder.z = lerp(rebounder.z, land.z, w);
@@ -734,7 +782,7 @@ export function sampleClip(c, time) {
         ? shotHands(t, T, me, ball && t < rel ? [ball.x, ball.y, ball.z] : null)
         : null,
     resolved: t >= BALL.arrive,
-    flying: c.outcome !== 'steal' && t >= rel && (c.outcome === 'block' ? t < rel + 0.04 : t < BALL.arrive),
+    flying: c.outcome !== 'steal' && t >= rel && (c.outcome === 'block' ? t < HIT : t < BALL.arrive),
     net: c.points && t > BALL.arrive ? Math.sin(((t - BALL.arrive) * Math.PI) / 0.14) * 0.12 : 0,
   };
 }

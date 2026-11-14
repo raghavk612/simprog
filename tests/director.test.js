@@ -1,6 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { pickShot, framing, smoothDamp, CAMERAS, LENS, APERTURE, RIM_X } from '../src/director.js';
+import {
+  pickShot,
+  framing,
+  smoothDamp,
+  frameShot,
+  SAFE,
+  CAMERAS,
+  LENS,
+  APERTURE,
+  RIM_X,
+} from '../src/director.js';
+import * as THREE from 'three';
 import { RIG, toGame } from '../src/broadcastRig.js';
 const V = a => ({ x: a[0], y: a[1], z: a[2] });
 test('director: the angles follow a possession, with close angles for jump shots and replays', () => {
@@ -60,4 +71,40 @@ test('director: camera springs settle, never overshoot, and do not depend on fra
   assert.ok(Math.abs(settled.x - 10) < 1e-3 && settled.max <= 10 + 1e-9);
   const [same] = smoothDamp(5, 5, 0, 0.5, 0);
   assert.equal(same, 5);
+});
+
+test('every shooting angle keeps the shooter, the hoop and the ball clear of the score bar, panels and captions', () => {
+  for (const shot of ['track', 'freeThrow', 'baseline', 'replayClose'])
+    for (const dir of [1, -1])
+      for (const [fx, fz] of [
+        [4, 5.5],
+        [7, 2.7],
+        [11.5, 1],
+        [9.5, -1.8],
+      ]) {
+        const f = { x: fx * dir, y: 0, z: fz },
+          pts = [
+            [f.x, 0, f.z],
+            [f.x, 2.3, f.z],
+            [RIM_X * dir, 3.28, 0],
+            [(fx + 1.5) * dir, 4.6, fz * 0.6], // the ball near the top of its arc
+          ],
+          fit = frameShot(shot, dir, f, { x: 0, z: 0 }, 16 / 9, pts, s => LENS[s]),
+          cam = new THREE.PerspectiveCamera(fit.fov, 16 / 9, 0.1, 300);
+        cam.position.set(...fit.position);
+        cam.lookAt(...fit.target);
+        cam.updateMatrixWorld();
+        for (const p of pts) {
+          const v = new THREE.Vector3(...p).project(cam);
+          if (v.z > 1) continue;
+          const tol = 0.03;
+          assert.ok(
+            v.x >= SAFE.left - tol &&
+              v.x <= SAFE.right + tol &&
+              v.y >= SAFE.bottom - tol &&
+              v.y <= SAFE.top + tol,
+            `${shot} dir ${dir} at ${fx},${fz}: ${p.join(',')} lands at ${v.x.toFixed(2)},${v.y.toFixed(2)}`,
+          );
+        }
+      }
 });

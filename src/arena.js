@@ -455,8 +455,15 @@ export class Arena {
         3.28 - 0.5 * FT + 1.75 * FT,
         0,
       );
-      back.material.transparent = true;
-      back.material.opacity = 0.6;
+      // tempered glass: you see the arena through it; the white frame and the shooter's square are painted on (below)
+      back.material = new THREE.MeshPhysicalMaterial({
+        color: 0xdfe8f2,
+        roughness: 0.05,
+        metalness: 0,
+        transparent: true,
+        opacity: 0.16,
+        depthWrite: false,
+      });
       back.castShadow = false; // stanchion sits out of bounds; arm meets the back of the board instead of poking through it over the rim
       const frame = (y0, y1, z) => [
         [y0, -z],
@@ -1643,7 +1650,12 @@ export class Arena {
         kept = keepApart((this.spacing ??= {}), wanted, {
           pinned: new Set([o]),
           dt: this.motion ? this.frameDt : 0,
-          gap: (i, j) => ((i === o && j === mk) || (i === mk && j === o) ? SPACE.contest : SPACE.min),
+          gap: (i, j) =>
+            (i === o && j === mk) || (i === mk && j === o)
+              ? clip.outcome === 'block'
+                ? SPACE.block
+                : SPACE.contest
+              : SPACE.min,
         });
       // a jump shooter's arms take the shot's form (basketball.js shotHands: the title jumper's), his legs their own jump
       const shooterArms = pose.shotHands && !tr ? this.shotPerform(pose.shotHands) : null;
