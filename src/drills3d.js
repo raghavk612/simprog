@@ -184,7 +184,8 @@ export function createStage(host, { fov = 38, minAspect = 1.0 } = {}) {
     document.removeEventListener('visibilitychange', vis);
     const seen = new Set(),
       free = t => {
-        if (t && !seen.has(t)) {
+        if (t && !seen.has(t) && !t.userData?.shared) {
+          // shared: the athletes' detail maps belong to their templates (src/playerMaps.js), not to this scene
           seen.add(t);
           t.dispose?.();
         }
@@ -1320,8 +1321,10 @@ function toAthlete(S, rig, { jersey, skin, number, numberBg, numberFg, name, sca
     jersey,
     'guard',
     lookFor(`${name}|${number}`),
+    { level: S.level || 'high' },
   );
   body.setLod?.(0);
+  S.onLevel?.push(() => !S.dead && body.setDetail?.(S.level)); // detail maps follow an Auto downgrade
   body.setLettering(String(number), name, numberBg, numberFg, jersey === PURPLE ? 'home' : null);
   body.root.traverse(o => {
     if (o.isMesh) {

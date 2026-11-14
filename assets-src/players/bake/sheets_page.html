@@ -1,0 +1,119 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Detail sheets</title>
+<style>
+  body { margin: 0; background: #111; }
+</style>
+<script type="importmap">
+  { "imports": { "three": "./three/build/three.module.js", "three/addons/": "./three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<script type="module">
+// Page for assets-src/players/bake/detail_sheets.py. window.load({glbs: {key: url}, textures: {key: url}}) loads
+// meshes (by node name) and maps; window.render(cfg) draws a list of items (glb key, mesh names, normal map key, AO
+// map key, colour) from a camera, the way the game assigns maps: separate textures, flipY = false (glTF UVs), linear,
+// TANGENT from the GLB, AO from the red channel, MeshStandardMaterial.
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true });
+renderer.setPixelRatio(1);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(30, 1, 0.02, 30);
+const hemi = new THREE.HemisphereLight(0xdfe6ff, 0x3a3030, 0.7);
+const key = new THREE.DirectionalLight(0xffffff, 2.8);
+const rim = new THREE.DirectionalLight(0xb8c8ff, 0.0);
+scene.add(hemi, key, key.target, rim, rim.target);
+
+const meshes = {}, textures = {};
+const tex = url =>
+  new Promise((ok, no) =>
+    new THREE.TextureLoader().load(url, t => {
+      t.flipY = false;
+      t.colorSpace = THREE.NoColorSpace;
+      t.anisotropy = 8;
+      ok(t);
+    }, undefined, no),
+  );
+const glb = url => new Promise((ok, no) => new GLTFLoader().load(url, ok, undefined, no));
+
+window.load = async spec => {
+  try {
+    for (const [k, url] of Object.entries(spec.glbs || {})) {
+      const g = await glb(url);
+      meshes[k] = {};
+      g.scene.traverse(o => o.isMesh && (meshes[k][o.name] = o));
+    }
+    for (const [k, url] of Object.entries(spec.textures || {})) textures[k] = await tex(url);
+    return Object.fromEntries(Object.entries(meshes).map(([k, v]) => [k, Object.keys(v)]));
+  } catch (e) {
+    return 'ERROR ' + String(e && e.stack ? e.stack : e);
+  }
+};
+
+const matCache = new Map();
+function material(it) {
+  const k = JSON.stringify([it.normal, it.ao, it.color, it.roughness, it.normalScale, it.normals]);
+  if (matCache.has(k)) return matCache.get(k);
+  const p = {};
+  if (it.normal) {
+    p.normalMap = textures[it.normal];
+    p.normalScale = new THREE.Vector2(it.normalScale ?? 1, it.normalScale ?? 1);
+  }
+  let m;
+  if (it.normals) m = new THREE.MeshNormalMaterial(p);
+  else {
+    if (it.ao) {
+      p.aoMap = textures[it.ao];
+      p.aoMapIntensity = it.aoIntensity ?? 1;
+    }
+    m = new THREE.MeshStandardMaterial({ color: it.color ?? 0x8a5a3e, roughness: it.roughness ?? 0.6, ...p });
+  }
+  matCache.set(k, m);
+  return m;
+}
+
+window.render = cfg => {
+  for (const c of [...scene.children]) if (c.isMesh) scene.remove(c);
+  for (const it of cfg.items) {
+    const set = meshes[it.glb];
+    if (!set) continue;
+    for (const name of it.names) {
+      const o = set[name];
+      if (!o) continue;
+      const m = new THREE.Mesh(o.geometry, material(it));
+      if (it.matrix) m.applyMatrix4(new THREE.Matrix4().fromArray(it.matrix));
+      scene.add(m);
+    }
+  }
+  const [w, h] = cfg.size || [400, 400];
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.fov = cfg.fov || 30;
+  camera.updateProjectionMatrix();
+  camera.position.fromArray(cfg.cam);
+  camera.lookAt(new THREE.Vector3().fromArray(cfg.target));
+  const t = new THREE.Vector3().fromArray(cfg.target);
+  const L = new THREE.Vector3().fromArray(cfg.light || [-0.6, 0.6, 0.8]).normalize();
+  key.position.copy(t).addScaledVector(L, 5);
+  key.target.position.copy(t);
+  key.intensity = cfg.key ?? 2.8;
+  hemi.intensity = cfg.hemi ?? 0.7;
+  const R = new THREE.Vector3().fromArray(cfg.rimDir || [0.8, 0.3, -0.8]).normalize();
+  rim.position.copy(t).addScaledVector(R, 5);
+  rim.target.position.copy(t);
+  rim.intensity = cfg.rim ?? 0.0;
+  renderer.setClearColor(cfg.bg ?? 0x1e1e24, 1);
+  renderer.render(scene, camera);
+  return renderer.domElement.toDataURL('image/png');
+};
+window.ready = true;
+</script>
+</body>
+</html>

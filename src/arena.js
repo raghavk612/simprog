@@ -587,7 +587,10 @@ export class Arena {
         });
       return;
     }
-    this.people.forEach(p => this.styleBody(p));
+    this.people.forEach(p => {
+      this.styleBody(p);
+      p.userData.body?.setDetail?.(this.level); // baked detail maps on Medium and High (bodies are not rebuilt per level)
+    });
     this.styleBall(want === 'athletes' && !!this.templates);
     this.look?.set(want === 'athletes' && !!this.templates, this.level);
   }
@@ -670,7 +673,7 @@ export class Arena {
     const body =
       want === 'classic'
         ? classicBody(this.bodyKit(), i, color)
-        : athleteBody(this.templates[want], this.bodyKit(), i, color, want, look);
+        : athleteBody(this.templates[want], this.bodyKit(), i, color, want, look, { level: this.level });
     return this.swapBody(p, body);
   }
   swapBody(p, body) {

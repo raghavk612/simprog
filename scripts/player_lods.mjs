@@ -59,19 +59,28 @@ function read(json, bin, index) {
 }
 /* Simplify an index list. Vertices that share a position (UV or normal seams) are welded for the simplifier, so seams do
    not count as borders; open garment edges (hems, sleeve openings) stay locked so pieces keep meeting the body. */
+/* The simplifier gets only the welded positions: with the duplicates still in its vertex array it would treat every vertex
+   that has one (all UV seams of the baked atlases) as a seam and lock it. Its output maps back to the first vertex at each
+   position. */
 export function simplifyIndices(indices, positions, ratio = LOD_RATIO, error = LOD_ERROR) {
   const count = positions.length / 3,
     key = new Map(),
-    weld = new Uint32Array(count);
+    weld = new Uint32Array(count),
+    rep = [];
   for (let i = 0; i < count; i++) {
     const k = `${positions[i * 3].toFixed(5)},${positions[i * 3 + 1].toFixed(5)},${positions[i * 3 + 2].toFixed(5)}`;
-    if (!key.has(k)) key.set(k, i);
+    if (!key.has(k)) {
+      key.set(k, rep.length);
+      rep.push(i);
+    }
     weld[i] = key.get(k);
   }
+  const compact = new Float32Array(rep.length * 3);
+  rep.forEach((v, u) => compact.set(positions.subarray(v * 3, v * 3 + 3), u * 3));
   const welded = Uint32Array.from(indices, i => weld[i]),
     target = Math.max(3, Math.floor((indices.length * ratio) / 3) * 3);
-  const [out] = MeshoptSimplifier.simplify(welded, positions, 3, target, error, ['LockBorder']);
-  return out;
+  const [out] = MeshoptSimplifier.simplify(welded, compact, 3, target, error, ['LockBorder']);
+  return Uint32Array.from(out, u => rep[u]);
 }
 
 export async function addLods(file) {
