@@ -199,6 +199,16 @@ export const COMMENTARY = {
     'Loose ball… {{rebounder}} comes up with it.',
     '{{rebounder}} dives on it.',
   ],
+  putbackMade: [
+    '{{helper}} grabs the loose ball and puts it right back up… good!',
+    'Loose ball… {{helper}} gets there first and scores!',
+    '{{helper}} hustles it down and lays it in!',
+  ],
+  putbackMiss: [
+    '{{helper}} grabs the loose ball, goes back up… no good.',
+    '{{helper}} wins the scramble, but the putback rims out.',
+    'Second chance for {{helper}}… off the iron.',
+  ],
   finish: {
     three: [
       'Got it! Three!',
@@ -248,7 +258,12 @@ export function renderCommentary(c, cm, T = COMMENTARY) {
   let parts;
   if (c.outcome === 'steal') parts = [f(at(T.steal, cm[0]))];
   else if (c.outcome === 'block')
-    parts = [f(at(T.lead[c.kind], cm[0])), f(at(T.block, cm[1])), f(tag(T.loose))];
+    parts = [
+      f(at(T.lead[c.kind], cm[0])),
+      f(at(T.block, cm[1])),
+      // the loose ball: the defense comes up with it, or the shooting team keeps it and goes back up
+      f(tag(c.recovery === 'offense' ? (c.putback === 'made' ? T.putbackMade : T.putbackMiss) : T.loose)),
+    ];
   else {
     const group = c.points ? (c.three ? 'three' : isDunk(c.kind) ? 'dunk' : 'two') : 'miss';
     parts = [
@@ -320,57 +335,150 @@ export const launch = (p, q, T) => ({
    reaches the top again, slowly (`arrive` units/s), so the catch is soft. The push is only as quick as it has to be for
    that: its length and the rhythm (DRIBBLE.period) are worked out from the bounce, not picked.
    Heights are ball-centre heights; the hand height is where the ball's centre is when the hand is on it. */
-export const DRIBBLE = { top: 1.0, reach: 0.11, at: 0.6, arrive: 0.6 };
 const smoother = s => s * s * s * (s * (6 * s - 15) + 10), // 0..1 with zero speed and acceleration at both ends
   smootherSpeed = s => 30 * s * s * (1 - s) * (1 - s);
-{
-  const D = DRIBBLE,
+/* A dribble for a hand that works between `top` and top - 2 x reach (the moves in src/moves use other heights than the
+   plays). Returns the solved timings and at(phase) -> {ball, hand, contact, progress}. */
+export function makeDribble({ top = 1.0, reach = 0.11, at = 0.6, arrive = 0.6 } = {}) {
+  const D = { top, reach, at, arrive, mid: top - reach },
     g = BALL.g,
-    travel = 2 * D.reach;
-  D.releaseY = D.top - travel * smoother(D.at);
+    travel = 2 * reach;
+  D.releaseY = top - travel * smoother(at);
   // the speed the ball must leave the hand with to bounce back up to the top arriving at `arrive`
-  const upOff = Math.sqrt(D.arrive ** 2 + 2 * g * (D.top - BALL.floor)),
+  const upOff = Math.sqrt(arrive ** 2 + 2 * g * (top - BALL.floor)),
     hit = upOff / BALL.bounce;
   D.releaseV = Math.sqrt(hit * hit - 2 * g * (D.releaseY - BALL.floor));
-  D.push = (travel * smootherSpeed(D.at)) / D.releaseV; // seconds for the whole down stroke
-  D.release = D.at * D.push;
-  D.period = D.release + (hit - D.releaseV) / g + (upOff - D.arrive) / g;
+  D.push = (travel * smootherSpeed(at)) / D.releaseV; // seconds for the whole down stroke
+  D.release = at * D.push;
+  D.period = D.release + (hit - D.releaseV) / g + (upOff - arrive) / g;
+  /* Ball and hand heights at a point in the dribble (phase in bounces: 0..1 is one, starting with the hand at the top and
+     the ball arriving in it; any number works). contact: the ball is in the hand; progress: 0..1 through that part. */
+  D.at = phase => {
+    const t = (phase - Math.floor(phase)) * D.period,
+      hand =
+        t < D.push
+          ? top - travel * smoother(t / D.push) // the push down
+          : top - travel + travel * smoother((t - D.push) / (D.period - D.push)); // the slow rise back to the top
+    if (t < D.release) return { ball: hand, hand, contact: true, progress: t / D.release };
+    const ball = fly({ x: 0, y: D.releaseY, z: 0 }, { x: 0, y: -D.releaseV, z: 0 }, t - D.release).y;
+    return { ball, hand, contact: false, progress: (t - D.release) / (D.period - D.release) };
+  };
+  return D;
 }
-/* Ball and hand heights at a point in the dribble (phase in bounces: 0..1 is one, starting with the hand at the top and the
-   ball arriving in it; any number works). contact: the ball is in the hand; progress: 0..1 through that part. */
-export function dribbleAt(phase) {
-  const D = DRIBBLE,
-    t = (phase - Math.floor(phase)) * D.period,
-    travel = 2 * D.reach,
-    hand =
-      t < D.push
-        ? D.top - travel * smoother(t / D.push) // the push down
-        : D.top - travel + travel * smoother((t - D.push) / (D.period - D.push)); // the slow rise back to the top
-  if (t < D.release) return { ball: hand, hand, contact: true, progress: t / D.release };
-  const ball = fly({ x: 0, y: D.releaseY, z: 0 }, { x: 0, y: -D.releaseV, z: 0 }, t - D.release).y;
-  return { ball, hand, contact: false, progress: (t - D.release) / (D.period - D.release) };
-}
+/* The game's dribble: the hand between 1.0 and 0.78, about 1.9 bounces a second. */
+export const DRIBBLE = makeDribble();
+export const dribbleAt = phase => DRIBBLE.at(phase);
+/* How far the drawn 24 cm ball sits below its play position near the floor (the plays place the classic 0.28 ball, so its
+   floor contact is at 0.3; the real ball touches at 0.13). Nothing in the hand: zero above about knee height. */
+export const ballDrop = y => (0.28 - 0.13) * Math.max(0, Math.min(1, 1 - (y - 0.28) / 0.45));
 /* A shot's timeline as fractions of the clip. The ball rises `rise` above the rim (higher arcs for jump shots, almost none
    for a dunk), so its flight time follows from gravity; the release comes that long before the ball reaches the rim, at the
    top of the jump, and the run, the gather and the jump are placed around it. */
 export function shotTiming(kind) {
   const fam = family(kind),
     spec = SHOTS[kind] || SHOTS.pullup,
-    jump = fam === 'dunk' ? 1.2 : fam === 'drive' || fam === 'roll' ? 0.65 : 0.8,
-    y0 = BALL.hand + jump,
+    jumper = JUMPERS.has(fam),
+    // how high he rises: a jump shooter about 18 in, a layup a little more, a dunk a lot
+    jump = fam === 'dunk' ? 1.2 : fam === 'drive' || fam === 'roll' ? 0.65 : jumper ? 0.55 : 0.6,
+    y0 = (jumper ? SHOT.release[1] : BALL.hand) + jump,
     apex = Math.max(y0, BALL.rim) + spec.arc * 0.45,
     flight = Math.sqrt((2 * (apex - y0)) / BALL.g) + Math.sqrt((2 * (apex - BALL.rim)) / BALL.g),
-    release = BALL.arrive - flight / CLIP_SECONDS;
+    release = BALL.arrive - flight / CLIP_SECONDS,
+    hang = (2 * Math.sqrt((2 * jump) / BALL.g)) / CLIP_SECONDS, // time in the air (clip fraction), real gravity
+    takeoff = release - hang / 2; // the release comes at the top of the jump
   return {
     flight,
     release,
     jump,
+    jumper,
     y0,
+    hang,
     gather: release - 0.18,
-    takeoff: release - 0.15,
-    arrive: release - 0.13,
+    takeoff,
+    land: takeoff + hang,
+    // a jump shooter is set (feet down) before he rises; a driver is still moving when he takes off
+    arrive: jumper ? release - 0.12 : takeoff + 0.02,
   };
 }
+/* ---- The jump shot's form (the same as the title screen's step-back jumper, src/moves/jumper.js) ----
+   Ball and hands in the shooter's own frame (+x his left, +z the way he faces, y up from the floor; his jump is added):
+   the ball comes into the shooting pocket in front of his chest, rises to the release above his forehead with the
+   shooting hand behind and under it and the guide hand on its side; after the release the shooting arm stays long, up and
+   out at the rim with the wrist snapped down, and comes down with him; the guide hand drifts up with the shot and falls
+   away; then his elbows go back down and the arms are his own again. */
+export const JUMPERS = new Set(['catch', 'pullup', 'stepback']);
+export const SHOT = {
+  pocket: [0, 1.18, 0.36],
+  release: [0, 2.22, 0.24],
+  nPocket: { R: [-0.55, -0.45, -0.55], L: [0.9, 0, -0.2] },
+  nRelease: { R: [0.02, -0.5, -0.85], L: [0.9, -0.35, 0] },
+  follow: [-0.2, 2.16, 0.46], // the shooting wrist after the release (he is in the air)
+  followDown: [-0.2, 1.88, 0.5], // still long as he lands
+  guideUp: [0.16, 2.22, 0.32],
+  guideOut: [0.34, 1.78, 0.5],
+  guideDown: [0.34, 1.46, 0.46],
+  pole: [-0.4, -0.8, 0.2], // the shooting elbow: down and out, the arm long
+};
+const PALM_OFF = 0.2; // wrist to ball centre with the hand on the ball
+const turnY = (p, yaw) => [
+  p[0] * Math.cos(yaw) + p[2] * Math.sin(yaw),
+  p[1],
+  -p[0] * Math.sin(yaw) + p[2] * Math.cos(yaw),
+];
+const unit = v => {
+  const l = Math.hypot(...v) || 1;
+  return v.map(x => x / l);
+};
+const mixV = (a, b, k) => a.map((v, i) => v + (b[i] - v) * k);
+/* The jump shooter's hands (world) at clip fraction t, or null outside the shot: hands on the ball from the gather to the
+   release, the follow-through after it, fading back to his own arms after the landing. at = {x, z, yaw, y (his jump)}. */
+function shotHands(t, T, at, ballW) {
+  if (t < T.gather || t > T.land + 0.14) return null;
+  const W = p => {
+      const r = turnY(p, at.yaw);
+      return [at.x + r[0], r[1] + at.y, at.z + r[2]];
+    },
+    D = n => unit(turnY(n, at.yaw)),
+    sm = x => ((x = clamp(x)), x * x * (3 - 2 * x)),
+    out = {};
+  if (t < T.release) {
+    const k = sm((t - (T.release - 0.07)) / 0.07); // the hands roll into the shooting grip as it rises
+    for (const h of ['R', 'L']) {
+      const n = D(mixV(SHOT.nPocket[h], SHOT.nRelease[h], k));
+      out[h] = {
+        p: ballW.map((v, i) => v + n[i] * PALM_OFF),
+        flex: h === 'R' ? -0.8 : 0,
+        pron: h === 'R' ? 0.5 : 0,
+        pole: h === 'R' ? D(SHOT.pole) : null,
+        w: sm((t - T.gather) / 0.05),
+      };
+    }
+    return out;
+  }
+  const sec = (t - T.release) * CLIP_SECONDS,
+    landS = (T.land - T.release) * CLIP_SECONDS,
+    fade = 1 - sm((t - T.land - 0.06) / 0.08), // back to his own arms after the landing
+    relHand = h => {
+      const n = D(SHOT.nRelease[h]),
+        b = W(SHOT.release);
+      return b.map((v, i) => v + n[i] * PALM_OFF);
+    };
+  const r =
+    sec < 0.12
+      ? mixV(relHand('R'), W(SHOT.follow), sm(sec / 0.12))
+      : mixV(W(SHOT.follow), W(SHOT.followDown), sm((sec - landS) / 0.25));
+  const l =
+    sec < 0.07
+      ? mixV(relHand('L'), W(SHOT.guideUp), sm(sec / 0.07))
+      : sec < 0.3
+        ? mixV(W(SHOT.guideUp), W(SHOT.guideOut), sm((sec - 0.07) / 0.23))
+        : mixV(W(SHOT.guideOut), W(SHOT.guideDown), sm((sec - landS) / 0.25));
+  out.R = { p: r, flex: 1.0, pron: 0.5, pole: D(SHOT.pole), w: fade };
+  out.L = { p: l, flex: 0, pron: 0, pole: null, w: fade };
+  return out;
+}
+/* When a block meets the ball (clip fraction): just out of the shooter's hand. */
+export const blockHit = kind => shotTiming(kind).release + 0.015;
 /* ---- Spacing (game units; 1 ft = 0.33) ---- */
 /* A defender's spot for a man at {x,z}: `gap` units from him toward the rim. Without a gap: a third of the way to the rim,
    at least 4 ft and at most 8 ft off him, the way an off-ball defender sits between his man and the basket. */
@@ -406,8 +514,12 @@ export function sampleClip(c, time) {
   const T = shotTiming(c.kind),
     rel = T.release,
     d = rel - 0.61;
-  const hop = u =>
-    u >= T.takeoff && u <= T.takeoff + 0.3 ? Math.sin(((u - T.takeoff) / 0.3) * Math.PI) * T.jump : 0;
+  // the jump: a real one under gravity, at its top as he lets the ball go
+  const hop = u => {
+    if (u < T.takeoff || u > T.land) return 0;
+    const tau = (u - T.release) * CLIP_SECONDS;
+    return Math.max(0, T.jump - 0.5 * BALL.g * tau * tau);
+  };
   const m0 = clamp(t / T.arrive),
     movement = 0.35 * m0 + 0.65 * smooth(m0),
     at = path(smoothRoute(route), movement), // an even run with a gentle start and finish (peak speed 1.3x the average)
@@ -454,11 +566,14 @@ export function sampleClip(c, time) {
   const separation = c.contest === 'open' ? 2.5 : c.contest === 'tight' ? 1 : 1.5;
   Object.assign(marker, guardSpot(shooter, side, separation));
   marker.run = 0.85 - 0.75 * smooth((t - 0.45 - d) / 0.08);
-  const defenseJump =
-    t >= 0.5 + d && t <= 0.81 + d
-      ? Math.sin(((t - 0.5 - d) / 0.31) * Math.PI) *
-        (c.outcome === 'block' ? 1.05 : c.contest === 'open' ? 0.22 : 0.7)
-      : 0;
+  // the contest: a real jump under gravity, at its top just as the ball leaves the shooter's hand (a block is timed to
+  // the ball itself, below)
+  const HIT = blockHit(c.kind), // when a block meets the ball: just out of the shooter's hand
+    leap = (u, H, peakU) => {
+      const tau = (u - peakU) * CLIP_SECONDS;
+      return Math.max(0, H - 0.5 * BALL.g * tau * tau);
+    };
+  const defenseJump = c.outcome === 'block' ? 0 : leap(t, c.contest === 'open' ? 0.22 : 0.62, HIT);
   marker.y = defenseJump;
   marker.arms = t > 0.48 + d && t < 0.82 + d ? 'block' : 'defend';
   if (fam === 'drive' || fam === 'floater' || fam === 'roll') {
@@ -485,7 +600,7 @@ export function sampleClip(c, time) {
     screen.x = lerp(-4.5 * side, screen.x, q);
     screen.z = lerp(3 * lane, screen.z, q);
     screen.run = 0.35 + 0.65 * Math.sin(q * Math.PI);
-    if (t < 0.2) screen.arms = 'pass';
+    if (t < 0.2 && !c.afterSteal) screen.arms = 'pass';
   }
   // Off-ball cuts and closeouts: players do not just oscillate in place.
   actors[offense + 2].x = lerp(4, 10, smooth(t)) * side;
@@ -498,7 +613,8 @@ export function sampleClip(c, time) {
   const mix = (a, b, w) => ({ x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), z: lerp(a.z, b.z, w) });
   const bounce = (t * CLIP_SECONDS) / DRIBBLE.period; // the dribble's clock, in bounces
   let ball = { x: shooter.x + 0.38 * side, y: dribbleAt(bounce).ball, z: shooter.z + 0.15 };
-  if (fam === 'catch') {
+  // c.afterSteal: the shooter stole the ball on the play before, so he already has it (no pass in to him)
+  if (fam === 'catch' && !c.afterSteal) {
     const q = smooth(t / 0.3);
     ball = mix(
       { x: lerp(3, at[0], q) * side, y: 1.4 + Math.sin(q * Math.PI) * 0.35, z: lerp(-5.5, at[1], q) },
@@ -507,25 +623,46 @@ export function sampleClip(c, time) {
     );
     if (t < 0.3) screen.arms = 'pass';
   }
-  if (fam === 'dunk') {
+  if (fam === 'dunk' && !c.afterSteal) {
+    // the outlet: thrown from the passer's hands (he starts deep in the backcourt) up to the man running the break
     const q = smooth(t / 0.2);
     ball = mix(
-      { x: lerp(-10, at[0], q) * side, y: 1.6 + Math.sin(q * Math.PI) * 0.7, z: lerp(3 * lane, at[1], q) },
+      { x: lerp(-4.5, at[0], q) * side, y: 1.6 + Math.sin(q * Math.PI) * 0.7, z: lerp(3 * lane, at[1], q) },
       ball,
       smooth((t - 0.17) / 0.08),
     );
   }
   const pickup = dribbleAt((T.gather * CLIP_SECONDS) / DRIBBLE.period).ball;
-  if (t >= T.gather && t < rel) {
-    ball = {
-      x: shooter.x + lerp(0.38, 0.28, gather) * side,
-      y: lerp(pickup, BALL.hand, gather) + jump,
-      z: shooter.z + lerp(0.15, 0, gather),
+  // the shooter's frame, for the jump shot's form (shotHands): where he stands, which way he faces, how high he is
+  const me = { x: shooter.x, z: shooter.z, yaw: shooter.yaw, y: jump },
+    inFrame = p => {
+      const r = turnY(p, me.yaw);
+      return { x: me.x + r[0], y: r[1] + me.y, z: me.z + r[2] };
     };
+  if (t >= T.gather && t < rel) {
+    if (T.jumper) {
+      // off the dribble into the pocket in front of his chest, then up to the release above his forehead as he rises
+      const pocket = inFrame(SHOT.pocket),
+        up = inFrame(SHOT.release),
+        k = smooth((t - (rel - 0.07)) / 0.07),
+        g = smooth(gather),
+        from = { x: shooter.x + 0.38 * side, y: pickup + jump, z: shooter.z + 0.15 };
+      ball = mix(mix(from, pocket, g), up, k);
+    } else
+      ball = {
+        x: shooter.x + lerp(0.38, 0.28, gather) * side,
+        y: lerp(pickup, BALL.hand, gather) + jump,
+        z: shooter.z + lerp(0.15, 0, gather),
+      };
   }
   // In flight the ball follows a true parabola under gravity from the release to the rim (constant speed across the floor).
   const sec = CLIP_SECONDS,
-    release = { x: (end[0] + 0.28) * side, y: BALL.hand + hop(rel), z: end[1] },
+    release = T.jumper
+      ? (() => {
+          const r = turnY(SHOT.release, me.yaw);
+          return { x: me.x + r[0], y: r[1] + hop(rel), z: me.z + r[2] };
+        })()
+      : { x: (end[0] + 0.28) * side, y: BALL.hand + hop(rel), z: end[1] },
     rim = { x: 12.15 * side, y: BALL.rim, z: 0 },
     shot = launch(release, rim, T.flight),
     flight = u => fly(release, shot, (Math.min(u, BALL.arrive) - rel) * sec);
@@ -549,16 +686,158 @@ export function sampleClip(c, time) {
             );
     else ball = fly(rim, launch(rim, land, (1 - BALL.arrive) * sec), tau);
   }
+  // A block (c.recovery / c.putback from the engine): the blocker explodes up and swings his hand through the ball just
+  // out of the shooter's hand; it is knocked hard to the side, bounces loose, and the nearest player from each team goes
+  // for it. The side the engine chose comes up with it: the defense turns up the floor; the shooting team goes straight
+  // back up (the putback), in time for the ball to land before the play ends.
+  let blockHands = null,
+    blockEnd = null;
   if (c.outcome === 'block') {
-    const w = smooth((t - 0.52 - d) / 0.13),
-      hit = rel + 0.04; // the block meets the ball just after the release and swats it down and away
-    const up = guardSpot(shooter, side, 0.85); // right up on the shooter to reach the ball
-    marker.x = lerp(marker.x, up.x, w);
-    marker.z = lerp(marker.z, up.z, w);
-    if (t > hit) {
-      const from = flight(hit),
-        span = (1 - hit) * sec;
-      ball = fly(from, { x: (land.x - from.x) / span, y: -2, z: (land.z - from.z) / span }, (t - hit) * sec);
+    const S = CLIP_SECONDS,
+      contact = flight(HIT),
+      rimX = 12.15 * side,
+      flat = (x, z) => {
+        const l = Math.hypot(x, z) || 1;
+        return { x: x / l, z: z / l };
+      },
+      toRim = flat(rimX - contact.x, -contact.z),
+      // higher than he needs: his fingers (2.4 standing) get above the ball and come down through it
+      H = clamp(contact.y - 2.4 + 0.15, 0.55, 1.05),
+      spot = { x: contact.x + toRim.x * 0.22, z: contact.z + toRim.z * 0.22 },
+      hang = Math.sqrt((2 * H) / BALL.g) / S,
+      w = smooth((t - (HIT - hang - 0.1)) / 0.08); // in place before he takes off
+    marker.x = lerp(marker.x, spot.x, w);
+    marker.z = lerp(marker.z, spot.z, w);
+    marker.y = leap(t, H, HIT);
+    // the swat: to the side (the near sideline of the play), a little back toward the shooter, and down
+    const sideZ = lane >= 0 ? 1 : -1;
+    let perp = { x: -toRim.z, z: toRim.x };
+    if (perp.z * sideZ < 0) perp = { x: -perp.x, z: -perp.z };
+    const dir = flat(perp.x * 0.85 - toRim.x * 0.45, perp.z * 0.85 - toRim.z * 0.45),
+      kept = c.recovery === 'offense',
+      // the time it may take to come up with it: time to spare for the putback (or to turn up the floor) after
+      endTau = (0.995 - HIT) * S,
+      want = clamp(endTau - (kept ? 0.62 : 0.2), 0.3, 0.62),
+      chest = 1.15,
+      tauFor = vy => {
+        const down = (vy + Math.sqrt(vy * vy + 2 * BALL.g * (contact.y - BALL.floor))) / BALL.g,
+          up = (BALL.g * down - vy) * BALL.bounce;
+        return down + (up - Math.sqrt(Math.max(0, up * up - 2 * BALL.g * (chest - BALL.floor)))) / BALL.g;
+      };
+    // a harder swat down reaches the floor sooner: find the one that comes up into his hands when it should
+    let lo = -14,
+      hi = -1.5;
+    for (let i = 0; i < 40; i++) {
+      const mid = (lo + hi) / 2;
+      if (tauFor(mid) > want) hi = mid;
+      else lo = mid;
+    }
+    const vy = (lo + hi) / 2,
+      catchTau = tauFor(vy),
+      // as hard as 4.8 units/s across, but it is won inbounds (inside the sidelines and the baseline)
+      room = Math.min(
+        dir.z ? (7.3 - Math.sign(dir.z) * contact.z) / Math.abs(dir.z) : Infinity,
+        dir.x ? (13.2 - Math.sign(dir.x) * contact.x) / Math.abs(dir.x) : Infinity,
+      ),
+      speed = clamp(Math.min(4.8, room / catchTau), 1.2, 4.8),
+      CATCH = HIT + catchTau / S;
+    let v = { x: dir.x * speed, y: vy, z: dir.z * speed },
+      at = fly(contact, v, catchTau);
+    // the scramble: each team's nearest player goes for it, from where he is at the block (the same play unblocked moves
+    // everyone else the same way)
+    const there = sampleClip(
+        { ...c, outcome: 'made', points: 2, recovery: undefined, putback: undefined },
+        HIT * S,
+      ).actors,
+      nearest = list =>
+        list.map(o => ({ ...o, d: Math.hypot(o.p.x - at.x, o.p.z - at.z) })).sort((a, b) => a.d - b.d)[0],
+      offP = nearest([1, 2, 3, 4].map(k => ({ i: offense + k, p: there[offense + k] }))),
+      defP = nearest([1, 2, 3, 4].map(k => ({ i: defense + k, p: there[defense + k] }))),
+      win0 = kept ? offP : defP;
+    // a real sprint (6.5 units/s) must get the winner there: if he could not, the swat goes more his way
+    {
+      const reach = 6.5 * catchTau,
+        far = Math.hypot(win0.p.x - at.x, win0.p.z - at.z);
+      if (far > reach) {
+        const k = (far - reach * 0.9) / far, // how far along from the ball's spot toward him it must come down
+          tx = at.x + (win0.p.x - at.x) * k,
+          tz = at.z + (win0.p.z - at.z) * k;
+        v = { x: (tx - contact.x) / catchTau, y: vy, z: (tz - contact.z) / catchTau };
+        at = fly(contact, v, catchTau);
+      }
+    }
+    const win = win0,
+      lose = kept ? defP : offP,
+      W = actors[win.i],
+      Lp = actors[lose.i],
+      meet = { x: at.x + dir.x * 0.3, z: at.z + dir.z * 0.3 },
+      fromL = flat(lose.p.x - at.x, lose.p.z - at.z),
+      beaten = { x: at.x + fromL.x * 0.8, z: at.z + fromL.z * 0.8 },
+      wm = smooth((t - HIT + 0.01) / (CATCH - HIT + 0.01));
+    W.x = lerp(W.x, meet.x, wm);
+    W.z = lerp(W.z, meet.z, wm);
+    W.run = Math.max(W.run, Math.sin(wm * Math.PI) * 0.95);
+    W.yaw = Math.atan2(at.x - meet.x, at.z - meet.z);
+    Lp.x = lerp(Lp.x, beaten.x, wm);
+    Lp.z = lerp(Lp.z, beaten.z, wm);
+    Lp.run = Math.max(Lp.run, Math.sin(wm * Math.PI) * 0.95);
+    Lp.yaw = Math.atan2(at.x - beaten.x, at.z - beaten.z);
+    if (t > CATCH - 0.04) {
+      W.arms = 'rebound';
+      Lp.arms = 'rebound';
+    }
+    // the putback: he rises straight away and lays it up at the rim; made goes through the net, missed comes off the iron
+    let putback = null;
+    if (kept) {
+      const rimP = { x: rimX, y: BALL.rim, z: 0 },
+        spare = (0.997 - CATCH) * S,
+        GO = CATCH + Math.min(0.22, spare * 0.3) / S, // gathers it up into his shooting hands
+        lift = 0.45,
+        from = { x: at.x, y: 2.35 + lift, z: at.z },
+        ARR = Math.min(0.997, GO + Math.max(0.42, Math.hypot(rimP.x - at.x, rimP.z) / 7.5) / S);
+      putback = { GO, ARR, from, v: launch(from, rimP, (ARR - GO) * S), rimP };
+      blockEnd = ARR;
+      if (t > CATCH) {
+        W.yaw = Math.atan2(rimX - W.x, -W.z);
+        W.arms = t < ARR ? 'shoot' : 'relax';
+        W.y = leap(t, lift, GO);
+      }
+    } else if (t > CATCH + 0.03) W.yaw = Math.atan2(-side, 0); // the defense has it: he turns up the floor
+    if (t > HIT) {
+      if (t < CATCH) ball = fly(contact, v, (t - HIT) * S);
+      else if (!putback) ball = { x: at.x, y: chest, z: at.z };
+      else if (t < putback.GO) {
+        const k = smooth((t - CATCH) / (putback.GO - CATCH));
+        ball = { x: at.x, y: lerp(chest, putback.from.y, k), z: at.z };
+      } else if (t < putback.ARR) ball = fly(putback.from, putback.v, (t - putback.GO) * S);
+      else {
+        const tau = (t - putback.ARR) * S;
+        ball =
+          c.putback === 'made'
+            ? { x: rimX, y: Math.max(BALL.floor, BALL.rim - 3 * tau), z: 0 } // through the net
+            : fly(putback.rimP, { x: -toRim.x * 2.2, y: 2.4, z: -toRim.z * 2.2 }, tau); // off the iron
+      }
+    }
+    // the blocker's hand: cocked high on his side of the ball, a fast swing down through it at the contact, and on
+    // through after the ball; his own arm again once he comes down
+    {
+      const h = lane > 0 ? 'R' : 'L',
+        n = unit([toRim.x * 0.72, 0.7, toRim.z * 0.72]), // from the ball to his palm: on top, on his side
+        onBall = [contact.x + n[0] * PALM_OFF, contact.y + n[1] * PALM_OFF, contact.z + n[2] * PALM_OFF],
+        cocked = [onBall[0] + toRim.x * 0.3, onBall[1] + 0.25, onBall[2] + toRim.z * 0.3],
+        through = unit([v.x, v.y, v.z]),
+        since = (t - HIT) * S;
+      if (t > HIT - 0.12 && since < 0.45) {
+        const swing = smooth((t - (HIT - 0.03)) / 0.03),
+          p =
+            t <= HIT
+              ? mixV(cocked, onBall, swing)
+              : onBall.map(
+                  (x, i) => x + through[i] * 0.6 * Math.sin((Math.min(1, since / 0.12) * Math.PI) / 2),
+                ),
+          wgt = smooth((t - (HIT - 0.12)) / 0.04) * (1 - smooth((since - 0.3) / 0.15));
+        blockHands = { [h]: { p, flex: t > HIT ? 1.0 : -0.4, pron: 1.1, pole: null, w: wgt } };
+      }
     }
   }
   if (c.outcome === 'steal') {
@@ -577,7 +856,7 @@ export function sampleClip(c, time) {
   }
   // The rebounder reads the shot and arrives where the ball comes down rather than appearing there.
   const rebounder = actors[defense + (c.team === 'home' ? 4 : 0)];
-  if (!c.points && c.outcome !== 'steal') {
+  if (!c.points && c.outcome !== 'steal' && c.outcome !== 'block') {
     const w = smooth((t - 0.64) / 0.22);
     rebounder.x = lerp(rebounder.x, land.x, w);
     rebounder.z = lerp(rebounder.z, land.z, w);
@@ -609,12 +888,21 @@ export function sampleClip(c, time) {
               : c.outcome === 'steal'
                 ? 'Turnover'
                 : 'Shot in flight'
-            : c.points
-              ? 'Basket'
-              : 'Rebound',
+            : blockEnd && t < blockEnd
+              ? 'Putback'
+              : c.points
+                ? 'Basket'
+                : 'Rebound',
     bounce, // the dribble's clock (dribbleAt), for the dribbling hand
-    resolved: t >= BALL.arrive,
-    flying: c.outcome !== 'steal' && t >= rel && (c.outcome === 'block' ? t < rel + 0.04 : t < BALL.arrive),
+    // the blocker's hand (world) on a block, for his arm (as shotHands), or null
+    blockHands,
+    // the jump shooter's hands (world), for his arms (motion.js plays them like a move's), or null
+    shotHands:
+      T.jumper && c.outcome !== 'steal'
+        ? shotHands(t, T, me, ball && t < rel ? [ball.x, ball.y, ball.z] : null)
+        : null,
+    resolved: t >= (blockEnd ?? BALL.arrive), // a putback after a block resolves when it lands
+    flying: c.outcome !== 'steal' && t >= rel && (c.outcome === 'block' ? t < HIT : t < BALL.arrive),
     net: c.points && t > BALL.arrive ? Math.sin(((t - BALL.arrive) * Math.PI) / 0.14) * 0.12 : 0,
   };
 }

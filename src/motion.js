@@ -44,7 +44,8 @@ export function footAt(phase, stride, lift) {
 const damp = (cur, target, rate, dt) => cur + (target - cur) * (1 - Math.exp(-rate * dt));
 
 /* ---- Personal space: players keep about 3 ft apart, and go round each other instead of through ---- */
-export const SPACE = { min: 0.95, contest: 0.85 }; // game units centre to centre (1 ft = 0.33); a shot contest comes closer
+export const SPACE = { min: 0.95, contest: 0.85, block: 0.5 }; // game units centre to centre (1 ft = 0.33); a shot
+// contest comes closer, and a shot-blocker jumps right at the shooter
 /* One frame of keeping players apart. desired = where the play puts each player ([{x, z}]); state = {drawn, off} from the
    previous frame (or a new {}); pinned = indexes that never move (the player with the ball); gap(i, j) = the distance
    two players keep. Returns where to draw them.
@@ -230,7 +231,9 @@ function rest(body) {
 }
 
 /* Called by the Arena after its own pose for an athlete. ctx = {dt, motion, ball (world position or null), holder,
-   dribbleHand (the dribbling hand height, basketball.js dribbleAt)}. */
+   dribbleHand (the dribbling hand height, basketball.js dribbleAt), perform (a move's pose in world space, from
+   src/moves/stage.js worldFrame: planted feet, hand targets, wrist, torso and head; null when not performing)}.
+   A performance blends in and out over a few tenths of a second, so starting or stopping one never snaps. */
 export function animateAthlete(player, pose, ctx) {
   const u = player.userData,
     body = u.body,
@@ -269,8 +272,15 @@ export function animateAthlete(player, pose, ctx) {
   const speed = dt > 0 ? moved / dt : 0;
   m.speed = damp(m.speed, Math.min(speed, 9), 6, dt);
   m.t += dt;
+  // a move being performed (src/moves): its weight eases in and out; when it stops the last pose fades
+  const perf = ctx.perform || null;
+  m.perfW = damp(m.perfW ?? 0, perf ? 1 : 0, perf ? 10 : 5, dt || (perf ? 1 : 0));
+  if (perf) m.lastPerf = perf;
+  const PF = perf || (m.perfW > 0.01 ? m.lastPerf : null),
+    pw = PF ? m.perfW : 0,
+    pb = PF?.body || {};
   const run = Math.min(1, m.speed / 5),
-    airborne = Math.min(1, Math.max(0, pose.y) / 0.18);
+    airborne = Math.min(1, Math.max(0, pose.y) / 0.18) * (PF && !PF.gait ? 1 - pw : 1);
   const stride = strideFor(m.speed);
   if (ctx.motion) m.phase += (moved / Math.max(stride, 0.2)) * Math.PI;
   // stance targets by what the player is doing
@@ -288,7 +298,12 @@ export function animateAthlete(player, pose, ctx) {
   // pelvis: crouch, a bob at twice the stride rate, weight shift to one side
   const bob = ctx.motion ? Math.abs(Math.sin(m.phase)) * 0.035 * run : 0,
     h = R.legs.L.hipY;
-  b.pelvis.position.set(R.pelvis.x + m.sway * 0.025, R.pelvis.y - m.crouch * h + bob, R.pelvis.z);
+  const pdrop = (pb.drop || 0) * pw;
+  b.pelvis.position.set(
+    R.pelvis.x + m.sway * 0.025 * (1 - pw),
+    R.pelvis.y - m.crouch * h + bob - pdrop,
+    R.pelvis.z,
+  );
   b.pelvis.rotation.set(0, ctx.motion ? -Math.sin(m.phase) * 0.1 * run : 0, -m.sway * 0.03);
   // legs: stride targets, planted while in stance; in the air the knees tuck
   for (const [j, s] of [
@@ -306,7 +321,7 @@ export function animateAthlete(player, pose, ctx) {
     // the stride runs along the direction of travel: forward/back in the leg's plane, sideways through the hip (a shuffle)
     const fwd = foot.forward * Math.cos(dir),
       side = foot.forward * Math.sin(dir);
-    const hipWorldY = L.hipY - m.crouch * h + bob,
+    const hipWorldY = L.hipY - m.crouch * h + bob - pdrop,
       drop = hipWorldY - L.ankleY - foot.up + (s === 'L' ? -1 : 1) * m.sway * 0.012;
     let sol = solveLeg(
       L.thigh,
@@ -322,8 +337,31 @@ export function animateAthlete(player, pose, ctx) {
         toe: tuck.toe,
       };
     }
-    const abduct = (s === 'L' ? 1 : -1) * m.wide + Math.asin(Math.max(-0.6, Math.min(0.6, side / drop)));
-    hipBone.rotation.set(sol.hip, 0, abduct);
+    let abduct = (s === 'L' ? 1 : -1) * m.wide + Math.asin(Math.max(-0.6, Math.min(0.6, side / drop))),
+      twist = 0;
+    // performing: the leg reaches the move's planted foot (world target -> this player's space), the foot turned its way
+    if (PF && !PF.gait && pw > 0 && PF.feet?.[s]) {
+      const F = PF.feet[s],
+        lf = (player.updateMatrixWorld(), player.worldToLocal(_w.copy(F.p))),
+        hip = hipBone.position,
+        hx = R.pelvis.x + hip.x,
+        hz = R.pelvis.z + hip.z,
+        hy = L.hipY - m.crouch * h - (pb.drop || 0), // the hip where the move puts it (the blend is on the angles)
+        fs = lf.x - hx,
+        dp = Math.max(0.2, hy - L.ankleY - lf.y),
+        sp = solveLeg(L.thigh, L.shin, lf.z - hz, Math.sqrt(Math.max(dp * dp - fs * fs, dp * dp * 0.5))),
+        ab = Math.asin(Math.max(-0.6, Math.min(0.6, fs / dp))),
+        tw = Math.atan2(Math.sin(F.yaw - player.rotation.y), Math.cos(F.yaw - player.rotation.y));
+      sol = {
+        hip: sol.hip + (sp.hip - sol.hip) * pw,
+        knee: sol.knee + (sp.knee - sol.knee) * pw,
+        toe: sol.toe,
+      };
+      abduct += (ab - abduct) * pw;
+      twist = tw * pw;
+    }
+    hipBone.rotation.order = 'XZY'; // the foot's turn first, about the leg; then out to the side; then forward
+    hipBone.rotation.set(sol.hip, twist, abduct);
     knee.rotation.set(sol.knee, 0, 0);
     ankle.rotation.set(
       -(sol.hip + sol.knee) * (1 - airborne) + (sol.toe || 0) * airborne,
@@ -332,9 +370,17 @@ export function animateAthlete(player, pose, ctx) {
     ); // flat on the floor; toes point in the air
   }
   // torso: lean into the run, shoulders counter-twist against the hips
-  b.spine.rotation.set(m.lean * 0.55, ctx.motion ? Math.sin(m.phase) * 0.12 * run : 0, m.sway * 0.025);
-  b.chest.rotation.set(m.lean * 0.35, ctx.motion ? Math.sin(m.phase) * 0.08 * run : 0, 0);
-  animateArms(player, pose, ctx, m, R, run, dt);
+  b.spine.rotation.set(
+    m.lean * 0.55 + (pb.lean || 0) * 0.6 * pw,
+    (ctx.motion ? Math.sin(m.phase) * 0.12 * run : 0) + (pb.twist || 0) * 0.4 * pw,
+    m.sway * 0.025 * (1 - pw) + (pb.side || 0) * pw,
+  );
+  b.chest.rotation.set(
+    m.lean * 0.35 + (pb.lean || 0) * 0.4 * pw,
+    (ctx.motion ? Math.sin(m.phase) * 0.08 * run : 0) + (pb.twist || 0) * 0.6 * pw,
+    0,
+  );
+  animateArms(player, pose, ctx, m, R, run, dt, PF, pw);
   // head: turn toward the ball (limited), eyes level against the torso lean
   if (b.head) {
     let yaw = 0;
@@ -347,9 +393,23 @@ export function animateAthlete(player, pose, ctx) {
         yaw = Math.max(-1, Math.min(1, yaw));
       }
     }
-    m.headYaw = damp(m.headYaw, yaw, 5, dt);
-    b.head.rotation.set(-m.lean * 0.6, m.headYaw * 0.7, 0);
-    if (b.neck) b.neck.rotation.set(0, m.headYaw * 0.3, 0);
+    let pitch = 0;
+    if (PF) {
+      // performing: eyes up the floor (a good handler does not watch the ball), or on the move's look target
+      let py = -(pb.twist || 0) * 0.8,
+        pp = 0;
+      if (PF.look) {
+        const l = (player.updateMatrixWorld(), player.worldToLocal(_w.copy(PF.look)));
+        py = Math.max(-1.1, Math.min(1.1, Math.atan2(l.x, l.z)));
+        pp = Math.max(-0.6, Math.min(0.5, Math.atan2(l.y - 1.75, Math.hypot(l.x, l.z))));
+      }
+      yaw += (py - yaw) * pw;
+      pitch = pp * pw;
+    }
+    m.headYaw = damp(m.headYaw, yaw, PF ? 9 : 5, dt);
+    const leanAll = m.lean + (pb.lean || 0) * pw;
+    b.head.rotation.set(-leanAll * 0.6 - pitch * 0.7, m.headYaw * 0.7, 0);
+    if (b.neck) b.neck.rotation.set(-pitch * 0.3, m.headYaw * 0.3, 0);
   }
 }
 
@@ -367,7 +427,7 @@ function jumpLegs(arms, family, side) {
    holding, gathering and shooting. When the ball leaves (a shot or pass), the IK fades and the follow-through takes over.
    The dribbling hand leads the ball rather than chasing it: it follows the dribble's hand height (ctx.dribbleHand), the
    forearm turns the palm down onto the ball and the wrist works on the dribble's beat (dribbleWrist). */
-function animateArms(player, pose, ctx, m, R, run, dt) {
+function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0) {
   const u = player.userData,
     b = u.body.bones,
     chest = b.chest;
@@ -467,6 +527,52 @@ function animateArms(player, pose, ctx, m, R, run, dt) {
       wrist.rotation.set(0, 0, dribbling ? -side * dribbleWrist(ctx.dribble) * dribbling : 0);
     }
     if (dribbling) a.userData.elbow.rotation.y = -side * 1.35 * dribbling; // pronation (palms face the body at rest)
+    // going up to block: the high hand goes for the ball when it is close (a swat when the play is a block, a swipe that
+    // misses when it is not), its arm reaching straight at it when it is just out of reach
+    if (arms === 'block' && ball && !holder && j === m.high && rest) {
+      chest.updateWorldMatrix(true, false);
+      const B = chest.worldToLocal(ball.clone()),
+        reach = rest.L1 + rest.L2,
+        toBall = B.clone().sub(S),
+        dist = toBall.length(),
+        near = Math.max(0, Math.min(1, (reach * 1.9 - dist) / (reach * 0.7)));
+      m.swat = damp(m.swat ?? 0, near, 12, dt);
+      if (m.swat > 0.01 && dist > 1e-3) {
+        const T2 = S.clone().add(toBall.multiplyScalar(Math.min(1, (reach * 0.98) / dist))),
+          sol = solveArm(S, T2, rest.L1, rest.L2, new THREE.Vector3(side * 0.5, -0.2, 1).normalize());
+        if (sol) {
+          quatFrom(rest.u0, rest.b0, sol.u, sol.b, _q);
+          a.quaternion.slerp(_q, m.swat);
+          const el = a.userData.elbow.rotation;
+          el.x += (-sol.bend - el.x) * m.swat;
+        }
+      }
+    }
+    // performing a move: the hand goes to the move's target, the elbow where the move points it, the wrist as it says
+    const H = PF?.hands?.[j ? 'L' : 'R'],
+      wt = H ? Math.max(0, Math.min(1, (H.w ?? 1) * pw)) : 0;
+    if (wt > 0.001 && rest) {
+      chest.updateWorldMatrix(true, false);
+      // (own vectors: the target and the elbow direction must not share the scratch vector)
+      const Tp = chest.worldToLocal(H.p.clone()),
+        pole = H.pole
+          ? chest
+              .worldToLocal(H.pole.clone().add(chest.getWorldPosition(new THREE.Vector3())))
+              .sub(chest.worldToLocal(chest.getWorldPosition(new THREE.Vector3())))
+              .normalize()
+          : Tp.y > S.y + 0.1
+            ? new THREE.Vector3(side * 0.5, -0.15, 1)
+            : new THREE.Vector3(side * 0.3, -0.2, -1);
+      const sol = solveArm(S, Tp, rest.L1, rest.L2, pole.normalize());
+      if (sol) {
+        quatFrom(rest.u0, rest.b0, sol.u, sol.b, _q);
+        a.quaternion.slerp(_q, wt);
+        const el = a.userData.elbow.rotation;
+        el.x += (-sol.bend - el.x) * wt;
+        el.y += (-side * (H.pron ?? 0) - el.y) * wt;
+      }
+      if (wrist) wrist.rotation.z += (-side * (H.flex ?? 0) - wrist.rotation.z) * wt;
+    }
   });
 }
 /* Wrist flex while dribbling (radians, + = toward the palm), from a dribbleAt result. The wrist stays cocked back so the

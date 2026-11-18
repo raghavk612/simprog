@@ -711,6 +711,7 @@ const sideStats = (m, i) => {
     if (!c || c.outcome === 'steal') continue;
     r.fga++;
     if (c.three) r.tpa++;
+    if (c.putback) r.fga++; // the putback after a block is a second attempt
     if (c.points) {
       r.fgm++;
       if (c.three) r.tpm++;
@@ -883,8 +884,16 @@ function makePlay(s, team, shooter, helper, defender, opp, m) {
     : (contest === 'tight' ? TUNING.blockTight : TUNING.block) + (isDunk(kind) ? 0.02 : 0);
   let outcome =
     rng() < stealChance ? 'steal' : rng() < blockChance ? 'block' : rng() < chance ? 'made' : 'miss';
-  const points = outcome === 'made' ? (spec.three ? 3 : 2) : 0,
-    assisted = points > 0 && ['catch', 'dunk'].includes(family(kind));
+  // A blocked shot is a loose ball. The shooting team wins it about a quarter of the time, more when it is the better side
+  // (its shot chance stands in for the matchup); then a teammate (the helper) goes straight back up with it.
+  let recovery = null,
+    putback = null;
+  if (outcome === 'block') {
+    recovery = rng() < cap(0.27 + (chance - 0.45) * 0.8, 0.15, 0.45) ? 'offense' : 'defense';
+    if (recovery === 'offense') putback = rng() < cap(chance + 0.08, 0.2, 0.75) ? 'made' : 'miss';
+  }
+  const points = outcome === 'made' ? (spec.three ? 3 : 2) : putback === 'made' ? 2 : 0,
+    assisted = outcome === 'made' && ['catch', 'dunk'].includes(family(kind)); // a putback is nobody's assist
   const play = {
     team,
     kind,
@@ -901,6 +910,8 @@ function makePlay(s, team, shooter, helper, defender, opp, m) {
     contest,
     points,
     outcome,
+    ...(recovery ? { recovery } : {}),
+    ...(putback ? { putback } : {}),
     three: !!spec.three,
     assisted,
     shotChance: Math.round(chance * 100),
@@ -948,7 +959,7 @@ export function possession(s) {
     away = makePlay(s, 'away', guest, { name: g2.name, id: -2, number: g2.number }, defender, opp, m);
   m.home += home.points;
   m.away += away.points;
-  m.box[shooter.id] += home.points;
+  m.box[(home.putback === 'made' ? helper : shooter).id] += home.points; // a putback is the helper's basket
   m.possession++;
   m.boost = Math.max(0, m.boost - 1);
   m.stats ??= {
@@ -959,8 +970,9 @@ export function possession(s) {
     const other = p.team === 'home' ? 'away' : 'home';
     if (p.assisted) m.stats[p.team].assists++;
     if (p.outcome === 'block') m.stats[other].blocks++;
+    if (p.recovery === 'offense') m.stats[p.team].rebounds++; // the shooting team won the loose ball
     if (p.outcome === 'steal') m.stats[other].steals++;
-    else if (!p.points) m.stats[other].rebounds++;
+    else if (!p.points) m.stats[other].rebounds++; // a miss, a block they lost, or a putback that missed
   }
   m.line ??= Object.fromEntries(s.players.map(p => [p.id, blankLine()]));
   const L = id => (m.line[id] ??= blankLine());
@@ -969,17 +981,28 @@ export function possession(s) {
   else {
     sl.fga++;
     if (home.three) sl.tpa++;
-    if (home.points) {
+    if (home.points && home.outcome !== 'block') {
       sl.fgm++;
       sl.pts += home.points;
       if (home.three) sl.tpm++;
     }
   }
   if (home.assisted && helper) L(helper.id).ast++;
+  if (home.recovery === 'offense' && helper) {
+    // the putback: the helper's offensive rebound and shot
+    const hl = L(helper.id);
+    hl.reb++;
+    hl.fga++;
+    if (home.putback === 'made') {
+      hl.fgm++;
+      hl.pts += 2;
+    }
+  }
   if (away.outcome === 'steal') L(defender.id).stl++;
-  else if (!away.points) {
+  else {
     if (away.outcome === 'block') L(defender.id).blk++;
-    L(defender.id).reb++;
+    // he takes the rebound unless the visitors kept the loose ball (and scored, or he got the miss)
+    if (away.recovery === 'offense' ? away.putback === 'miss' : !away.points) L(defender.id).reb++;
   }
   const lineup = [...new Map([shooter, helper, defender, ...active].map(p => [p.id, p])).values()]
     .slice(0, 5)
@@ -1471,6 +1494,8 @@ export function validSave(s) {
           [1, -1].includes(c.lane) &&
           ['open', 'tight', 'contested'].includes(c.contest) &&
           ['made', 'miss', 'block', 'steal'].includes(c.outcome) &&
+          (c.recovery === undefined || ['offense', 'defense'].includes(c.recovery)) &&
+          (c.putback === undefined || ['made', 'miss'].includes(c.putback)) &&
           num(c.points, 0, 3) &&
           num(c.shotChance, 0, 100) &&
           (c.cm === undefined ||

@@ -1,0 +1,284 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Move preview</title>
+    <style>
+      body { margin: 0; background: #0d0a16; color: #ddd; font: 13px system-ui, sans-serif; }
+      #sheet { display: block; }
+    </style>
+  </head>
+  <body>
+    <canvas id="sheet"></canvas>
+    <script type="module">
+      // Dev tool for the ball-handling moves (src/moves): renders a move (or a whole routine) at exact times from several
+      // cameras into one contact sheet, through the same code the game uses (motion.js animateAthlete with the move as
+      // ctx.perform, src/moves/stage.js). Driven by scripts/moves-sheet.mjs; open ?live=1 to watch a routine play.
+      import * as THREE from 'three';
+      import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+      import { athleteBody, attachBody } from './src/players.js';
+      import { ballMaterial } from './src/materials.js';
+      import { animateAthlete } from './src/motion.js';
+      import { ballDrop } from './src/basketball.js';
+      import { prepare, sample, mirrorMove, dribbleMove } from './src/moves/core.js';
+      import { MOVES, Routine } from './src/moves/index.js';
+      import { rootPose, worldFrame, toWorld } from './src/moves/stage.js';
+      import { courtContext } from './src/moves/context.js';
+
+      const q = new URLSearchParams(location.search);
+      const CELL = [440, 360];
+      const r = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+      r.setPixelRatio(1);
+      r.setSize(...CELL);
+      r.toneMapping = THREE.ACESFilmicToneMapping;
+      r.toneMappingExposure = 1;
+      r.outputColorSpace = THREE.SRGBColorSpace;
+      r.shadowMap.enabled = true;
+      r.shadowMap.type = THREE.PCFSoftShadowMap;
+      const s = new THREE.Scene();
+      s.background = new THREE.Color('#171226');
+      s.add(new THREE.HemisphereLight(0xded5ff, 0x2a1f3c, 1.0));
+      const sun = new THREE.DirectionalLight(0xffeee2, 2.3);
+      sun.position.set(3, 9, 6);
+      sun.castShadow = true;
+      sun.shadow.bias = -0.0005;
+      sun.shadow.mapSize.set(2048, 2048);
+      Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4 });
+      s.add(sun);
+      const fill = new THREE.DirectionalLight(0xc9d6ff, 0.8);
+      fill.position.set(-4, 3, -3);
+      s.add(fill);
+      // floor: maple-ish with a half-unit grid, so a sliding foot or a drifting bounce is easy to see
+      const floor = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.MeshStandardMaterial({ color: 0xd6a972, roughness: 0.5 }));
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      s.add(floor);
+      const grid = new THREE.GridHelper(30, 60, 0x8a6a45, 0xb48a5a);
+      grid.position.y = 0.002;
+      s.add(grid);
+      const textTexture = () => new THREE.Texture();
+      const kit = {
+        mat: (c, e = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: 0.68, ...e }),
+        textTexture,
+        capMat: new THREE.MeshBasicMaterial({ color: 0xe9b858 }),
+      };
+      const L = new GLTFLoader();
+      const variant = q.get('variant') || 'guard';
+      const tpl = await L.loadAsync(`/models/players/${variant}.glb`);
+      function athlete(i, color, look) {
+        const p = new THREE.Group(),
+          b = athleteBody(tpl, kit, i, color, variant, look);
+        attachBody(p, b);
+        b.setLettering('10', 'TAYLOR', '#6832ab', '#ffffff', 'home');
+        s.add(p);
+        return p;
+      }
+      const hero = athlete(2, 0x6832ab, { hair: 'crop', hairColor: 0x161210, headband: true, armSleeve: true, legSleeve: false });
+      let feeder = null;
+      const ballGroup = new THREE.Group(),
+        spinner = new THREE.Group(),
+        ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.13, 48, 32), ballMaterial());
+      ballMesh.castShadow = true;
+      spinner.add(ballMesh);
+      ballGroup.add(spinner);
+      s.add(ballGroup);
+      let hoop = null;
+      function addHoop(rimWorld) {
+        if (hoop) return;
+        hoop = new THREE.Group();
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.248, 0.012, 8, 40), new THREE.MeshStandardMaterial({ color: 0xe9832a }));
+        ring.rotation.x = Math.PI / 2;
+        ring.position.set(...rimWorld);
+        const board = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.2, 2.0), new THREE.MeshStandardMaterial({ color: 0xeeeeee, transparent: true, opacity: 0.5 }));
+        board.position.set(rimWorld[0] - Math.sign(rimWorld[0] || 1) * 0.5, rimWorld[1] + 0.35, rimWorld[2]);
+        hoop.add(ring, board);
+        s.add(hoop);
+      }
+
+      /* Cameras in the player's base frame (he stands at the origin facing +z; +x is his left). */
+      const CAMS = {
+        front: { p: [0.9, 1.35, 4.4], t: [0, 0.95, 0], fov: 34 },
+        title: { p: [0.2, 1.9, 5.2], t: [0, 0.9, 0], fov: 30 },
+        left: { p: [4.3, 1.1, 0.3], t: [0, 0.92, 0], fov: 34 },
+        right: { p: [-4.3, 1.1, 0.3], t: [0, 0.92, 0], fov: 34 },
+        back: { p: [-0.8, 1.6, -4.3], t: [0, 0.95, 0], fov: 34 },
+        top: { p: [0.001, 4.6, 0.9], t: [0, 0, 0.15], fov: 40 },
+        low: { p: [0.8, 0.38, 3.0], t: [0, 0.62, 0], fov: 38 },
+        wide: { p: [3.5, 3.2, 6.5], t: [-2.5, 1.2, -1], fov: 45 },
+        tall: { p: [1.0, 1.9, 5.6], t: [0, 1.45, 0], fov: 36 }, // room above his head (jumps, a ball on a finger)
+      };
+      const cam = new THREE.PerspectiveCamera(34, CELL[0] / CELL[1], 0.05, 100);
+      const base = { x: 0, z: 0, yaw: 0 };
+      let rimAt = null; // the hoop, when the title context is on (for the "court" and "rim" cameras)
+      function aim(name, follow) {
+        if (name === 'rim' && rimAt) {
+          // close on the ring, from the side of the line he shoots along
+          const d = new THREE.Vector3(rimAt[0], 0, rimAt[2]),
+            side = new THREE.Vector3(d.z, 0, -d.x).normalize(),
+            ring = new THREE.Vector3(...rimAt);
+          if (side.z < 0) side.negate();
+          cam.fov = 40;
+          cam.position.copy(ring).addScaledVector(side, 3.2).add(new THREE.Vector3(0, 0.6, 0)).addScaledVector(d.normalize(), 1.2);
+          cam.lookAt(ring.x, ring.y - 0.6, ring.z);
+          cam.updateProjectionMatrix();
+          return;
+        }
+        // "b-<camera>": the camera turns with him (his front stays his front through a turn or a spin)
+        const turned = name.startsWith('b-') && follow,
+          c = CAMS[turned ? name.slice(2) : name] || CAMS.front;
+        if (turned) {
+          const k = Math.cos(follow.yaw),
+            n = Math.sin(follow.yaw),
+            rot = q => [q[0] * k + q[2] * n, q[1], -q[0] * n + q[2] * k],
+            p = rot(c.p),
+            t = rot(c.t);
+          cam.fov = c.fov;
+          cam.position.set(p[0] + follow.x, p[1], p[2] + follow.z);
+          cam.lookAt(t[0] + follow.x, t[1], t[2] + follow.z);
+          cam.updateProjectionMatrix();
+          return;
+        }
+        const o = follow ? [follow.x, 0, follow.z] : [0, 0, 0];
+        cam.fov = c.fov;
+        cam.position.set(c.p[0] + o[0], c.p[1], c.p[2] + o[2]);
+        cam.lookAt(c.t[0] + o[0], c.t[1], c.t[2] + o[2]);
+        cam.updateProjectionMatrix();
+      }
+
+      /* A source of frames: one move (by id, or the plain dribble) played with a hand, or a routine. */
+      async function source({ move, hand = 'R', routine, ctx, file }) {
+        if (routine) {
+          const R = new Routine({ library: MOVES, seed: routine.seed ?? 1, weights: { handle: 1, show: 3 }, ctx, entrance: routine.entrance ?? null, dribbleChance: 0.3 });
+          return { duration: Infinity, at: t => R.frame(t) };
+        }
+        // file: load one family file on its own (src/moves/<file>.js), so a half-written file elsewhere cannot break this
+        const lib = file ? (await import(/* @vite-ignore */ `/src/moves/${file}.js`)).default : MOVES,
+          def = move === 'dribble' ? dribbleMove('R') : lib.find(m => m.id === move);
+        if (!def) throw new Error(`no move ${move}`);
+        const P = prepare(hand === def.start ? def : mirrorMove(def), ctx);
+        return { duration: P.duration, at: t => sample(P, t), P };
+      }
+
+      const quat = new THREE.Quaternion();
+      let lastBall = null;
+      function step(f, dt, ctxPts) {
+        const root = rootPose(f, base),
+          W = worldFrame(f, base);
+        hero.position.set(root.x, root.y, root.z);
+        hero.rotation.set(0, root.yaw, 0);
+        hero.updateMatrixWorld(true);
+        animateAthlete(hero, { y: root.y, arms: 'dribble' }, { dt, motion: true, ball: W.ball, ballRadius: 0.13, holder: false, perform: W });
+        ballGroup.position.copy(W.ball);
+        spinner.position.y = -ballDrop(W.ball.y);
+        // spin: the move's own, or rolling with how it moves (a little while held)
+        const v = lastBall ? W.ball.clone().sub(lastBall).divideScalar(Math.max(dt, 1e-4)) : new THREE.Vector3();
+        lastBall = W.ball.clone();
+        const w = W.spin ? W.spin.clone() : new THREE.Vector3(v.z, 0, -v.x).divideScalar(0.13).multiplyScalar(f.holder ? 0.15 : W.ball.y < 0.36 ? 1 : 0.5);
+        const a = w.length() * dt;
+        if (a > 1e-6) spinner.quaternion.premultiply(quat.setFromAxisAngle(w.normalize(), a));
+        if (feeder && ctxPts) {
+          const fp = toWorld(ctxPts.feeder, base),
+            toHero = Math.atan2(root.x - fp.x, root.z - fp.z),
+            near = W.ball.distanceTo(new THREE.Vector3(fp.x, 1.1, fp.z)) < 0.85;
+          feeder.position.set(fp.x, 0, fp.z);
+          feeder.rotation.set(0, toHero, 0);
+          feeder.updateMatrixWorld(true);
+          animateAthlete(feeder, { y: 0, arms: f.extra?.feeder || 'relax' }, { dt, motion: true, ball: W.ball, ballRadius: 0.13, holder: near });
+        }
+        return root;
+      }
+
+      /* Renders frames at the given times (seconds) from the given cameras into the sheet canvas. The motion is simulated at
+         60 fps from the start (after half a second settling into the first pose), so every frame is exact and repeatable. */
+      window.renderSheet = async ({ move = 'crossover', hand = 'R', routine = null, ctx: ctxName = null, file = null, times = [0], cams = ['front', 'left', 'top'], follow = false, label = '' }) => {
+        // the title context: the rim and the rebounder where they are for the title hero, in his base frame (the preview
+        // stands him at the origin facing +z, so his base frame is the preview's world)
+        let ctx = null;
+        if (ctxName === 'title') {
+          const { HERO, heroYaw } = await import('./src/title.js');
+          const real = courtContext({ x: HERO.x, z: HERO.z, yaw: heroYaw() });
+          ctx = { rim: real.rim, feeder: real.feeder };
+          addHoop(toWorld(real.rim, base).toArray());
+          rimAt = real.rim;
+          if (!feeder) feeder = athlete(0, 0x6832ab, { hair: 'buzz', hairColor: 0x161210, headband: false, armSleeve: false, legSleeve: false });
+        }
+        const src = await source({ move, hand, routine, ctx, file }),
+          ts = [...times].sort((a, b) => a - b),
+          sheet = document.getElementById('sheet'),
+          cols = cams.length,
+          rows = ts.length;
+        sheet.width = cols * CELL[0];
+        sheet.height = rows * CELL[1] + (label ? 30 : 0);
+        const g = sheet.getContext('2d');
+        g.fillStyle = '#0d0a16';
+        g.fillRect(0, 0, sheet.width, sheet.height);
+        lastBall = null;
+        hero.userData.motionState = null;
+        if (feeder) feeder.userData.motionState = null;
+        const dt = 1 / 60;
+        for (let k = 0; k < 30; k++) step(src.at(0), dt, ctx); // settle into the first pose
+        let t = 0,
+          row = 0;
+        const end = ts[ts.length - 1],
+          report = []; // per moment: how far each wrist is from where the move sent it (debugging the arm IK)
+        while (row < rows) {
+          if (t >= ts[row] - 1e-9) {
+            const f = src.at(ts[row]),
+              root = step(f, Math.max(1e-4, ts[row] - (t - dt)), ctx),
+              W = worldFrame(f, base),
+              bones = hero.userData.body?.bones || {};
+            report.push({
+              t: ts[row],
+              ...Object.fromEntries(
+                ['R', 'L'].map(h => {
+                  const w = bones['wrist_' + h]?.getWorldPosition(new THREE.Vector3()),
+                    e = bones['elbow_' + h]?.getWorldPosition(new THREE.Vector3()),
+                    sh = bones['shoulder_' + h]?.getWorldPosition(new THREE.Vector3());
+                  return [h, w ? { miss: +w.distanceTo(W.hands[h].p).toFixed(3), target: W.hands[h].p.toArray().map(v => +v.toFixed(2)), wrist: w.toArray().map(v => +v.toFixed(2)), elbow: e.toArray().map(v => +v.toFixed(2)), shoulder: sh.toArray().map(v => +v.toFixed(2)) } : null];
+                }),
+              ),
+            });
+            cams.forEach((c, col) => {
+              aim(c, follow || c.startsWith('b-') ? root : null);
+              r.render(s, cam);
+              g.drawImage(r.domElement, col * CELL[0], row * CELL[1] + (label ? 30 : 0));
+              g.fillStyle = '#ffde59';
+              g.font = '15px system-ui';
+              g.fillText(`${ts[row].toFixed(2)}s  ${c}`, col * CELL[0] + 8, row * CELL[1] + (label ? 30 : 0) + 20);
+            });
+            row++;
+            continue;
+          }
+          step(src.at(Math.min(t, end)), dt, ctx);
+          t += dt;
+        }
+        if (label) {
+          g.fillStyle = '#fff';
+          g.font = 'bold 18px system-ui';
+          g.fillText(label, 8, 21);
+        }
+        return { width: sheet.width, height: sheet.height, duration: src.duration, report };
+      };
+      window.ready = true;
+
+      if (q.has('live')) {
+        // watch a routine play in real time (front camera, following him)
+        const src = await source({ routine: { seed: +(q.get('seed') || 7), entrance: { from: [0.5, -3.4] } } });
+        const sheet = document.getElementById('sheet');
+        r.setSize(innerWidth, innerHeight);
+        cam.aspect = innerWidth / innerHeight;
+        document.body.replaceChild(r.domElement, sheet);
+        let t = 0,
+          prev = performance.now();
+        r.setAnimationLoop(now => {
+          const dt = Math.min(0.05, (now - prev) / 1000);
+          prev = now;
+          t += dt;
+          const root = step(src.at(t), dt, null);
+          aim(q.get('cam') || 'front', root);
+          r.render(s, cam);
+        });
+      }
+    </script>
+  </body>
+</html>

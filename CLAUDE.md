@@ -13,6 +13,8 @@ npm run format         # Prettier over src, tests and scripts (format:check only
 npm run check:ui       # every page in Chrome, dark/light, desktop/phone: script errors, low contrast, overflow
 npm run check:ui -- --shots   # same, plus a screenshot of each page in ui-shots/ to look at
 node scripts/i18n-set.mjs changes.json   # set, add or delete (null) keys in all 7 locales at once
+npm run moves:check                      # measurements and problems of every ball-handling move (src/moves)
+npm run moves:sheet -- --move crossover  # render a move as a contact sheet (cameras x moments) in ui-shots/moves/
 ```
 
 ## Map
@@ -22,6 +24,9 @@ node scripts/i18n-set.mjs changes.json   # set, add or delete (null) keys in all
 - `src/ui/`: the interface. `shell.js` `render()` rebuilds the whole page from `state` after every change, then
   restores focus, scroll and open `<details>`. Anything else held only in the DOM is lost on the next render.
 - `src/arena.js` and friends: the 3D gym. `src/drills*.js`: practice mini-games.
+- `src/moves/`: ball-handling set pieces (crossovers, between the legs, spin move...) as data plus physics, chained by a
+  `Routine` (the title screen's dribbler). `src/moves/README.md` says how a move is written and checked; look at moves with
+  `npm run moves:sheet`, not only the numbers.
 - `src/i18n/locales/*.js`: every string, in 7 languages with identical keys (`tests/i18n.test.js` checks keys,
   placeholders and that keys built at run time exist).
 - CSS loads in this order: `style.css` (layout), `theme.css` (colours, type and newer components),
@@ -45,3 +50,5 @@ touched. The live game and the drills are not covered by it: check those by hand
 a season with "Walk me through the first game" unticked when testing something else.
 In `npm run dev` only, the backquote key (`` ` ``) toggles 64× playback, so a watched game takes about 30 s
 (quarter breaks still stop it); production builds drop the shortcut.
+Also in dev only, `window.__kangsArena` is the gym: during a watched game you can stage a play, e.g.
+`a.play({ ...a.event, plays: [{ ...a.clips[0], kind: 'pullup', outcome: 'block' }, a.clips[1]] })`.

@@ -11,6 +11,8 @@ import {
   guardSpot,
   dribbleAt,
   DRIBBLE,
+  ballDrop,
+  blockHit,
 } from './basketball.js';
 import {
   drawScoreboard,
@@ -46,6 +48,10 @@ import { PerfHud, perfWanted } from './perfHud.js';
 import { titleCamera, flyIn, heroYaw, titleFov, HERO, STILL, titlePath } from './title.js';
 import { seatLayout, hash } from './seating.js';
 import { makeWood } from './courtwood.js';
+import { MOVES, Routine } from './moves/index.js';
+import { rootPose, worldFrame } from './moves/stage.js';
+import { yawRot } from './moves/core.js';
+import { courtContext } from './moves/context.js';
 import { buildCrowd } from './crowd.js';
 const purple = 0x6832ab;
 export class Arena {
@@ -427,14 +433,38 @@ export class Arena {
     }
     this.sign('LAKE WASHINGTON KANGS', 17, 2, -19.45, 6.5, 0, { ry: Math.PI / 2 });
     this.stands();
+    // The hoops at real size (1 ft = 0.3306): ring 18 in across, 10 ft up; backboard 6 x 3.5 ft, its face 15 in behind the
+    // ring's centre, its bottom 6 in below the ring; the shooter's square 24 x 18 in. The ring and net sit in one group at
+    // the hoop (styleBall makes them the old bigger size for the classic toy ball, which a real ring could not take).
     this.nets = [];
+    this.hoops = [];
+    const FT = 0.3306,
+      RIM = 0.75 * FT,
+      FACE = 12.15 + 1.25 * FT;
     for (const side of [-1, 1]) {
       const x = side * 14.9;
       this.box(0.3, 4.1, 0.3, 0x393846, x, 2.05, 0);
-      this.box(1.94, 0.2, 0.24, 0xd6d5df, side * 13.78, 3.72, 0);
-      const back = this.box(0.12, 1.25, 2.4, 0xded9e9, side * 12.75, 3.8, 0);
-      back.material.transparent = true;
-      back.material.opacity = 0.6;
+      const armFrom = FACE + 0.12,
+        armTo = 14.75;
+      this.box(armTo - armFrom, 0.2, 0.24, 0xd6d5df, side * ((armFrom + armTo) / 2), 3.72, 0);
+      const back = this.box(
+        0.12,
+        3.5 * FT,
+        6 * FT,
+        0xded9e9,
+        side * (FACE + 0.06),
+        3.28 - 0.5 * FT + 1.75 * FT,
+        0,
+      );
+      // tempered glass: you see the arena through it; the white frame and the shooter's square are painted on (below)
+      back.material = new THREE.MeshPhysicalMaterial({
+        color: 0xdfe8f2,
+        roughness: 0.05,
+        metalness: 0,
+        transparent: true,
+        opacity: 0.16,
+        depthWrite: false,
+      });
       back.castShadow = false; // stanchion sits out of bounds; arm meets the back of the board instead of poking through it over the rim
       const frame = (y0, y1, z) => [
         [y0, -z],
@@ -446,33 +476,41 @@ export class Arena {
         [y1, -z],
         [y0, -z],
       ];
+      const b0 = 3.28 - 0.5 * FT;
       this.scene.add(
         new THREE.LineSegments(
           new THREE.BufferGeometry().setFromPoints(
-            [...frame(3.18, 4.42, 1.19), ...frame(3.36, 3.86, 0.33)].map(
-              ([y, z]) => new THREE.Vector3(side * 12.685, y, z),
+            [...frame(b0, b0 + 3.5 * FT, 3 * FT - 0.01), ...frame(3.28, 3.28 + 1.5 * FT, 1 * FT)].map(
+              ([y, z]) => new THREE.Vector3(side * (FACE - 0.005), y, z),
             ),
           ),
           new THREE.LineBasicMaterial({ color: 0xffffff }),
         ),
       );
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.045, 8, 32), this.mat(0xf27a24));
+      const hoop = new THREE.Group();
+      hoop.position.set(side * 12.15, 3.28, 0);
+      this.scene.add(hoop);
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(RIM, 0.012, 8, 40), this.mat(0xf27a24));
       ring.rotation.x = Math.PI / 2;
-      ring.position.set(side * 12.15, 3.28, 0);
-      this.scene.add(ring);
+      hoop.add(ring);
+      // the net: 12 strands, 18 in long, narrowing to about half the ring
+      const net = new THREE.Group();
+      hoop.add(net);
       for (let i = 0; i < 12; i++) {
-        const a = (i / 12) * Math.PI * 2;
-        const points = [
-          new THREE.Vector3(ring.position.x + Math.cos(a) * 0.48, 3.25, Math.sin(a) * 0.48),
-          new THREE.Vector3(ring.position.x + Math.cos(a + 0.25) * 0.28, 2.65, Math.sin(a + 0.25) * 0.28),
-        ];
-        const net = new THREE.Line(
-          new THREE.BufferGeometry().setFromPoints(points),
-          new THREE.LineBasicMaterial({ color: 0xffffff }),
+        const a = (i / 12) * Math.PI * 2,
+          points = [
+            new THREE.Vector3(Math.cos(a) * RIM, -0.01, Math.sin(a) * RIM),
+            new THREE.Vector3(Math.cos(a + 0.25) * RIM * 0.55, -1.5 * FT, Math.sin(a + 0.25) * RIM * 0.55),
+          ];
+        net.add(
+          new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints(points),
+            new THREE.LineBasicMaterial({ color: 0xffffff }),
+          ),
         );
-        this.scene.add(net);
-        this.nets.push({ mesh: net, side });
       }
+      this.nets.push({ mesh: net, side });
+      this.hoops.push(hoop);
     }
     for (let i = 0; i < 4; i++)
       this.sign(i === 3 ? 'YOUR\nSEASON' : `KANGS\n${2023 + i}`, 2, 2.8, -17.6 + i * 2.5, 6.5, -15.95, {
@@ -600,6 +638,8 @@ export class Arena {
     if (!sphere) return;
     this.ballReal = real;
     sphere.userData.classic ??= sphere.material;
+    // the classic toy ball (0.28) needs the old big ring; the real ball goes through a real one
+    for (const h of this.hoops || []) h.scale.set(real ? 1 : 1.94, real ? 1 : 1.2, real ? 1 : 1.94);
     if (real) {
       sphere.material = this.ballMat ??= ballMaterial();
       this.ball.scale.setScalar(0.13 / 0.28);
@@ -608,6 +648,59 @@ export class Arena {
       this.ball.scale.setScalar(1);
       this.ballSpinner.position.y = 0;
     }
+  }
+  /* Broadcast slow motion around a block's contact (so the swat can be seen at any playback speed): the play slows to a
+     quarter of the playback speed (and never faster than real time) for about half a second either side, easing in and
+     out. 1 otherwise, and with reduced motion. */
+  slowMo() {
+    if (!this.motion || !this.clips) return 1;
+    const i = Math.min(1, Math.floor(this.playTime / CLIP_SECONDS)),
+      c = this.clips[i];
+    if (c?.outcome !== 'block') return 1;
+    const u = (this.playTime - i * CLIP_SECONDS) / CLIP_SECONDS,
+      d = Math.abs(u - blockHit(c.kind)) * CLIP_SECONDS, // seconds of play from the contact
+      k = Math.max(0, Math.min(1, (d - 0.12) / 0.4)),
+      slow = Math.min(0.25, 1 / Math.max(1, this.speed || 1));
+    return slow + (1 - slow) * k * k * (3 - 2 * k);
+  }
+  /* A hands-only performance (motion.js ctx.perform) from a play's shot hands (world arrays): legs keep their gait. */
+  shotPerform(hands) {
+    const V = p => new THREE.Vector3(...p),
+      out = { gait: true, body: {}, feet: {}, look: null, hands: {} };
+    for (const h of ['R', 'L']) {
+      const H = hands[h];
+      if (H) out.hands[h] = { ...H, p: V(H.p), pole: H.pole ? V(H.pole) : null };
+    }
+    return out;
+  }
+  /* The title hero's show for this frame: his Routine (created on the first title frame, walking up from wherever he
+     stands), advanced by dt; returns the move's pose, his root, and its world-space targets. */
+  titleShow(dt) {
+    const base = { x: HERO.x, z: HERO.z, yaw: heroYaw() };
+    if (!this.heroShow) {
+      const p = this.people[2]?.position,
+        rel = p ? yawRot([p.x - base.x, 0, p.z - base.z], -base.yaw) : null,
+        d = rel ? Math.hypot(rel[0], rel[2]) : 0,
+        from = d > 0.8 && d < 8 ? [rel[0], rel[2]] : [0.5, -3.4]; // from behind him, toward the camera
+      this.heroShow = new Routine({
+        library: MOVES,
+        seed: globalThis.__kangsShowSeed ?? (Math.random() * 2 ** 31) | 0, // testing: a fixed show for screenshots
+        weights: { handle: 1, show: 3 }, // the showtime moves come up most on the title screen
+        ctx: this.titleCtx(base),
+        entrance: { from },
+        dribbleChance: 0.15, // mostly moves back to back, a plain dribble now and then
+      });
+      this.heroClock = 0;
+    }
+    this.heroClock += dt;
+    const f = this.heroShow.frame(this.heroClock);
+    return { frame: f, base, root: rootPose(f, base), world: worldFrame(f, base) };
+  }
+  /* Context points (the hero's base frame) for title moves that need them. */
+  titleCtx(base) {
+    const c = courtContext(base); // the near-left hoop, and a rebounder's spot in front of it
+    this.heroCourt = c;
+    return { rim: c.rim, feeder: c.feeder };
   }
   /* Where the idle dribbler bounces the ball: at his right side and a little ahead, turning with him. It is calibrated so that
      facing the title camera (heroYaw) it is the spot it always was (+0.4 x, +0.25 z). */
@@ -622,7 +715,7 @@ export class Arena {
   /* Turns the ball the way a real one turns, from how it moved since the last frame: backspin on a shot (about two turns a
      second, top spinning back toward the shooter), rolling when it runs along the floor, and slowed by the hands while a
      player holds or dribbles it. In the air with nobody touching it, it keeps the spin it had. */
-  spinBall(shot) {
+  spinBall(shot, override = null) {
     const b = this.ball,
       dt = this.frameDt || 0,
       w = (this.ballSpin ??= new THREE.Vector3()),
@@ -636,7 +729,10 @@ export class Arena {
       onFloor = b.position.y < 0.36;
     let want = null,
       rate = 0;
-    if (shot) {
+    if (override) {
+      want = override; // a move spins it itself (a ball spun on a finger)
+      rate = 20;
+    } else if (shot) {
       want = roll.lengthSq() > 1e-6 ? roll.normalize().multiplyScalar(-12.5) : null;
       rate = 10;
     } else if (this.holder) {
@@ -658,7 +754,7 @@ export class Arena {
     if (!this.ballReal || !this.ball) return;
     const s = this.ball.scale.x,
       y = this.ball.position.y,
-      drop = (0.28 - 0.13) * Math.max(0, Math.min(1, 1 - (y - 0.28) / 0.45)); // near the floor only: none in the hand
+      drop = ballDrop(y);
     this.ballSpinner.position.y = -drop / s;
   }
   /* Gives one player the body the current setting asks for: classic, or the athlete variant for his position. */
@@ -1001,10 +1097,14 @@ export class Arena {
     }
   }
   restoreHead() {
+    if (this.camera.near !== 0.1) {
+      this.camera.near = 0.1; // the first-person near-clip (see firstPerson) is only for that view
+      this.camera.updateProjectionMatrix();
+    }
     const o = this.fpHidden;
     if (!o) return;
     this.fpHidden = null;
-    for (const k of ['head', 'hair']) if (o.userData[k]) o.userData[k].visible = true;
+    o.visible = true;
   }
   firstPerson() {
     const clip = this.event ? this.presentation()?.clip : null;
@@ -1025,36 +1125,55 @@ export class Arena {
           home: team === 'home',
         }
       : null;
+    // Through his eyes: the camera sits at his eyes (his head, so it rises with a jump and dips with the crouch), looks at
+    // the rim with a glance toward the ball, never cranes more than 40 degrees up, and keeps clear of everyone's
+    // body. His own body is hidden (it would fill the lens). Smoothing is time-based.
     const dir = team === 'home' ? 1 : -1;
-    const rim = new THREE.Vector3(dir * 12.15, 3.05, 0);
+    const rim = new THREE.Vector3(dir * 12.15, 3.28, 0);
     const a = actor.position;
-    const look = rim.clone().lerp(this.ball.position, 0.35);
-    const flat = new THREE.Vector3(look.x - a.x, 0, look.z - a.z);
+    const flat = new THREE.Vector3(rim.x - a.x, 0, rim.z - a.z);
     if (flat.lengthSq() < 0.01) flat.set(dir, 0, 0);
     flat.normalize();
-    const eye = new THREE.Vector3(a.x + flat.x * 0.4, 1.74, a.z + flat.z * 0.4);
-    /* never inside a neighbour's head: keep 0.6 from every other body, and hide the subject's own head */ for (const o of this
-      .people) {
+    const headBone = actor.userData.body?.bones?.head;
+    const eye = headBone
+      ? headBone.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 0.07, 0))
+      : new THREE.Vector3(a.x, a.y + 1.8, a.z);
+    eye.addScaledVector(flat, 0.12);
+    const look = rim.clone().lerp(this.ball.position, 0.2);
+    // limit how steeply he looks up (under the rim the view would otherwise point straight up the net)
+    const up = look.y - eye.y,
+      across = Math.hypot(look.x - eye.x, look.z - eye.z),
+      maxUp = Math.tan((40 * Math.PI) / 180) * Math.max(across, 0.4);
+    if (up > maxUp) look.y = eye.y + maxUp;
+    for (const o of this.people) {
       if (o === actor) continue;
       const dx = eye.x - o.position.x,
         dz = eye.z - o.position.z,
         d = Math.hypot(dx, dz);
-      if (d < 0.6) {
-        eye.x = o.position.x + (d > 0.001 ? dx / d : flat.x) * 0.6;
-        eye.z = o.position.z + (d > 0.001 ? dz / d : flat.z) * 0.6;
+      if (d < 0.75) {
+        eye.x = o.position.x + (d > 0.001 ? dx / d : -flat.x) * 0.75;
+        eye.z = o.position.z + (d > 0.001 ? dz / d : -flat.z) * 0.75;
       }
     }
     if (this.fpHidden !== actor) {
       this.restoreHead();
       this.fpHidden = actor;
-      for (const k of ['head', 'hair']) if (actor.userData[k]) actor.userData[k].visible = false;
+      // his whole body: from inside his head his own shoulder and arm would fill half the lens
+      actor.visible = false;
     }
+    if (this.camera.near !== 0.15) {
+      this.camera.near = 0.15;
+      this.camera.updateProjectionMatrix();
+    }
+    const dt = this.frameDt || 1 / 60,
+      kp = 1 - Math.exp(-dt * 20),
+      kl = 1 - Math.exp(-dt * 9);
     if (!this.fpLook) {
       this.camera.position.copy(eye);
       this.fpLook = look.clone();
     }
-    this.camera.position.lerp(eye, 0.25);
-    this.fpLook.lerp(look, 0.12);
+    this.camera.position.lerp(eye, kp);
+    this.fpLook.lerp(look, kl);
     this.camera.lookAt(this.fpLook);
   }
   /* TV director for Auto camera: wide for the setup, tracking for the drive, then a first-person look at the rim (Kangs) or a baseline angle (visitors) on the shot. Returns true when the first-person shot is active. */
@@ -1218,6 +1337,9 @@ export class Arena {
               commentary: 'Visitors complete their possession.',
             },
           ];
+    // after a steal the stealer already has the ball: the next play starts with him, not with a pass in to him
+    // (otherwise he dribbles up the floor and then the ball goes back to the passer)
+    if (this.clips[0]?.outcome === 'steal') this.clips[1] = { ...this.clips[1], afterSteal: true };
   }
   clear() {
     this.endFly();
@@ -1349,7 +1471,7 @@ export class Arena {
       dt = this.frameDt || 0,
       last = u.faceLast;
     u.faceLast = { x: pose.x, z: pose.z };
-    if (!this.motion || u.faceYaw === undefined || !last) return (u.faceYaw = pose.yaw);
+    if (pose.exactYaw || !this.motion || u.faceYaw === undefined || !last) return (u.faceYaw = pose.yaw); // a move turns him itself
     if (!dt) return u.faceYaw;
     const dx = pose.x - last.x,
       dz = pose.z - last.z,
@@ -1424,6 +1546,7 @@ export class Arena {
         holder: player === this.holder,
         dribbleHand: this.dribbleHand,
         dribble: this.dribble,
+        perform: pose.perform || null,
         family: this.clipFamily || '',
       });
   }
@@ -1480,14 +1603,16 @@ export class Arena {
       this.time += dt;
       if (titled && !still) this.titleClock = (this.titleClock || 0) + dt;
     }
-    this.frameDt = this.event && this.paused ? 0 : dt * (this.event ? this.speed || 1 : 1);
+    this.frameDt = this.event && this.paused ? 0 : dt * (this.event ? (this.speed || 1) * this.slowMo() : 1);
     // the crowd breathes and sways, and bounces for a few seconds after a Kangs basket (still with reduced motion)
     this.cheer = this.motion ? (this.cheer || 0) * Math.exp(-dt * 0.7) : 0;
     this.fans?.update(this.motion ? dt : 0, Math.min(1, this.cheer * 1.6));
     // One continuous stride/dribble clock, so legs and arms never jump when a clip restarts.
     this.gait =
       (this.gait || 0) +
-      (this.motion && !(this.event && this.paused) && !still ? dt * (this.event ? this.speed : 1) : 0);
+      (this.motion && !(this.event && this.paused) && !still
+        ? dt * (this.event ? this.speed * this.slowMo() : 1)
+        : 0);
     // the dribbling hand (dribbleAt) on the gait clock: between plays and in the idle gym; a play sets its own below
     this.dribble = dribbleAt(this.gait / DRIBBLE.period);
     this.dribbleHand = this.dribble.hand;
@@ -1502,7 +1627,7 @@ export class Arena {
             const b = this.ball.position;
             this.ballFrom = { x: b.x, y: b.y, z: b.z, t0: 0 };
           }
-        } else this.playTime = Math.min(CLIP_SECONDS * 2, this.playTime + dt * this.speed);
+        } else this.playTime = Math.min(CLIP_SECONDS * 2, this.playTime + dt * this.speed * this.slowMo());
       }
       let presentation = this.presentation(),
         clip = presentation.clip,
@@ -1548,10 +1673,29 @@ export class Arena {
         kept = keepApart((this.spacing ??= {}), wanted, {
           pinned: new Set([o]),
           dt: this.motion ? this.frameDt : 0,
-          gap: (i, j) => ((i === o && j === mk) || (i === mk && j === o) ? SPACE.contest : SPACE.min),
+          gap: (i, j) =>
+            (i === o && j === mk) || (i === mk && j === o)
+              ? clip.outcome === 'block'
+                ? SPACE.block
+                : SPACE.contest
+              : SPACE.min,
         });
+      // a jump shooter's arms take the shot's form (basketball.js shotHands: the title jumper's), his legs their own jump
+      const shooterArms = pose.shotHands && !tr ? this.shotPerform(pose.shotHands) : null,
+        blockerArm = pose.blockHands && !tr ? this.shotPerform(pose.blockHands) : null;
       wanted.forEach((w, i) =>
-        this.posePlayer(this.people[i], { ...w, x: kept[i].x, z: kept[i].z }, this.gait, ease),
+        this.posePlayer(
+          this.people[i],
+          {
+            ...w,
+            x: kept[i].x,
+            z: kept[i].z,
+            ...(i === o && shooterArms ? { perform: shooterArms } : {}),
+            ...(i === mk && blockerArm ? { perform: blockerArm } : {}),
+          },
+          this.gait,
+          ease,
+        ),
       );
       // While a player is still easing into place the ball stays in his hands (the handler, or the defender after a steal).
       const sm = x => ((x = Math.max(0, Math.min(1, x))), x * x * (3 - 2 * x)),
@@ -1624,20 +1768,45 @@ export class Arena {
         this.blendMotion = this.motion;
         this.snapshot(this.idleClock);
       }
+      // the title hero's show (src/moves): he walks up dribbling, then shuffled ball-handling moves; it holds still while
+      // the title is paused and is not played with reduced motion. Leaving the title, everything eases from where it is.
+      const show = titled && this.motion && this.posed ? this.titleShow(idt) : null;
+      if (!show && this.heroShow) {
+        this.heroShow = null;
+        this.snapshot(this.idleClock);
+      }
       this.people.forEach((p, i) => {
         const k = i % 5,
           hero = titled && i === 2,
+          performing = hero && show,
+          // during the title show a teammate rebounds under the near hoop for the hero's jumpers and passes the ball back
+          feeder = show && i === 0 && this.heroCourt ? this.heroCourt.feederWorld : null,
           spot = { x: [-6, -2, 4, 8, 1][k], z: [-4, 4, -3, 3, 0][k] },
           // a visitor stands guard on his Kangs man: about 5.5 ft off him, between him and the basket they attack (+x)
           guard = i >= 5 ? guardSpot(spot, 1, 1.7) : spot,
-          tx = hero ? HERO.x : guard.x,
-          tz = hero ? HERO.z : guard.z,
-          rest = hero ? heroYaw() : i < 5 ? Math.PI / 2 : -Math.PI / 2,
+          tx = hero ? HERO.x : feeder ? feeder[0] : guard.x,
+          tz = hero ? HERO.z : feeder ? feeder[2] : guard.z,
+          rest = hero
+            ? heroYaw()
+            : feeder
+              ? Math.atan2(this.people[2].position.x - feeder[0], this.people[2].position.z - feeder[2])
+              : i < 5
+                ? Math.PI / 2
+                : -Math.PI / 2,
           dx = tx - p.position.x,
           dz = tz - p.position.z,
           d = Math.hypot(dx, dz),
           v = Math.min(5, d * 2.2),
           step = !live || d < 0.02 ? d : Math.min(d, v * idt);
+        if (performing) {
+          this.posePlayer(
+            p,
+            { ...show.root, run: 0, arms: 'dribble', exactYaw: true, perform: show.world },
+            this.gait,
+            1,
+          );
+          return;
+        }
         this.posePlayer(
           p,
           {
@@ -1648,20 +1817,22 @@ export class Arena {
               ? turn(p.rotation.y, d > 0.6 ? Math.atan2(dx, dz) : rest, 1 - Math.exp(-idt * 7))
               : rest,
             run: live && d > 0.02 ? Math.min(1, v / 5) : 0,
-            arms: i === 2 ? 'dribble' : 'relax',
+            arms: i === 2 ? 'dribble' : feeder ? show.frame.extra?.feeder || 'relax' : 'relax',
           },
           this.gait,
           ease,
         );
       });
       // paused title: the ball holds in the hero's dribble (and the next blend starts from there)
-      const p = this.people[2].position,
-        at = { ...this.dribbleSpot(this.people[2]), y: dribbleAt(this.gait / DRIBBLE.period).ball },
-        b = still
-          ? ((this.ballFrom = { ...at, t0: this.idleClock }), at)
-          : this.blendBall(at, this.idleClock);
+      const at = show
+          ? show.world.ball
+          : { ...this.dribbleSpot(this.people[2]), y: dribbleAt(this.gait / DRIBBLE.period).ball },
+        b =
+          show || still
+            ? ((this.ballFrom = { x: at.x, y: at.y, z: at.z, t0: this.idleClock }), at)
+            : this.blendBall(at, this.idleClock);
       this.ball.position.set(b.x, b.y, b.z);
-      this.spinBall(false);
+      if (!still) this.spinBall(false, show?.world.spin || null); // a paused title holds the ball still too
       this.trail.forEach(d => (d.visible = false));
     }
     this.posed = true;
@@ -1689,7 +1860,7 @@ export class Arena {
       else if (!directed) this.controls.update();
     }
     const fov = fp
-      ? 74
+      ? 62
       : directed
         ? this.director.fov
         : titled

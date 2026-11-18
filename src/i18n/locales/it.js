@@ -925,6 +925,16 @@ export default {
       'Palla vagante… la recupera {{rebounder}}.',
       '{{rebounder}} si tuffa sul pallone.',
     ],
+    putbackMade: [
+      '{{helper}} recupera la palla vagante e la rimette subito su… dentro!',
+      'Palla vagante… {{helper}} arriva per primo e segna!',
+      '{{helper}} la conquista e la appoggia dentro!',
+    ],
+    putbackMiss: [
+      '{{helper}} recupera la palla vagante, torna su… niente.',
+      '{{helper}} vince la mischia, ma il tap-in esce.',
+      'Seconda occasione per {{helper}}… sul ferro.',
+    ],
     finish: {
       three: [
         'Dentro! Tripla!',

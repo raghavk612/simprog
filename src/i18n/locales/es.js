@@ -925,6 +925,16 @@ export default {
       'Balón suelto… y {{rebounder}} se queda con él.',
       '¡{{rebounder}} se tira al suelo por él!',
     ],
+    putbackMade: [
+      '{{helper}} atrapa el balón suelto y lo vuelve a subir… ¡adentro!',
+      'Balón suelto… ¡{{helper}} llega primero y anota!',
+      '¡{{helper}} lo pelea y la deja adentro!',
+    ],
+    putbackMiss: [
+      '{{helper}} recoge el balón suelto, vuelve a subir… no entra.',
+      '{{helper}} gana la pelea, pero el segundo intento se sale.',
+      'Segunda oportunidad para {{helper}}… escupe el aro.',
+    ],
     finish: {
       three: [
         '¡Adentro! ¡Triple!',

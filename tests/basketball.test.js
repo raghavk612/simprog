@@ -25,7 +25,8 @@ test('plays cover shot families, blocks, steals and varied chance without contra
   const kinds = new Set(),
     outcomes = new Set(),
     chances = new Set(),
-    lines = new Set();
+    lines = new Set(),
+    recoveries = { offense: 0, defense: 0 };
   let clips = 0;
   // The Kangs start with the five basic moves (skills.js); with the whole tree learned, these games show every move.
   for (let seed = 1; seed <= 15; seed++) {
@@ -44,9 +45,16 @@ test('plays cover shot families, blocks, steals and varied chance without contra
         outcomes.add(c.outcome);
         chances.add(c.shotChance);
         lines.add(c.commentary);
-        assert.equal(c.points, c.outcome === 'made' ? (c.three ? 3 : 2) : 0);
+        assert.equal(c.points, c.outcome === 'made' ? (c.three ? 3 : 2) : c.putback === 'made' ? 2 : 0);
+        // only a block has a loose ball, and only the shooting team's recovery has a putback
+        assert.equal(c.recovery !== undefined, c.outcome === 'block');
+        assert.equal(c.putback !== undefined, c.recovery === 'offense');
+        if (c.recovery) recoveries[c.recovery]++;
         assert.ok(c.commentary.includes(c.player));
-        assert.equal(c.assisted, !!c.points && ['catch', 'dunk'].includes(SHOTS[c.kind].like || c.kind));
+        assert.equal(
+          c.assisted,
+          !!c.points && c.outcome === 'made' && ['catch', 'dunk'].includes(SHOTS[c.kind].like || c.kind),
+        );
         assert.ok(!c.commentary.includes('shot quality'));
       }
     }
@@ -55,6 +63,12 @@ test('plays cover shot families, blocks, steals and varied chance without contra
   assert.deepEqual([...outcomes].sort(), ['block', 'made', 'miss', 'steal']);
   assert.ok(chances.size > 30);
   assert.ok(lines.size > clips * 0.5);
+  // after a block either side can come up with the ball, the defense more often
+  const share = recoveries.offense / (recoveries.offense + recoveries.defense);
+  assert.ok(
+    share > 0.12 && share < 0.45,
+    `the shooting team kept ${(share * 100).toFixed(0)}% of blocked shots`,
+  );
 });
 test('recorded poses are finite, bounded, mirrored, and contain actual jumps and contests', () => {
   for (const kind of Object.keys(SHOTS))
@@ -180,4 +194,57 @@ test('the dribble: hand and ball move together in the push, the ball bounces off
   assert.ok(DRIBBLE.arrive < 1.5); // the ball comes back into the hand slowly: a soft catch
   assert.ok(fastest < 8); // about 19 ft/s at most: a real dribble, no jumps where the phases meet
   assert.ok(Math.abs(dribbleAt(1).ball - dribbleAt(0).ball) < 1e-9);
+});
+test('in-game jump shots use the title jumper form: a real jump, released at its top, hands moving smoothly', () => {
+  for (const kind of ['catch', 'pullup', 'stepback', 'corner', 'fadeaway']) {
+    const c = { team: 'home', kind, lane: 1, contest: 'tight', outcome: 'made', points: 3 },
+      T = shotTiming(kind),
+      dt = 1 / 240;
+    assert.ok(T.jumper, kind);
+    // the shooter is highest at the release, and the jump is a parabola under gravity (hang time from the height)
+    const at = t => sampleClip(c, t * CLIP_SECONDS).actors[0].y;
+    assert.ok(Math.abs(at(T.release) - T.jump) < 1e-6, kind);
+    assert.ok(Math.abs(T.hang * CLIP_SECONDS - 2 * Math.sqrt((2 * T.jump) / BALL.g)) < 1e-9);
+    let prev = null,
+      seen = 0;
+    for (let t = 0; t <= CLIP_SECONDS; t += dt) {
+      const h = sampleClip(c, t).shotHands;
+      if (h) {
+        seen++;
+        if (prev)
+          for (const s of ['R', 'L']) {
+            const d = Math.hypot(...h[s].p.map((v, i) => v - prev[s].p[i]));
+            assert.ok(
+              d < 14 * dt + 1e-3,
+              `${kind} ${s} hand jumps ${d.toFixed(3)} at ${(t / CLIP_SECONDS).toFixed(3)}`,
+            );
+          }
+      }
+      prev = h;
+    }
+    assert.ok(seen > 50, kind);
+  }
+  assert.equal(
+    sampleClip({ team: 'home', kind: 'drive', lane: 1, contest: 'tight', outcome: 'made', points: 2 }, 2)
+      .shotHands,
+    null,
+  );
+});
+test('after a steal the stealer keeps the ball into the next play; an outlet pass comes from the passer, not past him', () => {
+  for (const kind of ['dunk', 'alley', 'catch', 'corner']) {
+    const c = { team: 'away', kind, lane: 1, contest: 'open', outcome: 'made', points: 2 },
+      after = { ...c, afterSteal: true },
+      s0 = sampleClip(after, 0),
+      handler = s0.actors[5];
+    // the ball starts with him (dribbling at his side), not out at the passer
+    assert.ok(Math.hypot(s0.ball.x - handler.x, s0.ball.z - handler.z) < 0.6, kind);
+    if (kind === 'dunk' || kind === 'alley') {
+      const p = sampleClip(c, 0),
+        passer = p.actors[6];
+      assert.ok(
+        Math.hypot(p.ball.x - passer.x, p.ball.z - passer.z) < 1,
+        `${kind}: the outlet leaves the passer's hands`,
+      );
+    }
+  }
 });
