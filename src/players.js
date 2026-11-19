@@ -502,6 +502,10 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
     H.kKnR.value.set(...hands.R.knuckle, hands.R.length);
     H.kKnL.value.set(...hands.L.knuckle, hands.L.length);
   }
+  // the shorts sway between their waistband and hem (materials.js sway). Jersey and shorts share the kit material: the
+  // jersey's lower edge sits inside that range and is tucked in, so it moves with them
+  const sh = template.userData?.clothFit?.shorts;
+  if (sh && jersey.userData.sway) jersey.userData.sway.kSwayRange.value.set(sh.top - 0.06, sh.bottom);
   // the skin under the clothes he wears is not drawn (src/clothFit.js)
   if (skin.userData.coverOn)
     skin.userData.coverOn.value.set(1, look.armSleeve ? 1 : 0, look.legSleeve ? 1 : 0);
@@ -635,5 +639,7 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
     lodMeshes,
     // how far each hand's fingers curl (0 open, about 0.45 round the ball, 1 a fist): motion.js sets it every frame
     setGrip: (r, l) => H?.kGrip.value.set(r, l),
+    // the shorts' lag (body units, his own frame: x his left, y up, z forward): motion.js sets it every frame
+    setSway: (x, y, z) => jersey.userData.sway?.kSway.value.set(x, y, z),
   });
 }

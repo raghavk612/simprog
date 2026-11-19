@@ -378,6 +378,36 @@ export function animateAthlete(player, pose, ctx) {
     m.turn = damp(m.turn ?? 0, Math.max(-12, Math.min(12, turn)), 6, dt);
     m.yawLast = yaw;
     m.exert = damp(m.exert ?? 0, run, run > (m.exert ?? 0) ? 0.4 : 0.12, dt); // breathing deepens after a hard run
+    // the shorts: a damped spring pushed by the body's acceleration (they lag a start, swing on a stop and a cut, and
+    // flutter as he lands from a jump), in his own frame (x his left, z forward)
+    const k = player.scale.x || 1,
+      vel = [
+        (here.x - (m.px ?? here.x)) / dt / k,
+        (pose.y - (m.py ?? pose.y)) / dt / k,
+        (here.z - (m.pz ?? here.z)) / dt / k,
+      ],
+      acc = vel.map((v, i) => Math.max(-40, Math.min(40, (v - (m.pv?.[i] ?? v)) / dt)));
+    m.px = here.x;
+    m.py = pose.y;
+    m.pz = here.z;
+    m.pv = vel;
+    m.cloth ??= { x: [0, 0, 0], v: [0, 0, 0] };
+    const C = m.cloth,
+      steps = Math.max(1, Math.ceil(dt / (1 / 120)));
+    for (let n = 0; n < steps; n++) {
+      const h = dt / steps;
+      for (let i = 0; i < 3; i++) {
+        const a = -140 * C.x[i] - 10 * C.v[i] - acc[i] * 0.0025;
+        C.v[i] += a * h;
+        C.x[i] = Math.max(-0.05, Math.min(0.05, C.x[i] + C.v[i] * h));
+      }
+    }
+    if (ctx.motion) {
+      const yaw = player.rotation.y,
+        c = Math.cos(yaw),
+        sn = Math.sin(yaw);
+      u.body.setSway?.(C.x[0] * c - C.x[2] * sn, C.x[1], C.x[0] * sn + C.x[2] * c);
+    } else u.body.setSway?.(0, 0, 0);
   }
   // stance targets by what the player is doing
   const arms = pose.arms || 'relax',

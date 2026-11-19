@@ -171,8 +171,16 @@ function patch(
     strands = false,
     cover = false,
     hands = false,
+    sway = false,
   } = {},
 ) {
+  // sway: the loose shorts lag and flutter (a spring motion.js drives from the body's acceleration, kSway, in the body's
+  // own space), more toward the hem: nothing at the waistband, all of it at the hem (kSwayRange: waist and hem heights)
+  if (sway)
+    material.userData.sway = {
+      kSway: { value: new THREE.Vector3() },
+      kSwayRange: { value: new THREE.Vector2(1, 0.7) },
+    };
   // hands: the fingers curl toward the palm about the knuckle line (src/clothFit.js handFit), by kGrip per hand (0 open,
   // about 0.45 round the ball, 1 a fist), before skinning: the hand mesh is rigid on the wrist and has no finger joints
   if (hands)
@@ -215,13 +223,15 @@ function patch(
     if (print) Object.assign(shader.uniforms, material.userData.print);
     if (cover) shader.uniforms.kCoverOn = material.userData.coverOn;
     if (hands) Object.assign(shader.uniforms, material.userData.hands);
+    if (sway) Object.assign(shader.uniforms, material.userData.sway);
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
         '#include <common>\nvarying vec3 vKRest; varying vec3 vKRestN;' +
           (strands ? ' varying vec3 vKUp;' : '') +
           (cover ? ' attribute vec3 kCover; varying vec3 vKCover;' : '') +
-          (hands ? HAND_CURL : ''),
+          (hands ? HAND_CURL : '') +
+          (sway ? ' uniform vec3 kSway; uniform vec2 kSwayRange;' : ''),
       )
       .replace(
         '#include <skinnormal_vertex>',
@@ -253,6 +263,9 @@ function patch(
             ? '\n { vec3 kPiv; float kA = kCurl(position, kPiv); if (kA != 0.0) transformed = kPiv + kRotZ(transformed - kPiv, kA); }'
             : '') +
           '\nvKRest = transformed;' +
+          (sway
+            ? '\n { float kW = clamp((kSwayRange.x - position.y) / max(kSwayRange.x - kSwayRange.y, 1e-3), 0.0, 1.0); transformed += kSway * kW * kW; }'
+            : '') +
           (cover ? '\nvKCover = kCover;' : '') +
           (inflate > 0 ? `\ntransformed += objectNormal * ${inflate.toFixed(4)};` : ''),
       );
@@ -352,7 +365,7 @@ function patch(
     shader.fragmentShader = frag;
   };
   material.customProgramCacheKey = () =>
-    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}-${strands ? 1 : 0}-${cover ? 1 : 0}-${hands ? 1 : 0}`;
+    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}-${strands ? 1 : 0}-${cover ? 1 : 0}-${hands ? 1 : 0}-${sway ? 1 : 0}`;
   return material;
 }
 
@@ -396,7 +409,7 @@ export function clothMaterial(color) {
       specularIntensity: 0.3,
       name: 'kit',
     }),
-    { map: MAPS.mesh(), scale: 22, bump: 0.18, fadeFar: 3.2, inflate: KIT_INFLATE, print: true },
+    { map: MAPS.mesh(), scale: 22, bump: 0.18, fadeFar: 3.2, inflate: KIT_INFLATE, print: true, sway: true },
   );
 }
 // Shoes: smooth leather-like upper with a little gloss; matte rubber sole.

@@ -351,3 +351,33 @@ mesh shares the near mesh's vertices and gets copies):
 Critique (close-ups): a continuous binding with a clean V at the neck and all the way round the armholes, no flaps; the
 road whites' blue binding reads like a real kit; no skin through the sleeve or at the hips. Still visible: the binding is
 a little faceted, and the sleeve's top rim still zig-zags slightly against the shoulder (a modelling fix).
+
+### 3.2 Hands and grip
+
+The hand is a rigid mesh on the wrist with no finger joints (17-bone rig), so it hung as a flat, spread mitt in every
+situation. **Decision:** no new bones (the brief's default); the skin shader curls the fingers instead: `handFit`
+(clothFit.js) finds each wrist's bone, the knuckle line about 45% of the way from the wrist to the fingertips and the
+fingers' length; the vertex shader (`materials.js`, `hands`) turns the vertices below the knuckle line toward the palm
+about its front-back axis, more toward the tips (a smooth arc, like three joints bending together), before skinning.
+`animateAthlete` sets each hand's grip every frame: relaxed 0.35, open on defence, spread on the dribble, wrapped round a
+ball he holds (0.42), or as a performance says (a fist for a fist pump or a flex, flat for a clap). Critique (hand
+close-ups): a relaxed hand now has naturally bent fingers; at the release the guide hand's fingers wrap the ball's side.
+Not possible without finger joints: separate fingers (a thumb that opposes, a pointing finger).
+
+### 3.3 Shorts that move
+
+The shorts were rigid shells. The kit material now sways the shorts' lower half (`materials.js`, `sway`): nothing at the
+waistband, all of it at the hem, by a damped spring (`motion.js`, about 1.9 Hz, lightly damped) pushed by the body's
+acceleration, so they lag a start, swing on a stop or a cut and flutter on a landing. The jersey's tucked-in lower edge
+lies inside the same range and moves with them (they share the material), so the waistband never parts.
+
+### 3.4 Close-up lighting and materials
+
+Reviewed at the replay camera and the orbit-zoom distances (closeups sheet): skin, kit sheen and the glossy floor hold up;
+the face is a painted stylized face, which suits the art direction; depth of field on the replay camera pulls focus to
+the ball in flight as designed. Nothing changed here. Remaining close-up weaknesses (for the final report): the sleeve's
+top rim zig-zags slightly, the binding is a little faceted, fingers cannot separate.
+
+### Phase 3 gate
+
+Tests 310 passing, build green. Images reviewed above.

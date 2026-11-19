@@ -269,6 +269,17 @@ export function prepareCloth(template) {
     if (trim) smoothTrim(trim); // after the coverage, which reads where the openings are from the tube as modelled
   }
   if (named.body_mesh) out.hands = handFit(named.body_mesh);
+  // the shorts' height range in the bind pose, for their sway (materials.js sway): waistband to hem
+  if (named.shorts_mesh) {
+    const a = named.shorts_mesh.geometry.attributes.position;
+    let lo = Infinity,
+      hi = -Infinity;
+    for (let i = 0; i < a.count; i++) {
+      lo = Math.min(lo, a.getY(i));
+      hi = Math.max(hi, a.getY(i));
+    }
+    out.shorts = { top: hi, bottom: lo };
+  }
   template.userData.clothFit = out;
   return out;
 }
