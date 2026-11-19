@@ -453,3 +453,12 @@ against 1,217 kB / 383 kB for this same code unsplit (−55 kB, −5%); against 
 larger, because Phases 1–4 added code (finishes, actions, reactions, cloth fit, team colours). **Decision:** the moves
 library and the post-processing stay in the first load: the title needs both on its first frame (a deferred import would
 show the gym without its look for a moment during the fly-in).
+
+### 4.7 Medium: bloom
+
+Measured each Medium pass at retina (frame median, title/live): bloom 0.8–1.0 ms (about 10%), grade 0.1 ms, SMAA
+0.2–0.3 ms. Bloom at half resolution saved nothing measurable (its cost is the number of passes and target switches, not
+their size). With its threshold at 2.2 it only lights the truss light banks, which the broadcast angles hardly show: the
+Medium broadcast frames with and without it are indistinguishable. **Decision (the 10% rule):** bloom stays on High and
+is off on Medium. Medium now (before → after): retina title 9.0 → 8.0 ms, live 8.9 → 8.2, replay 10.1 → 8.9; laptop
+title 6.5 → 5.5, live 6.1 → 5.6, replay 6.8 → 6.2.

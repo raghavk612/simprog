@@ -117,7 +117,11 @@ test('broadcast look: High has reflections and ambient occlusion, Medium only bl
   );
   assert.equal(m.reflections, false);
   assert.equal(m.ao, false);
-  assert.equal(m.bloom, true);
+  assert.equal(
+    m.bloom,
+    false,
+    'bloom only on High: about 10% of a Medium frame for a glow the broadcast angles hardly show',
+  );
   assert.equal(m.spots, 3);
   assert.equal(m.dof, true, 'depth of field only runs on replays and close angles, so Medium can afford it');
   assert.equal(lookFeatures('low'), null);

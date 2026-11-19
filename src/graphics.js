@@ -102,11 +102,13 @@ export function lookFeatures(level) {
       dof: true,
       aa: 'smaa',
     };
+  // Medium: no bloom. It cost about a tenth of a Medium frame at 2x for a glow on the light banks that the broadcast
+  // angles hardly show (measured; docs/realism-log.md 4.7)
   if (level === 'medium')
     return {
       reflections: false,
       ao: false,
-      bloom: true,
+      bloom: false,
       grade: true,
       spots: 3,
       contact: true,
