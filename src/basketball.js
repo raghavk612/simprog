@@ -754,6 +754,11 @@ export function blockPlan(c, release) {
 }
 // Sample any point in a recorded clip. Same clip + time always gives the same pose.
 // Coordinates are mirrored for the visitors, so both baskets are used.
+// Contract (the gym, the drills, the golden test in tests/golden.test.js and saved replays depend on it): pure and
+// deterministic (no clock, no Math.random, the clip is not changed); returns {actors, ball, phase, bounce, blockHands,
+// shotHands, resolved, flying, net, ...} where actors is always 10 entries (0-4 home, 5-9 away; the offence's
+// ball handler at its first slot) of {x, y, z, yaw, run, arms}. A clip with no motion version (c.v) moves exactly as it
+// did when it was recorded; new behaviour goes behind a new MOTION_VERSION.
 export function sampleClip(c, time) {
   const fam = family(c.kind),
     t = clamp(time / CLIP_SECONDS),
