@@ -172,7 +172,7 @@ test('player detail follows on-screen size in pixels: a Follow-view player on a 
 });
 
 test('auto quality: steps down while slow, recovers after three fast windows, and stops trying after a failed step up', async () => {
-  const { autoStep, PROBE, lookFeatures, qualityProfile, effectivePlayers } =
+  const { autoStep, PROBE, LOCK_WINDOWS, lookFeatures, qualityProfile, effectivePlayers } =
     await import('../src/graphics.js');
   const slow = PROBE.slowMs + 5,
     fast = PROBE.fastMs - 2,
@@ -199,5 +199,10 @@ test('auto quality: steps down while slow, recovers after three fast windows, an
   assert.equal(r.level, 'lite');
   for (let i = 0; i < 6; i++) r = autoStep(r.level, fast, r.state);
   assert.equal(r.level, 'lite', 'locked after a failed step up');
+  // for about a minute, not for good: once the load has gone it tries again
+  for (let i = 6; i < LOCK_WINDOWS - 1; i++) r = autoStep(r.level, fast, r.state);
+  assert.equal(r.level, 'lite', 'still locked');
+  for (let i = 0; i < 4; i++) r = autoStep(r.level, fast, r.state);
+  assert.equal(r.level, 'medium', 'tries the step up again after the lock');
   assert.equal(autoStep('high', fast).level, 'high', 'High is the top');
 });

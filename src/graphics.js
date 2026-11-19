@@ -47,20 +47,24 @@ export const PROBE = {
 };
 /* Auto quality, one decision per measured window: slow -> one step down the ladder (High, Medium, Lite, Low: the crowd,
    bloom and mirror go before the athletes do); three fast windows in a row -> one step back up (recovery, e.g. once the
-   browser has finished warming up); if a step up turns out slow, back down and no more steps up. state carries
-   {good: fast windows in a row, trial: the level just stepped up to, locked}. Pure, so it is tested. */
+   browser has finished warming up); if a step up turns out slow, back down and no step up for LOCK_WINDOWS windows
+   (about a minute: no flicker between two levels, but a load that has gone, a video in another tab, a warm-up, does not
+   keep the game on a lower level for the rest of the session). state carries {good: fast windows in a row, trial: the
+   level just stepped up to, locked: windows left before another step up}. Pure, so it is tested. */
+export const LOCK_WINDOWS = 30;
 export function autoStep(level, med, state = {}) {
   const i = AUTO_LEVELS.indexOf(level),
-    s = { good: 0, trial: null, locked: false, ...state };
+    s = { good: 0, trial: null, locked: 0, ...state };
+  if (s.locked > 0) s.locked--;
   if (i < 0) return { level, state: s };
   if (med > PROBE.slowMs) {
-    if (s.trial === level) s.locked = true;
+    if (s.trial === level) s.locked = LOCK_WINDOWS;
     s.trial = null;
     s.good = 0;
     return { level: lowerLevel(level), state: s };
   }
   s.trial = null;
-  if (med < PROBE.fastMs && !s.locked && i < AUTO_LEVELS.length - 1) {
+  if (med < PROBE.fastMs && !(s.locked > 0) && i < AUTO_LEVELS.length - 1) {
     s.good++;
     if (s.good >= 3) {
       s.good = 0;
