@@ -621,7 +621,7 @@ export class Arena {
     const want = arenaPlayers(this.playersChoice, this.level, this.mode);
     this.playerStyle = want;
     if (want === 'athletes' && !this.templates) {
-      (this.bodiesLoading ??= loadAthletes())
+      (this.bodiesLoading ??= loadAthletes(this.level))
         .then(t => {
           this.templates = t;
           this.applyPlayers();

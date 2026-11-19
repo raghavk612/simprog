@@ -1,8 +1,10 @@
 // Baked detail maps for the 3D athletes: per body variant, one RGBA texture per atlas with the tangent-space normal in RGB
 // (OpenGL / glTF, green up) and ambient occlusion in A, made by scripts/build_players.py --bake (assets-src/players/bake).
 //   skin: body, head, arms, hands   2048 px on High, a 1024 px copy (_1k) on Medium
-//   kit:  jersey, shorts, sleeves, headband, trim   1024 px
-//   gear: sneakers, hair   1024 px
+//   kit:  jersey, shorts, sleeves, headband, trim   1024 px on High, a 512 px copy (_512) on Medium
+//   gear: sneakers, hair   1024 px on High, a 512 px copy (_512) on Medium
+// (the half-size copies of kit and gear: scripts/player-maps-small.mjs; on Medium the players are seen at broadcast
+// distance, and a Medium session downloads about 4 MB less)
 // The GLBs carry the atlas UVs (TEXCOORD_0) and the tangents the maps were baked in (TANGENT), so normalScale stays (1, 1).
 // Maps are used on Medium and High only (Low draws the classic players) and never on the far mesh (LOD1), whose welded seams
 // smear the atlas. They are loaded once per variant and shared by every player of that variant; bodies switch them live.
@@ -21,8 +23,9 @@ export const ATLAS_OF = {
   hair: 'gear',
 };
 export const mapsOn = level => level === 'medium' || level === 'high';
+export const SMALL_SUFFIX = { skin: '_1k', kit: '_512', gear: '_512' };
 export const mapFile = (variant, atlas, level) =>
-  `${variant}_${atlas}${atlas === 'skin' && level !== 'high' ? '_1k' : ''}.png`;
+  `${variant}_${atlas}${level !== 'high' ? (SMALL_SUFFIX[atlas] ?? '') : ''}.png`;
 /* Baked AO darkens only indirect light (the hemisphere fill, sheen and clearcoat). On High the screen-space AO (GTAO) darkens
    the same creases again, so the baked AO is lighter there; on the face the painted shadows already carry it (materials.js
    fades the baked AO under the painted face). */
@@ -79,11 +82,13 @@ export class AthleteMaps {
     this.disposed = false;
     this.level = null; // the level the bodies show now (use)
   }
-  /* The bodies are now on this level. Only one skin size is kept: once this level's skin is loaded the other size is freed
-     (until then it stays, so bodies keep showing it while the new one loads). Kit and gear are the same file on both levels. */
+  /* The bodies are now on this level. Only one size of each atlas is kept: once this level's is loaded the other size is
+     freed (until then it stays, so bodies keep showing it while the new one loads). */
   use(level) {
     this.level = level;
-    if (mapsOn(level) && this.get('skin', level)) this.release('skin', level === 'high' ? 'medium' : 'high');
+    if (mapsOn(level))
+      for (const atlas of MAP_ATLASES)
+        if (this.get(atlas, level)) this.release(atlas, level === 'high' ? 'medium' : 'high');
   }
   release(atlas, level) {
     const file = mapFile(this.variant, atlas, level),
@@ -110,7 +115,7 @@ export class AthleteMaps {
           }
           t.name ||= file;
           e.texture = prepare(t);
-          if (atlas === 'skin' && this.level === level) this.use(level); // the other skin size can go now
+          if (this.level === level) this.use(level); // the other size can go now
           return e.texture;
         })
         .catch(err => {

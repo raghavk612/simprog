@@ -295,13 +295,14 @@ export function bodyFor(person, seed = personSeed(person), style = 'athletes') {
 let athleteTemplates = null,
   athleteLoading = null;
 export const loadedAthletes = () => athleteTemplates;
-export function loadAthletes() {
+export function loadAthletes(level = 'high') {
   if (athleteTemplates) return Promise.resolve(athleteTemplates);
   return (athleteLoading ??= Promise.all(
     BODY_VARIANTS.map(v =>
       new GLTFLoader().loadAsync(`${import.meta.env?.BASE_URL ?? '/'}models/players/${v}.glb`).then(g => {
         g.maps = new AthleteMaps(v);
-        g.maps.prefetch('high', ['kit', 'gear']);
+        // the kit and gear atlases start with the bodies, at the size the level shows (none without detail maps)
+        if (mapsOn(level)) g.maps.prefetch(level, ['kit', 'gear']);
         return [v, g];
       }),
     ),

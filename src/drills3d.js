@@ -1301,7 +1301,7 @@ export function makeRig(
     };
     if (loadedAthletes()) up();
     else
-      loadAthletes()
+      loadAthletes(S.level || 'high')
         .then(up)
         .catch(() => {
           /* keep the simple figure */

@@ -430,3 +430,15 @@ Settings menu, which keeps auto/low/medium/high): the athletes and the broadcast
 field, mirror, AO and detail maps go, the canvas is 1× and the shadow map 512. So the costly extras go before the
 athletes do. Measured (frame median, live possession): laptop Medium 5.9 ms → Lite 4.6 ms; retina Medium 9.1 → Lite
 5.0 ms. The practice drills use the same ladder. Tests: the ladder, recovery, the lock after a failed step up.
+
+### 4.5 Player maps by level
+
+The maps are lossless PNG (tangent normal in RGB, AO in alpha). **Decision:** no KTX2/Basis or WebP/AVIF re-encode. There
+is no encoder in the repo; macOS `sips` cannot write WebP, and its AVIF path applies colour management, chroma
+subsampling and premultiplied alpha, any of which corrupts a normal map with AO in its alpha. Instead Medium gets
+half-size copies of the kit and gear atlases (the skin already had its 1k copy): `scripts/player-maps-small.mjs`
+averages 2×2 on the raw bytes (data, not colour) and writes RGBA PNG with per-row adaptive filters. Kit 790–813 kB →
+343–349 kB, gear 1,397–1,412 kB → 507–513 kB per variant. `mapFile` picks them on Medium; `AthleteMaps.use` now keeps one
+size of every atlas (it freed only the other skin); `loadAthletes(level)` prefetches the size the level shows (it fetched
+the 1024 atlases whatever the level). The service worker still caches maps on first use. Close-ups on Medium checked: no
+visible loss. High is unchanged (its 2k skin is what the replay close-ups need).

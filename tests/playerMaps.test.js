@@ -86,8 +86,8 @@ test('player maps: a PNG per variant and atlas at its size, baked for the UV lay
   for (const v of BODY_VARIANTS) {
     for (const [atlas, high, medium] of [
       ['skin', 2048, 1024],
-      ['kit', 1024, 1024],
-      ['gear', 1024, 1024],
+      ['kit', 1024, 512],
+      ['gear', 1024, 512],
     ]) {
       assert.deepEqual(size(mapFile(v, atlas, 'high')), [high, high], `${v} ${atlas} on High`);
       assert.deepEqual(size(mapFile(v, atlas, 'medium')), [medium, medium], `${v} ${atlas} on Medium`);
@@ -110,7 +110,8 @@ test('map files: every body material reads one of the three atlases; skin is hal
     assert.ok(MAP_ATLASES.includes(ATLAS_OF[m]), m);
   assert.equal(mapFile('guard', 'skin', 'high'), 'guard_skin.png');
   assert.equal(mapFile('guard', 'skin', 'medium'), 'guard_skin_1k.png');
-  assert.equal(mapFile('center', 'kit', 'medium'), 'center_kit.png');
+  assert.equal(mapFile('center', 'kit', 'medium'), 'center_kit_512.png');
+  assert.equal(mapFile('center', 'gear', 'medium'), 'center_gear_512.png');
   assert.equal(mapFile('forward', 'gear', 'high'), 'forward_gear.png');
   assert.deepEqual(['auto', 'low', 'medium', 'high', undefined].map(mapsOn), [
     false,
@@ -131,7 +132,12 @@ test('AthleteMaps: one load per file, shared by every caller; a failed file stay
   assert.deepEqual(calls, ['/m/guard_skin.png']);
   await maps.request('kit', 'medium');
   await maps.request('kit', 'high');
-  assert.deepEqual(calls, ['/m/guard_skin.png', '/m/guard_kit.png'], 'kit is the same file on both levels');
+  await maps.request('kit', 'high');
+  assert.deepEqual(
+    calls,
+    ['/m/guard_skin.png', '/m/guard_kit_512.png', '/m/guard_kit.png'],
+    'each size of an atlas is its own file, loaded once',
+  );
   for (const t of [a, maps.get('kit', 'high')]) {
     assert.equal(t.flipY, false, 'glTF UVs: flipY false');
     assert.equal(t.colorSpace, THREE.NoColorSpace, 'normals and AO are data');
@@ -144,7 +150,7 @@ test('AthleteMaps: one load per file, shared by every caller; a failed file stay
   let freed = 0;
   for (const t of maps.loaded()) t.addEventListener('dispose', () => freed++);
   maps.dispose();
-  assert.equal(freed, 2);
+  assert.equal(freed, 3);
   assert.equal(await maps.request('skin', 'high'), null, 'a disposed store loads nothing more');
 });
 
@@ -211,10 +217,21 @@ test('athlete maps: on Medium and High, the right skin size per level, none on L
   const other = athleteBody(gltf, kit, 4, 0x111111, 'guard', { ...look, hair: 'rows' }, { level: 'high' });
   await tick();
   assert.equal(materials(other).get('kit').normalMap, mats.get('kit').normalMap);
-  // kit and gear are loaded once; the 2k skin a second time, as it was freed while the body was on Medium
+  // each level's size of each atlas is loaded once; the High ones a second time, as they were freed while the body was on
+  // Medium (only one size of an atlas is kept)
   assert.deepEqual(
     [...calls].sort(),
-    ['guard_gear.png', 'guard_kit.png', 'guard_skin.png', 'guard_skin.png', 'guard_skin_1k.png'],
+    [
+      'guard_gear.png',
+      'guard_gear.png',
+      'guard_gear_512.png',
+      'guard_kit.png',
+      'guard_kit.png',
+      'guard_kit_512.png',
+      'guard_skin.png',
+      'guard_skin.png',
+      'guard_skin_1k.png',
+    ],
     `loads: ${calls}`,
   );
   assert.equal(materials(other).get('skin').normalMap, mats.get('skin').normalMap, 'skin shared too');
@@ -240,7 +257,7 @@ test('athlete maps: on Medium and High, the right skin size per level, none on L
   assert.equal(materials(plain).get('skin').normalMap, null);
 });
 
-test('AthleteMaps: once a level has its skin, the other skin size is freed (kit and gear stay)', async () => {
+test('AthleteMaps: once a level has an atlas, the other size of it is freed', async () => {
   const { load, calls } = stubLoader(),
     maps = new AthleteMaps('guard', { base: '/m/', load });
   maps.use('high');
@@ -253,7 +270,13 @@ test('AthleteMaps: once a level has its skin, the other skin size is freed (kit 
   await maps.request('skin', 'medium');
   assert.equal(freed, 1, '2k skin disposed once the 1k is in');
   assert.equal(maps.get('skin', 'high'), null);
-  assert.ok(maps.get('kit', 'medium') && maps.get('gear', 'medium'), 'shared atlases kept');
+  assert.ok(
+    maps.get('kit', 'high') && maps.get('gear', 'high'),
+    'the 1024 kit and gear stay until their copies land',
+  );
+  await maps.prefetch('medium', ['kit', 'gear']);
+  assert.equal(maps.get('kit', 'high'), null, 'then go');
+  assert.ok(maps.get('kit', 'medium') && maps.get('gear', 'medium'));
   // back to High with the 1k loaded: the 2k is fetched again, and the 1k is freed when it lands
   maps.use('high');
   await maps.request('skin', 'high');
