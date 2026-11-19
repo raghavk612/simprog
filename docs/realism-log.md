@@ -442,3 +442,14 @@ averages 2×2 on the raw bytes (data, not colour) and writes RGBA PNG with per-r
 size of every atlas (it freed only the other skin); `loadAthletes(level)` prefetches the size the level shows (it fetched
 the 1024 atlases whatever the level). The service worker still caches maps on first use. Close-ups on Medium checked: no
 visible loss. High is unchanged (its 2k skin is what the replay close-ups need).
+
+### 4.6 The main chunk
+
+The practice drills' 3D scenes (`drillscenes.js`, `drills3d.js`) now load when a drill first opens (`drills.js`,
+a dynamic import; closing the drill before it arrives cancels it; a failed import or WebGL falls back to the 2D drill as
+before). Rollup now emits the entry (`index`, 516 kB), a shared chunk with three.js and the gym (`players`, 647 kB) and the
+drills (57 kB, deferred). **Honest accounting:** the first visit needs `index` + `players`: 1,163 kB raw / 363 kB gzip,
+against 1,217 kB / 383 kB for this same code unsplit (−55 kB, −5%); against the baseline's 1,120 kB the first load is
+larger, because Phases 1–4 added code (finishes, actions, reactions, cloth fit, team colours). **Decision:** the moves
+library and the post-processing stay in the first load: the title needs both on its first frame (a deferred import would
+show the gym without its look for a moment during the fly-in).
