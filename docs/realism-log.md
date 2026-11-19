@@ -268,3 +268,25 @@ contest now has a beat (hand up as the shooter gathers, full reach in the air wi
 then goes up for it with both hands. Bugs caught by the new tests and fixed before committing: the passer's action was
 still emitted at zero weight for the rest of the play, and the contest's rise was timed in clip fractions where seconds
 were meant (it started 0.8 s early).
+
+### 2.5 Off-ball movement, behind a motion version
+
+The off-ball offense drifted the whole play on a slow sine around its spots (never still, never going anywhere: it turned
+out to be a half-cycle drift rather than a fast wiggle), and the defenders shadowed that drift. This is decided by
+`sampleClip`, so it is gated: **`MOTION_VERSION = 2`** (basketball.js), stamped by the engine on every new play as `v`
+(`makePlay`; no random draw and no effect on the outcome; `validSave` accepts it and rejects anything but a small
+integer). A play without `v` (every play recorded before) samples exactly as before (golden clips, 162 plays × 23
+moments, unchanged); version-2 plays have their own new snapshot section.
+
+Version 2 (`offBallV2`): each off-ball player holds an athletic stance at his spot and moves at a moment of the play with
+an ease-in-out move between holds: the cutter's hard basket cut off a plant and curl to the dunker spot; the wing filling
+the corner as the drive comes, then crashing the weak-side board after the shot; the slot's jab in and pop out wider for
+an outlet, then to the free-throw line on the shot; a safety (when the play does not use him) stepping along the arc and
+getting back toward half court as the shot goes up. They watch the ball. The defenders take their guard spots on these
+moves, so help and recovery follow; on the catch-and-shoot the shooter's man sags into help and closes out as the ball
+swings to his man (a sprint, then chopping steps). Tests: holds and bursts, version 1 never still, version 2 still over
+40% of the play, the closeout.
+
+Critique (broadcast sheet): the floor reads as spaced with players set rather than milling; the crash after the shot pulls
+bodies to the rim the way a real possession ends. Stills cannot show the burst of the cut; the test checks it (four times
+the ground covered mid-cut than at its start).

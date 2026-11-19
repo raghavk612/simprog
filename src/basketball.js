@@ -1,5 +1,12 @@
 // Shared, deterministic basketball presentation. No rendering or wall-clock RNG here.
 export const CLIP_SECONDS = 4.4; // one side's play; the run between plays happens before it (Arena.startTransit)
+/* The motion version stamped on every new play (engine.js makePlay, field v). sampleClip moves the players of a play with
+   no version (recorded before it existed) exactly as it always did, so old saves and replays never change:
+     1 (no v)  off-ball players sway on a sine wave around their spots
+     2         off-ball players move with purpose: a basket cut with a plant, a jab-and-pop V-cut, filling the corner as the
+               drive comes, a safety getting back, crashing the boards after the shot; they watch the ball; the
+               catch-and-shoot's defender sags into help and closes out (a sprint, then chopping steps) */
+export const MOTION_VERSION = 2;
 export const SHOTS = {
   catch: { label: 'Catch-and-shoot three', three: true, base: -0.035, finish: [4.2, 5.5], arc: 3.8 },
   pullup: { label: 'Pull-up jumper', three: false, base: 0.015, finish: [7, 2.7], arc: 3 },
@@ -490,6 +497,83 @@ export function guardSpot(man, side, gap = null) {
     g = Math.min(Math.max(0.3, d - 0.4), gap ?? Math.max(1.3, Math.min(2.6, d * 0.33)));
   return { x: man.x + (dx / d) * g, z: man.z + (dz / d) * g };
 }
+/* Version 2 off-ball movement (MOTION_VERSION). Each player holds his spot in an athletic stance and moves with a purpose at
+   a moment of the play: ease-in-out moves with holds between them, never a sway. t = clip fraction, T = shotTiming. */
+function offBallV2(A, offense, side, lane, t, fam, T) {
+  const path = (keys, u) => {
+      if (u <= keys[0][0]) return keys[0][1];
+      for (let i = 1; i < keys.length; i++)
+        if (u <= keys[i][0]) {
+          const [u0, a] = keys[i - 1],
+            [u1, b] = keys[i],
+            k = smooth((u - u0) / (u1 - u0));
+          return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+        }
+      return keys[keys.length - 1][1];
+    },
+    put = (k, p, mirror = false) => {
+      A[offense + k].x = p[0] * side;
+      A[offense + k].z = p[1] * (mirror ? lane : 1);
+    },
+    rel = T.release,
+    usesScreen = fam === 'roll' || fam === 'dunk' || fam === 'catch';
+  // the cutter: holds, a hard basket cut off a plant, curls to the dunker spot and waits there
+  put(
+    2,
+    path(
+      [
+        [0.1, [4, -5]],
+        [0.22, [4.6, -4.4]],
+        [0.42, [9.4, -1.2]],
+        [0.6, [10.3, 2.6]],
+      ],
+      t,
+    ),
+    true,
+  );
+  // the wing fills the corner as the drive comes (spacing), then crashes the weak-side board after the shot
+  put(
+    3,
+    path(
+      [
+        [0.24, [9, -4.4]],
+        [0.48, [10.9, -6.1]],
+        [rel + 0.03, [10.9, -6.1]],
+        [rel + 0.22, [10.2, -3.2]],
+      ],
+      t,
+    ),
+  );
+  // the slot: a jab in, a pop back out wider to give the ball handler an outlet, then to the free-throw line on the shot
+  put(
+    4,
+    path(
+      [
+        [0.12, [6, 0]],
+        [0.21, [7.1, 0.5]],
+        [0.38, [5.1, 1.4]],
+        [rel + 0.03, [5.1, 1.4]],
+        [rel + 0.2, [7.6, 0.6]],
+      ],
+      t,
+    ),
+  );
+  // the safety (when the play does not use him): a step along the arc, then back toward half court as the shot goes up
+  if (!usesScreen)
+    put(
+      1,
+      path(
+        [
+          [0.3, [3, -5.5]],
+          [0.46, [3.9, -6.2]],
+          [rel, [3.9, -6.2]],
+          [rel + 0.25, [1.2, -4.8]],
+        ],
+        t,
+      ),
+    );
+}
+
 /* ---- A block, worked out once per play (sampleClip uses it at every moment) ----
    Everything about a block that does not depend on the moment: where the ball meets the blocker's hand, how hard and where
    it is swatted, which two players go for the loose ball and where they meet it (from where the same play unblocked has
@@ -693,12 +777,13 @@ export function sampleClip(c, time) {
     [9, -4.4],
     [6, 0],
   ];
+  const v2 = (c.v ?? 1) >= 2;
   const actors = Array.from({ length: 10 }, (_, i) => {
     const k = i % 5,
       off = i >= offense && i < offense + 5,
       base = SPOTS[k];
     return {
-      x: (base[0] + (off ? Math.sin(t * 3 + k) * 0.7 : 0)) * side,
+      x: (base[0] + (off && !v2 ? Math.sin(t * 3 + k) * 0.7 : 0)) * side,
       y: 0,
       z: base[1],
       yaw: (side * Math.PI) / 2,
@@ -707,6 +792,8 @@ export function sampleClip(c, time) {
       jump: 0,
     };
   });
+  // Motion version 2: the off-ball offense moves with purpose (offBallV2), before the defenders take their spots on them
+  if (v2) offBallV2(actors, offense, side, lane, t, fam, T);
   // Defenders start on their man's guard spot (guardSpot): between him and the basket.
   for (let k = 0; k < 5; k++) Object.assign(actors[defense + k], guardSpot(actors[offense + k], side));
   // Every value below is continuous in t: actors and ball ease between beats instead of snapping.
@@ -722,7 +809,10 @@ export function sampleClip(c, time) {
   });
   // the on-ball defender: between the shooter and the rim, 3 ft off on a tight contest, 4.5 ft normally, 7.5 ft when open
   const separation = c.contest === 'open' ? 2.5 : c.contest === 'tight' ? 1 : 1.5;
-  Object.assign(marker, guardSpot(shooter, side, separation));
+  // version 2, the catch-and-shoot: he sags into help while the ball is elsewhere, then closes out as it swings to his
+  // man (fast, then short chopping steps)
+  const closeout = v2 && fam === 'catch' ? 1 - Math.pow(1 - clamp((t - 0.1) / 0.24), 2.4) : 1;
+  Object.assign(marker, guardSpot(shooter, side, separation + (3.1 - separation) * (1 - closeout)));
   marker.run = 0.85 - 0.75 * smooth((t - 0.45 - d) / 0.08);
   // the contest: a real jump under gravity, at its top just as the ball leaves the shooter's hand (a block is timed to
   // the ball itself, below)
@@ -761,8 +851,10 @@ export function sampleClip(c, time) {
     if (t < 0.2 && !c.afterSteal) screen.arms = 'pass';
   }
   // Off-ball cuts and closeouts: players do not just oscillate in place.
-  actors[offense + 2].x = lerp(4, 10, smooth(t)) * side;
-  actors[offense + 2].z = lerp(-5, 3, smooth(t)) * lane;
+  if (!v2) {
+    actors[offense + 2].x = lerp(4, 10, smooth(t)) * side;
+    actors[offense + 2].z = lerp(-5, 3, smooth(t)) * lane;
+  }
   // the cutter's man trails him; the weak-side defender sags into the lane, then closes out to his man
   Object.assign(actors[defense + 3], {
     x: lerp(10.2 * side, actors[defense + 3].x, smooth(t)),
@@ -957,6 +1049,13 @@ export function sampleClip(c, time) {
   }
   // Defenders face their man (or the ball once the shot is up). Personal space is kept frame by frame by the Arena
   // (motion.js keepApart), which remembers which side players pass each other on.
+  // version 2: the off-ball offense watches the ball (the Arena turns them to run when they move)
+  if (v2)
+    for (let k = 1; k < 5; k++) {
+      const a = actors[offense + k];
+      if (a.arms === 'run' && Math.hypot(ball.x - a.x, ball.z - a.z) > 0.05)
+        a.yaw = Math.atan2(ball.x - a.x, ball.z - a.z);
+    }
   for (let k = 0; k < 5; k++) {
     const dfd = actors[defense + k];
     if (dfd === marker && c.outcome === 'steal' && t > 0.3) continue; // he is dribbling the other way
