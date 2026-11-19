@@ -368,8 +368,67 @@ export function coverField(body, cloths, trim, openings = null) {
     )
       cover[i * 3] = 1;
   }
+  // the sleeves (slots 1 and 2): every skin vertex of the limb a sleeve follows is marked; the skin shader hides it only
+  // between the sleeve's planes (sleeveRims), so the edge is a straight line across the limb wherever the skin's
+  // triangles end (marking only the skin a ray finds under the sleeve left a zig-zag of skin poking through at its rim)
+  for (const { mesh, slot } of cloths) {
+    if (slot === 0) continue;
+    const limb = sleeveBones(mesh, body);
+    for (let i = 0; i < n; i++) cover[i * 3 + slot] = limb(i) ? 1 : 0;
+  }
   g.setAttribute('kCover', new THREE.BufferAttribute(cover, 3));
   return cover;
+}
+/* Which skin vertices follow the bones a sleeve follows (most of its weight on one of them). */
+function sleeveBones(sleeve, body) {
+  const names = sleeve.skeleton?.bones.map(b => b.name) || [],
+    si = sleeve.geometry.attributes.skinIndex,
+    count = new Map();
+  if (si)
+    for (let i = 0; i < si.count; i++) count.set(names[si.getX(i)], (count.get(names[si.getX(i)]) || 0) + 1);
+  const total = si?.count || 1,
+    limb = new Set([...count].filter(([, c]) => c > total * 0.1).map(([b]) => b)),
+    bones = body.skeleton?.bones.map(b => b.name) || [],
+    bi = body.geometry.attributes.skinIndex,
+    bw = body.geometry.attributes.skinWeight;
+  return i => {
+    if (!bi) return false;
+    let best = 0;
+    for (let k = 1; k < 4; k++) if (bw.getComponent(i, k) > bw.getComponent(i, best)) best = k;
+    return limb.has(bones[bi.getComponent(i, best)]);
+  };
+}
+/* A sleeve's two planes in the bind pose (heights; the limbs hang straight, so a height is a cut across the limb): the top
+   is the lowest point of its top rim all the way round, the bottom the highest point of its bottom rim, so the sleeve is
+   whole between them. The sleeve is drawn and the skin under it hidden between the same two planes (materials.js cut,
+   kArmRim/kLegRim): a straight, clean edge. */
+export function sleeveRims(sleeve) {
+  const p = sleeve.geometry.attributes.position;
+  let lo = Infinity,
+    hi = -Infinity;
+  for (let i = 0; i < p.count; i++) {
+    lo = Math.min(lo, p.getY(i));
+    hi = Math.max(hi, p.getY(i));
+  }
+  const rim = end => {
+    const near = [];
+    for (let i = 0; i < p.count; i++) if (end > 0 ? p.getY(i) > hi - 0.1 : p.getY(i) < lo + 0.1) near.push(i);
+    let cx = 0,
+      cz = 0;
+    for (const i of near) {
+      cx += p.getX(i) / near.length;
+      cz += p.getZ(i) / near.length;
+    }
+    const bins = new Array(16).fill(end > 0 ? -Infinity : Infinity);
+    for (const i of near) {
+      const k =
+        Math.floor(((Math.atan2(p.getZ(i) - cz, p.getX(i) - cx) + Math.PI) / (2 * Math.PI)) * 16) % 16;
+      bins[k] = end > 0 ? Math.max(bins[k], p.getY(i)) : Math.min(bins[k], p.getY(i));
+    }
+    const f = bins.filter(Number.isFinite);
+    return end > 0 ? Math.min(...f) : Math.max(...f);
+  };
+  return { top: rim(1), bottom: rim(-1) };
 }
 
 /* The hands, for the finger curl (materials.js patch, hands): the rigid hand hangs straight down in the bind pose, palm
@@ -452,6 +511,10 @@ export function prepareCloth(template) {
     }
   }
   if (named.body_mesh) out.hands = handFit(named.body_mesh);
+  // the sleeves' planes (bind pose heights)
+  out.sleeves = {};
+  if (named.sleeve_arm_mesh) out.sleeves.arm = sleeveRims(named.sleeve_arm_mesh);
+  if (named.sleeve_leg_mesh) out.sleeves.leg = sleeveRims(named.sleeve_leg_mesh);
   // the shorts' height range in the bind pose, for their sway (materials.js sway): waistband to hem
   if (named.shorts_mesh) {
     const a = named.shorts_mesh.geometry.attributes.position;

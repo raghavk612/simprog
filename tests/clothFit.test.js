@@ -102,3 +102,39 @@ test('binding: lifted off the body along the skin (not fattened), only real open
     );
   }
 });
+
+test('sleeves: one plane at each end, the sleeve whole between them; the skin of the sleeved limb is marked', async () => {
+  const { sleeveRims } = await import('../src/clothFit.js');
+  for (const v of ['guard', 'forward', 'center']) {
+    const g = await load(v),
+      named = {};
+    g.scene.traverse(o => o.isMesh && (named[o.name] = o));
+    const r = prepareCloth(g).sleeves;
+    for (const [k, mesh] of [
+      ['arm', named.sleeve_arm_mesh],
+      ['leg', named.sleeve_leg_mesh],
+    ]) {
+      const p = mesh.geometry.attributes.position;
+      let lo = Infinity,
+        hi = -Infinity;
+      for (let i = 0; i < p.count; i++) ((lo = Math.min(lo, p.getY(i))), (hi = Math.max(hi, p.getY(i))));
+      assert.deepEqual(r[k], sleeveRims(mesh));
+      assert.ok(r[k].top <= hi && r[k].top > hi - 0.1, `${v} ${k}: top plane at the top rim`);
+      assert.ok(r[k].bottom >= lo && r[k].bottom < lo + 0.1, `${v} ${k}: bottom plane at the bottom rim`);
+      assert.ok(r[k].top - r[k].bottom > 0.25, `${v} ${k}: most of the sleeve kept`);
+    }
+    // marked skin: on the right arm for the arm sleeve, the left leg for the leg sleeve (by position in the bind pose)
+    const c = named.body_mesh.geometry.attributes.kCover,
+      bp = named.body_mesh.geometry.attributes.position;
+    let arm = 0,
+      wrongArm = 0,
+      leg = 0,
+      wrongLeg = 0;
+    for (let i = 0; i < c.count; i++) {
+      if (c.getY(i)) (arm++, bp.getX(i) > -0.1 && wrongArm++); // his right is -x
+      if (c.getZ(i)) (leg++, (bp.getX(i) < -0.02 || bp.getY(i) > 1.2) && wrongLeg++);
+    }
+    assert.ok(arm > 100 && wrongArm === 0, `${v}: arm skin marked (${arm}, ${wrongArm} elsewhere)`);
+    assert.ok(leg > 100 && wrongLeg === 0, `${v}: leg skin marked (${leg}, ${wrongLeg} elsewhere)`);
+  }
+});

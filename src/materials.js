@@ -189,6 +189,7 @@ function patch(
     hands = false,
     sway = false,
     push = false,
+    cut = false,
   } = {},
 ) {
   // sway: the loose shorts lag and flutter (a spring motion.js drives from the body's acceleration, kSway, in the body's
@@ -210,7 +211,15 @@ function patch(
     };
   // cover: skin wholly under clothing the player wears is not drawn (src/clothFit.js kCover; kCoverOn picks the sleeves).
   // A mesh without the attribute reads zeros: nothing skipped.
-  if (cover) material.userData.coverOn = { value: new THREE.Vector3(1, 0, 0) };
+  if (cover)
+    material.userData.coverOn = Object.assign(
+      { value: new THREE.Vector3(1, 0, 0) },
+      // the sleeves' planes (src/clothFit.js sleeveRims): skin of the sleeved limb between them is not drawn, for a
+      // straight edge (x top, y bottom, in the bind pose; the arm hangs, so they run across the limb)
+      { kArmRim: { value: new THREE.Vector2(-9, 9) }, kLegRim: { value: new THREE.Vector2(-9, 9) } },
+    );
+  // cut: a sleeve drawn only between two heights of the bind pose (the same planes the skin is hidden between)
+  if (cut) material.userData.cut = { value: new THREE.Vector2(9, -9) };
   if (print)
     material.userData.print = {
       kPrintF: { value: null },
@@ -239,7 +248,12 @@ function patch(
         kFaceSize: { value: face.size },
       });
     if (print) Object.assign(shader.uniforms, material.userData.print);
-    if (cover) shader.uniforms.kCoverOn = material.userData.coverOn;
+    if (cover) {
+      shader.uniforms.kCoverOn = material.userData.coverOn;
+      shader.uniforms.kArmRim = material.userData.coverOn.kArmRim;
+      shader.uniforms.kLegRim = material.userData.coverOn.kLegRim;
+    }
+    if (cut) shader.uniforms.kCut = material.userData.cut;
     if (hands) Object.assign(shader.uniforms, material.userData.hands);
     if (sway) Object.assign(shader.uniforms, material.userData.sway);
     shader.vertexShader = shader.vertexShader
@@ -294,7 +308,10 @@ function patch(
         '#include <common>\n' +
           DETAIL_PARS +
           (strands ? '\nvarying vec3 vKUp;' : '') +
-          (cover ? '\nvarying vec3 vKCover; uniform vec3 kCoverOn;' : '') +
+          (cover
+            ? '\nvarying vec3 vKCover; uniform vec3 kCoverOn; uniform vec2 kArmRim; uniform vec2 kLegRim;'
+            : '') +
+          (cut ? '\nuniform vec2 kCut;' : '') +
           (face ? '\nuniform sampler2D kFaceMap; uniform vec3 kFaceCenter; uniform vec2 kFaceSize;' : '') +
           (print
             ? '\nuniform sampler2D kPrintF; uniform sampler2D kPrintB; uniform vec2 kPrintFC; uniform vec2 kPrintBC; uniform vec2 kPrintSize; uniform float kPrintMinY; uniform float kPrintOn;'
@@ -366,7 +383,15 @@ function patch(
       frag = frag.replace(
         '#include <clipping_planes_fragment>',
         `#include <clipping_planes_fragment>
- if (max(vKCover.x * kCoverOn.x, max(vKCover.y * kCoverOn.y, vKCover.z * kCoverOn.z)) > 0.999) discard;`,
+ if (vKCover.x * kCoverOn.x > 0.999) discard;
+ if (vKCover.y * kCoverOn.y > 0.5 && vKRest.y < kArmRim.x && vKRest.y > kArmRim.y) discard;
+ if (vKCover.z * kCoverOn.z > 0.5 && vKRest.y < kLegRim.x && vKRest.y > kLegRim.y) discard;`,
+      );
+    if (cut)
+      frag = frag.replace(
+        '#include <clipping_planes_fragment>',
+        `#include <clipping_planes_fragment>
+ if (vKRest.y > kCut.x || vKRest.y < kCut.y) discard;`,
       );
     frag = aoAlpha(frag);
     if (wrap > 0)
@@ -384,7 +409,7 @@ function patch(
     shader.fragmentShader = frag;
   };
   material.customProgramCacheKey = () =>
-    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}-${strands ? 1 : 0}-${cover ? 1 : 0}-${hands ? 1 : 0}-${sway ? 1 : 0}-${push ? 1 : 0}`;
+    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}-${strands ? 1 : 0}-${cover ? 1 : 0}-${hands ? 1 : 0}-${sway ? 1 : 0}-${push ? 1 : 0}-${cut ? 1 : 0}`;
   return material;
 }
 
@@ -464,7 +489,7 @@ export function hairMaterial(color) {
 // lifted off the body a little further than the jersey (KIT_INFLATE) along the body's normal (push), so it rides on the
 // cloth's edge, at the width it was modelled, instead of dipping under it.
 export const TRIM_INFLATE = 0.014;
-export const fabricMaterial = (color, inflate = 0.01, { push = false, sway = false } = {}) =>
+export const fabricMaterial = (color, inflate = 0.01, { push = false, sway = false, cut = false } = {}) =>
   patch(
     new THREE.MeshPhysicalMaterial({
       color,
@@ -473,7 +498,7 @@ export const fabricMaterial = (color, inflate = 0.01, { push = false, sway = fal
       sheenRoughness: 0.35,
       name: 'sleeve',
     }),
-    { map: MAPS.mesh(), scale: 30, bump: 0.15, fadeFar: 3, inflate, push, sway },
+    { map: MAPS.mesh(), scale: 30, bump: 0.15, fadeFar: 3, inflate, push, sway, cut },
   );
 // Ball: pebbled orange leather.
 export function ballMaterial() {

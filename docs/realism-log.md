@@ -610,3 +610,18 @@ performance can ask for it (`spread`): the catch's target hands, the contest's h
 reach, the steal's poke, the blocker's swat. Close-up at 3×: the defender's high hand shows clear gaps between straight
 fingers; the low hand stays natural. Tests: spread on defence and for a target, none relaxed or in a fist, the high
 elbow under the hand. Trace identical (a uniform, no bone moves).
+
+### P4. The sleeve's top edge: straight (was a zig-zag)
+
+Measured: the sleeves' own rims are flat within 3–5 mm all the way round (one notch per sleeve, 4–8 cm low in one
+direction); the zig-zag was the skin. Skin under a sleeve was hidden per vertex (a ray from the skin had to find the
+sleeve), so at the rim the hidden area ended along the skin's triangle edges and the skin poked through the sleeve in
+drips as the arm bent. Fix: each sleeve has a plane at each end in the bind pose (`clothFit.js sleeveRims`: the top at
+the lowest point of its top rim, the bottom at the highest point of its bottom rim, which also removes the notch); the
+sleeve is drawn only between them (`materials.js cut`) and every skin vertex of the limb the sleeve follows is marked,
+hidden per pixel between the same planes, 3 mm inside (`kArmRim`, `kLegRim`). The limbs hang straight in the bind pose,
+so a plane is a straight cut across the limb, and it moves with it. **Decision:** the sleeve is up to 4 cm shorter at
+the top (8 cm for the forward's leg sleeve, whose rim dips most) so it is whole all the way round. The leg sleeve gets
+its own material for its planes. Close-up at 3× (the gather): a straight black edge across the upper arm, no skin
+through it. Tests: the planes sit at the rims and keep most of the sleeve; only the right arm's and left leg's skin is
+marked. Trace identical (shader and attributes only).

@@ -472,7 +472,8 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
     sole = soleMaterial(0x1d1d22),
     hairMat = hairMaterial(look.hairColor ?? 0x161210),
     band = fabricMaterial(0xffffff),
-    sleeve = fabricMaterial(0x111114),
+    sleeve = fabricMaterial(0x111114, 0.01, { cut: true }),
+    legSleeve = fabricMaterial(0x111114, 0.01, { cut: true }),
     trim = fabricMaterial(0xe9b858, TRIM_INFLATE, { push: true, sway: true });
   const pick = { kit: jersey, skin, shoes, sole, hair: hairMat, band, sleeve, trim }; // trim: the binding round the neck, armholes and hems
   // keep one hair style and the chosen options; drop the rest
@@ -491,7 +492,7 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
   root.traverse(o => {
     if (o.isMesh) {
       const name = o.material?.name;
-      o.material = pick[name] || skin;
+      o.material = name === 'sleeve' && /^sleeve_leg/.test(o.name) ? legSleeve : pick[name] || skin;
       o.castShadow = true;
       o.receiveShadow = true;
       // culled against a fixed sphere round the whole body (standing, arms up, a jump's tucked legs): a skinned mesh's own
@@ -516,6 +517,17 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
   // the skin under the clothes he wears is not drawn (src/clothFit.js)
   if (skin.userData.coverOn)
     skin.userData.coverOn.value.set(1, look.armSleeve ? 1 : 0, look.legSleeve ? 1 : 0);
+  // each sleeve is drawn between its two planes and the skin under it hidden between them, 3 mm inside, so the edge is
+  // straight and no skin shows at it (src/clothFit.js sleeveRims)
+  const rims = template.userData?.clothFit?.sleeves || {};
+  for (const [r, mat, uni] of [
+    [rims.arm, sleeve, 'kArmRim'],
+    [rims.leg, legSleeve, 'kLegRim'],
+  ])
+    if (r) {
+      mat.userData.cut?.value.set(r.top, r.bottom);
+      skin.userData.coverOn?.[uni].value.set(r.top - 0.003, r.bottom + 0.003);
+    }
   // head and hair (with the headband) hide together in Player view
   const hair = new THREE.Group();
   hair.name = 'hair';
@@ -565,7 +577,7 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
   const applyMaps = () => {
     store?.use(detail.level);
     const on = !!store && mapsOn(detail.level) && detail.lod === 0;
-    for (const [key, m] of Object.entries(pick)) {
+    for (const [key, m] of [...Object.entries(pick), ['sleeve', legSleeve]]) {
       const atlas = ATLAS_OF[key];
       let tex = on ? store.get(atlas, detail.level) : null;
       if (on && !tex) {
