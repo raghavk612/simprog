@@ -635,3 +635,30 @@ subject (`include`); the putback row holds him and the rim, side-on to the line 
 1.7. A first try at 9.5 units put the camera behind the baseline (the side-on spots were outside the gym), small and
 behind a defender; at 7.2 it fits inside. Critique: the gather and rise mid-frame, the ball's arc, and the ball through
 the net in the last cell. Sheet tooling only; nothing in the game changed.
+
+### P6. Auto quality on emulated weak hardware
+
+The owner has no other hardware, so weak hardware is emulated (`scripts/auto-ladder.mjs`, `npm run ladder`): the built
+game on Auto in a 1366×768 window at 1× (a school laptop's screen), real frames (not stepped), the live possession playing
+over and over, 15 s normal, 45 s under load, 60 s after it. The load is Chrome's own CPU throttling (CDP
+`Emulation.setCPUThrottlingRate`).
+
+- **CPU throttling alone, 4× and 6×: Auto stays on High, correctly.** This machine still draws High at about 80 fps
+  under 4× and 50 fps under 6×, above the 28 fps step-down line: the frame is mostly GPU work, which CDP cannot slow.
+- **With a slower GPU as well** (`--gpu`: each frame's render is synced and timed and the page waits (rate − 1) times as
+  long, so the extra cost scales with what the level draws, as on a weak device):
+
+| load | steps under load (time after the load starts) | at the floor | after the load is gone |
+|---|---|---|---|
+| 4× CPU, 4× GPU | High → Medium (3.5 s) → Lite (6.7 s) → Low (9.4 s) | Low, 48 fps | Lite (3 s), Medium (8 s), High (14 s) |
+| 6× CPU, 6× GPU | High → Medium (5.7 s) → Lite (9.5 s) → Low (13.5 s) | Low, 26 fps | Lite (3.5 s), Medium (8 s), High (14 s) |
+| 3× CPU, 3× GPU | High → Medium → Lite | Lite, 34 fps | Medium, High (11 s) |
+| 2× CPU, 2× GPU | High → Medium after a borderline window, back to High under the same load (49 fps) | High | High |
+
+  One step per measured window (about 2 s of frames), three fast windows per step back up, as designed. (The frame rate
+  printed at a level change lags it: it is the median of the last 240 frames.)
+- **Fixed on the way:** a step up that proved slow locked Auto out of stepping up for the rest of the session. A device
+  that tried a step during a passing load (a warm-up, a video in another tab) would stay on a lower level after the load
+  had gone. The lock now lasts 30 windows (about a minute): long enough that two levels never flicker, short enough to
+  recover (`graphics.js LOCK_WINDOWS`; the test covers lock, hold and retry). In the 4× and 6× runs Low never reached the
+  50 fps "fast" line under load, so no step up was tried there; the re-run after the change gives the same timeline.

@@ -17,6 +17,7 @@
     "perf": "node scripts/perf.mjs",
     "sheets": "node scripts/contact-sheet.mjs",
     "trace": "node scripts/arena-trace.mjs",
+    "ladder": "node scripts/auto-ladder.mjs",
     "golden:update": "UPDATE_GOLDEN=1 node --test tests/golden.test.js"
   },
   "dependencies": {
