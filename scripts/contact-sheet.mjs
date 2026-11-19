@@ -203,29 +203,23 @@ function sheets(base) {
       { transit: true },
     ),
   ];
+  // reactions right after the play is decided (src/reactions.js), close on the player who reacts
+  const after = kind => even(shotTiming(kind).release * S + (SHOTS[kind].three ? 0.85 : 0.55), 4.38);
   out.reactions = [
-    row(
-      'After a made three (shooter and teammates)',
-      HOME('catch', { assisted: true }),
-      0,
-      0,
-      even(0.86 * S, 1.0 * S),
-      { dist: 9, angle: 20, height: 2.5, fixed: true },
-    ),
-    row('After a dunk', HOME('dunk'), 0, 0, even(0.86 * S, 1.0 * S), {
-      dist: 9,
-      angle: 20,
-      height: 2.5,
-      fixed: true,
+    row('Made three: the arm goes up', HOME('catch', { assisted: true }), 0, 0, after('catch'), {
+      dist: 4.2,
+      angle: 35,
     }),
-    row(
-      'After a miss (defense rebounds)',
-      HOME('floater', { outcome: 'miss', points: 0 }),
-      0,
-      0,
-      even(0.86 * S, 1.0 * S),
-      { dist: 9, angle: 20, height: 2.5, fixed: true },
-    ),
+    row('Assisted three: the passer claps', HOME('catch', { assisted: true }), 0, 1, after('catch'), {
+      dist: 4.2,
+      angle: 35,
+    }),
+    row('Dunk: the flex', HOME('dunk'), 0, 0, even(3.95, 4.38), { dist: 4.6, angle: 30 }),
+    row('Scored on: hands on hips', HOME('pullup'), 0, 5, after('pullup'), { dist: 4.2, angle: 40 }),
+    row('Miss: a shake of the head', HOME('pullup', { outcome: 'miss', points: 0 }), 0, 0, after('pullup'), {
+      dist: 4.2,
+      angle: 35,
+    }),
   ];
   out.broadcast = [
     row('Auto camera, live: drive', HOME('drive'), 0, 0, even(0.3, 4.3), 'director', { mode: 'auto' }),

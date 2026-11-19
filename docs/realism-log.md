@@ -290,3 +290,30 @@ swings to his man (a sprint, then chopping steps). Tests: holds and bursts, vers
 Critique (broadcast sheet): the floor reads as spaced with players set rather than milling; the crash after the shot pulls
 bodies to the rim the way a real possession ends. Stills cannot show the burst of the cut; the test checks it (four times
 the ground covered mid-cut than at its start).
+
+### 2.6 Reactions
+
+New `src/reactions.js`: after a play is decided, a fist pump (a basket, a block), the arm raised and held (a three), a
+flex with both fists and eyes up (a dunk), the passer clapping (an assisted basket), the beaten defender with hands on
+hips and eyes down, a missed shooter shaking his head. Each is a short performance that eases in and out, kept by player
+rather than slot (bodies are re-ordered between plays), applied only when nothing else moves his arms, so it plays over
+his jog back. **Decision:** no free-throw routine (the game has no fouls, so no free throws) and no 3D huddle (timeouts
+pause the gym under a dialog); both logged as not applicable rather than invented. The reactions sheet now uses close
+follow cameras (the far fixed ones made the reactions too small to judge). Image review of the new reactions sheet is
+still to do (see "Where this pass stopped").
+
+## Where this pass stopped (usage limit)
+
+Done and committed: Phase 0 (harness, golden poses, sheets, baseline), Phase 1 (NaN black flashes, SMAA, defensive
+stance, visitor colours and person-driven bodies, dead code and docs), Phase 2 items 2.1–2.6 (locomotion, blockPlan
+refactor, finishes, passes/catches/steals/rebounds/contests, off-ball motion version 2, reactions). Tests: 308 passing,
+build green.
+
+Not done yet:
+- Phase 2 gate: re-run `node scripts/perf.mjs --label phase2`, review the reactions sheet, regenerate all sheets.
+- Phase 3 (trim and hems, shorts drape, hands and grip, close-up lighting), Phase 4 (crowd shadows and impostors, pass
+  reduction, athlete frustum culling, motion.js allocations, ball-trail sampling, multi-step auto quality, map
+  compression or lazy loading, chunk splitting), Phase 5 (arena.js split, docs, "after" sheets under docs/sheets/after,
+  after numbers in docs/perf-baseline.md, the final report).
+- Known costs to recover in Phase 4: SMAA (+3–9% on High/Medium), player-map downloads up 2 MB since all three variants
+  are now used.

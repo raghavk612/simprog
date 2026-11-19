@@ -13,6 +13,7 @@ import {
   DRIBBLE,
   ballDrop,
   blockHit,
+  blockPlan,
 } from './basketball.js';
 import {
   drawScoreboard,
@@ -48,6 +49,7 @@ import { BroadcastLook } from './broadcast.js';
 import { animateAthlete, facingWeight, mixAngle, steerYaw, keepApart, SPACE } from './motion.js';
 import { finishFrame, putbackFrame } from './finishes.js';
 import { actionFrames } from './actions.js';
+import { reactionsFor, reactionFrame } from './reactions.js';
 import { Director } from './director.js';
 import { PerfHud, perfWanted } from './perfHud.js';
 import { titleCamera, flyIn, heroYaw, titleFov, HERO, STILL, titlePath } from './title.js';
@@ -1350,6 +1352,7 @@ export class Arena {
   }
   play(event, { replay = false } = {}) {
     this.event = event;
+    this.reactions = null;
     this.replaying = replay;
     this.director?.reset();
     this.run++;
@@ -1393,6 +1396,7 @@ export class Arena {
   }
   clear() {
     this.endFly();
+    this.reactions = null;
     this.transit = null;
     this.event = null;
     this.replaying = false;
@@ -1774,6 +1778,12 @@ export class Arena {
           if (act.legs) q.airLegs = act.legs;
           if (act.arms) q.arms = act.arms;
         }
+        // a reaction to the last play (src/reactions.js), when nothing else is moving his arms: it plays over his jog
+        const re = !q.perform && this.reactions?.find(r => r.player === this.people[i]);
+        if (re) {
+          const rf = reactionFrame(re.kind, re.t, { x: q.x, z: q.z, y: q.y, yaw: this.people[i].rotation.y });
+          if (rf) q.perform = this.finishPerform(rf);
+        }
         if (f)
           Object.assign(q, {
             perform: this.finishPerform(f),
@@ -1841,8 +1851,22 @@ export class Arena {
       });
       this.score(presentation.home, presentation.away);
       const impact = `${this.run}|${index}`;
+      for (const r of this.reactions || []) r.t += this.frameDt || 0;
       if (presentation.resolved && this.impactKey !== impact) {
         this.impactKey = impact;
+        // who reacts (src/reactions.js): kept by player, not by slot, since bodies are re-ordered for the next play
+        const roles = {
+          shooter: this.people[o],
+          helper: this.people[o + 1],
+          marker: this.people[5 - o],
+          winner:
+            clip.outcome === 'block' && clip.recovery === 'offense'
+              ? this.people[blockPlan(clip, this.releasePoint(clip)).win.i]
+              : null,
+        };
+        this.reactions = reactionsFor(clip)
+          .map(r => ({ player: roles[r.role], kind: r.kind, t: 0 }))
+          .filter(r => r.player);
         // the home crowd jumps up for a Kangs basket (longest for a three or a dunk) and for a stop on defence
         const big = SHOTS[clip.kind]?.three || isDunk(clip.kind);
         if (clip.points && clip.team === 'home') this.cheer = big ? 1.6 : 1;
