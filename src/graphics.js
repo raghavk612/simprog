@@ -11,7 +11,7 @@ export const arenaPlayers = (choice, level, mode) =>
 const PROFILES = {
   low: { pixelRatio: 1, shadowSize: 0, crowd: 'hidden' },
   medium: { pixelRatio: 1.5, shadowSize: 1024, crowd: 'noshadow' },
-  high: { pixelRatio: 2, shadowSize: 2048, crowd: 'full' },
+  high: { pixelRatio: 2, shadowSize: 2048, crowd: 'noshadow' },
 };
 // Pixel budget per level: on very large canvases (e.g. a full-screen Retina window, 5.7 million pixels at 2x) the ratio is
 // lowered so the canvas stays under this many pixels, never below 1x. Measured on a Mac: High at 5.7 MP (3484×1644) ran at ~56 fps (18 ms); the budget brings that canvas to 1.6x.

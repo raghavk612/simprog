@@ -381,3 +381,23 @@ top rim zig-zags slightly, the binding is a little faceted, fingers cannot separ
 ### Phase 3 gate
 
 Tests 310 passing, build green. Images reviewed above.
+
+## Phase 4: efficiency
+
+### 4.1 The crowd
+
+- **Lighter fans:** 1,708 triangles each (14×10 spheres, 7-sided capsules for figures a few dozen pixels tall) down to
+  659 with the same silhouette. Measured (laptop): triangles per frame High 2.44 M → 1.27 M, Medium 1.22 M → 0.64 M;
+  frame median −5 to −10%. No difference visible at broadcast or title distance (1:1 crop and title compared).
+- **Crowd shadows off on High:** measured no change with the broadcast look, because its key light's shadow frustum
+  covers only the court; kept (`crowd: 'noshadow'`) because it does save the stands' shadow pass when High runs with the
+  classic players, where the plain gym's sun covers the stands.
+
+### 4.2 Render passes
+
+- **GTAO reading the main depth instead of its own normal pass** (tried, reverted): draw calls −30% and triangles −40% on
+  High, but the frame was no faster on the laptop window and 9–10% slower at retina resolution (rebuilding normals from
+  the 32-bit depth costs more per pixel than the geometry pass it saves on this GPU). The rule is no regression anywhere,
+  so the separate pass stays. Found on the way: three r180's GTAOPass throws if given a depth texture in its constructor
+  (it reads a normal target only built without one); worked around while testing (build, then `setGBuffer`).
+- The mirror (half resolution, reflected layer only) and the shadow map (once per frame) were already lean; left.
