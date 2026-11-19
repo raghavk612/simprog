@@ -20,7 +20,7 @@ test('quality levels map to renderer profiles; High keeps the current look', () 
   assert.deepEqual(qualityProfile('high', 3), {
     pixelRatio: 2,
     shadowSize: 2048,
-    crowd: 'full',
+    crowd: 'noshadow', // the stands never cast shadows (measured: no cost with the broadcast look, a saved pass without)
     shadows: true,
   });
   assert.deepEqual(qualityProfile('medium', 3), {
