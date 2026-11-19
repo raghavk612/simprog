@@ -178,6 +178,70 @@ export const playbackMethods = {
       run: Math.max(pose.run, trip),
     };
   },
+  /* The moment a play resolves (once per play): who reacts to it (src/reactions.js), kept by player, not by slot, since
+     bodies are re-ordered for the next play; the home crowd's cheer; the camera's impact shake. o: the offence's first slot. */
+  resolvePlay(clip, o) {
+    const roles = {
+      shooter: this.people[o],
+      helper: this.people[o + 1],
+      marker: this.people[5 - o],
+      winner:
+        clip.outcome === 'block' && clip.recovery === 'offense'
+          ? this.people[blockPlan(clip, this.releasePoint(clip)).win.i]
+          : null,
+    };
+    this.reactions = reactionsFor(clip)
+      .map(r => ({ player: roles[r.role], kind: r.kind, t: 0 }))
+      .filter(r => r.player);
+    // the home crowd jumps up for a Kangs basket (longest for a three or a dunk) and for a stop on defence
+    const big = SHOTS[clip.kind]?.three || isDunk(clip.kind);
+    if (clip.points && clip.team === 'home') this.cheer = big ? 1.6 : 1;
+    else if (clip.team === 'away' && (clip.outcome === 'block' || clip.outcome === 'steal')) this.cheer = 1;
+    if (isDunk(clip.kind) && clip.points) this.shake = 0.24;
+    else if (clip.outcome === 'block') this.shake = 0.18;
+  },
+  /* Where the ball is drawn in a play (playFrame): the play's ball, but held by the handler (or the stealer) while he is
+     still easing into his spot, carried up the floor in the run between plays, on a finish's own path, and scaled with a
+     player drawn taller or shorter than his model; passed along an arc when it changes hands (blendBall). o: the
+     offence's first slot; fin: the shooter's finish frame (src/finishes.js) or null; tr: the run between plays or null. */
+  placePlayBall({ pose, clip, o, clipTime, fin, tr }) {
+    const u = clipTime / CLIP_SECONDS;
+    // While a player is still easing into place the ball stays in his hands (the handler, or the defender after a steal).
+    const sm = x => ((x = Math.max(0, Math.min(1, x))), x * x * (3 - 2 * x)),
+      off = j => [this.people[j].position.x - pose.actors[j].x, this.people[j].position.z - pose.actors[j].z],
+      a = off(o),
+      b = off(5 - o),
+      st = clip.outcome === 'steal' ? sm((u - 0.27) / 0.09) : 0,
+      hold = 1 - sm((u - shotTiming(clip.kind).release + 0.06) / 0.06);
+    // in transition the new ball handler dribbles it up the floor (after a short pass to him if it is elsewhere)
+    const h = this.people[o],
+      hy = h.rotation.y,
+      carried = {
+        x: h.position.x - Math.cos(hy) * 0.38 + Math.sin(hy) * 0.3,
+        y: dribbleAt(this.gait / DRIBBLE.period).ball,
+        z: h.position.z + Math.sin(hy) * 0.38 + Math.cos(hy) * 0.3,
+      };
+    // a ball in the hands of a player drawn taller or shorter than his model is drawn scaled about his feet with him
+    // (presentation only: the play's ball is untouched, and the flight starts where it always did)
+    const held = {
+        x: pose.ball.x + (a[0] + (b[0] - a[0]) * st) * hold,
+        y: pose.ball.y,
+        z: pose.ball.z + (a[1] + (b[1] - a[1]) * st) * hold,
+      },
+      k = fin?.ball ? 0 : (h.scale.x - 1) * hold * (1 - st); // a finish scales its own path
+    if (k) {
+      held.x += (held.x - h.position.x) * k;
+      held.y += (held.y - pose.actors[o].y) * k;
+      held.z += (held.z - h.position.z) * k;
+    }
+    if (fin?.ball) {
+      held.x = fin.ball[0];
+      held.y = fin.ball[1];
+      held.z = fin.ball[2];
+    }
+    const ball = this.blendBall(tr ? carried : held, tr ? tr.t : clipTime);
+    this.ball.position.set(ball.x, ball.y, ball.z);
+  },
   /* One frame of a play (frame): the play clock and the run between plays (transit), the cast re-ordered for each play,
      every player's pose (the play's spot kept apart, a finish, an action, a reaction), the ball, its trail and the nets,
      the score, the reactions and the crowd when the play resolves, and onPresentation for the UI. */
@@ -221,8 +285,7 @@ export const playbackMethods = {
       this.dribble = dribbleAt(pose.bounce); // in a play the hand keeps the play's beat
       this.dribbleHand = this.dribble.hand;
     }
-    const u = clipTime / CLIP_SECONDS,
-      o = clip.team === 'home' ? 0 : 5,
+    const o = clip.team === 'home' ? 0 : 5,
       ease = !this.motion ? 1 : this.paused ? 0 : 1 - Math.exp(-dt * this.speed * 22);
     const tr = this.transit;
     // where the play wants everyone, then personal space (motion.js keepApart): about 3 ft apart, going round each other
@@ -306,41 +369,7 @@ export const playbackMethods = {
         });
       this.posePlayer(this.people[i], q, this.gait, ease);
     });
-    // While a player is still easing into place the ball stays in his hands (the handler, or the defender after a steal).
-    const sm = x => ((x = Math.max(0, Math.min(1, x))), x * x * (3 - 2 * x)),
-      off = j => [this.people[j].position.x - pose.actors[j].x, this.people[j].position.z - pose.actors[j].z],
-      a = off(o),
-      b = off(5 - o),
-      st = clip.outcome === 'steal' ? sm((u - 0.27) / 0.09) : 0,
-      hold = 1 - sm((u - shotTiming(clip.kind).release + 0.06) / 0.06);
-    // in transition the new ball handler dribbles it up the floor (after a short pass to him if it is elsewhere)
-    const h = this.people[o],
-      hy = h.rotation.y,
-      carried = {
-        x: h.position.x - Math.cos(hy) * 0.38 + Math.sin(hy) * 0.3,
-        y: dribbleAt(this.gait / DRIBBLE.period).ball,
-        z: h.position.z + Math.sin(hy) * 0.38 + Math.cos(hy) * 0.3,
-      };
-    // a ball in the hands of a player drawn taller or shorter than his model is drawn scaled about his feet with him
-    // (presentation only: the play's ball is untouched, and the flight starts where it always did)
-    const held = {
-        x: pose.ball.x + (a[0] + (b[0] - a[0]) * st) * hold,
-        y: pose.ball.y,
-        z: pose.ball.z + (a[1] + (b[1] - a[1]) * st) * hold,
-      },
-      k = fin?.ball ? 0 : (h.scale.x - 1) * hold * (1 - st); // a finish scales its own path
-    if (k) {
-      held.x += (held.x - h.position.x) * k;
-      held.y += (held.y - pose.actors[o].y) * k;
-      held.z += (held.z - h.position.z) * k;
-    }
-    if (fin?.ball) {
-      held.x = fin.ball[0];
-      held.y = fin.ball[1];
-      held.z = fin.ball[2];
-    }
-    const ball = this.blendBall(tr ? carried : held, tr ? tr.t : clipTime);
-    this.ball.position.set(ball.x, ball.y, ball.z);
+    this.placePlayBall({ pose, clip, o, clipTime, fin, tr });
     this.spinBall(pose.flying);
     this.focusRing.visible = true;
     this.focusRing.position.x = this.people[o].position.x;
@@ -359,25 +388,7 @@ export const playbackMethods = {
     for (const r of this.reactions || []) r.t += this.frameDt || 0;
     if (presentation.resolved && this.impactKey !== impact) {
       this.impactKey = impact;
-      // who reacts (src/reactions.js): kept by player, not by slot, since bodies are re-ordered for the next play
-      const roles = {
-        shooter: this.people[o],
-        helper: this.people[o + 1],
-        marker: this.people[5 - o],
-        winner:
-          clip.outcome === 'block' && clip.recovery === 'offense'
-            ? this.people[blockPlan(clip, this.releasePoint(clip)).win.i]
-            : null,
-      };
-      this.reactions = reactionsFor(clip)
-        .map(r => ({ player: roles[r.role], kind: r.kind, t: 0 }))
-        .filter(r => r.player);
-      // the home crowd jumps up for a Kangs basket (longest for a three or a dunk) and for a stop on defence
-      const big = SHOTS[clip.kind]?.three || isDunk(clip.kind);
-      if (clip.points && clip.team === 'home') this.cheer = big ? 1.6 : 1;
-      else if (clip.team === 'away' && (clip.outcome === 'block' || clip.outcome === 'steal')) this.cheer = 1;
-      if (isDunk(clip.kind) && clip.points) this.shake = 0.24;
-      else if (clip.outcome === 'block') this.shake = 0.18;
+      this.resolvePlay(clip, o);
     }
     const key = `${index}|${pose.phase}|${presentation.resolved}|${presentation.done}`;
     if (key !== this.presentKey) {
