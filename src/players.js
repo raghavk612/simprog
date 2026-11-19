@@ -23,7 +23,6 @@ import {
 } from './materials.js';
 import { AthleteMaps, ATLAS_OF, mapsOn, setMaterialMaps } from './playerMaps.js';
 
-export const PLAYER_STYLES = ['classic', 'realistic'];
 export const BODY_PARTS = ['jersey', 'head', 'hair', 'number', 'nameplate', 'capBadge', 'legs', 'arms'];
 // Which body variant a roster position wears (realistic style). Unknown positions fall back to forward.
 export const variantFor = position => {
@@ -310,19 +309,6 @@ export function loadAthletes() {
       athleteLoading = null;
       throw e;
     }));
-}
-/* Frees the templates and their detail maps (bodies made from them must be disposed first). */
-export function disposeAthleteTemplates(templates = athleteTemplates) {
-  for (const g of Object.values(templates || {})) {
-    g.maps?.dispose();
-    g.scene?.traverse(o => {
-      if (o.isMesh) {
-        o.geometry?.dispose();
-        o.material?.dispose?.();
-      }
-    });
-  }
-  if (templates === athleteTemplates) athleteTemplates = athleteLoading = null;
 }
 
 /* The locker-room lettering for one side of the jersey, transparent round the letters, in the same layout and colours as

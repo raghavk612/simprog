@@ -158,3 +158,17 @@ Critique (broadcast, close-up and title captures): Bothell in road whites with r
 kit and is never confused with the Kangs; Redmond in green on the title; the Kangs' guards (5'10"-6'0") stand visibly
 shorter than the 6'5" forward. Low: the classic figures keep lighter tones, their heads read dark from behind only
 because of the hair cap. Golden clips and bodies unchanged (scale 1 in the golden scenes).
+
+### 1.5 Dead code and outdated docs
+
+Removed `PLAYER_STYLES` (players.js, never used), `disposeAthleteTemplates` (players.js, never called) and `moveById`
+(moves/index.js, never called). `docs/visual-overhaul/README.md` said the overhaul was half done on a branch and its audit
+described primitive players as current: it now says it is done and merged, points to where today's players, motion and
+look live, and labels the audit as history. Found but left alone (outside the 3D work, or in the engine, which this pass
+does not touch): unused exports `drillName` (drills.js), `questionText` (press.js), `pairTeamLogos` (teamLabels.js),
+`interrupt` (a11y.js) and `KIT_UNLOCKS` (engine.js).
+
+### Phase 1 gate
+
+`npm test` 300 passing, `npm run build` succeeds, golden clips unchanged. Measurements and the "after Phase 1" image
+review: see the Phase 1 perf run below.

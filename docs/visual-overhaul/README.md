@@ -1,12 +1,23 @@
 # Visual overhaul: 2K-style players and arena
 
-Status: **Stages 0–4 done on the `visual-overhaul` branch** (not on the live site yet).
+Status: **done and merged into `main`** (stages 0–8 and the refinement pass below). This file is the design record of how
+the overhaul was planned and built; section 1 describes the game *before* it and is kept as history. For what the game
+draws today, start with:
 
-Restore point: branch `backup/pre-2k-overhaul` (commit `c9342d1`, the version live on Oct 25, 2026). To roll back, run `git checkout backup/pre-2k-overhaul` or reset `main` to it. All overhaul work happens on the `visual-overhaul` branch and reaches `main` (and the live site) one approved stage at a time.
+- **Players:** skinned glTF athletes (`public/models/players/{guard,forward,center}.glb`, 17-bone rig) built by the
+  Houdini/Python pipeline in `assets-src/players` and `scripts/build_players.py`, with baked normal/AO maps
+  (`src/playerMaps.js`) and procedural detail (`src/materials.js`); the primitive "classic" figure remains for Low and as
+  the fallback (`src/players.js`). A player's body, height, skin and look follow the person (`bodyFor`, `lookFor`).
+- **Motion:** no clips or AnimationMixer. `sampleClip` (`src/basketball.js`) places everyone for a play at any time;
+  `animateAthlete` (`src/motion.js`) adds stances, foot planting, arm IK and the ball-handling set pieces of `src/moves`.
+- **Look:** `src/broadcast.js` (Spline lighting rig, glossy court, contact shadows, AO, bloom, grade, SMAA) on Medium and
+  High; `src/director.js` and `src/dof.js` for the Auto camera and replays.
+- **Ongoing work:** [docs/realism-log.md](../realism-log.md) and [docs/perf-baseline.md](../perf-baseline.md).
 
-Gameplay logic is out of scope. `src/engine.js`, `src/basketball.js` (play choice, clips, commentary) and every rule stay as they are. Only the presentation layer changes: `src/arena.js` (player builder, pose animation, lights, renderer, camera), `src/graphics.js` (quality levels) and new asset files.
+Restore point from before the overhaul: branch `backup/pre-2k-overhaul` (commit `c9342d1`, the version live on Oct 25,
+2026). Gameplay logic was out of scope throughout: `src/engine.js` decides every play and the 3D only shows it.
 
-## 1. Audit
+## 1. Audit (October 2026, before the overhaul; history)
 
 ### Engine and how players are drawn
 - **Stack:** Three.js r180 bundled with Vite 7. The game is web-only, desktop and phone (from 390 px wide), hosted on GitHub Pages.
