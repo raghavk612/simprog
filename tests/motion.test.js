@@ -180,3 +180,53 @@ test('defensive stance: hands in front of the body, never out to the side; one h
     }
   }
 });
+test('gait: a planted foot stays put on the floor at a walk, a jog, a run and a sprint (stride fitted to the leg)', async () => {
+  const THREE = await import('three');
+  const { animateAthlete, gaitFor, fitGait, footAt } = await import('../src/motion.js');
+  const { loadBody } = await import('../assets-src/players/cloudmesh/ball_samples.mjs');
+  // the stance/swing cycle is continuous, and duty 0.5 is the old half-and-half cycle
+  for (const d of [0.3, 0.5, 0.62]) {
+    const a = footAt(d * 2 * Math.PI - 1e-9, 1.2, 0.2, d),
+      b = footAt(d * 2 * Math.PI + 1e-9, 1.2, 0.2, d);
+    assert.ok(Math.abs(a.forward - b.forward) < 1e-6 && b.up < 1e-6);
+  }
+  assert.deepEqual(footAt(1.3, 1.1, 0.1), footAt(1.3, 1.1, 0.1, 0.5));
+  // running leaves a flight phase, walking overlaps
+  assert.ok(gaitFor(7).duty < 0.5 && gaitFor(1.2).duty > 0.5);
+  assert.ok(gaitFor(7).stride > gaitFor(3).stride && gaitFor(7).elbow > gaitFor(1).elbow);
+  for (const v of ['guard', 'center']) {
+    const { body, player } = await loadBody(v);
+    for (const speed of [1.2, 3, 5, 7]) {
+      player.userData.motionState = undefined;
+      player.position.set(0, 0, 0);
+      let sum = 0,
+        n = 0;
+      const prev = {};
+      for (let f = 0; f < 240; f++) {
+        player.position.z += speed / 60;
+        animateAthlete(player, { arms: 'relax', y: 0 }, { dt: 1 / 60, motion: true, ball: null });
+        player.updateMatrixWorld(true);
+        const m = player.userData.motionState,
+          R = body.motionRest,
+          g = fitGait(gaitFor(m.speed), R.legs.L, R.legs.L.hipY - m.crouch * R.legs.L.hipY),
+          T = 2 * Math.PI;
+        ['R', 'L'].forEach((s, j) => {
+          const p = (((m.phase + (j ? Math.PI : 0)) % T) + T) % T,
+            prog = p / (g.duty * T),
+            mid = f > 90 && prog > 0.1 && prog < 0.85,
+            a = body.bones['ankle_' + s].getWorldPosition(new THREE.Vector3());
+          if (mid && prev[s]) {
+            sum += Math.hypot(a.x - prev[s].x, a.z - prev[s].z);
+            n++;
+          }
+          prev[s] = mid ? a : null;
+        });
+      }
+      const slip = sum / n / (speed / 60);
+      assert.ok(
+        n > 30 && slip < 0.05,
+        `${v} at ${speed}: planted foot slides ${(slip * 100).toFixed(1)}% of the travel`,
+      );
+    }
+  }
+});

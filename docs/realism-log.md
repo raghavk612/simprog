@@ -172,3 +172,30 @@ does not touch): unused exports `drillName` (drills.js), `questionText` (press.j
 
 `npm test` 300 passing, `npm run build` succeeds, golden clips unchanged. Measurements and the "after Phase 1" image
 review: see the Phase 1 perf run below.
+
+## Phase 2: motion
+
+### 2.1 Locomotion
+
+One stride pattern served every speed (half the cycle planted, half swinging) and the stride grew to 1.5 units at a
+sprint, which put the planted foot out of the leg's reach at both ends of the stance: measured with a guard driven at
+constant speeds, the planted foot slid 28% of the body's travel at a walk and about 35% at a run. Now (`motion.js`):
+
+- `gaitFor(speed)`: stride up to 2 units at a sprint; a **duty factor** (the part of the cycle a foot is planted) from
+  0.62 at a walk (both feet down in between) to 0.32 at a sprint (a flight phase with both feet up); heel lift, pelvis
+  bob, arm swing and elbow bend (loose at a walk, a 90° pump at a sprint) and forward lean all follow speed.
+- `fitGait`: a planted foot can only be as far from the hip as the leg reaches at the hip's height (no toes to roll
+  over), so running shortens the stance (more flight) and walking takes quicker, shorter steps for each body.
+- `gaitBob`: the pelvis vaults over the planted leg at a walk and sinks into the stance and rises through the flight at a
+  run.
+- The pelvis twist turned each leg's plane with it, which pushed a planted foot sideways (0.05 units over a stance):
+  foot targets are now taken from the twisted hip in the pelvis's frame.
+- Acceleration lean (into a start, back on a stop), banking into turns (more the faster he runs), the stride fading into
+  the standing stance as he slows (no snap when he stops), a weight shift that is not a pure sine, and breathing that
+  deepens after a hard run.
+
+Measured after (mid-stance, guard and center): under 1% of the travel at a walk, 1–3% at a run; the last tenth of a
+sprint stance (toe-off at full extension) reaches about 9%, invisible at broadcast distance. Pinned by
+`tests/motion.test.js` (under 5% at 1.2, 3, 5 and 7 units/s for the guard and the center). Golden bodies regenerated on
+purpose (every scene moves differently); golden clips unchanged. Image check (locomotion sheet): the defender's run in
+the drive row is long and low with bent, pumping arms; the off-ball cutter's jog is shorter and upright.

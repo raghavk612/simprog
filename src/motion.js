@@ -33,15 +33,84 @@ export function ankleOf(thigh, shin, hip, knee) {
 }
 /* Stride length for a speed (game units per second): short steps when shuffling, long ones at a sprint. */
 export const strideFor = speed => Math.min(1.5, 0.42 + speed * 0.2);
-/* Foot target in the stride cycle. phase 0..2π: first half planted (moves back exactly as the body moves forward), second half swinging. */
-export function footAt(phase, stride, lift) {
-  const p = ((phase % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-  if (p < Math.PI) return { forward: stride / 2 - (p / Math.PI) * stride, up: 0 };
-  const s = (p - Math.PI) / Math.PI,
-    e = s * s * (3 - 2 * s);
-  return { forward: -stride / 2 + e * stride, up: lift * Math.sin(s * Math.PI) };
+/* The gait for a ground speed (units/s: a walk is about 1.2, a jog 3, a run 5, a sprint 7; 1 unit = 1 ft x 3.02):
+   stride  - distance per step (one foot to the other); real runners lengthen it with speed (a sprint step is ~2 m)
+   duty    - the part of the cycle each foot is planted: over half when walking (both feet down in between), under half
+             when running, which leaves a flight phase with both feet up. A planted foot covers only duty x 2 x stride of
+             ground, so even a sprint's long strides stay within the leg's reach and the feet do not slide.
+   lift    - how high the swinging foot comes up (a heel kick at a sprint)
+   bob     - how far the pelvis rises and falls (units)
+   arm     - arm swing (radians) and elbow bend, from a loose walk to a sprinter's 90-degree pump
+   lean    - forward lean of the trunk (radians) */
+export function gaitFor(speed) {
+  const s = Math.max(0, Math.min(9, speed || 0)),
+    k = x => Math.max(0, Math.min(1, x)),
+    run = k((s - 1.6) / 4.4); // 0 at a walk, 1 at a sprint
+  return {
+    stride: Math.min(2.0, 0.42 + s * 0.24),
+    duty: 0.62 - 0.3 * run,
+    lift: 0.07 + 0.2 * run,
+    bob: 0.025 + 0.03 * run,
+    arm: 0.22 + 0.55 * run,
+    elbow: 0.3 + 1.15 * k((s - 1.2) / 3),
+    lean: 0.03 + 0.2 * run,
+    run,
+  };
+}
+/* Fits a gait to a body: a planted foot can only be as far ahead of or behind the hip as the leg reaches at the hip's
+   height (we have no toes to roll over), so a stance longer than that would leave the foot short of its spot and sliding.
+   Running shortens the stance (a longer flight, down to a quarter of the cycle); walking takes quicker, shorter steps.
+   leg = {thigh, shin, ankleY}, hipY = the hip's height now (units of the body). */
+export function fitGait(g, leg, hipY) {
+  const reach = (leg.thigh + leg.shin) * 0.985,
+    drop = Math.max(0.2, hipY - leg.ankleY),
+    cmax = Math.sqrt(Math.max(0.0025, reach * reach - drop * drop));
+  if (g.duty * g.stride <= cmax) return g;
+  let duty = g.duty,
+    stride = g.stride;
+  if (g.run > 0.05) duty = Math.max(0.25, Math.min(duty, cmax / stride));
+  if (duty * stride > cmax) stride = cmax / duty;
+  return { ...g, duty, stride };
+}
+/* Foot target in the stride cycle. phase 0..2π is one cycle: two steps, 2 x stride of travel. The foot is planted for the
+   first duty x 2π, moving back exactly as far as the body moves forward (from +duty x stride to -duty x stride), then
+   swings forward to the next contact, lifting `lift` (earlier in the swing at a run: the heel comes up first). duty 0.5 is
+   the old half-and-half cycle. */
+export function footAt(phase, stride, lift, duty = 0.5) {
+  const T = 2 * Math.PI,
+    p = ((phase % T) + T) % T,
+    c = duty * stride,
+    st = duty * T;
+  if (p < st) return { forward: c - (p / Math.PI) * stride, up: 0 };
+  const s = (p - st) / (T - st),
+    e = s * s * (3 - 2 * s),
+    q = duty < 0.5 ? Math.pow(s, 0.75) : s; // a running swing lifts early
+  return { forward: -c + e * 2 * c, up: lift * Math.sin(q * Math.PI) };
+}
+/* The pelvis's rise and fall over the cycle (-1..1, times gait.bob). Walking vaults over the planted leg: highest at
+   mid-stance. Running sinks as the leg takes the weight and rises through the flight. */
+export function gaitBob(phase, duty) {
+  const T = 2 * Math.PI,
+    p = ((phase % T) + T) % T,
+    st = duty * T;
+  let walk = 0,
+    run = 0;
+  for (const q of [p, (p + Math.PI) % T])
+    if (q < st) {
+      const s = q / st;
+      walk = Math.max(walk, Math.sin(Math.PI * s));
+      run -= Math.sin(Math.PI * s);
+    }
+  if (duty < 0.5) {
+    const q = p % Math.PI,
+      gap = Math.PI - st;
+    if (q >= st && gap > 1e-6) run += Math.sin((Math.PI * (q - st)) / gap);
+  }
+  const w = Math.max(0, Math.min(1, (0.5 - duty) / 0.12 + 0.5));
+  return walk * (1 - w) + run * w;
 }
 const damp = (cur, target, rate, dt) => cur + (target - cur) * (1 - Math.exp(-rate * dt));
+const smooth01 = x => ((x = Math.max(0, Math.min(1, x))), x * x * (3 - 2 * x));
 
 /* ---- Personal space: players keep about 3 ft apart, and go round each other instead of through ---- */
 export const SPACE = { min: 0.95, contest: 0.85, block: 0.5 }; // game units centre to centre (1 ft = 0.33); a shot
@@ -294,22 +363,41 @@ export function animateAthlete(player, pose, ctx) {
     pb = PF?.body || {};
   const run = Math.min(1, m.speed / 5),
     airborne = Math.min(1, Math.max(0, pose.y) / 0.18) * (PF && !PF.gait ? 1 - pw : 1);
-  const stride = strideFor(m.speed);
+  const g = fitGait(gaitFor(m.speed), R.legs.L, R.legs.L.hipY - m.crouch * R.legs.L.hipY),
+    stride = g.stride,
+    gw = smooth01((m.speed - 0.1) / 0.8); // how much of the gait shows: none standing, all of it from a slow walk
   if (ctx.motion) m.phase += (moved / Math.max(stride, 0.2)) * Math.PI;
+  // starts, stops and cuts: the speed along his facing and its change (lean into a start, back on a stop), and how fast
+  // he is turning (lean into the turn, more the faster he runs)
+  if (dt > 0) {
+    const vf = (moved / dt) * Math.cos(dir),
+      yaw = player.rotation.y,
+      turn = m.yawLast == null ? 0 : Math.atan2(Math.sin(yaw - m.yawLast), Math.cos(yaw - m.yawLast)) / dt;
+    m.acc = damp(m.acc ?? 0, Math.max(-25, Math.min(25, (vf - (m.vf ?? vf)) / dt)), 5, dt);
+    m.vf = vf;
+    m.turn = damp(m.turn ?? 0, Math.max(-12, Math.min(12, turn)), 6, dt);
+    m.yawLast = yaw;
+    m.exert = damp(m.exert ?? 0, run, run > (m.exert ?? 0) ? 0.4 : 0.12, dt); // breathing deepens after a hard run
+  }
   // stance targets by what the player is doing
   const arms = pose.arms || 'relax',
     dribble = arms === 'dribble',
     defend = arms === 'defend';
-  const crouchT = airborne > 0 ? 0.02 : defend ? 0.17 : dribble ? 0.13 : 0.07 + run * 0.05,
+  const crouchT = airborne > 0 ? 0.02 : defend ? 0.17 : dribble ? 0.13 : 0.07 + run * 0.07,
     wideT = defend ? 0.2 : dribble ? 0.08 : 0.03,
-    leanT = run * 0.2 + (dribble ? 0.22 : 0) + (defend ? 0.12 : 0);
+    leanT =
+      g.lean * gw +
+      (dribble ? 0.22 : 0) +
+      (defend ? 0.12 : 0) +
+      (airborne > 0 ? 0 : Math.max(-0.14, Math.min(0.18, (m.acc ?? 0) * 0.02)) * gw);
   m.crouch = damp(m.crouch, crouchT, 7, dt);
   m.wide = damp(m.wide, wideT, 7, dt);
   m.lean = damp(m.lean, leanT, 6, dt);
   const still = 1 - run;
-  m.sway = Math.sin(m.t * 1.1) * still * (ctx.motion ? 1 : 0); // slow weight shift when standing
-  // pelvis: crouch, a bob at twice the stride rate, weight shift to one side
-  const bob = ctx.motion ? Math.abs(Math.sin(m.phase)) * 0.035 * run : 0,
+  // a slow weight shift from foot to foot when standing, never quite periodic
+  m.sway = (0.7 * Math.sin(m.t * 0.9) + 0.3 * Math.sin(m.t * 2.3 + 1.7)) * still * (ctx.motion ? 1 : 0);
+  // pelvis: crouch, the gait's rise and fall, weight shift to one side
+  const bob = ctx.motion ? gaitBob(m.phase, g.duty) * g.bob * gw : 0,
     h = R.legs.L.hipY;
   const pdrop = (pb.drop || 0) * pw;
   b.pelvis.position.set(
@@ -317,7 +405,7 @@ export function animateAthlete(player, pose, ctx) {
     R.pelvis.y - m.crouch * h + bob - pdrop,
     R.pelvis.z,
   );
-  b.pelvis.rotation.set(0, ctx.motion ? -Math.sin(m.phase) * 0.1 * run : 0, -m.sway * 0.03);
+  b.pelvis.rotation.set(0, ctx.motion ? -Math.sin(m.phase) * (0.06 + 0.08 * g.run) * gw : 0, -m.sway * 0.03);
   // legs: stride targets, planted while in stance; in the air the knees tuck
   for (const [j, s] of [
     [0, 'R'],
@@ -327,13 +415,22 @@ export function animateAthlete(player, pose, ctx) {
       hipBone = b['hip_' + s],
       knee = b['knee_' + s],
       ankle = b['ankle_' + s];
-    const foot =
-      run > 0.02 && ctx.motion
-        ? footAt(m.phase + (j ? Math.PI : 0), stride, 0.1 + 0.12 * run)
-        : { forward: (j ? 0.06 : -0.04) * (1 - m.wide * 2), up: 0 };
+    // the gait's foot, faded into the standing stance as he slows (no snap when he stops)
+    const rest = { forward: (j ? 0.06 : -0.04) * (1 - m.wide * 2), up: 0 },
+      walk = ctx.motion && gw > 0 ? footAt(m.phase + (j ? Math.PI : 0), stride, g.lift, g.duty) : rest,
+      foot = { forward: rest.forward + (walk.forward - rest.forward) * gw, up: walk.up * gw };
     // the stride runs along the direction of travel: forward/back in the leg's plane, sideways through the hip (a shuffle)
-    const fwd = foot.forward * Math.cos(dir),
-      side = foot.forward * Math.sin(dir);
+    // the pelvis twists with the stride: it carries the hip forward or back and turns the leg's plane with it. The target
+    // (relative to the body's root, under the hip) is taken from the twisted hip and turned into the pelvis's frame, so a
+    // planted foot stays exactly where it is on the floor
+    const th = b.pelvis.rotation.y,
+      ct = Math.cos(th),
+      sn = Math.sin(th),
+      hipX = R.pelvis.x + hipBone.position.x,
+      rx = foot.forward * Math.sin(dir) + hipX * (1 - ct),
+      rz = foot.forward * Math.cos(dir) + hipX * sn,
+      fwd = rx * sn + rz * ct,
+      side = rx * ct - rz * sn;
     const hipWorldY = L.hipY - m.crouch * h + bob - pdrop,
       drop = hipWorldY - L.ankleY - foot.up + (s === 'L' ? -1 : 1) * m.sway * 0.012;
     let sol = solveLeg(
@@ -383,17 +480,22 @@ export function animateAthlete(player, pose, ctx) {
     ); // flat on the floor; toes point in the air
   }
   // torso: lean into the run, shoulders counter-twist against the hips
+  // banking: into a turn (his left is +x; turning left tilts the trunk left), more the faster he runs
+  const bank = ctx.motion ? Math.max(-0.22, Math.min(0.22, -(m.turn ?? 0) * m.speed * 0.018)) * gw : 0,
+    breath = ctx.motion
+      ? Math.sin(m.t * (1.3 + 1.6 * (m.exert ?? 0))) * (0.012 + 0.025 * (m.exert ?? 0)) * (1 - gw * 0.7)
+      : 0;
   b.spine.rotation.set(
     m.lean * 0.55 + (pb.lean || 0) * 0.6 * pw,
-    (ctx.motion ? Math.sin(m.phase) * 0.12 * run : 0) + (pb.twist || 0) * 0.4 * pw,
-    m.sway * 0.025 * (1 - pw) + (pb.side || 0) * pw,
+    (ctx.motion ? Math.sin(m.phase) * (0.08 + 0.08 * g.run) * gw : 0) + (pb.twist || 0) * 0.4 * pw,
+    m.sway * 0.025 * (1 - pw) + bank * (1 - pw) + (pb.side || 0) * pw,
   );
   b.chest.rotation.set(
-    m.lean * 0.35 + (pb.lean || 0) * 0.4 * pw,
-    (ctx.motion ? Math.sin(m.phase) * 0.08 * run : 0) + (pb.twist || 0) * 0.6 * pw,
+    m.lean * 0.35 + (pb.lean || 0) * 0.4 * pw - breath,
+    (ctx.motion ? Math.sin(m.phase) * (0.05 + 0.06 * g.run) * gw : 0) + (pb.twist || 0) * 0.6 * pw,
     0,
   );
-  animateArms(player, pose, ctx, m, R, run, dt, PF, pw);
+  animateArms(player, pose, ctx, m, R, run, dt, PF, pw, g, gw);
   // head: turn toward the ball (limited), eyes level against the torso lean
   if (b.head) {
     let yaw = 0;
@@ -440,7 +542,7 @@ function jumpLegs(arms, family, side) {
    holding, gathering and shooting. When the ball leaves (a shot or pass), the IK fades and the follow-through takes over.
    The dribbling hand leads the ball rather than chasing it: it follows the dribble's hand height (ctx.dribbleHand), the
    forearm turns the palm down onto the ball and the wrist works on the dribble's beat (dribbleWrist). */
-function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0) {
+function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0, g = gaitFor(0), gw = 0) {
   const u = player.userData,
     b = u.body.bones,
     chest = b.chest;
@@ -487,9 +589,10 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0) {
       side = j ? 1 : -1;
     let [x, z, e] = (ARM[arms] || ARM.relax)(j, m, t);
     if (arms === 'relax') {
-      x = ctx.motion ? -Math.sin(m.phase + (j ? Math.PI : 0)) * 0.55 * run : 0;
-      z = 0.1 + 0.08 * m.crouch * 4;
-      e = -0.25 - 0.6 * run;
+      // the arms swing against the legs: loose and low at a walk, bent to 90 degrees and pumping at a sprint
+      x = ctx.motion ? -Math.sin(m.phase + (j ? Math.PI : 0)) * g.arm * gw - 0.08 * g.run * gw : 0;
+      z = 0.1 + 0.08 * m.crouch * 4 - 0.04 * g.run * gw;
+      e = -0.25 - (g.elbow - 0.25) * gw;
     }
     const st = m.arm[j];
     st[0] = damp(st[0], x, 10, dt);
