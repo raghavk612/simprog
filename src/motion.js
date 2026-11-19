@@ -440,7 +440,7 @@ export function animateAthlete(player, pose, ctx) {
       Math.sqrt(Math.max(drop * drop - side * side, drop * drop * 0.5)),
     );
     if (airborne > 0) {
-      const tuck = jumpLegs(arms, ctx.family, s);
+      const tuck = jumpLegs(arms, ctx.family, s, ctx.airLegs, ctx.airLead);
       sol = {
         hip: sol.hip + (tuck.hip - sol.hip) * airborne,
         knee: sol.knee + (tuck.knee - sol.knee) * airborne,
@@ -528,9 +528,19 @@ export function animateAthlete(player, pose, ctx) {
   }
 }
 
+/* Leg shapes in the air for the finishes (src/finishes.js names one per moment; lead = the side of the knee that drives
+   up, the shooting hand's): hip flexion (- = thigh forward), knee bend, toe point. */
+export const AIR_LEGS = {
+  kneeR: { lead: { hip: -1.35, knee: 1.65, toe: 0.35 }, trail: { hip: 0.18, knee: 0.55, toe: 0.6 } }, // a layup's knee drive
+  hook: { lead: { hip: -1.05, knee: 1.35, toe: 0.4 }, trail: { hip: 0.08, knee: 0.4, toe: 0.6 } },
+  tuck: { lead: { hip: -0.6, knee: 1.05, toe: 0.45 }, trail: { hip: -0.5, knee: 0.95, toe: 0.45 } }, // two feet, knees up
+  softTuck: { lead: { hip: -0.4, knee: 0.75, toe: 0.5 }, trail: { hip: -0.25, knee: 0.6, toe: 0.55 } },
+  dunk: { lead: { hip: -0.45, knee: 1.25, toe: 0.5 }, trail: { hip: -0.3, knee: 1.15, toe: 0.5 } }, // knees bent, feet back
+};
 /* Leg shape in the air, by move: jump shooters keep the legs long with toes pointed; on drives and dunks the lead knee drives
-   up and the trail leg folds back; blocks and rebounds tuck both knees. */
-function jumpLegs(arms, family, side) {
+   up and the trail leg folds back; blocks and rebounds tuck both knees. A finish (ctx.airLegs) names its own shape. */
+function jumpLegs(arms, family, side, air = null, lead = 'R') {
+  if (air && AIR_LEGS[air]) return AIR_LEGS[air][side === lead ? 'lead' : 'trail'];
   if (arms === 'shoot' && ['drive', 'dunk', 'roll', 'floater'].includes(family))
     return side === 'R' ? { hip: -1.25, knee: 1.5, toe: 0.35 } : { hip: 0.12, knee: 0.6, toe: 0.6 };
   if (arms === 'shoot' || arms === 'hook') return { hip: -0.12, knee: 0.28, toe: 0.65 };

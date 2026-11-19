@@ -46,6 +46,7 @@ import { rosterRecord } from './identities.js';
 import { ballMaterial } from './materials.js';
 import { BroadcastLook } from './broadcast.js';
 import { animateAthlete, facingWeight, mixAngle, steerYaw, keepApart, SPACE } from './motion.js';
+import { finishFrame, putbackFrame } from './finishes.js';
 import { Director } from './director.js';
 import { PerfHud, perfWanted } from './perfHud.js';
 import { titleCamera, flyIn, heroYaw, titleFov, HERO, STILL, titlePath } from './title.js';
@@ -669,6 +670,21 @@ export class Arena {
   /* A hands-only performance (motion.js ctx.perform) from a play's shot hands (world arrays): legs keep their gait.
      around/scale: a player drawn taller or shorter than his model (bodyFor) has the hands scaled about his feet, as the
      ball he holds is (frame), so they still meet it. */
+  /* A finish's frame (src/finishes.js finishFrame / putbackFrame) as a performance: hands (world arrays), body, look. */
+  finishPerform(f) {
+    const V = p => new THREE.Vector3(...p),
+      out = { gait: true, body: f.body || {}, feet: {}, look: f.look ? V(f.look) : null, hands: {} };
+    for (const [h, H] of Object.entries(f.hands || {}))
+      out.hands[h] = { ...H, p: V(H.p), pole: H.pole ? V(H.pole) : null };
+    return out;
+  }
+  /* The play's release point (where the flight starts): the finishes land the held ball on it exactly. */
+  releasePoint(clip) {
+    const c = (this.relCache ??= new WeakMap());
+    let r = c.get(clip);
+    if (!r) c.set(clip, (r = sampleClip(clip, shotTiming(clip.kind).release * CLIP_SECONDS + 1e-9).ball));
+    return r;
+  }
   shotPerform(hands, around = null, scale = 1) {
     const V = p =>
         around && scale !== 1
@@ -1525,7 +1541,7 @@ export class Arena {
     const u = player.userData,
       run = (u.run = ease >= 1 || u.run === undefined ? pose.run : u.run + (pose.run - u.run) * ease);
     player.position.set(pose.x, pose.y, pose.z);
-    player.rotation.set(0, this.faceYaw(player, pose), 0);
+    player.rotation.set(0, this.faceYaw(player, pose) + (pose.yawAdd || 0), 0); // yawAdd: a finish's turn (hook, spin)
     u.legs.forEach((leg, j) => {
       leg.rotation.set(Math.sin(t * 11 + j * Math.PI) * 0.65 * run, 0, 0);
       leg.userData.knee.rotation.x = Math.max(0, -Math.sin(t * 11 + j * Math.PI)) * 0.8 * run;
@@ -1582,6 +1598,8 @@ export class Arena {
         dribble: this.dribble,
         perform: pose.perform || null,
         family: this.clipFamily || '',
+        airLegs: pose.airLegs || null,
+        airLead: pose.airLead || 'R',
       });
   }
   frame() {
@@ -1719,20 +1737,46 @@ export class Arena {
         shooterArms =
           pose.shotHands && !tr ? this.shotPerform(pose.shotHands, feet, this.people[o].scale.x) : null,
         blockerArm = pose.blockHands && !tr ? this.shotPerform(pose.blockHands) : null;
-      wanted.forEach((w, i) =>
-        this.posePlayer(
-          this.people[i],
-          {
+      // a finish at the rim (src/finishes.js): the shooter's hands, body, legs in the air, turn, the euro's side step, the
+      // dunk's elevation and rim hang, and the ball on the finish's path; the putback's dip and two-hand rise
+      const rel = !tr ? this.releasePoint(clip) : null,
+        sh = this.people[o],
+        fin = rel
+          ? finishFrame(
+              clip,
+              clipTime,
+              { x: kept[o].x, z: kept[o].z, yaw: pose.actors[o].yaw, y: pose.actors[o].y, scale: sh.scale.x },
+              pose.ball,
+              rel,
+            )
+          : null,
+        pb = rel ? putbackFrame(clip, clipTime, rel) : null;
+      this.finish = fin;
+      wanted.forEach((w, i) => {
+        const f = i === o ? fin : null,
+          q = {
             ...w,
-            x: kept[i].x,
-            z: kept[i].z,
+            x: kept[i].x + (f?.shift?.[0] || 0),
+            y: w.y + (f?.lift || 0),
+            z: kept[i].z + (f?.shift?.[2] || 0),
             ...(i === o && shooterArms ? { perform: shooterArms } : {}),
             ...(i === mk && blockerArm ? { perform: blockerArm } : {}),
-          },
-          this.gait,
-          ease,
-        ),
-      );
+          };
+        if (f)
+          Object.assign(q, {
+            perform: this.finishPerform(f),
+            yawAdd: f.yaw,
+            airLegs: f.legs,
+            airLead: f.legSide,
+          });
+        if (pb && i === pb.actor)
+          Object.assign(q, {
+            perform: this.finishPerform({ body: pb.body }),
+            airLegs: pb.legs,
+            airLead: 'R',
+          });
+        this.posePlayer(this.people[i], q, this.gait, ease);
+      });
       // While a player is still easing into place the ball stays in his hands (the handler, or the defender after a steal).
       const sm = x => ((x = Math.max(0, Math.min(1, x))), x * x * (3 - 2 * x)),
         off = j => [
@@ -1758,11 +1802,16 @@ export class Arena {
           y: pose.ball.y,
           z: pose.ball.z + (a[1] + (b[1] - a[1]) * st) * hold,
         },
-        k = (h.scale.x - 1) * hold * (1 - st);
+        k = fin?.ball ? 0 : (h.scale.x - 1) * hold * (1 - st); // a finish scales its own path
       if (k) {
         held.x += (held.x - h.position.x) * k;
         held.y += (held.y - pose.actors[o].y) * k;
         held.z += (held.z - h.position.z) * k;
+      }
+      if (fin?.ball) {
+        held.x = fin.ball[0];
+        held.y = fin.ball[1];
+        held.z = fin.ball[2];
       }
       const ball = this.blendBall(tr ? carried : held, tr ? tr.t : clipTime);
       this.ball.position.set(ball.x, ball.y, ball.z);

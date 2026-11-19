@@ -209,3 +209,39 @@ the key); the "same play unblocked" sample it needs is cached per play. `sampleC
 40-step bisection once per play instead of every frame: 23 µs per block sample against 16 µs for a plain one (it was
 more than double). Golden clips identical (162 plays × 23 moments). It also gives the finishes (2.3) the putback's
 timing and winner without repeating the arithmetic.
+
+### 2.3 Finishes
+
+Every finish except the jump shots was the same jump with one static arm preset and a generic leg tuck. New
+`src/finishes.js`: each finish authored in the shooter's frame in seconds from his release (which the play's
+`shotTiming` places), mirrored for a left-handed finish (the hand away from the defender), and fed through the existing
+`ctx.perform` path (world-space hand targets with palm normals, elbow poles and wrist flex), plus body cues (lean, side,
+a pelvis drop for the gather and the landing), named leg shapes in the air (`AIR_LEGS` in motion.js), a turn added to the
+facing and, for the euro and the dunk, where he is drawn. **Decision:** finishes are presentation only and leave
+`sampleClip` untouched, so no version field is needed for them: the held ball is drawn on the finish's path, blended in
+from the play's dribble at the gather and landed exactly on the play's release point at the release, and the flight that
+follows is the play's own (the test holds it to within 0.09 units and never more than 0.25 a frame).
+
+- **Layup:** two hands secure it at the hip on the gather, a dip to load, the knee on the shooting side drives up, the
+  ball comes up under the shooting hand to full extension, the off arm comes off to shield; the follow-through holds on
+  the way down, the landing is absorbed.
+- **Euro step:** the layup with a long step to one side on the gather and a second one back across (the body leans into
+  each).
+- **Floater:** upright, two hands to the forehead, a soft one-hand push released high.
+- **Hook:** turns side-on (the off shoulder to the rim), the off arm up to shield, the ball swept from the hip out and over
+  the head.
+- **Spin move:** a full turn on the gather with the ball at the chest, into the layup. **Decision:** the first version
+  spun and then turned into the hook, but gather to take-off is only 0.45 s, too short for both (the keyframes ran
+  backwards and the ball jumped 0.5 units in a frame).
+- **Dunk / alley-oop:** a two-foot power load, the ball cocked behind the head with both hands (caught overhead on the
+  lob), thrown down; he is drawn 0.28 higher than the play's jump so his hands reach over the rim, both hands go to the
+  front of the rim and he hangs 0.18 s, then falls under gravity from there and absorbs the landing. A blocked dunk never
+  hangs (the test caught a crash there: the dunk had no follow-through for that case).
+- **Roll:** a two-hand power layup off two feet. **Putback:** the winner of the loose ball (from `blockPlan`) dips to
+  gather and goes straight up off two feet.
+
+Critique of the finishes sheet (crops at full size): the layup reads at once (pocket, knee drive, full extension, held
+follow-through); the dunk's load and the hang on the rim are clear from the sideline; the hook turns the chest to the
+camera with the ball low at the hip, then both arms up at the release. Weak spots left: the gather steps are not
+choreographed (the gait carries him in, so the take-off foot is not always the one opposite the knee drive), and the
+alley-oop's lob is not a real pass (the play has none).
