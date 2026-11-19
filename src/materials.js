@@ -149,8 +149,12 @@ function patch(
     inflate = 0,
     print = false,
     strands = false,
+    cover = false,
   } = {},
 ) {
+  // cover: skin wholly under clothing the player wears is not drawn (src/clothFit.js kCover; kCoverOn picks the sleeves).
+  // A mesh without the attribute reads zeros: nothing skipped.
+  if (cover) material.userData.coverOn = { value: new THREE.Vector3(1, 0, 0) };
   if (print)
     material.userData.print = {
       kPrintF: { value: null },
@@ -179,11 +183,13 @@ function patch(
         kFaceSize: { value: face.size },
       });
     if (print) Object.assign(shader.uniforms, material.userData.print);
+    if (cover) shader.uniforms.kCoverOn = material.userData.coverOn;
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
         '#include <common>\nvarying vec3 vKRest; varying vec3 vKRestN;' +
-          (strands ? ' varying vec3 vKUp;' : ''),
+          (strands ? ' varying vec3 vKUp;' : '') +
+          (cover ? ' attribute vec3 kCover; varying vec3 vKCover;' : ''),
       )
       .replace(
         '#include <skinnormal_vertex>',
@@ -200,6 +206,7 @@ function patch(
       .replace(
         '#include <begin_vertex>',
         '#include <begin_vertex>\nvKRest = transformed;' +
+          (cover ? '\nvKCover = kCover;' : '') +
           (inflate > 0 ? `\ntransformed += objectNormal * ${inflate.toFixed(4)};` : ''),
       );
     let frag = shader.fragmentShader
@@ -208,6 +215,7 @@ function patch(
         '#include <common>\n' +
           DETAIL_PARS +
           (strands ? '\nvarying vec3 vKUp;' : '') +
+          (cover ? '\nvarying vec3 vKCover; uniform vec3 kCoverOn;' : '') +
           (face ? '\nuniform sampler2D kFaceMap; uniform vec3 kFaceCenter; uniform vec2 kFaceSize;' : '') +
           (print
             ? '\nuniform sampler2D kPrintF; uniform sampler2D kPrintB; uniform vec2 kPrintFC; uniform vec2 kPrintBC; uniform vec2 kPrintSize; uniform float kPrintMinY; uniform float kPrintOn;'
@@ -275,6 +283,12 @@ function patch(
  }
  #endif`,
       );
+    if (cover)
+      frag = frag.replace(
+        '#include <clipping_planes_fragment>',
+        `#include <clipping_planes_fragment>
+ if (max(vKCover.x * kCoverOn.x, max(vKCover.y * kCoverOn.y, vKCover.z * kCoverOn.z)) > 0.999) discard;`,
+      );
     frag = aoAlpha(frag);
     if (wrap > 0)
       frag = frag.replace(
@@ -291,7 +305,7 @@ function patch(
     shader.fragmentShader = frag;
   };
   material.customProgramCacheKey = () =>
-    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}-${strands ? 1 : 0}`;
+    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}-${strands ? 1 : 0}-${cover ? 1 : 0}`;
   return material;
 }
 
@@ -309,7 +323,16 @@ export function skinMaterial(color, face = null) {
       clearcoatRoughness: 0.35,
       name: 'skin',
     }),
-    { map: MAPS.skin(), scale: 9, bump: 0.35, fadeFar: 7, wrap: 0.35, scatter: [0.75, 0.32, 0.22], face },
+    {
+      map: MAPS.skin(),
+      scale: 9,
+      bump: 0.35,
+      fadeFar: 7,
+      wrap: 0.35,
+      scatter: [0.75, 0.32, 0.22],
+      face,
+      cover: true,
+    },
   );
 }
 export const KIT_INFLATE = 0.012; // how far the jersey and shorts are pushed off the skin (decals sit on top of it)
@@ -356,8 +379,10 @@ export function hairMaterial(color) {
     { map: MAPS.strands(), scale: 14, bump: 0.8, fadeFar: 6, strands: true },
   );
 }
-// Sleeves and headband: compression fabric, smoother and a touch shinier than the jersey.
-export const fabricMaterial = color =>
+// Sleeves and headband: compression fabric, smoother and a touch shinier than the jersey. The binding (trim) uses it too,
+// pushed out further than the jersey (KIT_INFLATE) so it always rides on the cloth's edge instead of dipping under it.
+export const TRIM_INFLATE = 0.02;
+export const fabricMaterial = (color, inflate = 0.01) =>
   patch(
     new THREE.MeshPhysicalMaterial({
       color,
@@ -366,7 +391,7 @@ export const fabricMaterial = color =>
       sheenRoughness: 0.35,
       name: 'sleeve',
     }),
-    { map: MAPS.mesh(), scale: 30, bump: 0.15, fadeFar: 3, inflate: 0.01 },
+    { map: MAPS.mesh(), scale: 30, bump: 0.15, fadeFar: 3, inflate },
   );
 // Ball: pebbled orange leather.
 export function ballMaterial() {

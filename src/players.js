@@ -20,8 +20,10 @@ import {
   decalMaterial,
   faceTexture,
   KIT_INFLATE,
+  TRIM_INFLATE,
 } from './materials.js';
 import { AthleteMaps, ATLAS_OF, mapsOn, setMaterialMaps } from './playerMaps.js';
+import { prepareCloth } from './clothFit.js';
 
 export const BODY_PARTS = ['jersey', 'head', 'hair', 'number', 'nameplate', 'capBadge', 'legs', 'arms'];
 // Which body variant a roster position wears (realistic style). Unknown positions fall back to forward.
@@ -406,6 +408,7 @@ export function kitLettering(kitKey, side, number, name) {
    Geometry stays shared with the template (only materials and decals belong to the body).
    level: the graphics level the body starts at ('medium' / 'high' put the baked detail maps on; setDetail changes it). */
 export function athleteBody(template, kit, i, color, variant, look = lookFor(i), { level = null } = {}) {
+  prepareCloth(template); // the flat bindings and the skin under the clothes (src/clothFit.js), once per variant
   const root = cloneSkinned(template.scene),
     bones = {},
     objs = {};
@@ -469,7 +472,7 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
     hairMat = hairMaterial(look.hairColor ?? 0x161210),
     band = fabricMaterial(0xffffff),
     sleeve = fabricMaterial(0x111114),
-    trim = fabricMaterial(0xe9b858);
+    trim = fabricMaterial(0xe9b858, TRIM_INFLATE);
   const pick = { kit: jersey, skin, shoes, sole, hair: hairMat, band, sleeve, trim }; // trim: the binding round the neck, armholes and hems
   // keep one hair style and the chosen options; drop the rest
   const keep = new Set(
@@ -491,6 +494,9 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
       o.frustumCulled = false;
     }
   });
+  // the skin under the clothes he wears is not drawn (src/clothFit.js)
+  if (skin.userData.coverOn)
+    skin.userData.coverOn.value.set(1, look.armSleeve ? 1 : 0, look.legSleeve ? 1 : 0);
   // head and hair (with the headband) hide together in Player view
   const hair = new THREE.Group();
   hair.name = 'hair';

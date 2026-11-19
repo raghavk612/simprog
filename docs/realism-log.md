@@ -325,3 +325,29 @@ arm holds clearly; the beaten defender's hands on hips read; the dunker's flex w
 performance outlived its own fade) and now plays on the run back (fixed in its own commit). Measured (`phase2` against
 `before`, frame median): High +2–6%, Medium +6–10%, Low within ±15% of a 1.3–2.7 ms frame (noise at that size). Of that,
 SMAA (phase 1) is 3–9% and the new motion about 0.2 ms; Phase 4 has to pay it back with interest.
+
+## Phase 3: visuals
+
+### 3.1 Bindings and skin through the clothes
+
+Up close (chest camera, 1.1 units): the white binding round the neck and armholes was a thick tube with a zig-zag edge
+that kinked into flaps at the shoulders and broke into segments where it dipped under the jersey; skin showed through the
+arm sleeve at the elbow and its top edge, and through the shorts at the hips. No Houdini source here, so new
+`src/clothFit.js` works on the loaded meshes once per variant (about 60 ms each at load, cached on the template; the far
+mesh shares the near mesh's vertices and gets copies):
+
+- **Skin under the clothes** (`kCover`): a short ray out along each skin vertex's normal must hit the jersey, shorts or a
+  sleeve lying over it and facing the same way, away from any opening (judged from the binding tube, which runs round
+  every opening); the skin shader (`materials.js`, `cover`) does not draw skin wholly under clothing the player wears
+  (sleeves are switched per player). Only torso and thigh skin can be under the kit: in the rest pose the hands hang
+  beside the shorts with their palms toward them, which a first version marked as covered (a hole in the forearm).
+- **The binding**: welded within 1.5 mm (its panels meet with gaps) and Taubin-smoothed, which relaxes the kinks without
+  shrinking it, and pushed out 2 cm instead of 1 so it rides on the jersey (pushed out 1.2 cm) instead of dipping under
+  it. Tried and dropped, with the reason: painting the binding flat from a per-vertex distance (sawtoothed on the
+  jersey's coarse triangles); finding the openings from the meshes' topology (their edges split into 5 to 16 fragments
+  per jersey); plain Laplacian smoothing (it shrank the tube into the jersey); smoothing the sleeves' rims (their inner and
+  outer shells pulled against each other and the rim got worse).
+
+Critique (close-ups): a continuous binding with a clean V at the neck and all the way round the armholes, no flaps; the
+road whites' blue binding reads like a real kit; no skin through the sleeve or at the hips. Still visible: the binding is
+a little faceted, and the sleeve's top rim still zig-zags slightly against the shoulder (a modelling fix).
