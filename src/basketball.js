@@ -490,6 +490,164 @@ export function guardSpot(man, side, gap = null) {
     g = Math.min(Math.max(0.3, d - 0.4), gap ?? Math.max(1.3, Math.min(2.6, d * 0.33)));
   return { x: man.x + (dx / d) * g, z: man.z + (dz / d) * g };
 }
+/* ---- A block, worked out once per play (sampleClip uses it at every moment) ----
+   Everything about a block that does not depend on the moment: where the ball meets the blocker's hand, how hard and where
+   it is swatted, which two players go for the loose ball and where they meet it (from where the same play unblocked has
+   everyone at the contact), and the putback when the shooting team keeps it. release = the play's release point (for a
+   jump shooter it follows his feet until he is set, so it is part of the key). Cached: a play is sampled every frame. */
+const PLANS = new Map(),
+  UNBLOCKED = new Map(),
+  clipKey = c =>
+    [
+      c.kind,
+      c.team,
+      c.lane,
+      c.contest,
+      c.outcome,
+      c.recovery,
+      c.putback,
+      c.afterSteal ? 1 : 0,
+      c.points,
+      c.v ?? 0,
+    ].join('|');
+const remember = (cache, key, value) => {
+  if (cache.size > 64) cache.delete(cache.keys().next().value);
+  cache.set(key, value);
+  return value;
+};
+export function blockPlan(c, release) {
+  const key = `${clipKey(c)}|${release.x}|${release.y}|${release.z}`,
+    hit = PLANS.get(key);
+  if (hit) return hit;
+  const S = CLIP_SECONDS,
+    side = c.team === 'home' ? 1 : -1,
+    lane = c.lane || 1,
+    T = shotTiming(c.kind),
+    rel = T.release,
+    HIT = blockHit(c.kind),
+    offense = c.team === 'home' ? 0 : 5,
+    defense = c.team === 'home' ? 5 : 0,
+    rim = { x: 12.15 * side, y: BALL.rim, z: 0 },
+    shot = launch(release, rim, T.flight),
+    contact = fly(release, shot, (Math.min(HIT, BALL.arrive) - rel) * S),
+    rimX = 12.15 * side,
+    flat = (x, z) => {
+      const l = Math.hypot(x, z) || 1;
+      return { x: x / l, z: z / l };
+    },
+    toRim = flat(rimX - contact.x, -contact.z),
+    // higher than he needs: his fingers (2.4 standing) get above the ball and come down through it
+    H = clamp(contact.y - 2.4 + 0.15, 0.55, 1.05),
+    spot = { x: contact.x + toRim.x * 0.22, z: contact.z + toRim.z * 0.22 },
+    hang = Math.sqrt((2 * H) / BALL.g) / S;
+  // the swat: to the side (the near sideline of the play), a little back toward the shooter, and down
+  const sideZ = lane >= 0 ? 1 : -1;
+  let perp = { x: -toRim.z, z: toRim.x };
+  if (perp.z * sideZ < 0) perp = { x: -perp.x, z: -perp.z };
+  const dir = flat(perp.x * 0.85 - toRim.x * 0.45, perp.z * 0.85 - toRim.z * 0.45),
+    kept = c.recovery === 'offense',
+    // the time it may take to come up with it: time to spare for the putback (or to turn up the floor) after
+    endTau = (0.995 - HIT) * S,
+    want = clamp(endTau - (kept ? 0.62 : 0.2), 0.3, 0.62),
+    chest = 1.15,
+    tauFor = vy => {
+      const down = (vy + Math.sqrt(vy * vy + 2 * BALL.g * (contact.y - BALL.floor))) / BALL.g,
+        up = (BALL.g * down - vy) * BALL.bounce;
+      return down + (up - Math.sqrt(Math.max(0, up * up - 2 * BALL.g * (chest - BALL.floor)))) / BALL.g;
+    };
+  // a harder swat down reaches the floor sooner: find the one that comes up into his hands when it should
+  let lo = -14,
+    hi = -1.5;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (tauFor(mid) > want) hi = mid;
+    else lo = mid;
+  }
+  const vy = (lo + hi) / 2,
+    catchTau = tauFor(vy),
+    // as hard as 4.8 units/s across, but it is won inbounds (inside the sidelines and the baseline)
+    room = Math.min(
+      dir.z ? (7.3 - Math.sign(dir.z) * contact.z) / Math.abs(dir.z) : Infinity,
+      dir.x ? (13.2 - Math.sign(dir.x) * contact.x) / Math.abs(dir.x) : Infinity,
+    ),
+    speed = clamp(Math.min(4.8, room / catchTau), 1.2, 4.8),
+    CATCH = HIT + catchTau / S;
+  let v = { x: dir.x * speed, y: vy, z: dir.z * speed },
+    at = fly(contact, v, catchTau);
+  // the scramble: each team's nearest player goes for it, from where he is at the block (the same play unblocked moves
+  // everyone else the same way)
+  const ukey = clipKey(c),
+    there =
+      UNBLOCKED.get(ukey) ??
+      remember(
+        UNBLOCKED,
+        ukey,
+        sampleClip({ ...c, outcome: 'made', points: 2, recovery: undefined, putback: undefined }, HIT * S)
+          .actors,
+      ),
+    nearest = list =>
+      list.map(o => ({ ...o, d: Math.hypot(o.p.x - at.x, o.p.z - at.z) })).sort((a, b) => a.d - b.d)[0],
+    offP = nearest([1, 2, 3, 4].map(k => ({ i: offense + k, p: there[offense + k] }))),
+    defP = nearest([1, 2, 3, 4].map(k => ({ i: defense + k, p: there[defense + k] }))),
+    win0 = kept ? offP : defP;
+  // a real sprint (6.5 units/s) must get the winner there: if he could not, the swat goes more his way
+  {
+    const reach = 6.5 * catchTau,
+      far = Math.hypot(win0.p.x - at.x, win0.p.z - at.z);
+    if (far > reach) {
+      const k = (far - reach * 0.9) / far, // how far along from the ball's spot toward him it must come down
+        tx = at.x + (win0.p.x - at.x) * k,
+        tz = at.z + (win0.p.z - at.z) * k;
+      v = { x: (tx - contact.x) / catchTau, y: vy, z: (tz - contact.z) / catchTau };
+      at = fly(contact, v, catchTau);
+    }
+  }
+  const win = win0,
+    lose = kept ? defP : offP,
+    meet = { x: at.x + dir.x * 0.3, z: at.z + dir.z * 0.3 },
+    fromL = flat(lose.p.x - at.x, lose.p.z - at.z),
+    beaten = { x: at.x + fromL.x * 0.8, z: at.z + fromL.z * 0.8 };
+  // the putback: he rises straight away and lays it up at the rim
+  let putback = null;
+  if (kept) {
+    const rimP = { x: rimX, y: BALL.rim, z: 0 },
+      spare = (0.997 - CATCH) * S,
+      GO = CATCH + Math.min(0.22, spare * 0.3) / S, // gathers it up into his shooting hands
+      lift = 0.45,
+      from = { x: at.x, y: 2.35 + lift, z: at.z },
+      ARR = Math.min(0.997, GO + Math.max(0.42, Math.hypot(rimP.x - at.x, rimP.z) / 7.5) / S);
+    putback = { GO, ARR, from, v: launch(from, rimP, (ARR - GO) * S), rimP, lift };
+  }
+  // the blocker's hand: on top of the ball on his side at the contact, cocked above it before, through after
+  const n = unit([toRim.x * 0.72, 0.7, toRim.z * 0.72]), // from the ball to his palm: on top, on his side
+    onBall = [contact.x + n[0] * PALM_OFF, contact.y + n[1] * PALM_OFF, contact.z + n[2] * PALM_OFF],
+    hand = {
+      h: lane > 0 ? 'R' : 'L',
+      onBall,
+      cocked: [onBall[0] + toRim.x * 0.3, onBall[1] + 0.25, onBall[2] + toRim.z * 0.3],
+      through: unit([v.x, v.y, v.z]),
+    };
+  return remember(PLANS, key, {
+    HIT,
+    contact,
+    rimX,
+    toRim,
+    H,
+    spot,
+    hang,
+    dir,
+    kept,
+    CATCH,
+    v,
+    at,
+    win: { i: win.i, p: win.p },
+    lose: { i: lose.i, p: lose.p },
+    meet,
+    beaten,
+    putback,
+    hand,
+  });
+}
 // Sample any point in a recorded clip. Same clip + time always gives the same pose.
 // Coordinates are mirrored for the visitors, so both baskets are used.
 export function sampleClip(c, time) {
@@ -694,85 +852,32 @@ export function sampleClip(c, time) {
     blockEnd = null;
   if (c.outcome === 'block') {
     const S = CLIP_SECONDS,
-      contact = flight(HIT),
-      rimX = 12.15 * side,
-      flat = (x, z) => {
-        const l = Math.hypot(x, z) || 1;
-        return { x: x / l, z: z / l };
-      },
-      toRim = flat(rimX - contact.x, -contact.z),
-      // higher than he needs: his fingers (2.4 standing) get above the ball and come down through it
-      H = clamp(contact.y - 2.4 + 0.15, 0.55, 1.05),
-      spot = { x: contact.x + toRim.x * 0.22, z: contact.z + toRim.z * 0.22 },
-      hang = Math.sqrt((2 * H) / BALL.g) / S,
+      {
+        contact,
+        rimX,
+        toRim,
+        H,
+        spot,
+        hang,
+        dir,
+        kept,
+        CATCH,
+        v,
+        at,
+        win,
+        lose,
+        meet,
+        beaten,
+        putback,
+        hand,
+      } = blockPlan(c, release),
       w = smooth((t - (HIT - hang - 0.1)) / 0.08); // in place before he takes off
     marker.x = lerp(marker.x, spot.x, w);
     marker.z = lerp(marker.z, spot.z, w);
     marker.y = leap(t, H, HIT);
-    // the swat: to the side (the near sideline of the play), a little back toward the shooter, and down
-    const sideZ = lane >= 0 ? 1 : -1;
-    let perp = { x: -toRim.z, z: toRim.x };
-    if (perp.z * sideZ < 0) perp = { x: -perp.x, z: -perp.z };
-    const dir = flat(perp.x * 0.85 - toRim.x * 0.45, perp.z * 0.85 - toRim.z * 0.45),
-      kept = c.recovery === 'offense',
-      // the time it may take to come up with it: time to spare for the putback (or to turn up the floor) after
-      endTau = (0.995 - HIT) * S,
-      want = clamp(endTau - (kept ? 0.62 : 0.2), 0.3, 0.62),
-      chest = 1.15,
-      tauFor = vy => {
-        const down = (vy + Math.sqrt(vy * vy + 2 * BALL.g * (contact.y - BALL.floor))) / BALL.g,
-          up = (BALL.g * down - vy) * BALL.bounce;
-        return down + (up - Math.sqrt(Math.max(0, up * up - 2 * BALL.g * (chest - BALL.floor)))) / BALL.g;
-      };
-    // a harder swat down reaches the floor sooner: find the one that comes up into his hands when it should
-    let lo = -14,
-      hi = -1.5;
-    for (let i = 0; i < 40; i++) {
-      const mid = (lo + hi) / 2;
-      if (tauFor(mid) > want) hi = mid;
-      else lo = mid;
-    }
-    const vy = (lo + hi) / 2,
-      catchTau = tauFor(vy),
-      // as hard as 4.8 units/s across, but it is won inbounds (inside the sidelines and the baseline)
-      room = Math.min(
-        dir.z ? (7.3 - Math.sign(dir.z) * contact.z) / Math.abs(dir.z) : Infinity,
-        dir.x ? (13.2 - Math.sign(dir.x) * contact.x) / Math.abs(dir.x) : Infinity,
-      ),
-      speed = clamp(Math.min(4.8, room / catchTau), 1.2, 4.8),
-      CATCH = HIT + catchTau / S;
-    let v = { x: dir.x * speed, y: vy, z: dir.z * speed },
-      at = fly(contact, v, catchTau);
-    // the scramble: each team's nearest player goes for it, from where he is at the block (the same play unblocked moves
-    // everyone else the same way)
-    const there = sampleClip(
-        { ...c, outcome: 'made', points: 2, recovery: undefined, putback: undefined },
-        HIT * S,
-      ).actors,
-      nearest = list =>
-        list.map(o => ({ ...o, d: Math.hypot(o.p.x - at.x, o.p.z - at.z) })).sort((a, b) => a.d - b.d)[0],
-      offP = nearest([1, 2, 3, 4].map(k => ({ i: offense + k, p: there[offense + k] }))),
-      defP = nearest([1, 2, 3, 4].map(k => ({ i: defense + k, p: there[defense + k] }))),
-      win0 = kept ? offP : defP;
-    // a real sprint (6.5 units/s) must get the winner there: if he could not, the swat goes more his way
-    {
-      const reach = 6.5 * catchTau,
-        far = Math.hypot(win0.p.x - at.x, win0.p.z - at.z);
-      if (far > reach) {
-        const k = (far - reach * 0.9) / far, // how far along from the ball's spot toward him it must come down
-          tx = at.x + (win0.p.x - at.x) * k,
-          tz = at.z + (win0.p.z - at.z) * k;
-        v = { x: (tx - contact.x) / catchTau, y: vy, z: (tz - contact.z) / catchTau };
-        at = fly(contact, v, catchTau);
-      }
-    }
-    const win = win0,
-      lose = kept ? defP : offP,
+    const chest = 1.15,
       W = actors[win.i],
       Lp = actors[lose.i],
-      meet = { x: at.x + dir.x * 0.3, z: at.z + dir.z * 0.3 },
-      fromL = flat(lose.p.x - at.x, lose.p.z - at.z),
-      beaten = { x: at.x + fromL.x * 0.8, z: at.z + fromL.z * 0.8 },
       wm = smooth((t - HIT + 0.01) / (CATCH - HIT + 0.01));
     W.x = lerp(W.x, meet.x, wm);
     W.z = lerp(W.z, meet.z, wm);
@@ -787,20 +892,12 @@ export function sampleClip(c, time) {
       Lp.arms = 'rebound';
     }
     // the putback: he rises straight away and lays it up at the rim; made goes through the net, missed comes off the iron
-    let putback = null;
     if (kept) {
-      const rimP = { x: rimX, y: BALL.rim, z: 0 },
-        spare = (0.997 - CATCH) * S,
-        GO = CATCH + Math.min(0.22, spare * 0.3) / S, // gathers it up into his shooting hands
-        lift = 0.45,
-        from = { x: at.x, y: 2.35 + lift, z: at.z },
-        ARR = Math.min(0.997, GO + Math.max(0.42, Math.hypot(rimP.x - at.x, rimP.z) / 7.5) / S);
-      putback = { GO, ARR, from, v: launch(from, rimP, (ARR - GO) * S), rimP };
-      blockEnd = ARR;
+      blockEnd = putback.ARR;
       if (t > CATCH) {
         W.yaw = Math.atan2(rimX - W.x, -W.z);
-        W.arms = t < ARR ? 'shoot' : 'relax';
-        W.y = leap(t, lift, GO);
+        W.arms = t < putback.ARR ? 'shoot' : 'relax';
+        W.y = leap(t, putback.lift, putback.GO);
       }
     } else if (t > CATCH + 0.03) W.yaw = Math.atan2(-side, 0); // the defense has it: he turns up the floor
     if (t > HIT) {
@@ -821,22 +918,17 @@ export function sampleClip(c, time) {
     // the blocker's hand: cocked high on his side of the ball, a fast swing down through it at the contact, and on
     // through after the ball; his own arm again once he comes down
     {
-      const h = lane > 0 ? 'R' : 'L',
-        n = unit([toRim.x * 0.72, 0.7, toRim.z * 0.72]), // from the ball to his palm: on top, on his side
-        onBall = [contact.x + n[0] * PALM_OFF, contact.y + n[1] * PALM_OFF, contact.z + n[2] * PALM_OFF],
-        cocked = [onBall[0] + toRim.x * 0.3, onBall[1] + 0.25, onBall[2] + toRim.z * 0.3],
-        through = unit([v.x, v.y, v.z]),
-        since = (t - HIT) * S;
+      const since = (t - HIT) * S;
       if (t > HIT - 0.12 && since < 0.45) {
         const swing = smooth((t - (HIT - 0.03)) / 0.03),
           p =
             t <= HIT
-              ? mixV(cocked, onBall, swing)
-              : onBall.map(
-                  (x, i) => x + through[i] * 0.6 * Math.sin((Math.min(1, since / 0.12) * Math.PI) / 2),
+              ? mixV(hand.cocked, hand.onBall, swing)
+              : hand.onBall.map(
+                  (x, i) => x + hand.through[i] * 0.6 * Math.sin((Math.min(1, since / 0.12) * Math.PI) / 2),
                 ),
           wgt = smooth((t - (HIT - 0.12)) / 0.04) * (1 - smooth((since - 0.3) / 0.15));
-        blockHands = { [h]: { p, flex: t > HIT ? 1.0 : -0.4, pron: 1.1, pole: null, w: wgt } };
+        blockHands = { [hand.h]: { p, flex: t > HIT ? 1.0 : -0.4, pron: 1.1, pole: null, w: wgt } };
       }
     }
   }

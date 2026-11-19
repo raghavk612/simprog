@@ -199,3 +199,13 @@ sprint stance (toe-off at full extension) reaches about 9%, invisible at broadca
 `tests/motion.test.js` (under 5% at 1.2, 3, 5 and 7 units/s for the guard and the center). Golden bodies regenerated on
 purpose (every scene moves differently); golden clips unchanged. Image check (locomotion sheet): the defender's run in
 the drive row is long and low with bent, pumping arms; the off-ball cutter's jog is shorter and upright.
+
+### 2.2 Refactor: blockPlan (behaviour-preserving)
+
+Everything about a block that does not depend on the moment (the contact, the swat, the scramble's winner and loser and
+where they meet the ball, the putback's timing, the blocker's hand) moved out of `sampleClip` into `blockPlan(c,
+release)`, cached per play and release point (a jump shooter's release follows his feet until he is set, so it is part of
+the key); the "same play unblocked" sample it needs is cached per play. `sampleClip` now runs that recursion and the
+40-step bisection once per play instead of every frame: 23 µs per block sample against 16 µs for a plain one (it was
+more than double). Golden clips identical (162 plays × 23 moments). It also gives the finishes (2.3) the putback's
+timing and winner without repeating the arithmetic.
