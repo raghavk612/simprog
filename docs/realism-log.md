@@ -462,3 +462,41 @@ their size). With its threshold at 2.2 it only lights the truss light banks, whi
 Medium broadcast frames with and without it are indistinguishable. **Decision (the 10% rule):** bloom stays on High and
 is off on Medium. Medium now (before → after): retina title 9.0 → 8.0 ms, live 8.9 → 8.2, replay 10.1 → 8.9; laptop
 title 6.5 → 5.5, live 6.1 → 5.6, replay 6.8 → 6.2.
+
+### 4.8 Low: the classic figures, instanced
+
+Profiled on Low (laptop, live possession): the ten classic figures were about 200 of the 322 draw calls and 44% of the
+frame. `src/classicBatch.js` now draws them as one instanced mesh per body part for all ten players (17 instanced meshes);
+the textured number, nameplate and captain badge each player keeps stay as they are. The figures and the body interface
+are untouched (`classicBody`, the parts and pivots the Arena poses, `attachBody`); their own meshes move to a layer no
+camera renders, and every frame each part's world matrix and colour are copied into its instance. A part the figure
+hides (the head in Player view, a headband this player does not wear) is drawn at zero scale. Shadows and the court
+mirror see the instances. When there are no shadows (Low), players outside the camera's view take no slot, as when each
+figure was culled on its own; with shadows on (the classic players on High or Medium) every player is drawn, because one
+just out of shot still throws a shadow into it. Low live: 2.5 → 1.8 ms, 322 → 169 draw calls. Tests: one slot per
+classic player, matrices and colours copied, hidden parts at zero scale, other bodies skipped, camera culling.
+
+**Basic upgrade for Low (the brief's 1.x item, done here):** the classic figure's legs swung on a fixed sine of time, so
+its feet slid at any speed but one and its arms swung with the same-side leg. It now strides on the distance it covers
+(`motion.js footAt`, the athletes' gait), faded in with speed, arms against the legs.
+
+Also: a finish's keyframes and timings are built once per play kind instead of every frame (`finishes.js keysFor`,
+`finishTimes`); a test checks the frames are the same whatever ran before.
+
+### 4.9 Low, Player view replay: not recovered, within noise
+
+The one scene that is not faster than the baseline: Low's first-person replay, 1.3 → 1.4 ms on the laptop window
+(retina 1.6 → 1.6). A recheck of the baseline commit in a separate worktree measured 1.3 / 1.4 ms, so the difference is
+0.1 ms, the size of this harness's run-to-run spread at that frame time. Where it comes from: Phase 2's motion (finishes,
+passes, reactions, the off-ball version) runs for all ten players whatever the view, and at 1.3 ms the CPU is most of the
+frame (`phase1` 1.4, `phase2` 1.5 for this scene); the instancing then took it back to 1.4. Tried: culling and compacting
+the instances to the figures in view (kept, it costs nothing), caching the finish keyframes (kept). **Decision:** accepted
+and logged rather than cutting motion out of view (that would make what a player is doing depend on the camera, and a
+cut back to the broadcast angle would show it).
+
+### Phase 4 gate
+
+Tests 316 passing, build green, golden clips for unversioned plays unchanged. `phase4` against `before` (frame median):
+High −5 to −8% on the laptop window, −0 to +1% at retina (within noise); Medium −7 to −14%; Low title and live −28 to
+−32%, Low Player-view replay +0.1 ms (4.9). Downloads: Medium 13.3 → 10.1 MB (−24%), High 15.8 → 17.8 MB (+13%, the
+two extra player variants Phase 1 put on court; see OPEN-QUESTIONS), Low unchanged. Main chunk 1,120 → 518 kB.
