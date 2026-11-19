@@ -419,3 +419,14 @@ Tests 310 passing, build green. Images reviewed above.
 - **Ball trail:** it re-ran `sampleClip` 8 times a frame while the ball flew; `flightPath(clip)` (basketball.js) is the
   same parabola in closed form, cached per play (matches `sampleClip` to 1e-6 in the test).
 - (Earlier, 2.2: a block no longer re-runs the whole play and a bisection inside `sampleClip` every frame.)
+
+### 4.4 Auto quality: a ladder with recovery
+
+Auto measured once and could step down once (High → Medium), so a weak laptop stayed on Medium with bloom, depth of
+field and the crowd. Now (`graphics.js autoStep`, `Arena.measure`) every two seconds of frames decide: slower than about
+28 fps steps down a ladder High → Medium → **Lite** → Low; three windows in a row faster than about 50 fps step back up;
+a step up that turns out slow is undone and not tried again. **Decision:** Lite is a new auto-only step (not in the
+Settings menu, which keeps auto/low/medium/high): the athletes and the broadcast lighting stay, the crowd, bloom, depth of
+field, mirror, AO and detail maps go, the canvas is 1× and the shadow map 512. So the costly extras go before the
+athletes do. Measured (frame median, live possession): laptop Medium 5.9 ms → Lite 4.6 ms; retina Medium 9.1 → Lite
+5.0 ms. The practice drills use the same ladder. Tests: the ladder, recovery, the lock after a failed step up.

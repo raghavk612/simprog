@@ -114,6 +114,9 @@ async function openOnce(
   try {
     await page.goto(`${url}?perf`);
     await page.waitForFunction(() => !!window.__kangsArena, null, { timeout: 60000 });
+    // a level Auto can reach but Settings does not offer (Lite): set it on the gym directly
+    if (!['auto', 'low', 'medium', 'high'].includes(level))
+      await page.evaluate(l => window.__kangsArena.setQuality(l), level);
     await waitReady(page);
   } catch (e) {
     const state = await page
@@ -244,6 +247,13 @@ export async function toGame(page, event) {
   if (event) await stagePlay(page, event);
 }
 
+/* A level Auto can reach but Settings does not offer (Lite) is set on the gym directly, and again after a page that
+   re-applies the settings (Game day). */
+export async function forceLevel(page, level) {
+  if (['auto', 'low', 'medium', 'high'].includes(level)) return;
+  await page.evaluate(l => window.__kangsArena.setQuality(l), level);
+  await waitReady(page);
+}
 /* Plays an event in the gym (replay = the director's replay close-up angles). mode: camera mode ('auto', 'court', ...). */
 export async function stagePlay(page, event, { replay = false, mode = 'auto' } = {}) {
   await page.evaluate(

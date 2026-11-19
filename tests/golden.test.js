@@ -60,7 +60,17 @@ export function goldenClips() {
   return [...out, ...out.map(c => ({ ...c, v: 2 }))];
 }
 const clipName = c =>
-  [c.kind, c.team, c.outcome, c.recovery, c.putback, c.contest, c.lane, c.afterSteal && 'afterSteal', c.v && `v${c.v}`]
+  [
+    c.kind,
+    c.team,
+    c.outcome,
+    c.recovery,
+    c.putback,
+    c.contest,
+    c.lane,
+    c.afterSteal && 'afterSteal',
+    c.v && `v${c.v}`,
+  ]
     .filter(Boolean)
     .join(':');
 const TIMES = Array.from({ length: 23 }, (_, i) => +(i * 0.2).toFixed(2)); // 0 .. 4.4 s
@@ -221,7 +231,10 @@ test('golden clips: every unversioned play samples exactly as recorded (old save
   }
   assert.deepEqual(bad, [], `sampleClip changed for recorded plays:\n${bad.slice(0, 20).join('\n')}`);
   assert.ok(Object.keys(GOLD.clips).length >= 320);
-  assert.ok(Object.keys(GOLD.clips).filter(k => !k.endsWith(':v2')).length >= 160, 'the unversioned plays are all there');
+  assert.ok(
+    Object.keys(GOLD.clips).filter(k => !k.endsWith(':v2')).length >= 160,
+    'the unversioned plays are all there',
+  );
 });
 test('golden bodies: animateAthlete poses every bone as recorded', async () => {
   const now = await bodiesSnapshot(),

@@ -26,7 +26,7 @@ import {
 } from './scoreboard.js';
 import { oppRoster } from './engine.js';
 import { visitorCast } from './identities.js';
-import { qualityProfile, lowerLevel, autoDowngrade, probeDone, PROBE } from './graphics.js';
+import { qualityProfile, autoStep, medianMs, probeDone, PROBE } from './graphics.js';
 import { loadOpponentLogo } from './logos.js';
 import { gymColors, visitorKit } from './kits.js';
 import {
@@ -963,7 +963,9 @@ export class Arena {
     }
     if (this.playersChoice) this.applyPlayers();
   }
-  /* Auto mode: after a short warm-up, time about two seconds of rendered frames; if the typical frame is slower than ~28 fps drop one level, once. Nothing is remembered. */
+  /* Auto mode (graphics.js autoStep): after a short warm-up, every two seconds or so of rendered frames decides a step down
+     the ladder (High, Medium, Lite, Low) when frames are slow, or back up after three fast windows; a step up that proves
+     slow is undone and not tried again. Each change starts a new warm-up (new shaders compile). Nothing is remembered. */
   measure(now) {
     const pr = this.probe;
     if (pr.done) return;
@@ -971,12 +973,14 @@ export class Arena {
     this.lastT = now;
     if (raw <= 0 || ++pr.frames <= PROBE.warmup) return;
     pr.times.push(raw);
-    if (probeDone(pr.times)) {
-      pr.done = true;
-      if (autoDowngrade(pr.times)) {
-        this.level = lowerLevel(this.level);
-        this.applyLevel();
-      }
+    if (!probeDone(pr.times)) return;
+    const { level, state } = autoStep(this.level, medianMs(pr.times), pr.state);
+    pr.state = state;
+    pr.times = [];
+    if (level !== this.level) {
+      this.level = level;
+      pr.frames = 0;
+      this.applyLevel();
     }
   }
   setView(mode) {

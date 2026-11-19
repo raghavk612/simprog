@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import zlib from 'node:zlib';
 import { execSync } from 'node:child_process';
 import {
+  forceLevel,
   root,
   serve,
   launch,
@@ -117,6 +118,7 @@ try {
         const title = await page.evaluate(() => __gym.measure(300));
         // live: the whole possession (both plays and the run between them), 10 s
         await toGame(page, null);
+        await forceLevel(page, level);
         await fullFrame(page);
         await stagePlay(page, live, { mode: 'auto' });
         const liveStats = await page.evaluate(() => __gym.measure(600));
