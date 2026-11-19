@@ -171,15 +171,25 @@ const ARM = {
   relax: () => [0, 0.1, -0.25],
   shoot: (j, m) => (j === 0 ? [-2.75, 0.05, -0.15] : [-1.75, 0.45, -0.6]), // follow-through: shooting arm up and through, guide hand falls away
   hook: j => (j === 0 ? [-2.9, 0.55, -0.2] : [-1.2, 0.7, -0.9]), // hook over the top, off arm up to shield
-  block: (j, m) => (j === m.high ? [-2.85, 0.15, -0.12] : [-1.85, 0.45, -0.45]), // one hand high on the ball, the other wide
+  block: (j, m) => (j === m.high ? [-2.85, 0.15, -0.12] : [-2.2, 0.32, -0.55]), // one hand high on the ball, the other up beside it
   rebound: () => [-2.55, 0.3, -0.45], // both up, elbows soft
-  defend: (j, m, t) =>
-    j === m.high
-      ? [-1.25 + Math.sin(t * 3.1) * 0.12, 0.75, -0.8]
-      : [-0.45 + Math.sin(t * 2.3 + 1) * 0.1, 0.95, -0.55], // active hands, one high one low
+  // a starting point only: the defensive stance itself is placed by hand targets (DEFEND, animateArms)
+  defend: () => [-0.85, 0.3, -1.1],
   pass: () => [-1.35, -0.08, -0.35], // chest pass: arms through, hands together
   screen: () => [-0.6, -0.38, -1.5], // arms crossed in front, braced
   dribble: () => [-0.7, 0.35, -1.0], // off arm out front as a guard; the dribble hand is set by IK
+};
+/* The defensive stance, as wrist targets from each shoulder in the chest's space (+x his left, +y up, +z forward), with
+   side = +1 for the left arm. On the ball: the hand on the ball's side low and out front to trace the dribble, the other
+   up at face height in the passing lane, elbows bent and in front of the body. Help (off the ball): both hands up in
+   front at chest height, a little wider than the shoulders ("pistols"). Never the arms straight out to the side.
+   Scaled by the arm's length (rest L1 + L2), so the same stance fits the guard and the center. */
+export const DEFEND = {
+  low: [0.16, -0.66, 0.55], // traces the dribble
+  high: [0.1, 0.36, 0.62], // in the passing lane
+  help: [0.06, -0.62, 0.48], // pistols: hands in front at the hips, just outside the shoulders
+  onBall: [2.0, 3.2], // distance to the ball (units): fully on-ball inside the first, help beyond the second
+  pole: { low: [0.35, -0.8, -0.3], high: [0.5, -0.7, -0.1], help: [0.25, -0.8, -0.5] }, // elbows down, a little out
 };
 const quatFrom = (() => {
   const m0 = new THREE.Matrix4(),
@@ -527,6 +537,9 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0) {
       wrist.rotation.set(0, 0, dribbling ? -side * dribbleWrist(ctx.dribble) * dribbling : 0);
     }
     if (dribbling) a.userData.elbow.rotation.y = -side * 1.35 * dribbling; // pronation (palms face the body at rest)
+    // the defensive stance: hands placed in front of the body by IK, between the on-ball and the help stance
+    m.defW = damp(m.defW ?? 0, arms === 'defend' ? 1 : 0, 8, dt);
+    if (m.defW > 0.01 && rest) defendArm(player, a, j, side, rest, m, ctx, t, S);
     // going up to block: the high hand goes for the ball when it is close (a swat when the play is a block, a swipe that
     // misses when it is not), its arm reaching straight at it when it is just out of reach
     if (arms === 'block' && ball && !holder && j === m.high && rest) {
@@ -574,6 +587,52 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0) {
       if (wrist) wrist.rotation.z += (-side * (H.flex ?? 0) - wrist.rotation.z) * wt;
     }
   });
+}
+/* One arm of the defensive stance (DEFEND): the wrist target eases (so hands never snap between stances), then arm IK.
+   m.onBall: 1 near the ball, 0 in help; m.lowHand: which hand traces the ball (the ball's side, with some hysteresis). */
+const _d = new THREE.Vector3(),
+  _p = new THREE.Vector3();
+function defendArm(player, a, j, side, rest, m, ctx, t, S) {
+  const reach = rest.L1 + rest.L2;
+  if (j === 0) {
+    // once per frame (the right arm comes first): how close the ball is, and which side it is on
+    let near = 0,
+      lateral = 0;
+    if (ctx.ball) {
+      const dx = ctx.ball.x - player.position.x,
+        dz = ctx.ball.z - player.position.z,
+        y = player.rotation.y;
+      lateral = dx * Math.cos(y) - dz * Math.sin(y); // + = his left
+      const d = Math.hypot(dx, dz),
+        [a0, a1] = DEFEND.onBall;
+      near = Math.max(0, Math.min(1, (a1 - d) / (a1 - a0)));
+    }
+    m.onBall = damp(m.onBall ?? near, near, 4, ctx.dt || 0);
+    m.ballSide = lateral;
+    if (m.lowHand == null || Math.abs(lateral) > 0.25) m.lowHand = lateral > 0 ? 1 : 0;
+  }
+  const ob = m.onBall ?? 0,
+    low = j === m.lowHand,
+    on = low ? DEFEND.low : DEFEND.high,
+    poleOn = low ? DEFEND.pole.low : DEFEND.pole.high,
+    // active hands: the low hand drifts toward the ball and works on a quick beat, the high hand moves a little
+    lean = low ? Math.max(-0.12, Math.min(0.12, (m.ballSide || 0) * 0.15)) * ob : 0,
+    beat = ctx.motion ? (low ? Math.sin(t * 6.3 + j) * 0.035 : Math.sin(t * 2.9 + 1) * 0.025) : 0,
+    want = [0, 1, 2].map(k => (DEFEND.help[k] + (on[k] - DEFEND.help[k]) * ob) * reach);
+  want[0] = want[0] * side + lean;
+  want[1] += beat;
+  const pole = [0, 1, 2].map(k => DEFEND.pole.help[k] + (poleOn[k] - DEFEND.pole.help[k]) * ob);
+  m.defT ??= [null, null];
+  const T = (m.defT[j] ??= new THREE.Vector3()),
+    goal = _d.set(S.x + want[0], S.y + want[1], S.z + want[2]);
+  if (m.defT[j].lengthSq() === 0) T.copy(goal);
+  else T.lerp(goal, 1 - Math.exp(-12 * (ctx.dt || 0)));
+  const sol = solveArm(S, T, rest.L1, rest.L2, _p.set(pole[0] * side, pole[1], pole[2]).normalize());
+  if (!sol) return;
+  quatFrom(rest.u0, rest.b0, sol.u, sol.b, _q);
+  a.quaternion.slerp(_q, m.defW);
+  const el = a.userData.elbow.rotation;
+  el.x += (-sol.bend - el.x) * m.defW;
 }
 /* Wrist flex while dribbling (radians, + = toward the palm), from a dribbleAt result. The wrist stays cocked back so the
    palm lies on the ball, with a small flick (about 15 degrees) through the push, easing back while the ball bounces. */

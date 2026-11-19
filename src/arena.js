@@ -1513,9 +1513,10 @@ export class Arena {
         elbow = -0.4;
       }
       if (pose.arms === 'defend') {
-        x = -0.5;
-        z = side * 1.1;
-        elbow = -0.2;
+        // one hand up in the passing lane, the other low in front: never both straight out to the side
+        x = j ? -0.55 : -1.3;
+        z = side * 0.32;
+        elbow = j ? -0.9 : -0.6;
       }
       if (pose.arms === 'screen') {
         x = -0.1;

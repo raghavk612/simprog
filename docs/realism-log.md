@@ -111,3 +111,21 @@ crops (scratch comparison, 2× nearest): without AA the three-point arc, the lan
 FXAA smooths them but visibly softens the jersey numbers and the "WASHINGTON" lettering on the apron; SMAA gives clean
 lines with the lettering still sharp. Its search and area textures are embedded in three's SMAAPass, so it works offline.
 Low already uses the canvas MSAA (no composer).
+
+### 1.3 Defensive stance (no more airplane arms)
+
+Every defender held both arms straight out to the side at shoulder height (a fixed Euler preset), on every defender at
+once. Replaced in `motion.js` by hand targets placed with the existing arm IK (`DEFEND`, `defendArm`), sized by each
+body's arm length: on the ball, the hand on the ball's side low and out front tracing the dribble (it drifts toward the
+ball and works on a quick beat), the other up at face height in the passing lane; in help, both hands in front at the hips
+just outside the shoulders ("pistols"); elbows down. The blend between the two follows the distance to the ball (on-ball
+inside 2.0 units, help beyond 3.2), eased, and the hands ease between targets, so nothing snaps when a defender's role
+changes. The contest preset's second arm goes up beside the first instead of out wide. The classic (Low) figure gets the
+same idea in its Euler preset (one hand up, one low, both in front).
+
+Iteration: the first help stance still flared the arms wide (hands 0.22 outside the shoulder line, elbows pointed out);
+the second pulls the hands in to just outside the shoulders at hip height with the elbows down and back. The low hand's
+drift toward the ball now applies only on the ball (in help it pushed one hand out). Critique of the crops: the help
+defenders read as engaged and balanced, the on-ball defender (from behind, close-up row) shows the classic one-up
+one-down stance. `tests/motion.test.js` pins the geometry for the guard and the center. Golden bodies regenerated on
+purpose (the defender scenes); golden clips unchanged.
