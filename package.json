@@ -16,6 +16,7 @@
     "moves:sheet": "node scripts/moves-sheet.mjs",
     "perf": "node scripts/perf.mjs",
     "sheets": "node scripts/contact-sheet.mjs",
+    "trace": "node scripts/arena-trace.mjs",
     "golden:update": "UPDATE_GOLDEN=1 node --test tests/golden.test.js"
   },
   "dependencies": {
