@@ -23,11 +23,16 @@ and the risks it knows about. Each points at the log entry with the details (doc
 
 ## Known weaknesses (see the final report for the ranking)
 
-4. **Jersey trim reads thick up close** (docs/sheets/after/closeups.jpg). The trim is inflated 2 cm so skin never pokes
-   through it (3.1); at a replay close-up the armhole trim looks lumpy. A thinner inflate needs the cover test re-run
-   against every pose.
-5. **The close-up defender's high hand rests by his head** in the "defender up close" shot: the stance's high hand is
-   placed for the broadcast distance, where it reads as a hand in the passing lane.
+4. **Jersey trim reads thick up close.** **Resolved (polish pass, P1):** the binding was swollen by pushing a tube along
+   its own normals; it is now lifted along the body's and is thin and even. Two residuals, both needing the player
+   pipeline (its Python packages are not installed here, and a change to the triangles needs a full re-bake of the maps):
+   - the binding loop shows corners at half a metre (a ring every ~6 cm along the tube: `add_trim step` in
+     scripts/build_players.py);
+   - the kit has holes 2–6 cm across where its panels meet at the shorts' side seam; a slit opens there when the hip flexes
+     hard and the thigh shows through. A runtime cover (skin hidden under the holes, the kit double-sided) worked but cost
+     1–3% of a High frame and was reverted. Closing the holes belongs in the build (`scripts/build_players.py`).
+5. **The close-up defender's high hand rests by his head.** **Resolved (polish pass, P2):** it reaches out at the man
+   with the elbow under it; the close-ups gained a front view.
 6. **Low, Player-view replay is 0.1 ms slower than the baseline** (4.9): within run-to-run noise, from Phase 2's motion
    running for all ten players.
 

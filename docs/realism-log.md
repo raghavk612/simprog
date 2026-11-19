@@ -574,16 +574,18 @@ thigh skin (not a hand: in the rest pose the hands hang beside the shorts, palms
   binding did not. It now shares the shorts' sway uniforms (weighted by height, so the neck and armholes stay put).
 - The build also swept tubes along a few short open edges where the kit's panels meet with gaps: crumpled scraps 2 to
   16 cm across (the real openings are 26 cm and more), one of them the white "Y" on the hip in the close-ups. As
-  "openings" they kept the skin near them drawn, so the thigh showed through the shorts there. `trimOpenings` finds the
-  pieces (welded within 2 mm) and drops those under 20 cm; the skin is judged against the real openings only.
-- Those gaps are holes in the kit 2 to 6 cm across, too wide to weld at load without distorting the cloth. Skin under a
-  hole (within 5 cm of its edge, away from any opening) is not drawn either, and the kit is drawn double-sided, so the slit
-  shows the inside of the shorts instead of skin bending out through it.
+  "openings" they kept the skin near them drawn. `trimOpenings` finds the pieces (welded within 2 mm) and the scraps under
+  20 cm are no longer drawn.
+- Those gaps are holes in the kit 2 to 6 cm across, too wide to weld at load without distorting the cloth. Tried: hiding
+  the skin under the holes too and drawing the kit double-sided, so a slit showed the inside of the shorts. It looked
+  better up close but cost 1–3% of a High frame (measured back to back), against the goal of no regression; single-sided,
+  hiding that skin showed the floor through the body. **Decision:** reverted (P7); the skin near the holes stays drawn as
+  before, so the slit shows skin as it did before this pass, without the white scrap over it.
 
 Critique (close-ups, 1:1): the armhole and neck binding is a thin, even white edge with no lumps or slivers; the hem
 binding stays on the hem as the shorts swing. Still visible: the binding loop is slightly polygonal at half a metre (a ring
-every ~6 cm along the tube; finer rings need a rebuild and re-bake), and a narrow slit at the shorts' side seam still opens
-when the hip flexes hard (the hole is in the mesh; through it the far thigh shows). Both logged in OPEN-QUESTIONS.
+every ~6 cm along the tube; finer rings need a rebuild and re-bake), and a slit at the shorts' side seam opens when the hip
+flexes hard (the hole is in the mesh; through it the thigh shows). Both logged in OPEN-QUESTIONS.
 Tests: the push points out from the body, the scraps are gone, the far mesh shares the result. Trace identical.
 
 ### P2. The on-ball defender's high hand contests instead of resting by his head
@@ -662,3 +664,35 @@ over and over, 15 s normal, 45 s under load, 60 s after it. The load is Chrome's
   had gone. The lock now lasts 30 windows (about a minute): long enough that two levels never flicker, short enough to
   recover (`graphics.js LOCK_WINDOWS`; the test covers lock, hold and retry). In the 4× and 6× runs Low never reached the
   50 fps "fast" line under load, so no step up was tried there; the re-run after the change gives the same timeline.
+
+### P7. Sheets refreshed and critiqued
+
+`docs/sheets/after/` closeups, finishes, defense and locomotion re-rendered (same cameras, plus the close-ups' new
+front view of the defender; same formats and sizes). Each was opened and checked against the checklist at sheet scale
+and in 2–3× crops of the moments that matter:
+
+- **Weight and balance:** takeoffs load the legs and land on two feet; the sprint leans and reaches, the jog is short,
+  the defensive slide stays wide and low; planted feet do not slide. Pass.
+- **No airplane arms:** none in any defense row; help defenders' hands low in front, on-ball one high one low; the high
+  hand now reaches out at the man with the elbow under it (P2). Pass.
+- **Hands gripping or contesting the ball:** the gather holds the ball between both hands at the chest; the contest's
+  hand rises into the shot's path, spread (P3); the block hand meets the ball; the rebounder rises with two open hands.
+  Pass.
+- **No clipping through torso or ball:** none seen at 2× in the finishes, contests or the block. Pass.
+- **Clean trim and hems:** the binding is a thin even edge at the neck, armholes and hems (P1); the sleeve's top edge is
+  straight (P4). Not fully: a slit at the shorts' side seam opens when the hip flexes hard (a hole in the kit mesh from the
+  build; the thigh shows through it, as before this pass), and the binding loop shows corners at half a metre. Logged.
+- **No aliasing:** edges are smoothed (SMAA, 1.2) in the 1:1 crops; no stair-stepping on the lines or the figures. Pass.
+
+Sheet-only flaws noticed (not the game): the last rebound cell is blocked by a player crossing near the camera, and the
+original defender close-up is from behind (kept for the before/after comparison; the front view was added).
+
+### P8. Performance against the start of the branch
+
+Measured back to back in one session, the branch's starting commit (677e2a5, in a worktree) then this branch, three runs
+each. The first full run had High 1–3% slower; the double-sided kit (P1) was the measurable part (single-sided measured
++0–2%), so it was reverted with the skin hiding that needed it. After the revert, High measured 0–1% (0.1 ms, the
+harness's resolution); the High runs are `polish-*-hi.json` (double-sided), `exp-single.json`, `polish-*-hi2.json`
+(after the revert). The final full run is `docs/perf/polish-before.json` / `polish-after.json`: every scene within −1% to
++1% (the table in the
+final summary). The binding is about 240 triangles lighter per player (no scraps); nothing else in the polish draws more.
