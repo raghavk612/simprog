@@ -279,6 +279,9 @@ export function animateAthlete(player, pose, ctx) {
     } else dir = m.dir || 0;
   }
   m.last = { x: here.x, z: here.z };
+  // a player drawn taller or shorter than his model (the Arena scales him, players.js bodyFor): his stride is measured in
+  // his own body's units, so the planted foot moves back exactly as far as he moves
+  moved /= player.scale.x || 1;
   const speed = dt > 0 ? moved / dt : 0;
   m.speed = damp(m.speed, Math.min(speed, 9), 6, dt);
   m.t += dt;

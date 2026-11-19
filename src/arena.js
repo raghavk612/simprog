@@ -26,20 +26,23 @@ import { oppRoster } from './engine.js';
 import { visitorCast } from './identities.js';
 import { qualityProfile, lowerLevel, autoDowngrade, probeDone, PROBE } from './graphics.js';
 import { loadOpponentLogo } from './logos.js';
-import { gymColors } from './kits.js';
+import { gymColors, visitorKit } from './kits.js';
 import {
   classicBody,
   attachBody,
   disposeBody,
   validBody,
   athleteBody,
-  variantFor,
   BODY_VARIANTS,
   lookFor,
   lookKey,
   loadAthletes,
+  bodyFor,
+  personSeed,
+  CLASSIC_SKIN,
 } from './players.js';
 import { arenaPlayers, bodyPixels, lodFor } from './graphics.js';
+import { rosterRecord } from './identities.js';
 import { ballMaterial } from './materials.js';
 import { BroadcastLook } from './broadcast.js';
 import { animateAthlete, facingWeight, mixAngle, steerYaw, keepApart, SPACE } from './motion.js';
@@ -663,9 +666,14 @@ export class Arena {
       slow = Math.min(0.25, 1 / Math.max(1, this.speed || 1));
     return slow + (1 - slow) * k * k * (3 - 2 * k);
   }
-  /* A hands-only performance (motion.js ctx.perform) from a play's shot hands (world arrays): legs keep their gait. */
-  shotPerform(hands) {
-    const V = p => new THREE.Vector3(...p),
+  /* A hands-only performance (motion.js ctx.perform) from a play's shot hands (world arrays): legs keep their gait.
+     around/scale: a player drawn taller or shorter than his model (bodyFor) has the hands scaled about his feet, as the
+     ball he holds is (frame), so they still meet it. */
+  shotPerform(hands, around = null, scale = 1) {
+    const V = p =>
+        around && scale !== 1
+          ? new THREE.Vector3(...p).sub(around).multiplyScalar(scale).add(around)
+          : new THREE.Vector3(...p),
       out = { gait: true, body: {}, feet: {}, look: null, hands: {} };
     for (const h of ['R', 'L']) {
       const H = hands[h];
@@ -761,8 +769,9 @@ export class Arena {
   styleBody(p) {
     const u = p.userData,
       i = u.slot ?? 0,
-      want = this.playerStyle === 'athletes' && this.templates ? variantFor(u.person?.position) : 'classic',
-      look = want === 'classic' ? null : lookFor(u.person?.id ?? u.person?.name ?? i),
+      seed = personSeed(u.person, i),
+      want = this.playerStyle === 'athletes' && this.templates ? bodyFor(u.person, seed).variant : 'classic',
+      look = want === 'classic' ? null : lookFor(seed),
       key = want === 'classic' ? 'classic' : `${want}|${lookKey(look)}`;
     if (u.body?.key === key) return false;
     const color = u.jersey?.color?.getHex?.() ?? (i < 5 ? purple : 0xf1e9df);
@@ -1216,21 +1225,44 @@ export class Arena {
     this.controls.target.lerp(tgt, 0.09);
     return false;
   }
-  setIdentity(p, person, home = true) {
+  /* Dresses a body as a person: kit colours (the Kangs' chosen kit; visitors their school's colours, src/kits.js
+     visitorKit), name, number, and the body itself (src/players.js bodyFor and lookFor: the variant and height from his
+     roster position and height, skin, face and hair from who he is, never from the slot he is drawn in). A play's lineup
+     carries only id, name and number, so a Kangs player's position and height come from the roster (rosterRecord). */
+  setIdentity(p, person, home = true, kit = null) {
     const [kb, kf] = gymColors(this.state?.kit || 'home', this.state?.trim || '#ffffff'),
-      bg = home ? kb : '#db7536';
-    const fg = home ? kf : '#ffffff';
+      [vb, vf] = kit || this.visitorColors || ['#db7536', '#ffffff'],
+      bg = home ? kb : vb;
+    const fg = home ? kf : vf;
+    const rec = home ? rosterRecord(this.state, person) : person;
     p.userData.person = {
-      id: person?.id,
-      number: person?.number,
-      name: person?.name,
-      position: person?.position,
+      id: rec?.id,
+      number: rec?.number,
+      name: rec?.name,
+      position: rec?.position,
+      height: rec?.height,
       home,
     };
     p.userData.plate = person?.plate;
+    const fit = bodyFor(
+      p.userData.person,
+      personSeed(p.userData.person, p.userData.slot),
+      this.playerStyle === 'athletes' && this.templates ? 'athletes' : 'classic',
+    );
+    p.scale.setScalar(fit.scale);
     if (this.playerStyle === 'athletes' && this.templates && this.styleBody(p)) return;
+    p.userData.body?.setSkin?.(CLASSIC_SKIN[lookFor(personSeed(p.userData.person, p.userData.slot)).skin]);
     const cap = home && person?.id != null && person.id === this.state?.captain,
-      key = [person?.id, person?.number, person?.name, bg, fg, cap ? 'C' : '', person?.plate || ''].join('|');
+      key = [
+        person?.id,
+        person?.number,
+        person?.name,
+        bg,
+        fg,
+        cap ? 'C' : '',
+        person?.plate || '',
+        fit.scale,
+      ].join('|');
     if (p.userData.identity === key) return;
     p.userData.identity = key;
     p.userData.jersey.color.set(bg);
@@ -1253,8 +1285,9 @@ export class Arena {
     const s = this.state;
     if (!s) return;
     const opp = boardGame(s, this.event).opponent;
+    this.visitorColors = visitorKit(opp, gymColors(s.kit || 'home', s.trim || '#ffffff')[0]);
     visitorCast(oppRoster(s, opp), this.clips?.[1], opp).forEach((v, i) =>
-      this.setIdentity(this.people[i + 5], v, false),
+      this.setIdentity(this.people[i + 5], v, false, this.visitorColors),
     );
   }
   score(home, away) {
@@ -1682,7 +1715,9 @@ export class Arena {
               : SPACE.min,
         });
       // a jump shooter's arms take the shot's form (basketball.js shotHands: the title jumper's), his legs their own jump
-      const shooterArms = pose.shotHands && !tr ? this.shotPerform(pose.shotHands) : null,
+      const feet = (this.shooterFeet ??= new THREE.Vector3()).set(kept[o].x, pose.actors[o].y, kept[o].z),
+        shooterArms =
+          pose.shotHands && !tr ? this.shotPerform(pose.shotHands, feet, this.people[o].scale.x) : null,
         blockerArm = pose.blockHands && !tr ? this.shotPerform(pose.blockHands) : null;
       wanted.forEach((w, i) =>
         this.posePlayer(
@@ -1716,16 +1751,20 @@ export class Arena {
           y: dribbleAt(this.gait / DRIBBLE.period).ball,
           z: h.position.z + Math.sin(hy) * 0.38 + Math.cos(hy) * 0.3,
         };
-      const ball = this.blendBall(
-        tr
-          ? carried
-          : {
-              x: pose.ball.x + (a[0] + (b[0] - a[0]) * st) * hold,
-              y: pose.ball.y,
-              z: pose.ball.z + (a[1] + (b[1] - a[1]) * st) * hold,
-            },
-        tr ? tr.t : clipTime,
-      );
+      // a ball in the hands of a player drawn taller or shorter than his model is drawn scaled about his feet with him
+      // (presentation only: the play's ball is untouched, and the flight starts where it always did)
+      const held = {
+          x: pose.ball.x + (a[0] + (b[0] - a[0]) * st) * hold,
+          y: pose.ball.y,
+          z: pose.ball.z + (a[1] + (b[1] - a[1]) * st) * hold,
+        },
+        k = (h.scale.x - 1) * hold * (1 - st);
+      if (k) {
+        held.x += (held.x - h.position.x) * k;
+        held.y += (held.y - pose.actors[o].y) * k;
+        held.z += (held.z - h.position.z) * k;
+      }
+      const ball = this.blendBall(tr ? carried : held, tr ? tr.t : clipTime);
       this.ball.position.set(ball.x, ball.y, ball.z);
       this.spinBall(pose.flying);
       this.focusRing.visible = true;

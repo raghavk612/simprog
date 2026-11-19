@@ -298,7 +298,14 @@ try {
     if (only && !only.includes(name)) continue;
     const big = rows.some(r => r.big) || rows.some(r => r.crop),
       size = big ? [800, 600] : [640, 480];
-    const { page, context, errors } = await openGym(browser, srv.url, { level, players, save, size, dpr: 1, look });
+    const { page, context, errors } = await openGym(browser, srv.url, {
+      level,
+      players,
+      save,
+      size,
+      dpr: 1,
+      look,
+    });
     await page.addStyleTag({ content: '.perf-hud{display:none!important}' });
     await fullFrame(page);
     await takeOver(page);

@@ -56,3 +56,16 @@ test('old events and short or missing rosters still give five usable bodies', ()
   assert.equal(two[1].name, 'Ava Stone');
   assert.equal(two[4].name, 'Visitors');
 });
+test('rosterRecord: a lineup entry (id, name, number) gets its position and height from the roster', async () => {
+  const { rosterRecord } = await import('../src/identities.js');
+  const state = { players: [{ id: 3, name: 'A B', number: 5, position: 'Center', height: `6' 7"` }] };
+  assert.deepEqual(rosterRecord(state, { id: 3, name: 'A B', number: 5 }), {
+    id: 3,
+    name: 'A B',
+    number: 5,
+    position: 'Center',
+    height: `6' 7"`,
+  });
+  assert.deepEqual(rosterRecord(state, { id: 9, name: 'X' }), { id: 9, name: 'X' });
+  assert.equal(rosterRecord(null, null), null);
+});

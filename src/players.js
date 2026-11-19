@@ -36,14 +36,19 @@ export function classicBody(kit, i, color) {
   const g = new THREE.Group(),
     parts = { legs: [], arms: [] };
   const skin = [0x9c6946, 0xe4b58b, 0x66432d, 0xb67e57, 0xd39871][i % 5];
-  const jersey = kit.mat(color);
-  const limb = (radius, length, c) =>
-    new THREE.Mesh(new THREE.CapsuleGeometry(radius, length, 4, 8), kit.mat(c));
+  const jersey = kit.mat(color),
+    skins = [];
+  const limb = (radius, length, c) => {
+    const m = new THREE.Mesh(new THREE.CapsuleGeometry(radius, length, 4, 8), kit.mat(c));
+    if (c === skin) skins.push(m.material);
+    return m;
+  };
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.22, 0.65, 8), jersey);
   body.position.y = 1.18;
   g.add(body);
   parts.jersey = jersey;
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.205, 12, 10), kit.mat(skin));
+  skins.push(head.material);
   head.position.y = 1.78;
   g.add(head);
   parts.head = head;
@@ -129,6 +134,7 @@ export function classicBody(kit, i, color) {
     forearm.position.y = -0.12;
     elbow.add(forearm);
     const hand = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), kit.mat(skin));
+    skins.push(hand.material);
     hand.position.y = -0.27;
     elbow.add(hand);
     shoulder.userData.elbow = elbow;
@@ -137,7 +143,9 @@ export function classicBody(kit, i, color) {
   g.traverse(o => {
     if (o.isMesh) o.castShadow = true;
   });
-  return { root: g, parts, style: 'classic', variant: 'classic', key: 'classic' };
+  // the person's skin tone (the figure is not rebuilt when the player in it changes)
+  const setSkin = hex => skins.forEach(m => m.color.setHex(hex));
+  return { root: g, parts, style: 'classic', variant: 'classic', key: 'classic', setSkin };
 }
 
 /* Puts a body into a player's outer group, replacing the previous one, and points the player's userData at the new parts.
@@ -215,6 +223,9 @@ export function validBody(body) {
 /* ---- Athletes: the rigged bodies built in Houdini (assets-src/players) and rigged by scripts/build_players.py ---- */
 export const BODY_VARIANTS = ['guard', 'forward', 'center'];
 export const SKIN_TONES = [0x8a5a3c, 0xc99a7a, 0x5a3825, 0xa8754f, 0xbf8a63, 0x3f2a1e, 0xdcb59b];
+/* The same seven tones for the classic figure's plain material (no skin shading or environment light on Low, so it needs
+   lighter values to read as the same person; the first five are the figure's original tones). */
+export const CLASSIC_SKIN = [0x9c6946, 0xe4b58b, 0x66432d, 0xb67e57, 0xd39871, 0x55392a, 0xf0c9ae];
 export const HAIR_STYLES = ['buzz', 'crop', 'afro', 'rows'];
 const HAIR_COLORS = [0x161210, 0x161210, 0x221813, 0x2e2118, 0x161210, 0x4a3424];
 const hash = s => {
@@ -222,19 +233,61 @@ const hash = s => {
   for (const c of String(s)) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
   return h >>> 0;
 };
-/* A player's look (hair style and colour, headband, arm and leg sleeves), the same every time for the same player. */
+/* A player's look (hair style and colour, headband, arm and leg sleeves, skin tone and the face's small differences), the
+   same every time for the same player, whichever body slot he is drawn in. */
 export function lookFor(seed) {
-  const h = hash(seed);
+  const h = hash(seed),
+    h2 = hash(`${seed}|face`);
   return {
     hair: HAIR_STYLES[h % 4],
     hairColor: HAIR_COLORS[(h >>> 4) % HAIR_COLORS.length],
     headband: (h >>> 8) % 5 === 0,
     armSleeve: (h >>> 11) % 4 === 0,
     legSleeve: (h >>> 14) % 6 === 0,
+    skin: h2 % SKIN_TONES.length,
+    face: (h2 >>> 4) % 997,
   };
 }
 export const lookKey = l =>
-  l ? `${l.hair}${l.headband ? '+band' : ''}${l.armSleeve ? '+arm' : ''}${l.legSleeve ? '+leg' : ''}` : '';
+  l
+    ? `${l.hair}${l.headband ? '+band' : ''}${l.armSleeve ? '+arm' : ''}${l.legSleeve ? '+leg' : ''}${l.skin != null ? `|s${l.skin}f${l.face ?? 0}` : ''}`
+    : '';
+/* Who a player is, for his look: the Kangs by roster id; visitors by name (their ids are only their slot on the floor). */
+export const personSeed = (person, slot = 0) =>
+  person?.home === false && person.name && person.name !== 'Visitors'
+    ? `v:${person.name}`
+    : (person?.id ?? person?.name ?? slot);
+
+/* ---- Height: the body variant nearest the player's real height, scaled to it ---- */
+// the models' heights in inches (glTF extras height, units of 1 ft = 0.3306): guard 6'3", forward 6'7", center 6'11";
+// the classic figure stands 6'2"
+export const VARIANT_INCHES = { guard: 75.2, forward: 79.1, center: 83.1, classic: 73.7 };
+/* Scaling a body changes how far it reaches: at the jump shot's release a player more than 5% shorter than his model would
+   not reach the ball the play puts above his head, so the scale stays within 5% and the variant takes up the rest. */
+export const HEIGHT_SCALE = [0.95, 1.05];
+/* "6' 3\"" -> 75 (inches); anything else (e.g. "Not listed") -> null. */
+export function parseHeight(h) {
+  const m = /^\s*(\d)\s*'\s*(\d{1,2})?/.exec(String(h ?? ''));
+  return m ? +m[1] * 12 + +(m[2] || 0) : null;
+}
+/* The body for a person: {variant, scale, inches}. The variant follows his position unless his height is more than 3 in
+   from that model, then the model nearest his height; visitors (no position or height on the rosters) get a variant and a
+   height within 2 in of its model from their name. style 'classic' always uses the classic figure. */
+export function bodyFor(person, seed = personSeed(person), style = 'athletes') {
+  const h = hash(seed),
+    inches = parseHeight(person?.height);
+  let variant = person?.position
+    ? variantFor(person.position)
+    : ['guard', 'guard', 'forward', 'forward', 'center'][h % 5];
+  if (inches && Math.abs(VARIANT_INCHES[variant] - inches) > 3)
+    variant = BODY_VARIANTS.reduce((a, v) =>
+      Math.abs(VARIANT_INCHES[v] - inches) < Math.abs(VARIANT_INCHES[a] - inches) ? v : a,
+    );
+  const model = VARIANT_INCHES[style === 'classic' ? 'classic' : variant],
+    tall = inches ?? VARIANT_INCHES[variant] + (((h >>> 7) % 5) - 2),
+    scale = Math.max(HEIGHT_SCALE[0], Math.min(HEIGHT_SCALE[1], tall / model));
+  return { variant, scale: Math.round(scale * 1000) / 1000, inches: tall };
+}
 /* The three rigged bodies, loaded once and shared by the gym and the practice drills (about 3 MB), each with its baked
    detail maps (gltf.maps, src/playerMaps.js): the kit and gear atlases start loading with the bodies, the skin atlas in the
    size the first body asks for. Bodies do not wait for the maps; they put them on when they arrive. */
@@ -411,14 +464,14 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
   }
   // skin: one material for the head and body, with the face painted on (see materials.js faceTexture): it is lit like the
   // rest of the skin, hides with the head, and its painted shadow under the jaw carries onto the throat
-  const tone = SKIN_TONES[i % SKIN_TONES.length];
+  const tone = SKIN_TONES[(look.skin ?? i) % SKIN_TONES.length];
   let face = null;
   if (info.face && bones.head) {
     root.updateMatrixWorld(true);
     const c = bones.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3().fromArray(info.face));
     const [fw, fh] = info.faceSize || [0.156, 0.2];
     face = {
-      map: faceTexture(tone, i, { ...(info.faceMarks || {}), aspect: fw / fh }),
+      map: faceTexture(tone, look.face ?? i, { ...(info.faceMarks || {}), aspect: fw / fh }),
       center: c,
       size: new THREE.Vector2(fw, fh),
     };

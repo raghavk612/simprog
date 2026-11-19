@@ -129,3 +129,32 @@ drift toward the ball now applies only on the ball (in help it pushed one hand o
 defenders read as engaged and balanced, the on-ball defender (from behind, close-up row) shows the classic one-up
 one-down stance. `tests/motion.test.js` pins the geometry for the guard and the center. Golden bodies regenerated on
 purpose (the defender scenes); golden clips unchanged.
+
+### 1.4 Visitors in their colours; skin, face, body and height follow the person
+
+- **Colours.** Every visitor wore `#db7536` orange. There are no school colours in the data, but there is a logo for each
+  of the 13 opponents (supplied by the team, cleared). `scripts/team-colors.mjs` reads them (a small PNG decoder over
+  zlib, no new dependency) and writes `src/teamColors.js`: the dominant saturated hue and a second colour. **Decision:**
+  colours from the schools' own logos rather than from memory (a wrong guess would be worse than orange). `visitorKit`
+  (`src/kits.js`) dresses them in that colour with white or dark lettering; when it would be mistaken for the Kangs' kit
+  (CIE76 ΔE under 42: Bothell's royal blue and North Creek's indigo against the purple, Issaquah's purple) they wear road
+  whites lettered in their colour; a school with no logo gets a classic colour picked by its name. Tested against every
+  opponent and every Kangs kit (distance and a 3:1 lettering contrast).
+- **Skin, face, hair.** Skin tone and the face's variations came from the body slot (`i % 7`), so a player changed skin
+  when he was drawn in another slot. They are now part of `lookFor(seed)` (with the hair), and the seed is the roster id
+  for the Kangs and the name for visitors (`personSeed`; visitor ids are only their slot). The classic figure recolours
+  its skin (`setSkin`) from a matched lighter palette (`CLASSIC_SKIN`): the athletes' tones are tuned for the skin shader.
+- **Bug fixed: everyone was a forward in live play.** A play's lineup carries only id, name and number, so `setIdentity`
+  lost the position and every Kangs player became the forward body during games. `rosterRecord` (`identities.js`) fills
+  in position and height from the roster.
+- **Height.** The variant follows the position unless the roster height is more than 3 in from that model, then the
+  model nearest it; the player is scaled to his height within ±5% (`bodyFor`). **Decision:** not more than 5%, because the
+  play puts the ball at a fixed height at the jump shot's release and a smaller body could not reach it; for the same
+  reason the ball a player holds and his shot hands are drawn scaled about his feet (presentation only, the play's ball is
+  untouched), and the stride is measured in his body's units so feet stay planted. Visitors (no heights on their rosters)
+  get a variant and a height within 2 in of it from their name.
+
+Critique (broadcast, close-up and title captures): Bothell in road whites with royal-blue lettering reads as a real road
+kit and is never confused with the Kangs; Redmond in green on the title; the Kangs' guards (5'10"-6'0") stand visibly
+shorter than the 6'5" forward. Low: the classic figures keep lighter tones, their heads read dark from behind only
+because of the hair cap. Golden clips and bodies unchanged (scale 1 in the golden scenes).
