@@ -13,7 +13,10 @@
     "format:check": "prettier --check \"src/**/*.{js,css}\" \"tests/*.js\" \"scripts/*.mjs\"",
     "check:ui": "node scripts/ui-check.mjs",
     "moves:check": "node scripts/moves-check.mjs",
-    "moves:sheet": "node scripts/moves-sheet.mjs"
+    "moves:sheet": "node scripts/moves-sheet.mjs",
+    "perf": "node scripts/perf.mjs",
+    "sheets": "node scripts/contact-sheet.mjs",
+    "golden:update": "UPDATE_GOLDEN=1 node --test tests/golden.test.js"
   },
   "dependencies": {
     "three": "^0.180.0"

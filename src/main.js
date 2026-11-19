@@ -4,6 +4,7 @@ import './style.css';
 import './theme.css';
 import './a11y.css';
 import { onSettingsChange } from './settings.js';
+import { perfWanted } from './perfHud.js';
 import { t } from './i18n/index.js';
 import { arena, modal, app } from './ui/page.js';
 import { data, view, ui, setData, setView, restoreSave } from './ui/store.js';
@@ -22,8 +23,9 @@ import { onSkillKey } from './ui/screens/breaks.js';
 // The 3D gym follows the settings, shows the first-person player tag, and reports each play as it resolves.
 applyArena();
 setInterval(fpHud, 150);
-// dev builds only: the gym for checking plays by hand (window.__kangsArena.clips[0].outcome = 'block', ...)
-if (import.meta.env?.DEV) window.__kangsArena = arena;
+// dev builds, or any build opened with ?perf (scripts/perf.mjs measures the built game): the gym for checking plays by
+// hand (window.__kangsArena.clips[0].outcome = 'block', ...)
+if (import.meta.env?.DEV || perfWanted()) window.__kangsArena = arena;
 arena.onPresentation = p => {
   if (p.resolved) reportPlay(p);
   syncPresentation(p);
