@@ -51,6 +51,7 @@ import { animateAthlete, facingWeight, mixAngle, steerYaw, keepApart, SPACE } fr
 import { finishFrame, putbackFrame } from './finishes.js';
 import { actionFrames } from './actions.js';
 import { reactionsFor, reactionFrame } from './reactions.js';
+import { ClassicBatch } from './classicBatch.js';
 import { Director } from './director.js';
 import { PerfHud, perfWanted } from './perfHud.js';
 import { titleCamera, flyIn, heroYaw, titleFov, HERO, STILL, titlePath } from './title.js';
@@ -569,6 +570,8 @@ export class Arena {
       this.people.push(player);
       this.scene.add(player);
     }
+    // the classic figures drawn instanced, a part type at a time (src/classicBatch.js)
+    this.classicBatch = new ClassicBatch(this.scene);
     // ball (placed by the plays) > spinner (turned by spinBall, lowered by settleBall) > sphere and seams
     this.ball = new THREE.Group();
     this.ballSpinner = new THREE.Group();
@@ -2026,6 +2029,7 @@ export class Arena {
     }
     this.settleBall();
     this.updateLods();
+    this.classicBatch?.update(this.people);
     this.camera.position.x += jx;
     this.camera.position.y += jy;
     this.look.render(this.camera);
