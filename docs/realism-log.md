@@ -304,6 +304,8 @@ still to do (see "Where this pass stopped").
 
 ## Where this pass stopped (usage limit)
 
+_History: the pass resumed from here and finished every item below (Phases 3–5 follow)._
+
 Done and committed: Phase 0 (harness, golden poses, sheets, baseline), Phase 1 (NaN black flashes, SMAA, defensive
 stance, visitor colours and person-driven bodies, dead code and docs), Phase 2 items 2.1–2.6 (locomotion, blockPlan
 refactor, finishes, passes/catches/steals/rebounds/contests, off-ball motion version 2, reactions). Tests: 308 passing,
@@ -500,3 +502,52 @@ Tests 316 passing, build green, golden clips for unversioned plays unchanged. `p
 High −5 to −8% on the laptop window, −0 to +1% at retina (within noise); Medium −7 to −14%; Low title and live −28 to
 −32%, Low Player-view replay +0.1 ms (4.9). Downloads: Medium 13.3 → 10.1 MB (−24%), High 15.8 → 17.8 MB (+13%, the
 two extra player variants Phase 1 put on court; see OPEN-QUESTIONS), Low unchanged. Main chunk 1,120 → 518 kB.
+
+## Phase 5: code quality
+
+### 5.1 Proof for refactors: a state trace
+
+Rendered sheets differ 0.8–4% of pixels between two identical runs (GPU, asset load order), so they cannot prove a
+refactor exact. `scripts/arena-trace.mjs` (`npm run trace`) records what the pixels are drawn from instead: every object
+under each player, the ball, trail, nets, camera, the director's shot and every instance matrix, hashed per frame, while
+stepping the gym at a fixed 1/60 s through the title, five plays (every finish family, a block, a steal, reactions), each
+camera mode and a replay, at High with the athletes and Low with the classic figures (9,280 frames). The gym never runs a
+frame on its own and the random numbers restart when stepping begins, so two runs match exactly; a 0.0001 change to one
+reaction's lean is caught on the frames it plays.
+
+### 5.2 arena.js split (behaviour-preserving)
+
+`src/arena.js` was one 2,071-line class. It keeps the setup, graphics level, auto quality, scoreboard and the frame loop
+(349 lines); the rest moved verbatim into `src/arena/` by concern: gym (building), cast (bodies and identities), playback
+(a possession), pose (one player's pose), ball, idle (between plays, the title show), cameras. **Decision:** the modules
+are plain method objects added to `Arena.prototype` (a name defined twice throws), not separate classes: every field and
+call stays exactly as it was, which is what made a provably exact split possible; each module's header says what it
+covers and what it reads or leaves on the Arena. `frame()` became `playFrame`, `idleFrame` and `cameraFrame`, and
+`playFrame` lost `resolvePlay` and `placePlayBall` (260 → 150 lines). The trace is identical on all 9,280 frames after
+each step; tests, build and `check:ui` green. A test checks every module's methods are on the class once.
+
+### 5.3 Contracts and docs
+
+`sampleClip`'s contract (pure, deterministic, ten actors, unversioned clips unchanged) is written where it is defined;
+the motion version, body interface and cloth fit already had theirs. README: a section on how the 3D gym is built and how
+to check it (perf, sheets, trace, golden poses). CLAUDE.md: the gym's map and commands. `docs/OPEN-QUESTIONS.md`: the
+decisions left to the owners and the known risks.
+
+### 5.4 After sheets
+
+`docs/sheets/after/` (same cameras, moments and sizes as before). Against the before set: no skin through the sleeve or
+shorts; defenders in a stance with hands in front instead of airplane arms; finishes that read as different moves (the
+hook's one arm, the euro's side step, the dunk hanging on the rim); passes with a step and follow-through; reactions after
+the play; strides that change with speed; visitors in their own colours; no stair-stepped edges (aa.png). Still weak: the
+armhole trim reads thick at replay close-up range, and the close-up defender's high hand rests by his head.
+
+### 5.5 After numbers
+
+Measured back to back with the baseline commit in one session (`docs/perf-baseline.md`, After): Medium −6 to −13%,
+Low title/live −20 to −28%, High −4 to −5% at the laptop window and 0 to +2% at retina (within run spread), Low
+Player-view replay +0.2 ms (4.9). Downloads Medium −24%, High +13%, Low +2%. Main chunk 1,120 → 519 kB.
+
+### Phase 5 gate
+
+Tests 317 passing, build green, `check:ui` clean, golden clips for unversioned plays unchanged, trace identical across
+the refactor commits.
