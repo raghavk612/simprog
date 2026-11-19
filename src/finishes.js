@@ -333,7 +333,8 @@ export function finishFrame(clip, time, me, playBall, release) {
     DL = dunk ? dunkLift(T, tr, hangs ? {} : { hang: 0, boost: 0.18 }) : null,
     landS = dunk ? DL.land : F.landS,
     K = KEYS[kind]({ ...F, landS });
-  if (tr < F.gatherS - 0.05 || tr > landS + 0.7) return null;
+  // over once the follow-through has faded (fade below): a reaction (src/reactions.js) can take his arms from there
+  if (tr < F.gatherS - 0.05 || tr > landS + 0.5) return null;
   // the hand away from the defender: the right on the right of the rim (as he faces it), mirrored for the left
   const right = (clip.lane || 1) * (clip.team === 'home' ? 1 : -1) >= 0,
     mx = right ? 1 : -1,
