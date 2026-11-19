@@ -551,3 +551,37 @@ Player-view replay +0.2 ms (4.9). Downloads Medium −24%, High +13%, Low +2%. M
 
 Tests 317 passing, build green, `check:ui` clean, golden clips for unversioned plays unchanged, trace identical across
 the refactor commits.
+
+## Polish pass (branch polish-pass, off realism-pass)
+
+Five flaws from the final report, the contact sheets refreshed and critiqued, the Auto ladder checked under CPU
+throttling. Tooling for close looks: a fixed camera on a bone of the paused title player (scratch script; the close-up
+sheet for the result). Houdini (`hython`) is not installed here; the in-repo player pipeline's sources are present
+(`assets-src/players/houdini/export/*.obj`) but its Python packages (numpy, scipy, scikit-image, xatlas,
+fast-simplification) are not, and any change to the meshes' triangles changes the UV layout and needs a full re-bake of
+every map. So each fix below is tried at load time or in the shader first.
+
+### P1. The binding: thin and clean (was thick and lumpy)
+
+Cause: the binding is a 5-sided tube about 9 mm in radius swept along each opening (`scripts/build_players.py add_trim`).
+The shader's `inflate` pushed every vertex 2 cm along its own normal, which on a tube points all the way round it: the
+tube swelled to about 6 cm across instead of lifting off the body, and its facets and the jersey's edge showed as lumps
+and slivers. Fix (runtime): `clothFit.js trimPush` gives each binding vertex the outward normal of the nearest torso or
+thigh skin (not a hand: in the rest pose the hands hang beside the shorts, palms in) as `kPush`, and the binding is lifted
+1.4 cm along it (`materials.js push`), just past the jersey's 1.2 cm, at its modelled width. Found on the way:
+
+- The hem's binding hung below the shorts as a loose hoop once it was thin: the shorts sway on a spring (3.3) and the
+  binding did not. It now shares the shorts' sway uniforms (weighted by height, so the neck and armholes stay put).
+- The build also swept tubes along a few short open edges where the kit's panels meet with gaps: crumpled scraps 2 to
+  16 cm across (the real openings are 26 cm and more), one of them the white "Y" on the hip in the close-ups. As
+  "openings" they kept the skin near them drawn, so the thigh showed through the shorts there. `trimOpenings` finds the
+  pieces (welded within 2 mm) and drops those under 20 cm; the skin is judged against the real openings only.
+- Those gaps are holes in the kit 2 to 6 cm across, too wide to weld at load without distorting the cloth. Skin under a
+  hole (within 5 cm of its edge, away from any opening) is not drawn either, and the kit is drawn double-sided, so the slit
+  shows the inside of the shorts instead of skin bending out through it.
+
+Critique (close-ups, 1:1): the armhole and neck binding is a thin, even white edge with no lumps or slivers; the hem
+binding stays on the hem as the shorts swing. Still visible: the binding loop is slightly polygonal at half a metre (a ring
+every ~6 cm along the tube; finer rings need a rebuild and re-bake), and a narrow slit at the shorts' side seam still opens
+when the hip flexes hard (the hole is in the mesh; through it the far thigh shows). Both logged in OPEN-QUESTIONS.
+Tests: the push points out from the body, the scraps are gone, the far mesh shares the result. Trace identical.

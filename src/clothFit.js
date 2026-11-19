@@ -114,9 +114,173 @@ export function smoothTrim(mesh, { steps = 6, lambda = 0.5, tol = 0.002 } = {}) 
   return cur.length;
 }
 
+/* The binding's real openings (neck, armholes, waist, leg hems) and its scraps: the build also swept a tube along a few
+   short open edges where the kit's panels meet with gaps, which came out as crumpled bits 2 to 16 cm across (the real
+   openings are 26 cm and more) (a white Y on
+   the hip) and, being "openings", kept the skin under them drawn so the thigh showed through the shorts there. Pieces are
+   found by welding within 2 mm; a piece under `minSize` across is a scrap. Returns a flag per vertex, 1 for a real opening. */
+export function trimOpenings(trim, minSize = 0.2) {
+  const a = trim.geometry.attributes.position,
+    n = a.count,
+    id = new Int32Array(n),
+    weld = new Map();
+  for (let i = 0; i < n; i++) {
+    const k = `${Math.round(a.getX(i) / 0.002)},${Math.round(a.getY(i) / 0.002)},${Math.round(a.getZ(i) / 0.002)}`;
+    if (!weld.has(k)) weld.set(k, weld.size);
+    id[i] = weld.get(k);
+  }
+  const up = Int32Array.from({ length: weld.size }, (_, i) => i),
+    root = x => {
+      while (up[x] !== x) x = up[x] = up[up[x]];
+      return x;
+    },
+    idx = triIndex(trim.geometry);
+  for (let t = 0; t < idx.length; t += 3) {
+    const r = root(id[idx[t]]);
+    up[root(id[idx[t + 1]])] = r;
+    up[root(id[idx[t + 2]])] = r;
+  }
+  const box = new Map();
+  for (let i = 0; i < n; i++) {
+    const r = root(id[i]);
+    if (!box.has(r)) box.set(r, new THREE.Box3());
+    box.get(r).expandByPoint(new THREE.Vector3(a.getX(i), a.getY(i), a.getZ(i)));
+  }
+  const real = new Map(
+      [...box].map(([r, b]) => [r, Math.max(...b.getSize(new THREE.Vector3()).toArray()) >= minSize]),
+    ),
+    out = new Uint8Array(n);
+  for (let i = 0; i < n; i++) out[i] = real.get(root(id[i])) ? 1 : 0;
+  return out;
+}
+/* The vertices on a mesh's open edges (edges of one triangle), its UV seams welded within half a millimetre. */
+function openEdgeVertices(mesh) {
+  const a = mesh.geometry.attributes.position,
+    id = new Int32Array(a.count),
+    weld = new Map(),
+    first = [];
+  for (let i = 0; i < a.count; i++) {
+    const k = `${Math.round(a.getX(i) / 5e-4)},${Math.round(a.getY(i) / 5e-4)},${Math.round(a.getZ(i) / 5e-4)}`;
+    if (!weld.has(k)) {
+      weld.set(k, weld.size);
+      first.push(i);
+    }
+    id[i] = weld.get(k);
+  }
+  const count = new Map(),
+    idx = triIndex(mesh.geometry);
+  for (let t = 0; t < idx.length; t += 3)
+    for (let e = 0; e < 3; e++) {
+      const u = id[idx[t + e]],
+        v = id[idx[t + ((e + 1) % 3)]],
+        k = u < v ? u * 1e7 + v : v * 1e7 + u;
+      count.set(k, (count.get(k) || 0) + 1);
+    }
+  const out = new Set();
+  for (const [k, c] of count)
+    if (c === 1) {
+      out.add(first[Math.floor(k / 1e7)]);
+      out.add(first[k % 1e7]);
+    }
+  return out;
+}
+/* World positions of the binding's vertices at real openings (all of them without a flag list). */
+function openingPoints(trim, openings) {
+  const all = worldPositions(trim);
+  if (!openings) return all;
+  const out = [];
+  for (let i = 0; i < openings.length; i++)
+    if (openings[i]) out.push(all[i * 3], all[i * 3 + 1], all[i * 3 + 2]);
+  return Float64Array.from(out);
+}
+/* Drops the triangles of a mesh that touch a vertex not kept. */
+function keepTriangles(mesh, keep) {
+  const g = mesh.geometry,
+    idx = triIndex(g),
+    out = [];
+  for (let t = 0; t < idx.length; t += 3)
+    if (keep[idx[t]] && keep[idx[t + 1]] && keep[idx[t + 2]]) out.push(idx[t], idx[t + 1], idx[t + 2]);
+  g.setIndex(out);
+  return (idx.length - out.length) / 3;
+}
+
+/* Whether a skin vertex follows the torso or a thigh most (the skin the kit can lie on). */
+function torsoSkin(body) {
+  const g = body.geometry,
+    bones = body.skeleton?.bones.map(b => b.name) || [],
+    torso = new Set(['pelvis', 'spine', 'chest', 'hip_L', 'hip_R']),
+    sIdx = g.attributes.skinIndex,
+    sW = g.attributes.skinWeight;
+  return i => {
+    if (!sIdx || !bones.length) return true;
+    let best = 0,
+      w = -1;
+    for (let k = 0; k < 4; k++)
+      if (sW.getComponent(i, k) > w) {
+        w = sW.getComponent(i, k);
+        best = sIdx.getComponent(i, k);
+      }
+    return torso.has(bones[best]);
+  };
+}
+/* kPush on the binding: the direction to lift each of its vertices off the body (materials.js push), the normal of the
+   nearest skin vertex. The tube's own normals point all the way round it; the skin's say which way is out from the body,
+   the way the jersey itself is lifted. A vertex with no skin within 12 cm keeps its own normal. */
+export function trimPush(trim, body) {
+  const tp = worldPositions(trim),
+    bp = worldPositions(body),
+    bn = body.geometry.attributes.normal,
+    tn = trim.geometry.attributes.normal,
+    n = trim.geometry.attributes.position.count,
+    out = new Float32Array(n * 3),
+    CELL = 0.04,
+    grid = new Map(),
+    key = (x, y, z) => `${Math.floor(x / CELL)},${Math.floor(y / CELL)},${Math.floor(z / CELL)}`,
+    toWorld = new THREE.Matrix3().getNormalMatrix(body.matrixWorld),
+    toTrim = new THREE.Matrix4().copy(trim.matrixWorld).invert(),
+    v = new THREE.Vector3();
+  // only skin the kit lies on (torso and thighs): in the rest pose the hands hang beside the shorts, palms in, and the arms
+  // pass through the armholes; their normals would push the binding into the body
+  const torso = torsoSkin(body);
+  for (let i = 0; i < bp.length / 3; i++) {
+    if (!torso(i)) continue;
+    const k = key(bp[i * 3], bp[i * 3 + 1], bp[i * 3 + 2]);
+    if (!grid.has(k)) grid.set(k, []);
+    grid.get(k).push(i);
+  }
+  for (let i = 0; i < n; i++) {
+    const x = tp[i * 3],
+      y = tp[i * 3 + 1],
+      z = tp[i * 3 + 2],
+      cx = Math.floor(x / CELL),
+      cy = Math.floor(y / CELL),
+      cz = Math.floor(z / CELL);
+    let best = 0.12,
+      at = -1;
+    for (let dx = -3; dx <= 3; dx++)
+      for (let dy = -3; dy <= 3; dy++)
+        for (let dz = -3; dz <= 3; dz++)
+          for (const j of grid.get(`${cx + dx},${cy + dy},${cz + dz}`) || []) {
+            const d = Math.hypot(bp[j * 3] - x, bp[j * 3 + 1] - y, bp[j * 3 + 2] - z);
+            if (d < best) {
+              best = d;
+              at = j;
+            }
+          }
+    if (at < 0) v.fromBufferAttribute(tn, i);
+    else v.fromBufferAttribute(bn, at).applyMatrix3(toWorld).transformDirection(toTrim);
+    v.normalize();
+    out[i * 3] = v.x;
+    out[i * 3 + 1] = v.y;
+    out[i * 3 + 2] = v.z;
+  }
+  trim.geometry.setAttribute('kPush', new THREE.BufferAttribute(out, 3));
+  return out;
+}
+
 /* kCover on the body skin: which clothing (slot 0 kit, 1 arm sleeve, 2 leg sleeve) is over each skin vertex. A short ray
    out along the skin's normal must hit that clothing, and (for the kit) away from its openings. */
-export function coverField(body, cloths, trim) {
+export function coverField(body, cloths, trim, openings = null) {
   const g = body.geometry,
     pos = worldPositions(body),
     nrm = g.attributes.normal,
@@ -125,7 +289,7 @@ export function coverField(body, cloths, trim) {
     CELL = 0.1,
     grid = new Map(),
     key = (x, y, z) => `${Math.floor(x / CELL)},${Math.floor(y / CELL)},${Math.floor(z / CELL)}`,
-    nearTrim = trim ? pointGrid(worldPositions(trim), 0.07) : () => 1;
+    nearTrim = trim ? pointGrid(openingPoints(trim, openings), 0.07) : () => 1;
   for (const { mesh, slot } of cloths) {
     const cp = worldPositions(mesh),
       idx = triIndex(mesh.geometry),
@@ -160,21 +324,20 @@ export function coverField(body, cloths, trim) {
     }
   }
   // which bones the kit can cover: a hand or forearm hanging beside the shorts in the rest pose never is under them
-  const bones = body.skeleton?.bones.map(b => b.name) || [],
-    torso = new Set(['pelvis', 'spine', 'chest', 'hip_L', 'hip_R']),
-    sIdx = g.attributes.skinIndex,
-    sW = g.attributes.skinWeight,
-    kitBone = i => {
-      if (!sIdx || !bones.length) return true;
-      let best = 0,
-        w = -1;
-      for (let k = 0; k < 4; k++)
-        if (sW.getComponent(i, k) > w) {
-          w = sW.getComponent(i, k);
-          best = sIdx.getComponent(i, k);
-        }
-      return torso.has(bones[best]);
-    };
+  const kitBone = torsoSkin(body);
+  // the kit's holes: its open edges away from the binding's real openings
+  const holes = [];
+  for (const { mesh, slot } of cloths) {
+    if (slot !== 0) continue;
+    const cp = worldPositions(mesh);
+    for (const v of openEdgeVertices(mesh)) {
+      const x = cp[v * 3],
+        y = cp[v * 3 + 1],
+        z = cp[v * 3 + 2];
+      if (nearTrim(x, y, z, 0.04) >= 0.04) holes.push(x, y, z);
+    }
+  }
+  const nearHole = holes.length ? pointGrid(Float64Array.from(holes), 0.05) : () => 1;
   const ray = new THREE.Ray(),
     hit = new THREE.Vector3(),
     N = new THREE.Vector3(),
@@ -195,6 +358,15 @@ export function coverField(body, cloths, trim) {
       const p = ray.intersectTriangle(tri.v[0], tri.v[1], tri.v[2], false, hit);
       if (p && p.distanceTo(o) < 0.07) cover[i * 3 + tri.slot] = 1;
     }
+    // under a hole in the kit (where its panels meet with a gap, away from any opening): not drawn either, so the slit
+    // shows the inside of the cloth (the kit is drawn double-sided) instead of skin that bends out through it
+    if (
+      !cover[i * 3] &&
+      kitBone(i) &&
+      nearHole(o.x, o.y, o.z, 0.05) < 0.05 &&
+      !(open ?? nearTrim(o.x, o.y, o.z, 0.07) < 0.07)
+    )
+      cover[i * 3] = 1;
   }
   g.setAttribute('kCover', new THREE.BufferAttribute(cover, 3));
   return cover;
@@ -238,7 +410,9 @@ export function prepareCloth(template) {
   scene.traverse(o => {
     if (o.isMesh && o.name) named[o.name] = o;
   });
-  const out = { covered: {} };
+  const out = { covered: {} },
+    openings = named.trim_mesh ? trimOpenings(named.trim_mesh) : null;
+  if (openings) out.scraps = openings.length - openings.reduce((s, v) => s + v, 0);
   // the far mesh (scripts/player_lods.mjs) keeps the near mesh's vertices and only drops triangles: copy, do not redo
   const sameVerts = (a, b) =>
     a &&
@@ -265,8 +439,17 @@ export function prepareCloth(template) {
           leg && { mesh: leg, slot: 2 },
         ].filter(Boolean),
         named.trim_mesh,
+        openings,
       ).reduce((c, v, i) => ((c[i % 3] += v), c), [0, 0, 0]);
-    if (trim) smoothTrim(trim); // after the coverage, which reads where the openings are from the tube as modelled
+    if (trim) {
+      // the scraps go (the far mesh keeps the near mesh's vertices, so the same flags fit it)
+      if (openings && trim.geometry.attributes.position.count === openings.length)
+        keepTriangles(trim, openings);
+      smoothTrim(trim); // after the coverage, which reads where the openings are from the tube as modelled
+      if (lod && sameVerts(named.trim_mesh, trim) && named.trim_mesh.geometry.attributes.kPush)
+        trim.geometry.setAttribute('kPush', named.trim_mesh.geometry.attributes.kPush);
+      else if (body) trimPush(trim, body);
+    }
   }
   if (named.body_mesh) out.hands = handFit(named.body_mesh);
   // the shorts' height range in the bind pose, for their sway (materials.js sway): waistband to hem

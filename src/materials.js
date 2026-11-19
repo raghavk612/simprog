@@ -153,7 +153,9 @@ function withAoAlpha(material) {
 /* strands: the hair's anisotropic highlight runs along the head's up direction (as it did on the old cylindrical UVs). The
    GLB's tangents now follow the atlas charts, which point anywhere, so the direction is the skinned rest-pose up instead. */
 /* inflate (game units): clothing is pushed out along its normals after skinning starts, so the skin under it never pokes
-   through when joints bend (the rest-pose gap is only about a centimetre). */
+   through when joints bend (the rest-pose gap is only about a centimetre). push: along a direction of its own instead
+   (attribute kPush, src/clothFit.js trimPush): the binding is a tube, whose own normals point every way round it, so
+   pushing along them made it fatter rather than lifting it off the body. */
 /* print: lettering printed into the fabric. Two textures (front and back) projected in the rest pose, so the print moves
    and folds with the jersey and can never sink into the body. material.userData.print holds the uniforms to update. */
 function patch(
@@ -172,6 +174,7 @@ function patch(
     cover = false,
     hands = false,
     sway = false,
+    push = false,
   } = {},
 ) {
   // sway: the loose shorts lag and flutter (a spring motion.js drives from the body's acceleration, kSway, in the body's
@@ -231,7 +234,8 @@ function patch(
           (strands ? ' varying vec3 vKUp;' : '') +
           (cover ? ' attribute vec3 kCover; varying vec3 vKCover;' : '') +
           (hands ? HAND_CURL : '') +
-          (sway ? ' uniform vec3 kSway; uniform vec2 kSwayRange;' : ''),
+          (sway ? ' uniform vec3 kSway; uniform vec2 kSwayRange;' : '') +
+          (push ? ' attribute vec3 kPush;' : ''),
       )
       .replace(
         '#include <skinnormal_vertex>',
@@ -267,7 +271,7 @@ function patch(
             ? '\n { float kW = clamp((kSwayRange.x - position.y) / max(kSwayRange.x - kSwayRange.y, 1e-3), 0.0, 1.0); transformed += kSway * kW * kW; }'
             : '') +
           (cover ? '\nvKCover = kCover;' : '') +
-          (inflate > 0 ? `\ntransformed += objectNormal * ${inflate.toFixed(4)};` : ''),
+          (inflate > 0 ? `\ntransformed += ${push ? 'kPush' : 'objectNormal'} * ${inflate.toFixed(4)};` : ''),
       );
     let frag = shader.fragmentShader
       .replace(
@@ -365,7 +369,7 @@ function patch(
     shader.fragmentShader = frag;
   };
   material.customProgramCacheKey = () =>
-    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}-${strands ? 1 : 0}-${cover ? 1 : 0}-${hands ? 1 : 0}-${sway ? 1 : 0}`;
+    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}-${strands ? 1 : 0}-${cover ? 1 : 0}-${hands ? 1 : 0}-${sway ? 1 : 0}-${push ? 1 : 0}`;
   return material;
 }
 
@@ -407,6 +411,7 @@ export function clothMaterial(color) {
       sheenRoughness: 0.45,
       sheenColor: new THREE.Color(0.75, 0.75, 0.8),
       specularIntensity: 0.3,
+      side: THREE.DoubleSide, // through an armhole or a slit at a seam the inside of the cloth shows, not what is behind it
       name: 'kit',
     }),
     { map: MAPS.mesh(), scale: 22, bump: 0.18, fadeFar: 3.2, inflate: KIT_INFLATE, print: true, sway: true },
@@ -441,9 +446,10 @@ export function hairMaterial(color) {
   );
 }
 // Sleeves and headband: compression fabric, smoother and a touch shinier than the jersey. The binding (trim) uses it too,
-// pushed out further than the jersey (KIT_INFLATE) so it always rides on the cloth's edge instead of dipping under it.
-export const TRIM_INFLATE = 0.02;
-export const fabricMaterial = (color, inflate = 0.01) =>
+// lifted off the body a little further than the jersey (KIT_INFLATE) along the body's normal (push), so it rides on the
+// cloth's edge, at the width it was modelled, instead of dipping under it.
+export const TRIM_INFLATE = 0.014;
+export const fabricMaterial = (color, inflate = 0.01, { push = false, sway = false } = {}) =>
   patch(
     new THREE.MeshPhysicalMaterial({
       color,
@@ -452,7 +458,7 @@ export const fabricMaterial = (color, inflate = 0.01) =>
       sheenRoughness: 0.35,
       name: 'sleeve',
     }),
-    { map: MAPS.mesh(), scale: 30, bump: 0.15, fadeFar: 3, inflate },
+    { map: MAPS.mesh(), scale: 30, bump: 0.15, fadeFar: 3, inflate, push, sway },
   );
 // Ball: pebbled orange leather.
 export function ballMaterial() {

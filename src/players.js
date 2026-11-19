@@ -473,7 +473,7 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
     hairMat = hairMaterial(look.hairColor ?? 0x161210),
     band = fabricMaterial(0xffffff),
     sleeve = fabricMaterial(0x111114),
-    trim = fabricMaterial(0xe9b858, TRIM_INFLATE);
+    trim = fabricMaterial(0xe9b858, TRIM_INFLATE, { push: true, sway: true });
   const pick = { kit: jersey, skin, shoes, sole, hair: hairMat, band, sleeve, trim }; // trim: the binding round the neck, armholes and hems
   // keep one hair style and the chosen options; drop the rest
   const keep = new Set(
@@ -512,6 +512,7 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
   // jersey's lower edge sits inside that range and is tucked in, so it moves with them
   const sh = template.userData?.clothFit?.shorts;
   if (sh && jersey.userData.sway) jersey.userData.sway.kSwayRange.value.set(sh.top - 0.06, sh.bottom);
+  trim.userData.sway = jersey.userData.sway; // the hem's binding sways with the shorts (the same spring and range)
   // the skin under the clothes he wears is not drawn (src/clothFit.js)
   if (skin.userData.coverOn)
     skin.userData.coverOn.value.set(1, look.armSleeve ? 1 : 0, look.legSleeve ? 1 : 0);
