@@ -20,7 +20,7 @@
     "golden:update": "UPDATE_GOLDEN=1 node --test tests/golden.test.js"
   },
   "dependencies": {
-    "three": "^0.180.0"
+    "three": "0.180.0"
   },
   "devDependencies": {
     "meshoptimizer": "^0.22.0",
