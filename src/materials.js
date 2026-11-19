@@ -91,7 +91,7 @@ export const MAPS = {
 };
 
 /* ---------- shader patch: triplanar bump detail on the rest pose, plus optional wrap lighting (subsurface look) ---------- */
-const PARS = `
+export const DETAIL_PARS = `
 varying vec3 vKRest; varying vec3 vKRestN;
 uniform sampler2D kDetailMap; uniform float kDetailScale; uniform float kDetailBump; uniform float kFadeFar;
 float kHeight(vec3 p, vec3 n){
@@ -99,11 +99,16 @@ float kHeight(vec3 p, vec3 n){
  return texture2D(kDetailMap, p.yz).r * w.x + texture2D(kDetailMap, p.xz).r * w.y + texture2D(kDetailMap, p.xy).r * w.z;
 }
 vec3 kPerturb(vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDir){
- vec3 vSigmaX = normalize(dFdx(surf_pos)); vec3 vSigmaY = normalize(dFdy(surf_pos));
+ // a zero screen derivative (a pixel quad on a silhouette or edge-on) would normalise to NaN; the reflection lookups of
+ // the environment light then turn that into NaN pixels, which bloom spreads over the whole frame (a black flash)
+ vec3 dx = dFdx(surf_pos), dy = dFdy(surf_pos);
+ if (dot(dx, dx) < 1e-14 || dot(dy, dy) < 1e-14) return surf_norm;
+ vec3 vSigmaX = normalize(dx); vec3 vSigmaY = normalize(dy);
  vec3 R1 = cross(vSigmaY, surf_norm); vec3 R2 = cross(surf_norm, vSigmaX);
  float fDet = dot(vSigmaX, R1) * faceDir;
  vec3 vGrad = sign(fDet) * (dHdxy.x * R1 + dHdxy.y * R2);
- return normalize(abs(fDet) * surf_norm - vGrad);
+ vec3 n = abs(fDet) * surf_norm - vGrad;
+ return dot(n, n) > 1e-14 ? normalize(n) : surf_norm;
 }`;
 /* Baked detail maps (src/playerMaps.js) hold the normal in RGB and the ambient occlusion in A of one texture, which is both
    normalMap and aoMap; three's aomap_fragment reads R, so every athlete material reads A instead. kAoFade (0..1) lets the
@@ -201,7 +206,7 @@ function patch(
       .replace(
         '#include <common>',
         '#include <common>\n' +
-          PARS +
+          DETAIL_PARS +
           (strands ? '\nvarying vec3 vKUp;' : '') +
           (face ? '\nuniform sampler2D kFaceMap; uniform vec3 kFaceCenter; uniform vec2 kFaceSize;' : '') +
           (print
