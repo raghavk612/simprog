@@ -47,7 +47,16 @@ import { arenaPlayers, bodyPixels, lodFor } from './graphics.js';
 import { rosterRecord } from './identities.js';
 import { ballMaterial } from './materials.js';
 import { BroadcastLook } from './broadcast.js';
-import { animateAthlete, facingWeight, mixAngle, steerYaw, keepApart, SPACE } from './motion.js';
+import {
+  animateAthlete,
+  facingWeight,
+  mixAngle,
+  steerYaw,
+  keepApart,
+  SPACE,
+  footAt,
+  strideFor,
+} from './motion.js';
 import { finishFrame, putbackFrame } from './finishes.js';
 import { actionFrames } from './actions.js';
 import { reactionsFor, reactionFrame } from './reactions.js';
@@ -1555,13 +1564,35 @@ export class Arena {
       run = (u.run = ease >= 1 || u.run === undefined ? pose.run : u.run + (pose.run - u.run) * ease);
     player.position.set(pose.x, pose.y, pose.z);
     player.rotation.set(0, this.faceYaw(player, pose) + (pose.yawAdd || 0), 0); // yawAdd: a finish's turn (hook, spin)
-    u.legs.forEach((leg, j) => {
-      leg.rotation.set(Math.sin(t * 11 + j * Math.PI) * 0.65 * run, 0, 0);
-      leg.userData.knee.rotation.x = Math.max(0, -Math.sin(t * 11 + j * Math.PI)) * 0.8 * run;
-    });
+    // the classic figure strides on the distance it covers (motion.js footAt), so a planted foot stays put; the athletes'
+    // legs are posed by animateAthlete below
+    const classic = u.body?.style === 'classic';
+    let swing = j => Math.sin(t * 11 + j * Math.PI) * 0.65 * run;
+    if (classic) {
+      const last = u.cLast,
+        dt = this.frameDt || 0;
+      let moved = last ? Math.hypot(pose.x - last.x, pose.z - last.z) : 0;
+      if (moved > 1.5) moved = 0;
+      u.cLast = { x: pose.x, z: pose.z };
+      if (dt > 0) u.cSpeed = (u.cSpeed || 0) + (moved / dt - (u.cSpeed || 0)) * (1 - Math.exp(-6 * dt));
+      const stride = strideFor(u.cSpeed || 0),
+        k = Math.max(0, Math.min(1, ((u.cSpeed || 0) - 0.1) / 0.8)),
+        gw = this.motion ? k * k * (3 - 2 * k) : 0;
+      if (this.motion) u.cPhase = (u.cPhase || 0) + (moved / Math.max(stride, 0.2)) * Math.PI;
+      const foot = j => footAt((u.cPhase || 0) + j * Math.PI, stride, 0.12);
+      swing = j => -Math.atan2(foot(j).forward, 0.74) * gw;
+      u.legs.forEach((leg, j) => {
+        leg.rotation.set(swing(j), 0, 0);
+        leg.userData.knee.rotation.x = foot(j).up * 6 * gw;
+      });
+    } else
+      u.legs.forEach((leg, j) => {
+        leg.rotation.set(swing(j), 0, 0);
+        leg.userData.knee.rotation.x = Math.max(0, -Math.sin(t * 11 + j * Math.PI)) * 0.8 * run;
+      });
     u.arms.forEach((arm, j) => {
       const side = j ? 1 : -1;
-      let x = Math.sin(t * 11 + j * Math.PI) * 0.55 * run,
+      let x = classic ? -swing(j) * 0.85 : Math.sin(t * 11 + j * Math.PI) * 0.55 * run,
         z = side * 0.12,
         elbow = -0.25;
       if (['shoot', 'block', 'rebound'].includes(pose.arms)) {
