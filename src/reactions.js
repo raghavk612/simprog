@@ -42,16 +42,17 @@ export function reactionFrame(kind, since, me) {
     W = p => [me.x + p[0] * c + p[2] * s, (me.y || 0) + p[1], me.z - p[0] * s + p[2] * c],
     D = p => [p[0] * c + p[2] * s, p[1], -p[0] * s + p[2] * c],
     weight = sm(since / 0.15) * (1 - sm((since - (dur - 0.3)) / 0.3)),
-    hand = (p, pole, flex = 0, pron = 0.3) => ({
+    hand = (p, pole, flex = 0, pron = 0.3, grip = 0.35) => ({
       p: W(p),
       pole: pole ? D(pole) : null,
       flex,
       pron,
+      grip,
       w: weight,
     }),
     hips = {
-      R: hand([-0.27, 1.0, 0.0], [-1, 0, -0.2], -0.6, 1.2),
-      L: hand([0.27, 1.0, 0.0], [1, 0, -0.2], -0.6, 1.2),
+      R: hand([-0.27, 1.0, 0.0], [-1, 0, -0.2], -0.6, 1.2, 0.55),
+      L: hand([0.27, 1.0, 0.0], [1, 0, -0.2], -0.6, 1.2, 0.55),
     };
   let hands = {},
     body = {},
@@ -59,23 +60,23 @@ export function reactionFrame(kind, since, me) {
   if (kind === 'fist') {
     // two quick pumps of the right fist, elbow bent
     const pump = Math.abs(Math.sin(clamp(since / 0.55) * Math.PI * 2));
-    hands = { R: hand([-0.24, 1.22 + 0.5 * pump, 0.28], [-0.6, -0.8, 0.1], 0.6) };
+    hands = { R: hand([-0.24, 1.22 + 0.5 * pump, 0.28], [-0.6, -0.8, 0.1], 0.6, 0.3, 1) };
     body = { lean: 0.06 * pump };
   } else if (kind === 'three') {
-    hands = { R: hand([-0.14, 2.45, 0.12], [-0.8, 0, -0.3], -0.2) };
+    hands = { R: hand([-0.14, 2.45, 0.12], [-0.8, 0, -0.3], -0.2, 0.3, 0.9) };
     look = W([0, 3.2, 3]);
   } else if (kind === 'flex') {
     hands = {
-      R: hand([-0.42, 1.58, 0.06], [-0.4, -1, 0], 0.8),
-      L: hand([0.42, 1.58, 0.06], [0.4, -1, 0], 0.8),
+      R: hand([-0.42, 1.58, 0.06], [-0.4, -1, 0], 0.8, 0.3, 1),
+      L: hand([0.42, 1.58, 0.06], [0.4, -1, 0], 0.8, 0.3, 1),
     };
     body = { lean: -0.1 * sm(since / 0.3) };
     look = W([0, 3.4, 2]);
   } else if (kind === 'clap') {
     const k = 0.5 + 0.5 * Math.cos(clamp((since - 0.15) / 0.7) * Math.PI * 4); // twice
     hands = {
-      R: hand([-0.04 - 0.16 * k, 1.32, 0.34], [-1, -0.4, -0.3], 0, 1.4),
-      L: hand([0.04 + 0.16 * k, 1.32, 0.34], [1, -0.4, -0.3], 0, 1.4),
+      R: hand([-0.04 - 0.16 * k, 1.32, 0.34], [-1, -0.4, -0.3], 0, 1.4, 0.05),
+      L: hand([0.04 + 0.16 * k, 1.32, 0.34], [1, -0.4, -0.3], 0, 1.4, 0.05),
     };
   } else if (kind === 'hips' || kind === 'shake') {
     hands = hips;

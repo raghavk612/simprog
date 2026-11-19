@@ -494,6 +494,14 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
       o.frustumCulled = false;
     }
   });
+  // the finger curl (materials.js hands): which bones are the wrists, where the knuckles are
+  const hands = template.userData?.clothFit?.hands,
+    H = skin.userData.hands;
+  if (hands && H) {
+    H.kWrist.value.set(hands.R.wrist, hands.L.wrist);
+    H.kKnR.value.set(...hands.R.knuckle, hands.R.length);
+    H.kKnL.value.set(...hands.L.knuckle, hands.L.length);
+  }
   // the skin under the clothes he wears is not drawn (src/clothFit.js)
   if (skin.userData.coverOn)
     skin.userData.coverOn.value.set(1, look.armSleeve ? 1 : 0, look.legSleeve ? 1 : 0);
@@ -625,5 +633,7 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
     setLod,
     setDetail,
     lodMeshes,
+    // how far each hand's fingers curl (0 open, about 0.45 round the ball, 1 a fist): motion.js sets it every frame
+    setGrip: (r, l) => H?.kGrip.value.set(r, l),
   });
 }

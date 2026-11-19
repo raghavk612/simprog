@@ -200,6 +200,34 @@ export function coverField(body, cloths, trim) {
   return cover;
 }
 
+/* The hands, for the finger curl (materials.js patch, hands): the rigid hand hangs straight down in the bind pose, palm
+   to the thigh, width front to back. Per hand: the wrist bone's index in the skin's skeleton, the knuckle line (a pivot
+   about 45% of the way from the wrist to the fingertips) and the fingers' length below it. Bind space of body_mesh. */
+export function handFit(body) {
+  const sk = body.skeleton,
+    g = body.geometry,
+    p = g.attributes.position,
+    si = g.attributes.skinIndex,
+    sw = g.attributes.skinWeight;
+  if (!sk || !si) return null;
+  const out = {};
+  for (const side of ['R', 'L']) {
+    const wi = sk.bones.findIndex(b => b.name === `wrist_${side}`);
+    if (wi < 0) return null;
+    const joint = new THREE.Vector3().setFromMatrixPosition(sk.boneInverses[wi].clone().invert()),
+      pts = [];
+    for (let i = 0; i < p.count; i++)
+      if (si.getX(i) === wi && sw.getX(i) > 0.99) pts.push([p.getX(i), p.getY(i), p.getZ(i)]);
+    if (pts.length < 20) return null;
+    const tip = Math.min(...pts.map(q => q[1])),
+      knY = joint.y - 0.45 * (joint.y - tip),
+      ring = pts.filter(q => Math.abs(q[1] - knY) < 0.012),
+      mean = k => ring.reduce((a, q) => a + q[k], 0) / Math.max(1, ring.length);
+    out[side] = { wrist: wi, knuckle: [mean(0), knY, mean(2)], length: knY - tip };
+  }
+  return out;
+}
+
 /* Works the attributes out for a loaded athlete template (gltf), once. Every level of detail gets its own. */
 export function prepareCloth(template) {
   template.userData ??= {};
@@ -240,6 +268,7 @@ export function prepareCloth(template) {
       ).reduce((c, v, i) => ((c[i % 3] += v), c), [0, 0, 0]);
     if (trim) smoothTrim(trim); // after the coverage, which reads where the openings are from the tube as modelled
   }
+  if (named.body_mesh) out.hands = handFit(named.body_mesh);
   template.userData.clothFit = out;
   return out;
 }

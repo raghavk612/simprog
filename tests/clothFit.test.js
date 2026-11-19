@@ -40,3 +40,17 @@ test('cloth fit: skin under the kit and sleeves is marked, skin at the openings 
     assert.ok(named.body_mesh_lod1.geometry.attributes.kCover, 'the far mesh has it too');
   }
 });
+test('hand fit: each wrist, its knuckle line part-way down the hand, and the fingers below it', async () => {
+  const { handFit } = await import('../src/clothFit.js');
+  for (const v of ['guard', 'center']) {
+    const g = await load(v),
+      named = {};
+    g.scene.traverse(o => o.isMesh && (named[o.name] = o));
+    const h = handFit(named.body_mesh),
+      bones = named.body_mesh.skeleton.bones;
+    assert.equal(bones[h.R.wrist].name, 'wrist_R');
+    assert.equal(bones[h.L.wrist].name, 'wrist_L');
+    assert.ok(h.R.knuckle[0] < 0 && h.L.knuckle[0] > 0, 'right hand on his right (-x)');
+    assert.ok(h.R.length > 0.08 && h.R.length < 0.18, `${v}: finger length ${h.R.length.toFixed(3)}`);
+  }
+});

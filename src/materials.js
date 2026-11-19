@@ -110,6 +110,26 @@ vec3 kPerturb(vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDir){
  vec3 n = abs(fDet) * surf_norm - vGrad;
  return dot(n, n) > 1e-14 ? normalize(n) : surf_norm;
 }`;
+/* The finger curl (hands): rotation about the knuckle line's front-back axis, more toward the fingertips. The right hand's
+   palm faces +x in the bind pose, so its fingers turn toward +x; the left's toward -x. */
+const HAND_CURL = `
+uniform vec2 kWrist; uniform vec4 kKnR; uniform vec4 kKnL; uniform vec2 kGrip;
+vec3 kRotZ(vec3 v, float a){ float c = cos(a), s = sin(a); return vec3(v.x * c - v.y * s, v.x * s + v.y * c, v.z); }
+float kCurl(vec3 p, out vec3 piv){
+ piv = vec3(0.0);
+ #ifdef USE_SKINNING
+ if (skinWeight.x < 0.99) return 0.0;
+ vec4 kn; float g; float sd;
+ if (abs(skinIndex.x - kWrist.x) < 0.5) { kn = kKnR; g = kGrip.x; sd = 1.0; }
+ else if (abs(skinIndex.x - kWrist.y) < 0.5) { kn = kKnL; g = kGrip.y; sd = -1.0; }
+ else return 0.0;
+ piv = kn.xyz;
+ float below = kn.y - p.y;
+ return below > 0.0 ? sd * g * 1.6 * clamp(below / kn.w, 0.0, 1.0) : 0.0;
+ #else
+ return 0.0;
+ #endif
+}`;
 /* Baked detail maps (src/playerMaps.js) hold the normal in RGB and the ambient occlusion in A of one texture, which is both
    normalMap and aoMap; three's aomap_fragment reads R, so every athlete material reads A instead. kAoFade (0..1) lets the
    painted face take over from the baked AO where it already paints the shadows. */
@@ -150,8 +170,18 @@ function patch(
     print = false,
     strands = false,
     cover = false,
+    hands = false,
   } = {},
 ) {
+  // hands: the fingers curl toward the palm about the knuckle line (src/clothFit.js handFit), by kGrip per hand (0 open,
+  // about 0.45 round the ball, 1 a fist), before skinning: the hand mesh is rigid on the wrist and has no finger joints
+  if (hands)
+    material.userData.hands = {
+      kWrist: { value: new THREE.Vector2(-9, -9) },
+      kKnR: { value: new THREE.Vector4(0, 0, 0, 1) },
+      kKnL: { value: new THREE.Vector4(0, 0, 0, 1) },
+      kGrip: { value: new THREE.Vector2(0.3, 0.3) },
+    };
   // cover: skin wholly under clothing the player wears is not drawn (src/clothFit.js kCover; kCoverOn picks the sleeves).
   // A mesh without the attribute reads zeros: nothing skipped.
   if (cover) material.userData.coverOn = { value: new THREE.Vector3(1, 0, 0) };
@@ -184,12 +214,14 @@ function patch(
       });
     if (print) Object.assign(shader.uniforms, material.userData.print);
     if (cover) shader.uniforms.kCoverOn = material.userData.coverOn;
+    if (hands) Object.assign(shader.uniforms, material.userData.hands);
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
         '#include <common>\nvarying vec3 vKRest; varying vec3 vKRestN;' +
           (strands ? ' varying vec3 vKUp;' : '') +
-          (cover ? ' attribute vec3 kCover; varying vec3 vKCover;' : ''),
+          (cover ? ' attribute vec3 kCover; varying vec3 vKCover;' : '') +
+          (hands ? HAND_CURL : ''),
       )
       .replace(
         '#include <skinnormal_vertex>',
@@ -202,10 +234,25 @@ function patch(
  vKUp = normalize((modelViewMatrix * vec4(kUp, 0.0)).xyz);`
           : '#include <skinnormal_vertex>',
       )
-      .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\nvKRestN = objectNormal;')
+      .replace(
+        '#include <beginnormal_vertex>',
+        '#include <beginnormal_vertex>' +
+          (hands
+            ? `\n { vec3 kPiv; float kA = kCurl(position, kPiv); objectNormal = kRotZ(objectNormal, kA);
+  #ifdef USE_TANGENT
+  objectTangent = kRotZ(objectTangent, kA);
+  #endif
+ }`
+            : '') +
+          '\nvKRestN = objectNormal;',
+      )
       .replace(
         '#include <begin_vertex>',
-        '#include <begin_vertex>\nvKRest = transformed;' +
+        '#include <begin_vertex>' +
+          (hands
+            ? '\n { vec3 kPiv; float kA = kCurl(position, kPiv); if (kA != 0.0) transformed = kPiv + kRotZ(transformed - kPiv, kA); }'
+            : '') +
+          '\nvKRest = transformed;' +
           (cover ? '\nvKCover = kCover;' : '') +
           (inflate > 0 ? `\ntransformed += objectNormal * ${inflate.toFixed(4)};` : ''),
       );
@@ -305,7 +352,7 @@ function patch(
     shader.fragmentShader = frag;
   };
   material.customProgramCacheKey = () =>
-    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}-${strands ? 1 : 0}-${cover ? 1 : 0}`;
+    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}-${strands ? 1 : 0}-${cover ? 1 : 0}-${hands ? 1 : 0}`;
   return material;
 }
 
@@ -332,6 +379,7 @@ export function skinMaterial(color, face = null) {
       scatter: [0.75, 0.32, 0.22],
       face,
       cover: true,
+      hands: true,
     },
   );
 }
