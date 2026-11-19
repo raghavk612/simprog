@@ -18,7 +18,10 @@ const partsOf = body => {
   });
   return out;
 };
-const ZERO = new THREE.Matrix4().makeScale(0, 0, 0);
+const ZERO = new THREE.Matrix4().makeScale(0, 0, 0),
+  _frustum = new THREE.Frustum(),
+  _pv = new THREE.Matrix4(),
+  _sphere = new THREE.Sphere(new THREE.Vector3(), 1.4); // round a standing figure (about 2 units tall)
 
 export class ClassicBatch {
   constructor(scene, size = 10) {
@@ -41,40 +44,56 @@ export class ClassicBatch {
       return im;
     });
   }
-  /* Copies the classic players' parts into the instances; players with another body leave their slot empty. */
-  update(people) {
+  /* Copies the classic players' parts into the instances; players with another body take no slot. Given a camera, a
+     player outside its view takes none either (each figure used to be culled on its own); the caller passes none when
+     the figures cast shadows, since one out of view can still shadow what is in it. */
+  update(people, camera = null) {
+    if (camera) {
+      camera.updateMatrixWorld();
+      _frustum.setFromProjectionMatrix(
+        _pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse),
+      );
+    }
     let any = false;
     for (const p of people) if (p.userData.body?.style === 'classic') any = true;
     if (!any) {
       if (this.meshes) for (const im of this.meshes) im.visible = false;
       return;
     }
-    people.forEach((p, i) => {
+    // only the figures in view are written, one after another, and the meshes draw just that many instances (a figure
+    // out of view costs nothing, as when each was culled on its own)
+    let n = 0;
+    for (const p of people) {
       const body = p.userData.body;
-      if (body?.style !== 'classic') return;
+      if (body?.style !== 'classic') continue;
       if (!this.meshes) this.build(body);
       if (!this.bodies.has(body)) {
         this.bodies.add(body);
         body.root.traverse(o => o.isMesh && !keep(o) && o.layers.set(HIDDEN_LAYER));
       }
+      if (!p.visible) continue;
+      if (
+        camera &&
+        !_frustum.intersectsSphere(
+          _sphere.set(_sphere.center.set(p.position.x, p.position.y + 1, p.position.z), 1.4),
+        )
+      )
+        continue;
       p.updateWorldMatrix(true, true);
       const parts = (body.batchParts ??= partsOf(body));
       parts.forEach((m, k) => {
         const im = this.meshes[k];
         if (!im) return;
-        let shown = p.visible;
-        for (let o = m; shown && o && o !== p; o = o.parent) shown = o.visible;
-        im.setMatrixAt(i, shown ? m.matrixWorld : ZERO);
-        im.setColorAt(i, m.material.color);
+        let shown = true;
+        for (let o = m; shown && o && o !== p; o = o.parent) shown = o.visible; // the head in Player view
+        im.setMatrixAt(n, shown ? m.matrixWorld : ZERO);
+        im.setColorAt(n, m.material.color);
       });
-    });
-    // a slot whose player is not classic (or missing) stays empty
-    for (let i = people.length; i < this.size; i++) for (const im of this.meshes) im.setMatrixAt(i, ZERO);
-    people.forEach((p, i) => {
-      if (p.userData.body?.style !== 'classic') for (const im of this.meshes) im.setMatrixAt(i, ZERO);
-    });
-    for (const im of this.meshes) {
-      im.visible = true;
+      n++;
+    }
+    for (const im of this.meshes || []) {
+      im.count = n;
+      im.visible = n > 0;
       im.instanceMatrix.needsUpdate = true;
       im.instanceColor.needsUpdate = true;
     }

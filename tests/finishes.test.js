@@ -136,3 +136,18 @@ test('putback: the loose ball winner dips, goes up with both feet, and is let go
   assert.ok(seen > 20 && tuck > 5);
   assert.equal(putbackFrame(clipOf('pullup', { outcome: 'block', recovery: 'defense' }), 4, rel), null);
 });
+
+test('finishes: the cached keyframes give the same frames whatever ran before (a dunk that hangs, one that is blocked)', () => {
+  const frames = c => {
+    const out = [];
+    run(c, f => out.push(f && JSON.stringify([f.hands, f.body, f.lift, f.ball])));
+    return out;
+  };
+  const made = clipOf('dunk'),
+    blocked = clipOf('dunk', { outcome: 'block', points: 0 }),
+    first = frames(made);
+  frames(blocked);
+  for (const k of FINISHES) frames(clipOf(k));
+  assert.deepEqual(frames(made), first);
+  assert.notDeepEqual(frames(blocked), first, 'a blocked dunk has its own landing');
+});

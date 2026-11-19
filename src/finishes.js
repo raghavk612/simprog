@@ -290,15 +290,28 @@ const KEYS = {
   dunk: T => dunkKeys(T),
   alley: T => dunkKeys(T, { lob: true }),
 };
+/* A finish's keyframes for a play kind's timing, made once (finishFrame runs every frame). Keyed by the play's kind, not
+   the finish's: kinds sharing a finish have their own timings. landS takes two values for a dunk (hangs or not). */
+const KEY_CACHE = new Map();
+function keysFor(playKind, kind, F, landS) {
+  const k = `${playKind}|${landS}`;
+  let K = KEY_CACHE.get(k);
+  if (!K) KEY_CACHE.set(k, (K = KEYS[kind]({ ...F, landS })));
+  return K;
+}
 /* Seconds of the shot's beats from the release, for a kind. */
+const TIMES = new Map();
 export function finishTimes(kind) {
+  if (TIMES.has(kind)) return TIMES.get(kind);
   const T = shotTiming(kind);
-  return {
+  const out = {
     T,
     gatherS: (T.gather - T.release) * S,
     takeoffS: (T.takeoff - T.release) * S,
     landS: (T.land - T.release) * S,
   };
+  TIMES.set(kind, out);
+  return out;
 }
 
 /* The dunker's drawn height above the play's jump (presentation): he rises `boost` higher so his hands reach over the
@@ -332,7 +345,7 @@ export function finishFrame(clip, time, me, playBall, release) {
     hangs = dunk && clip.outcome !== 'block', // a blocked dunk never reaches the rim
     DL = dunk ? dunkLift(T, tr, hangs ? {} : { hang: 0, boost: 0.18 }) : null,
     landS = dunk ? DL.land : F.landS,
-    K = KEYS[kind]({ ...F, landS });
+    K = keysFor(clip.kind, kind, F, landS);
   // over once the follow-through has faded (fade below): a reaction (src/reactions.js) can take his arms from there
   if (tr < F.gatherS - 0.05 || tr > landS + 0.5) return null;
   // the hand away from the defender: the right on the right of the rim (as he faces it), mirrored for the left

@@ -2060,7 +2060,8 @@ export class Arena {
     }
     this.settleBall();
     this.updateLods();
-    this.classicBatch?.update(this.people);
+    // figures out of view are skipped only without shadows: a player just out of shot still throws one into it
+    this.classicBatch?.update(this.people, this.sun?.castShadow ? null : this.camera);
     this.camera.position.x += jx;
     this.camera.position.y += jy;
     this.look.render(this.camera);
