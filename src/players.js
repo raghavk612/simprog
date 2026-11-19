@@ -485,13 +485,18 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
   );
   for (const [name, o] of Object.entries(objs))
     if (/^(hair_|headband_|sleeve_)/.test(name) && !keep.has(name)) o.parent?.remove(o);
+  const tall = info.height || 2.2,
+    cullSphere = new THREE.Sphere(new THREE.Vector3(0, tall * 0.55, 0), tall * 0.85);
   root.traverse(o => {
     if (o.isMesh) {
       const name = o.material?.name;
       o.material = pick[name] || skin;
       o.castShadow = true;
       o.receiveShadow = true;
-      o.frustumCulled = false;
+      // culled against a fixed sphere round the whole body (standing, arms up, a jump's tucked legs): a skinned mesh's own
+      // bounds are the bind pose's, and working them out from the pose every frame would cost more than it saves
+      o.frustumCulled = true;
+      o.boundingSphere = cullSphere;
     }
   });
   // the finger curl (materials.js hands): which bones are the wrists, where the knuckles are

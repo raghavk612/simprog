@@ -282,3 +282,26 @@ test('motion version 2: off-ball players hold their spots and move with purpose;
     };
   assert.ok(gap(0.08) > gap(0.36) + 0.8, 'sagging, then closed out');
 });
+test('flightPath: the trail follows exactly the parabola the play flies (without re-sampling the play)', async () => {
+  const { flightPath, sampleClip, shotTiming, CLIP_SECONDS: S } = await import('../src/basketball.js');
+  for (const kind of ['catch', 'drive', 'dunk', 'hook'])
+    for (const outcome of ['made', 'miss']) {
+      const c = {
+          kind,
+          team: 'away',
+          lane: -1,
+          contest: 'contested',
+          outcome,
+          points: outcome === 'made' ? 2 : 0,
+          v: 2,
+        },
+        T = shotTiming(kind),
+        f = flightPath(c);
+      for (let t = T.release * S + 0.01; t < 0.86 * S; t += 0.05) {
+        const a = f(t),
+          b = sampleClip(c, t).ball;
+        assert.ok(Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) < 1e-6, `${kind} ${outcome} at ${t}`);
+      }
+      assert.equal(flightPath(c), f, 'once per play');
+    }
+});

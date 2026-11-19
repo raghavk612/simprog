@@ -484,6 +484,26 @@ function shotHands(t, T, at, ballW) {
   out.L = { p: l, flex: 0, pron: 0, pole: null, w: fade };
   return out;
 }
+/* A shot's flight as a function of time (seconds into the play), worked out once per play: the same parabola sampleClip
+   follows (from the play's release point to the rim), held at the release point before it. The Arena's ball trail uses it
+   instead of sampling the whole play several times a frame. */
+const FLIGHTS = new WeakMap();
+export function flightPath(clip) {
+  let f = FLIGHTS.get(clip);
+  if (f) return f;
+  const T = shotTiming(clip.kind),
+    side = clip.team === 'home' ? 1 : -1,
+    release = sampleClip(clip, T.release * CLIP_SECONDS + 1e-9).ball,
+    v = launch(release, { x: 12.15 * side, y: BALL.rim, z: 0 }, T.flight);
+  f = time => {
+    const t = Math.max(0, Math.min(1, time / CLIP_SECONDS));
+    return t < T.release
+      ? { ...release }
+      : fly(release, v, (Math.min(t, BALL.arrive) - T.release) * CLIP_SECONDS);
+  };
+  FLIGHTS.set(clip, f);
+  return f;
+}
 /* When a block meets the ball (clip fraction): just out of the shooter's hand. */
 export const blockHit = kind => shotTiming(kind).release + 0.015;
 /* ---- Spacing (game units; 1 ft = 0.33) ---- */

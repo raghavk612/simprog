@@ -134,7 +134,14 @@ test('athlete bodies: every variant file loads as a rigged body the Arena can dr
     b.root.traverse(o => {
       if (o.isSkinnedMesh) {
         tris += o.geometry.index.count / 3;
-        assert.equal(o.frustumCulled, false);
+        // culled against a fixed sphere that holds the whole body, arms raised (the bind pose's own bounds would clip)
+        assert.equal(o.frustumCulled, true);
+        const sp = o.boundingSphere;
+        assert.ok(
+          sp.radius >= b.height * 0.8 && Math.abs(sp.center.y - b.height * 0.55) < 1e-6,
+          `${v}: cull sphere`,
+        );
+        assert.ok(sp.center.y + sp.radius > b.height + 0.6, 'reaches above a raised hand');
       }
     });
     assert.ok(tris > 10000 && tris < 15000, `${v}: ${tris} triangles in budget`);

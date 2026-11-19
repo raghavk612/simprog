@@ -212,27 +212,32 @@ export function facingWeight(speed, arms, off = 0) {
 /* Two-bone arm IK in the chest's space. S = shoulder, T = wrist target, L1/L2 = upper arm and forearm, pole = where the elbow
    should point. Returns the upper-arm direction u, the forearm bend direction b (both unit) and the elbow bend angle
    (0 = straight), or null if the target sits on the shoulder. */
+const _sd = new THREE.Vector3(),
+  _sp = new THREE.Vector3(),
+  _su = new THREE.Vector3(),
+  _sE = new THREE.Vector3(),
+  _sf = new THREE.Vector3(),
+  _sb = new THREE.Vector3(),
+  _sol = { u: _su, b: _sb, bend: 0, elbow: _sE };
+/* (The result's vectors are reused by the next call: use them before calling it again.) */
 export function solveArm(S, T, L1, L2, pole) {
-  const d = T.clone().sub(S),
+  const d = _sd.copy(T).sub(S),
     len = d.length();
   if (len < 1e-5) return null;
   const D = Math.min(Math.max(len, Math.abs(L1 - L2) + 1e-3), L1 + L2 - 1e-6),
     dn = d.multiplyScalar(1 / len);
-  const p = pole.clone().sub(dn.clone().multiplyScalar(pole.dot(dn)));
-  if (p.lengthSq() < 1e-8) p.set(0, 0, 1).sub(dn.clone().multiplyScalar(dn.z));
+  const p = _sp.copy(pole).addScaledVector(dn, -pole.dot(dn));
+  if (p.lengthSq() < 1e-8) p.set(0, 0, 1).addScaledVector(dn, -dn.z);
   p.normalize();
   const a = Math.acos(Math.max(-1, Math.min(1, (L1 * L1 + D * D - L2 * L2) / (2 * L1 * D)))),
-    u = dn
-      .clone()
-      .multiplyScalar(Math.cos(a))
-      .add(p.clone().multiplyScalar(Math.sin(a)));
-  const E = S.clone().add(u.clone().multiplyScalar(L1)),
-    f = dn.clone().multiplyScalar(D).add(S).sub(E).normalize();
-  const b = f.clone().sub(u.clone().multiplyScalar(f.dot(u)));
+    u = _su.copy(dn).multiplyScalar(Math.cos(a)).addScaledVector(p, Math.sin(a));
+  const E = _sE.copy(S).addScaledVector(u, L1),
+    f = _sf.copy(dn).multiplyScalar(D).add(S).sub(E).normalize();
+  const b = _sb.copy(f).addScaledVector(u, -f.dot(u));
   if (b.lengthSq() < 1e-8) b.copy(p);
   b.normalize();
-  const bend = Math.PI - Math.acos(Math.max(-1, Math.min(1, (L1 * L1 + L2 * L2 - D * D) / (2 * L1 * L2))));
-  return { u, b, bend, elbow: E };
+  _sol.bend = Math.PI - Math.acos(Math.max(-1, Math.min(1, (L1 * L1 + L2 * L2 - D * D) / (2 * L1 * L2))));
+  return _sol;
 }
 /* Arm poses for each play situation, per side (j: 0 = right, 1 = left): shoulder flex x (negative = forward/up), abduction z
    (positive = away from the body) and elbow flex e (negative = bent). */
@@ -273,6 +278,22 @@ const quatFrom = (() => {
     return out.setFromRotationMatrix(m1.multiply(m0.transpose()));
   };
 })();
+// scratch vectors for the per-frame work (nothing is allocated per player per frame); each is used and done with inside
+// one step, never kept
+const _fw = new THREE.Vector3(),
+  _left = new THREE.Vector3(),
+  _tmp = new THREE.Vector3(),
+  _at = new THREE.Vector3(),
+  _pole = new THREE.Vector3(),
+  _bb = new THREE.Vector3(),
+  _tb = new THREE.Vector3(),
+  _t2 = new THREE.Vector3(),
+  _tp = new THREE.Vector3(),
+  _cw = new THREE.Vector3(),
+  _cw2 = new THREE.Vector3(),
+  _pp = new THREE.Vector3(),
+  _nrm = [new THREE.Vector3(), new THREE.Vector3()],
+  UP = new THREE.Vector3(0, 1, 0);
 const _v = new THREE.Vector3(),
   _w = new THREE.Vector3(),
   _q = new THREE.Quaternion(),
@@ -347,7 +368,10 @@ export function animateAthlete(player, pose, ctx) {
       m.dir = dir;
     } else dir = m.dir || 0;
   }
-  m.last = { x: here.x, z: here.z };
+  if (m.last) {
+    m.last.x = here.x;
+    m.last.z = here.z;
+  } else m.last = { x: here.x, z: here.z };
   // a player drawn taller or shorter than his model (the Arena scales him, players.js bodyFor): his stride is measured in
   // his own body's units, so the planted foot moves back exactly as far as he moves
   moved /= player.scale.x || 1;
@@ -482,7 +506,7 @@ export function animateAthlete(player, pose, ctx) {
     // performing: the leg reaches the move's planted foot (world target -> this player's space), the foot turned its way
     if (PF && !PF.gait && pw > 0 && PF.feet?.[s]) {
       const F = PF.feet[s],
-        lf = (player.updateMatrixWorld(), player.worldToLocal(_w.copy(F.p))),
+        lf = (player.updateWorldMatrix(true, false), player.worldToLocal(_w.copy(F.p))), // his own matrix only, not every bone's
         hip = hipBone.position,
         hx = R.pelvis.x + hip.x,
         hz = R.pelvis.z + hip.z,
@@ -544,7 +568,7 @@ export function animateAthlete(player, pose, ctx) {
       let py = -(pb.twist || 0) * 0.8,
         pp = 0;
       if (PF.look) {
-        const l = (player.updateMatrixWorld(), player.worldToLocal(_w.copy(PF.look)));
+        const l = (player.updateWorldMatrix(true, false), player.worldToLocal(_w.copy(PF.look)));
         py = Math.max(-1.1, Math.min(1.1, Math.atan2(l.x, l.z)));
         pp = Math.max(-0.6, Math.min(0.5, Math.atan2(l.y - 1.75, Math.hypot(l.x, l.z))));
       }
@@ -602,27 +626,25 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0, g = ga
   const ball = ctx.ball,
     holder = !!ctx.holder && !!ball,
     yaw = player.rotation.y,
-    fw = _v.set(Math.sin(yaw), 0, Math.cos(yaw)).clone(),
-    left = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-  const r = ctx.ballRadius || 0.13,
-    up = new THREE.Vector3(0, 1, 0);
-  let normals = [null, null];
+    fw = _fw.set(Math.sin(yaw), 0, Math.cos(yaw)),
+    left = _left.set(Math.cos(yaw), 0, -Math.sin(yaw));
+  const r = ctx.ballRadius || 0.13;
+  const normals = [null, null];
   if (holder) {
     if (arms === 'dribble') {
-      const j = ball.clone().sub(player.position).dot(left) > 0 ? 1 : 0;
-      normals[j] = up.clone();
+      const j = _tmp.copy(ball).sub(player.position).dot(left) > 0 ? 1 : 0;
+      normals[j] = _nrm[j].copy(UP);
     } else if (arms === 'shoot' || arms === 'hook') {
-      normals[0] = fw
-        .clone()
-        .negate()
-        .multiplyScalar(0.75)
-        .add(up.clone().multiplyScalar(-0.35))
-        .add(left.clone().multiplyScalar(-0.3))
+      normals[0] = _nrm[0]
+        .copy(fw)
+        .multiplyScalar(-0.75)
+        .addScaledVector(UP, -0.35)
+        .addScaledVector(left, -0.3)
         .normalize();
-      if (arms === 'shoot') normals[1] = left.clone();
+      if (arms === 'shoot') normals[1] = _nrm[1].copy(left);
     } else {
-      normals[0] = left.clone().negate();
-      normals[1] = left.clone();
+      normals[0] = _nrm[0].copy(left).negate();
+      normals[1] = _nrm[1].copy(left);
     }
   }
   u.arms.forEach((a, j) => {
@@ -650,11 +672,11 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0, g = ga
       chest.updateWorldMatrix(true, false);
       // the dribbling hand goes where the dribble puts it (ctx.dribbleHand, basketball.js dribbleAt), over the ball: on it
       // in the push, waiting above it while it bounces. Every other hand on the ball goes to the ball.
-      const at = arms === 'dribble' && ctx.dribbleHand != null ? ball.clone().setY(ctx.dribbleHand) : ball;
-      T = chest.worldToLocal(at.add(n.clone().multiplyScalar(r + 0.07)));
+      const at = arms === 'dribble' && ctx.dribbleHand != null ? _at.copy(ball).setY(ctx.dribbleHand) : ball;
+      T = chest.worldToLocal(at.addScaledVector(n, r + 0.07));
       if (T.distanceTo(S) < (rest.L1 + rest.L2) * 1.2) {
         want = 1;
-        m.ikT[j] = T.clone();
+        (m.ikT[j] ??= new THREE.Vector3()).copy(T);
       }
     }
     m.ik[j] = damp(m.ik[j], want, want ? 14 : 7, dt);
@@ -663,10 +685,10 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0, g = ga
       {
         const pole =
           arms === 'dribble'
-            ? new THREE.Vector3(side * 0.3, -0.2, -1) // dribbling: the elbow points back, close to the body
+            ? _pole.set(side * 0.3, -0.2, -1) // dribbling: the elbow points back, close to the body
             : T.y > S.y + 0.1
-              ? new THREE.Vector3(side * 0.45, -0.1, 1)
-              : new THREE.Vector3(side * 0.6, -0.25, -1);
+              ? _pole.set(side * 0.45, -0.1, 1)
+              : _pole.set(side * 0.6, -0.25, -1);
         const sol = solveArm(S, T, rest.L1, rest.L2, pole.normalize());
         if (sol) {
           quatFrom(rest.u0, rest.b0, sol.u, sol.b, _q);
@@ -691,15 +713,15 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0, g = ga
     // misses when it is not), its arm reaching straight at it when it is just out of reach
     if (arms === 'block' && ball && !holder && j === m.high && rest) {
       chest.updateWorldMatrix(true, false);
-      const B = chest.worldToLocal(ball.clone()),
+      const B = chest.worldToLocal(_bb.copy(ball)),
         reach = rest.L1 + rest.L2,
-        toBall = B.clone().sub(S),
+        toBall = _tb.copy(B).sub(S),
         dist = toBall.length(),
         near = Math.max(0, Math.min(1, (reach * 1.9 - dist) / (reach * 0.7)));
       m.swat = damp(m.swat ?? 0, near, 12, dt);
       if (m.swat > 0.01 && dist > 1e-3) {
-        const T2 = S.clone().add(toBall.multiplyScalar(Math.min(1, (reach * 0.98) / dist))),
-          sol = solveArm(S, T2, rest.L1, rest.L2, new THREE.Vector3(side * 0.5, -0.2, 1).normalize());
+        const T2 = _t2.copy(S).add(toBall.multiplyScalar(Math.min(1, (reach * 0.98) / dist))),
+          sol = solveArm(S, T2, rest.L1, rest.L2, _pole.set(side * 0.5, -0.2, 1).normalize());
         if (sol) {
           quatFrom(rest.u0, rest.b0, sol.u, sol.b, _q);
           a.quaternion.slerp(_q, m.swat);
@@ -714,15 +736,18 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0, g = ga
     if (wt > 0.001 && rest) {
       chest.updateWorldMatrix(true, false);
       // (own vectors: the target and the elbow direction must not share the scratch vector)
-      const Tp = chest.worldToLocal(H.p.clone()),
+      const Tp = chest.worldToLocal(_tp.copy(H.p)),
         pole = H.pole
-          ? chest
-              .worldToLocal(H.pole.clone().add(chest.getWorldPosition(new THREE.Vector3())))
-              .sub(chest.worldToLocal(chest.getWorldPosition(new THREE.Vector3())))
-              .normalize()
+          ? (() => {
+              const c = chest.getWorldPosition(_cw);
+              return chest
+                .worldToLocal(_pp.copy(H.pole).add(c))
+                .sub(chest.worldToLocal(_cw2.copy(c)))
+                .normalize();
+            })()
           : Tp.y > S.y + 0.1
-            ? new THREE.Vector3(side * 0.5, -0.15, 1)
-            : new THREE.Vector3(side * 0.3, -0.2, -1);
+            ? _pole.set(side * 0.5, -0.15, 1)
+            : _pole.set(side * 0.3, -0.2, -1);
       const sol = solveArm(S, Tp, rest.L1, rest.L2, pole.normalize());
       if (sol) {
         quatFrom(rest.u0, rest.b0, sol.u, sol.b, _q);

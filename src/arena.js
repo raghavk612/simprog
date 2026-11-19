@@ -14,6 +14,7 @@ import {
   ballDrop,
   blockHit,
   blockPlan,
+  flightPath,
 } from './basketball.js';
 import {
   drawScoreboard,
@@ -1842,10 +1843,11 @@ export class Arena {
       this.focusRing.position.x = this.people[o].position.x;
       this.focusRing.position.z = this.people[o].position.z;
       this.nets.forEach(n => (n.mesh.rotation.y = n.side === (clip.team === 'home' ? 1 : -1) ? pose.net : 0));
+      const flight = pose.flying ? flightPath(clip) : null; // the shot's parabola (no re-sampling of the play)
       this.trail.forEach((d, i) => {
-        d.visible = this.motion && pose.flying;
+        d.visible = this.motion && !!flight;
         if (d.visible) {
-          const previous = sampleClip(clip, Math.max(0, clipTime - i * 0.025)).ball;
+          const previous = flight(Math.max(0, clipTime - i * 0.025));
           d.position.set(previous.x, previous.y, previous.z);
         }
       });
