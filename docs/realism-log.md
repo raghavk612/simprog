@@ -86,3 +86,28 @@ marked `*` needed one).
   broadcast look renders into a target with no multisampling and no FXAA/SMAA.
 - **Weight and balance**: on-ball defence and the dribbler are crouched and planted (good); the transition run and the
   sprint keep the feet planted (the stride is tied to distance). Jump arcs are real gravity arcs.
+
+## Phase 1: cheap, high-visibility wins
+
+### 1.1 Black flashes (NaN normals)
+
+See phase 0. Committed on its own: `kPerturb` guards zero derivatives; `tests/materials.test.js`.
+
+### 1.2 Anti-aliasing in the broadcast look
+
+The canvas has MSAA, but with the broadcast look everything is drawn into the composer's half-float targets, which had
+none, and no FXAA/SMAA pass: every edge stair-stepped (docs/sheets/before/aa.png). Three options measured on the built
+game (frame median, ms; one run each, the same build):
+
+| | laptop High live | laptop Medium live | retina High live | retina Medium live |
+|---|---|---|---|---|
+| none | 11.1 | 6.3 | 22.1 | 9.4 |
+| 4× MSAA on the composer targets | 15.0 (+35%) | 8.9 (+41%) | 32.4 (+47%) | 14.2 (+51%) |
+| FXAA after the output pass | 11.0 | 6.5 | 21.8 | 9.1 |
+| SMAA after the output pass | 10.8 | 6.5 | 22.6 | 9.6 |
+
+MSAA resolves on every post pass and would break the 10% rule. **Decision: SMAA on High and Medium.** Critique of the 1:1
+crops (scratch comparison, 2× nearest): without AA the three-point arc, the lane lines and every silhouette stair-step;
+FXAA smooths them but visibly softens the jersey numbers and the "WASHINGTON" lettering on the apron; SMAA gives clean
+lines with the lettering still sharp. Its search and area textures are embedded in three's SMAAPass, so it works offline.
+Low already uses the canvas MSAA (no composer).

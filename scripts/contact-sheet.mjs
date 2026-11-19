@@ -31,7 +31,8 @@ const argv = process.argv.slice(2),
 const outDir = path.resolve(root, opt('out', 'ui-shots/sheets')),
   only = opt('only') ? String(opt('only')).split(',') : null,
   level = opt('level', 'high'),
-  players = opt('players', 'athletes');
+  players = opt('players', 'athletes'),
+  look = opt('look') ? JSON.parse(opt('look')) : null; // --look '{"aa":"smaa"}': a broadcast-look override
 fs.mkdirSync(outDir, { recursive: true });
 
 const S = CLIP_SECONDS;
@@ -297,7 +298,7 @@ try {
     if (only && !only.includes(name)) continue;
     const big = rows.some(r => r.big) || rows.some(r => r.crop),
       size = big ? [800, 600] : [640, 480];
-    const { page, context, errors } = await openGym(browser, srv.url, { level, players, save, size, dpr: 1 });
+    const { page, context, errors } = await openGym(browser, srv.url, { level, players, save, size, dpr: 1, look });
     await page.addStyleTag({ content: '.perf-hud{display:none!important}' });
     await fullFrame(page);
     await takeOver(page);

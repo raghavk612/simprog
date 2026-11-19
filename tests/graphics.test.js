@@ -106,8 +106,14 @@ test('broadcast look: High has reflections and ambient occlusion, Medium only bl
     spots: 6,
     contact: true,
     dof: true,
+    aa: 'smaa',
   });
   const m = lookFeatures('medium');
+  assert.equal(
+    m.aa,
+    'smaa',
+    'the broadcast look smooths its edges on Medium too (the canvas MSAA does not reach it)',
+  );
   assert.equal(m.reflections, false);
   assert.equal(m.ao, false);
   assert.equal(m.bloom, true);

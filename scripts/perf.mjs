@@ -57,7 +57,8 @@ const label = opt('label', 'run'),
   levels = String(opt('levels', 'high,medium,low')).split(','),
   configs = String(opt('configs', 'laptop,retina')).split(','),
   repeat = +opt('repeat', 2),
-  dev = !!opt('dev');
+  dev = !!opt('dev'),
+  look = opt('look') ? JSON.parse(opt('look')) : null; // --look '{"aa":"fxaa"}': a broadcast-look override (experiments)
 if (!dev && !opt('no-build')) execSync('npm run build', { cwd: root, stdio: 'inherit' });
 
 const chunks = dev ? null : chunkSizes();
@@ -94,6 +95,7 @@ try {
         const { page, context, errors } = await openGym(browser, srv.url, {
           level,
           save,
+          look,
           size: cfg.size,
           dpr: cfg.dpr,
           before: async (p, ctx) => {

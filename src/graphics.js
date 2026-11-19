@@ -47,11 +47,32 @@ export const probeDone = (
   times.length >= maxFrames ||
   (times.length >= minFrames && times.reduce((a, b) => a + b, 0) >= seconds * 1000);
 // Broadcast look (with the 3D athletes): what each level turns on. Low draws the classic gym.
+// aa: edge smoothing for the post-processed image (the canvas's own MSAA does not reach it). SMAA keeps lines and lettering
+// crisp for about 2-4% of a frame; 4x MSAA on the composer's targets cost 40-55% and FXAA blurred the lettering
+// (measured with scripts/perf.mjs and the aa contact sheet, docs/realism-log.md).
 export function lookFeatures(level) {
   if (level === 'high')
-    return { reflections: true, ao: true, bloom: true, grade: true, spots: 6, contact: true, dof: true };
+    return {
+      reflections: true,
+      ao: true,
+      bloom: true,
+      grade: true,
+      spots: 6,
+      contact: true,
+      dof: true,
+      aa: 'smaa',
+    };
   if (level === 'medium')
-    return { reflections: false, ao: false, bloom: true, grade: true, spots: 3, contact: true, dof: true };
+    return {
+      reflections: false,
+      ao: false,
+      bloom: true,
+      grade: true,
+      spots: 3,
+      contact: true,
+      dof: true,
+      aa: 'smaa',
+    };
   return null;
 }
 /* Player level of detail by on-screen size in device pixels. The far mesh (30% of the triangles, scripts/player_lods.mjs)

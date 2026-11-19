@@ -84,6 +84,7 @@ async function openOnce(
     save,
     block = true,
     before = null,
+    look = null,
   } = {},
 ) {
   const context = await browser.newContext({
@@ -96,8 +97,9 @@ async function openOnce(
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.addInitScript(
-    ([s, level, players]) => {
+    ([s, level, players, look]) => {
       if (s) localStorage.setItem('kangs-three-season-v2', s);
+      if (look) globalThis.__kangsLook = look; // broadcast-look overrides for experiments (src/broadcast.js)
       localStorage.setItem(
         'kangs_accessibility',
         JSON.stringify({ graphics: level, players, reducedMotion: false, modelsVersion: 2 }),
@@ -107,7 +109,7 @@ async function openOnce(
       let seed = 12345;
       Math.random = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
     },
-    [save ? JSON.stringify(save) : null, level, players],
+    [save ? JSON.stringify(save) : null, level, players, look],
   );
   try {
     await page.goto(`${url}?perf`);
