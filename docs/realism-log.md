@@ -598,3 +598,15 @@ the way a player faces (`face`), and the close-ups have a front view of the same
 for the before/after comparison. Golden bodies: the four scenes with an on-ball defender changed (deliberately), no clip.
 Trace: only the High athlete scenes differ, from the frames where an on-ball defender is in his stance; the title and Low
 are identical.
+
+### P3. Fingers spread
+
+The hands have separate fingers but no finger bones; the skin shader curled them (3.2). It now also fans them apart
+(`materials.js kFan`, per hand `kSpread`, 0 together to 1 wide): below the knuckle line, each point moves away from the
+hand's centre line across its width, more toward the tips, before the curl. **Decision:** no new bones (the brief's
+default) and no per-finger rig: the fan reads as spread fingers at every camera distance the game uses. `motion.js` sets
+the spread with the grip: wide on defence, a little on the dribble, together when relaxed, round the ball or in a fist; a
+performance can ask for it (`spread`): the catch's target hands, the contest's hand in the shot's path, the rebound's
+reach, the steal's poke, the blocker's swat. Close-up at 3×: the defender's high hand shows clear gaps between straight
+fingers; the low hand stays natural. Tests: spread on defence and for a target, none relaxed or in a fist, the high
+elbow under the hand. Trace identical (a uniform, no bone moves).

@@ -111,6 +111,7 @@ export function actionFrames(clip, time, pose) {
           p: R.W([target[0] + sx * 0.13, target[1], target[2]]),
           flex: -0.3,
           pron: 0.6,
+          spread: 0.9, // a target: fingers spread, thumbs in
           pole: null,
           w: cw,
         };
@@ -126,7 +127,9 @@ export function actionFrames(clip, time, pose) {
       w = bell(t, 0.2, 0.29, 0.36);
     out.push({
       actor: def,
-      hands: { [h]: { p: [ball.x, ball.y + 0.05, ball.z], flex: 0.4, pron: 1.2, pole: null, w } },
+      hands: {
+        [h]: { p: [ball.x, ball.y + 0.05, ball.z], flex: 0.4, pron: 1.2, spread: 0.6, pole: null, w },
+      },
       body: { lean: 0.32 * w, drop: 0.1 * w, side: (h === 'L' ? 0.1 : -0.1) * w },
       weight: w,
     });
@@ -152,6 +155,7 @@ export function actionFrames(clip, time, pose) {
         p: wide.map((v, i) => v + (up[i] - v) * rise),
         flex: rise > 0.5 ? -0.3 : 0,
         pron: 0.5,
+        spread: 0.8 * rise, // reaching for it with open hands
         pole: null,
         w: Math.max(box, rise),
       };
@@ -187,8 +191,8 @@ export function actionFrames(clip, time, pose) {
         out.push({
           actor: i,
           hands: {
-            [h]: { p, flex: 0.2, pron: 0.9, pole: null, w },
-            [h === 'L' ? 'R' : 'L']: { p: other, flex: 0, pron: 0.4, pole: null, w: w * 0.8 },
+            [h]: { p, flex: 0.2, pron: 0.9, spread: 0.9, pole: null, w }, // a wide hand in the shot's path
+            [h === 'L' ? 'R' : 'L']: { p: other, flex: 0, pron: 0.4, spread: 0.5, pole: null, w: w * 0.8 },
           },
           body: { lean: 0.05 * w },
           weight: w,

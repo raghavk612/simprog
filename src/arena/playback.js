@@ -312,7 +312,7 @@ export const playbackMethods = {
     const feet = (this.shooterFeet ??= new THREE.Vector3()).set(kept[o].x, pose.actors[o].y, kept[o].z),
       shooterArms =
         pose.shotHands && !tr ? this.shotPerform(pose.shotHands, feet, this.people[o].scale.x) : null,
-      blockerArm = pose.blockHands && !tr ? this.shotPerform(pose.blockHands) : null;
+      blockerArm = pose.blockHands && !tr ? this.shotPerform(pose.blockHands, null, 1, 0.9) : null; // spread hands swat
     // a finish at the rim (src/finishes.js): the shooter's hands, body, legs in the air, turn, the euro's side step, the
     // dunk's elevation and rim hang, and the ball on the finish's path; the putback's dip and two-hand rise
     const rel = !tr ? this.releasePoint(clip) : null,

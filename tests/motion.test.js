@@ -147,6 +147,8 @@ test('defensive stance: hands in front of the body, never out to the side; one h
           );
         player.updateMatrixWorld(true);
         return {
+          eR: at('elbow_R'),
+          eL: at('elbow_L'),
           R: at('wrist_R'),
           L: at('wrist_L'),
           sR: at('shoulder_R'),
@@ -169,6 +171,12 @@ test('defensive stance: hands in front of the body, never out to the side; one h
       `${v}: one hand up, one low (${hi.y.toFixed(2)} / ${lo.y.toFixed(2)})`,
     );
     assert.ok(lo === on.L, `${v}: the low hand is on the ball's side (his left)`);
+    // the high hand reaches out at the man with its elbow under it, not out to the side (a chicken wing)
+    assert.ok(on.R.z > on.sR.z + 0.4, `${v}: high hand well out in front (${(on.R.z - on.sR.z).toFixed(2)})`);
+    assert.ok(
+      Math.abs(on.eR.x) < Math.abs(on.sR.x) + 0.08 && on.eR.y < on.R.y,
+      `${v}: high elbow under the hand (${on.eR.x.toFixed(2)} vs shoulder ${on.sR.x.toFixed(2)})`,
+    );
     // help: the ball far away
     const help = drive(new THREE.Vector3(6, 1, 6));
     for (const [w, s] of [
@@ -229,4 +237,35 @@ test('gait: a planted foot stays put on the floor at a walk, a jog, a run and a 
       );
     }
   }
+});
+
+test('fingers: spread wide on defence and for a target, together when relaxed or in a fist', async () => {
+  const THREE = await import('three');
+  const { animateAthlete } = await import('../src/motion.js');
+  const { loadBody } = await import('../assets-src/players/cloudmesh/ball_samples.mjs');
+  const { body, player } = await loadBody('guard');
+  let spread = null;
+  body.setSpread = (r, l) => (spread = [r, l]);
+  const run = (pose, perform = null) => {
+    player.userData.motionState = undefined;
+    for (let f = 0; f < 60; f++)
+      animateAthlete(player, { y: 0, ...pose }, { dt: 1 / 60, motion: true, ball: null, perform });
+    return spread;
+  };
+  assert.ok(
+    run({ arms: 'defend' }).every(s => s > 0.7),
+    'defence: both hands spread',
+  );
+  assert.ok(
+    run({ arms: 'relax' }).every(s => s < 0.05),
+    'relaxed: together',
+  );
+  const at = new THREE.Vector3(0.2, 1.4, 0.5),
+    target = { p: at, pole: null, w: 1, spread: 0.9 },
+    fist = { p: at.clone(), pole: null, w: 1, grip: 1 };
+  const shown = run(
+    { arms: 'relax' },
+    { gait: true, body: {}, feet: {}, look: null, hands: { R: target, L: fist } },
+  );
+  assert.ok(shown[0] > 0.8 && shown[1] < 0.05, `a target hand spreads, a fist does not (${shown})`);
 });

@@ -113,7 +113,7 @@ vec3 kPerturb(vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDir){
 /* The finger curl (hands): rotation about the knuckle line's front-back axis, more toward the fingertips. The right hand's
    palm faces +x in the bind pose, so its fingers turn toward +x; the left's toward -x. */
 const HAND_CURL = `
-uniform vec2 kWrist; uniform vec4 kKnR; uniform vec4 kKnL; uniform vec2 kGrip;
+uniform vec2 kWrist; uniform vec4 kKnR; uniform vec4 kKnL; uniform vec2 kGrip; uniform vec2 kSpread;
 vec3 kRotZ(vec3 v, float a){ float c = cos(a), s = sin(a); return vec3(v.x * c - v.y * s, v.x * s + v.y * c, v.z); }
 float kCurl(vec3 p, out vec3 piv){
  piv = vec3(0.0);
@@ -126,6 +126,20 @@ float kCurl(vec3 p, out vec3 piv){
  piv = kn.xyz;
  float below = kn.y - p.y;
  return below > 0.0 ? sd * g * 1.6 * clamp(below / kn.w, 0.0, 1.0) : 0.0;
+ #else
+ return 0.0;
+ #endif
+}
+// the fingers fanned apart across the hand's width (z in the bind pose, the hand hanging palm in), more toward the tips
+float kFan(vec3 p){
+ #ifdef USE_SKINNING
+ if (skinWeight.x < 0.99) return 0.0;
+ vec4 kn; float sp;
+ if (abs(skinIndex.x - kWrist.x) < 0.5) { kn = kKnR; sp = kSpread.x; }
+ else if (abs(skinIndex.x - kWrist.y) < 0.5) { kn = kKnL; sp = kSpread.y; }
+ else return 0.0;
+ float below = kn.y - p.y;
+ return below > 0.0 ? (p.z - kn.z) * sp * 0.5 * clamp(below / kn.w, 0.0, 1.0) : 0.0;
  #else
  return 0.0;
  #endif
@@ -192,6 +206,7 @@ function patch(
       kKnR: { value: new THREE.Vector4(0, 0, 0, 1) },
       kKnL: { value: new THREE.Vector4(0, 0, 0, 1) },
       kGrip: { value: new THREE.Vector2(0.3, 0.3) },
+      kSpread: { value: new THREE.Vector2(0, 0) }, // 0 fingers together, 1 spread wide
     };
   // cover: skin wholly under clothing the player wears is not drawn (src/clothFit.js kCover; kCoverOn picks the sleeves).
   // A mesh without the attribute reads zeros: nothing skipped.
@@ -264,7 +279,7 @@ function patch(
         '#include <begin_vertex>',
         '#include <begin_vertex>' +
           (hands
-            ? '\n { vec3 kPiv; float kA = kCurl(position, kPiv); if (kA != 0.0) transformed = kPiv + kRotZ(transformed - kPiv, kA); }'
+            ? '\n { transformed.z += kFan(position); vec3 kPiv; float kA = kCurl(position, kPiv); if (kA != 0.0) transformed = kPiv + kRotZ(transformed - kPiv, kA); }'
             : '') +
           '\nvKRest = transformed;' +
           (sway

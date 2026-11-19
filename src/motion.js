@@ -621,6 +621,7 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0, g = ga
   ];
   m.ik ??= [0, 0];
   m.grip ??= [0.35, 0.35];
+  m.spread ??= [0, 0];
   m.ikT ??= [null, null];
   const t = ctx.motion ? m.t : 0;
   // where the ball is relative to this player, and which hands should be on it
@@ -776,8 +777,14 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0, g = ga
               ? 0.42
               : 0.35;
     m.grip[j] = damp(m.grip[j], grip, 12, dt);
+    // and spread: wide on defence and when a performance shows an open hand (a target for the pass, a contest, a reach
+    // for the rebound), a little on the dribble, together otherwise (a fist, round the ball, relaxed)
+    const spread =
+      H && wt > 0.3 ? (H.spread ?? 0) : arms === 'defend' ? 0.8 : dribbling > 0.5 && m.ik[j] <= 0.3 ? 0.3 : 0;
+    m.spread[j] = damp(m.spread[j], spread, 12, dt);
   });
   u.body.setGrip?.(m.grip[0], m.grip[1]);
+  u.body.setSpread?.(m.spread[0], m.spread[1]);
 }
 /* One arm of the defensive stance (DEFEND): the wrist target eases (so hands never snap between stances), then arm IK.
    m.onBall: 1 near the ball, 0 in help; m.lowHand: which hand traces the ball (the ball's side, with some hysteresis). */

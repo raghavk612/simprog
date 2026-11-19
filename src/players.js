@@ -646,6 +646,8 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
     lodMeshes,
     // how far each hand's fingers curl (0 open, about 0.45 round the ball, 1 a fist): motion.js sets it every frame
     setGrip: (r, l) => H?.kGrip.value.set(r, l),
+    // how far each hand's fingers fan apart (0 together, 1 spread wide): motion.js sets it every frame
+    setSpread: (r, l) => H?.kSpread.value.set(r, l),
     // the shorts' lag (body units, his own frame: x his left, y up, z forward): motion.js sets it every frame
     setSway: (x, y, z) => jersey.userData.sway?.kSway.value.set(x, y, z),
   });

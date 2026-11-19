@@ -123,8 +123,8 @@ export const poseMethods = {
   },
   /* A hands-only performance (motion.js ctx.perform) from a play's shot hands (world arrays): legs keep their gait.
      around/scale: a player drawn taller or shorter than his model (bodyFor) has the hands scaled about his feet, as the
-     ball he holds is (frame), so they still meet it. */
-  shotPerform(hands, around = null, scale = 1) {
+     ball he holds is (frame), so they still meet it. spread: how far the fingers fan apart (a blocker's swat). */
+  shotPerform(hands, around = null, scale = 1, spread = 0) {
     const V = p =>
         around && scale !== 1
           ? new THREE.Vector3(...p).sub(around).multiplyScalar(scale).add(around)
@@ -132,7 +132,7 @@ export const poseMethods = {
       out = { gait: true, body: {}, feet: {}, look: null, hands: {} };
     for (const h of ['R', 'L']) {
       const H = hands[h];
-      if (H) out.hands[h] = { ...H, p: V(H.p), pole: H.pole ? V(H.pole) : null };
+      if (H) out.hands[h] = { spread, ...H, p: V(H.p), pole: H.pole ? V(H.pole) : null };
     }
     return out;
   },
