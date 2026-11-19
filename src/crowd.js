@@ -10,7 +10,7 @@ function limb(a, b, r) {
   const A = new THREE.Vector3(...a),
     B = new THREE.Vector3(...b),
     len = A.distanceTo(B),
-    g = new THREE.CapsuleGeometry(r, Math.max(0.001, len), 3, 7);
+    g = new THREE.CapsuleGeometry(r, Math.max(0.001, len), 1, 6);
   g.applyQuaternion(
     new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize()),
   );
@@ -22,11 +22,11 @@ const merge = list => mergeGeometries(list.map(g => (g.index ? g.toNonIndexed() 
 
 /* The figure's parts in its own space: origin on the riser top under the hips, +z toward the court. Sized like the players. */
 export function fanParts() {
-  const torso = new THREE.CylinderGeometry(0.2, 0.165, 0.48, 12, 1);
+  const torso = new THREE.CylinderGeometry(0.2, 0.165, 0.48, 9, 1);
   torso.scale(1, 1, 0.62);
   torso.rotateX(0.1); // leaning in a little toward the game
   torso.translate(0, 0.36, 0.02);
-  const shoulders = new THREE.SphereGeometry(0.2, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2);
+  const shoulders = new THREE.SphereGeometry(0.2, 9, 3, 0, Math.PI * 2, 0, Math.PI / 2);
   shoulders.scale(1, 0.32, 0.62);
   shoulders.translate(0, 0.6, 0.045);
   const clothes = merge([
@@ -34,7 +34,7 @@ export function fanParts() {
     shoulders,
     ...both(s => limb([s * 0.2, 0.58, 0.05], [s * 0.22, 0.34, 0.16], 0.058)), // upper arms
   ]);
-  const head = new THREE.SphereGeometry(0.125, 14, 10);
+  const head = new THREE.SphereGeometry(0.125, 10, 7);
   head.scale(0.92, 1.1, 1);
   head.translate(0, 0.81, 0.07);
   const skin = merge([
@@ -42,12 +42,12 @@ export function fanParts() {
     limb([0, 0.62, 0.05], [0, 0.72, 0.06], 0.05), // neck
     ...both(s => limb([s * 0.22, 0.34, 0.16], [s * 0.13, 0.22, 0.4], 0.045)), // forearms down to the knees
     ...both(s => {
-      const h = new THREE.SphereGeometry(0.048, 8, 6);
+      const h = new THREE.SphereGeometry(0.048, 5, 3);
       h.translate(s * 0.12, 0.2, 0.44);
       return h;
     }),
   ]);
-  const hair = new THREE.SphereGeometry(0.133, 14, 8, 0, Math.PI * 2, 0, Math.PI * 0.52);
+  const hair = new THREE.SphereGeometry(0.133, 10, 4, 0, Math.PI * 2, 0, Math.PI * 0.52);
   hair.scale(0.94, 1.12, 1.02);
   hair.translate(0, 0.825, 0.06);
   const legs = merge([
