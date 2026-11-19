@@ -47,6 +47,7 @@ import { ballMaterial } from './materials.js';
 import { BroadcastLook } from './broadcast.js';
 import { animateAthlete, facingWeight, mixAngle, steerYaw, keepApart, SPACE } from './motion.js';
 import { finishFrame, putbackFrame } from './finishes.js';
+import { actionFrames } from './actions.js';
 import { Director } from './director.js';
 import { PerfHud, perfWanted } from './perfHud.js';
 import { titleCamera, flyIn, heroYaw, titleFov, HERO, STILL, titlePath } from './title.js';
@@ -1750,7 +1751,11 @@ export class Arena {
               rel,
             )
           : null,
-        pb = rel ? putbackFrame(clip, clipTime, rel) : null;
+        pb = rel ? putbackFrame(clip, clipTime, rel) : null,
+        // passes, catches, steals, rebounds and contests (src/actions.js), one per player at most
+        acts = new Map();
+      if (!tr)
+        for (const a of actionFrames(clip, clipTime, pose)) if (!acts.has(a.actor)) acts.set(a.actor, a);
       this.finish = fin;
       wanted.forEach((w, i) => {
         const f = i === o ? fin : null,
@@ -1762,6 +1767,13 @@ export class Arena {
             ...(i === o && shooterArms ? { perform: shooterArms } : {}),
             ...(i === mk && blockerArm ? { perform: blockerArm } : {}),
           };
+        const act = acts.get(i);
+        if (act && !f && !(i === mk && blockerArm) && !(pb && i === pb.actor)) {
+          q.perform = this.finishPerform(act);
+          q.y += act.lift || 0;
+          if (act.legs) q.airLegs = act.legs;
+          if (act.arms) q.arms = act.arms;
+        }
         if (f)
           Object.assign(q, {
             perform: this.finishPerform(f),

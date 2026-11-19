@@ -245,3 +245,26 @@ follow-through); the dunk's load and the hang on the rim are clear from the side
 camera with the ball low at the hip, then both arms up at the release. Weak spots left: the gather steps are not
 choreographed (the gait carries him in, so the take-off foot is not always the one opposite the knee drive), and the
 alley-oop's lob is not a real pass (the play has none).
+
+### 2.4 Passes, catches, steals, rebounds, contests
+
+New `src/actions.js`, the same presentation-only performance path as the finishes:
+
+- **Pass:** the passer leans and turns into it; once the ball leaves, both hands follow through toward the receiver (arms
+  long, thumbs turned down); the dunk's outlet is a two-hand overhead throw. **Catch:** the receiver's hands come up to
+  give a target and meet the ball before it arrives (until then the passer held a static "chest pass" preset and the
+  receiver's hands only found the ball once it was in reach).
+- **Steal:** the defender lunges (lean 0.32, dip) and pokes the near hand at the ball; the player he took it from
+  straightens and turns to chase instead of dropping into a defensive stance.
+- **Rebound:** a box-out (low, hands wide at the hips) as the shot comes off the rim, then a two-hand rise to the ball with
+  a small hop and the knees tucked.
+- **Contest:** instead of both arms held straight up for 1.5 s, the on-ball defender's hand nearest the shot rises over
+  the last 0.35 s to a point in the shot's path just short of the ball (a contest, not a foul) at the moment a block
+  would meet it, the other hand up beside it, and both come down as he lands; the help defender's is smaller. A block
+  keeps its own swat (basketball.js blockHands).
+
+Critique (passes and defense sheets): the outlet passer's overhead follow-through and the steal's lunge read at once; the
+contest now has a beat (hand up as the shooter gathers, full reach in the air with him); the rebounder visibly boxes out,
+then goes up for it with both hands. Bugs caught by the new tests and fixed before committing: the passer's action was
+still emitted at zero weight for the rest of the play, and the contest's rise was timed in clip fractions where seconds
+were meant (it started 0.8 s early).
