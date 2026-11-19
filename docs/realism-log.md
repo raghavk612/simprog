@@ -625,3 +625,13 @@ the top (8 cm for the forward's leg sleeve, whose rim dips most) so it is whole 
 its own material for its planes. Close-up at 3× (the gather): a straight black edge across the upper arm, no skin
 through it. Tests: the planes sit at the rims and keep most of the sleeve; only the right arm's and left leg's skin is
 marked. Trace identical (shader and attributes only).
+
+### P5. The putback row frames the rim
+
+The row followed the player at 4.6 units, aimed at 1.05: with a 43° lens that sees up to about 2.9, so the rim (3.28)
+and the ball's flight were off the top of every cell. The putback is taken from where he won the loose ball, about 6
+units from the rim (the play's own geometry, unchanged). The sheet's fixed camera can now frame an extra point with the
+subject (`include`); the putback row holds him and the rim, side-on to the line between them, 7.2 units off, aimed at
+1.7. A first try at 9.5 units put the camera behind the baseline (the side-on spots were outside the gym), small and
+behind a defender; at 7.2 it fits inside. Critique: the gather and rise mid-frame, the ball's arc, and the ball through
+the net in the last cell. Sheet tooling only; nothing in the game changed.

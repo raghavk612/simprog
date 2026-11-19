@@ -59,13 +59,14 @@ const even = (a, b, n = 6) => Array.from({ length: n }, (_, i) => +(a + ((b - a)
    travel shows against the floor), from the side of his travel or facing, turned `angle` degrees toward his front. The
    direction is the one nearest that, among 24 round him, that keeps every other player out of the lens and off the line
    of sight at all the row's moments and stays inside the gym. fixed: the camera stays put instead (aimed at the middle).
-   face: placed by the way he faces instead of the way he travels. */
+   face: placed by the way he faces instead of the way he travels. include: [x, z], a point the fixed camera frames
+   with him (the rim for a putback). */
 const FOV = 43;
 function sideCam(
   clip,
   idx,
   moments,
-  { dist = 4.6, height = 1.45, angle = 25, aimY = 1.05, fixed = false, face = false } = {},
+  { dist = 4.6, height = 1.45, angle = 25, aimY = 1.05, fixed = false, face = false, include = null } = {},
 ) {
   const S = moments.map(m => sampleClip(clip, m).actors),
     at = S.map(A => A[idx]),
@@ -115,8 +116,8 @@ function sideCam(
   }
   const off = [best.u[0] * dist, height - aimY, best.u[1] * dist];
   if (fixed) {
-    const xs = at.map(a => a.x),
-      zs = at.map(a => a.z),
+    const xs = [...at.map(a => a.x), ...(include ? [include[0]] : [])],
+      zs = [...at.map(a => a.z), ...(include ? [include[1]] : [])],
       c = [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...zs) + Math.max(...zs)) / 2];
     return { position: [c[0] + off[0], height, c[1] + off[2]], target: [c[0], aimY, c[1]] };
   }
@@ -157,7 +158,17 @@ function sheets(base) {
           [1, 2, 3, 4].find(k =>
             [0.8, 0.85, 0.9].some(t => sampleClip(clip, t * S).actors[k].arms === 'shoot'),
           ) ?? 1;
-      return row('Putback (after a block)', plays, 0, who, even(blockHit('pullup') * S + 0.3, 0.995 * S), {});
+      // the putback goes up from where he won the ball, about 6 units from the rim: a fixed camera holds him and the rim
+      // (the home team attacks +x), seen side-on to the line between them, aimed between the floor and the rim
+      return row('Putback (after a block)', plays, 0, who, even(blockHit('pullup') * S + 0.3, 0.995 * S), {
+        fixed: true,
+        include: [12.15, 0],
+        dist: 7.2,
+        height: 2.3,
+        aimY: 1.7,
+        angle: 90,
+        face: true,
+      });
     })(),
   ];
   out.jumpers = ['pullup', 'catch', 'stepback', 'fadeaway', 'corner'].map(k =>
