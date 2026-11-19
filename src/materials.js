@@ -451,7 +451,6 @@ export function clothMaterial(color) {
       sheenRoughness: 0.45,
       sheenColor: new THREE.Color(0.75, 0.75, 0.8),
       specularIntensity: 0.3,
-      side: THREE.DoubleSide, // through an armhole or a slit at a seam the inside of the cloth shows, not what is behind it
       name: 'kit',
     }),
     { map: MAPS.mesh(), scale: 22, bump: 0.18, fadeFar: 3.2, inflate: KIT_INFLATE, print: true, sway: true },
