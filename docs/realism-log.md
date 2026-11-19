@@ -401,3 +401,21 @@ Tests 310 passing, build green. Images reviewed above.
   so the separate pass stays. Found on the way: three r180's GTAOPass throws if given a depth texture in its constructor
   (it reads a normal target only built without one); worked around while testing (build, then `setGBuffer`).
 - The mirror (half resolution, reflected layer only) and the shadow map (once per frame) were already lean; left.
+
+### 4.3 CPU per frame
+
+- **Allocations (refactor, behaviour-preserving):** the arm IK cloned vectors for every hand of every player every frame
+  (`motion.js` had 46 allocation sites); it now uses module scratch vectors (and `solveArm` returns a reused result).
+  World-to-local conversions refreshed every bone's matrix (`updateMatrixWorld`) where the player's own was enough.
+  Proven exact: with the old ball handling restored, the golden bodies match bit for bit.
+- **Bug fixed on the way:** the hand-on-ball IK added to the Arena's own `ball.position` (passed by reference) and turned
+  it into the holder's chest space. The second hand's target was garbage (two-handed holds lost the left hand) and every
+  player animated after him that frame (head turn, defensive stance) read a wrong ball. It works on a copy now; the guide
+  hand on a shot, which now really reaches the ball, rests 2 cm further out so its fingers stay on the surface (the hands
+  test caught it). Golden bodies regenerated on purpose.
+- **Frustum culling:** athletes were never culled (`frustumCulled = false`, because a skinned mesh's bounds are the bind
+  pose's). Each mesh now has a fixed sphere round the whole body (centre at 55% of the height, radius 85%: arms raised,
+  a jump's tucked legs), so players off screen in the close and first-person shots are skipped.
+- **Ball trail:** it re-ran `sampleClip` 8 times a frame while the ball flew; `flightPath(clip)` (basketball.js) is the
+  same parabola in closed form, cached per play (matches `sampleClip` to 1e-6 in the test).
+- (Earlier, 2.2: a block no longer re-runs the whole play and a bisection inside `sampleClip` every frame.)
