@@ -7,6 +7,7 @@ export const SPECIAL_KITS = ['throwback', 'seniornight', 'blackout'];
 export const ALL_KITS = [...CORE_KITS, ...SPECIAL_KITS];
 export const KIT_NAMES = { throwback: 'Throwback', seniornight: 'Senior Night', blackout: 'Blackout' };
 export const isSpecialKit = k => SPECIAL_KITS.includes(k);
+export const KANGS_PURPLE = 0x6832ab; // the Kangs jersey before a kit is applied (the 3D gym)
 export const KITS = {
   home: {
     body: '#6832ab',
