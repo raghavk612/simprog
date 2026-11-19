@@ -58,20 +58,24 @@ const even = (a, b, n = 6) => Array.from({ length: n }, (_, i) => +(a + ((b - a)
 /* The camera for a row: it keeps a fixed offset from the subject (so he stays the same size in every moment and his
    travel shows against the floor), from the side of his travel or facing, turned `angle` degrees toward his front. The
    direction is the one nearest that, among 24 round him, that keeps every other player out of the lens and off the line
-   of sight at all the row's moments and stays inside the gym. fixed: the camera stays put instead (aimed at the middle). */
+   of sight at all the row's moments and stays inside the gym. fixed: the camera stays put instead (aimed at the middle).
+   face: placed by the way he faces instead of the way he travels. */
 const FOV = 43;
 function sideCam(
   clip,
   idx,
   moments,
-  { dist = 4.6, height = 1.45, angle = 25, aimY = 1.05, fixed = false } = {},
+  { dist = 4.6, height = 1.45, angle = 25, aimY = 1.05, fixed = false, face = false } = {},
 ) {
   const S = moments.map(m => sampleClip(clip, m).actors),
     at = S.map(A => A[idx]),
     travel = [at.at(-1).x - at[0].x, at.at(-1).z - at[0].z],
     moved = Math.hypot(...travel),
     mid = at[Math.floor(at.length / 2)],
-    fwd = moved > 1 ? [travel[0] / moved, travel[1] / moved] : [Math.sin(mid.yaw), Math.cos(mid.yaw)],
+    // face: by the way he faces, not the way he travels (a defender backpedals: "toward his front" along his travel is
+    // his back)
+    fwd =
+      moved > 1 && !face ? [travel[0] / moved, travel[1] / moved] : [Math.sin(mid.yaw), Math.cos(mid.yaw)],
     r = (angle * Math.PI) / 180;
   let best = null;
   for (let k = 0; k < 24; k++) {
@@ -271,6 +275,15 @@ function sheets(base) {
       5,
       [0.6, 1.0, 1.4],
       { dist: 2.2, angle: 60, height: 1.5, aimY: 1.2 },
+      { big: true },
+    ),
+    row(
+      'Orbit zoom: defender up close, from the front (the stance and the high hand)',
+      HOME('drive'),
+      0,
+      5,
+      [0.6, 1.0, 1.4],
+      { dist: 2.4, angle: 50, height: 1.5, aimY: 1.2, face: true },
       { big: true },
     ),
   ];

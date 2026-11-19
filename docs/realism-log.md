@@ -585,3 +585,16 @@ binding stays on the hem as the shorts swing. Still visible: the binding loop is
 every ~6 cm along the tube; finer rings need a rebuild and re-bake), and a narrow slit at the shorts' side seam still opens
 when the hip flexes hard (the hole is in the mesh; through it the far thigh shows). Both logged in OPEN-QUESTIONS.
 Tests: the push points out from the body, the scraps are gone, the far mesh shares the result. Trace identical.
+
+### P2. The on-ball defender's high hand contests instead of resting by his head
+
+Measured in the page (chest space, the drive's on-ball defender at 0.6–1.4 s): the high hand was 56 cm in front of the
+chest at head height, so it did reach forward, but the elbow sat 17 cm outside the shoulder at shoulder height (a chicken
+wing) with the forearm upright: from behind it read as a hand raised by the head. The close-up camera was behind him
+because the sheet placed it by his direction of travel, and a defender backpedals. Fix: the high hand reaches further out
+at the man (`DEFEND.high` 0.72 → 0.84 of the arm's length, narrower) with its elbow under it and toward him
+(`DEFEND.pole.high`); the elbow is now 4 cm outside the shoulder, the hand 61 cm out. The sheet camera can be placed by
+the way a player faces (`face`), and the close-ups have a front view of the same moments; the original back view stays
+for the before/after comparison. Golden bodies: the four scenes with an on-ball defender changed (deliberately), no clip.
+Trace: only the High athlete scenes differ, from the frames where an on-ball defender is in his stance; the title and Low
+are identical.

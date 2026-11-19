@@ -260,10 +260,11 @@ const ARM = {
    Scaled by the arm's length (rest L1 + L2), so the same stance fits the guard and the center. */
 export const DEFEND = {
   low: [0.16, -0.66, 0.55], // traces the dribble
-  high: [0.1, 0.36, 0.62], // in the passing lane
+  high: [0.12, 0.4, 0.82], // up in the passing lane, reaching out at the ball handler (a hand by the head reads as idle)
   help: [0.06, -0.62, 0.48], // pistols: hands in front at the hips, just outside the shoulders
   onBall: [2.0, 3.2], // distance to the ball (units): fully on-ball inside the first, help beyond the second
-  pole: { low: [0.35, -0.8, -0.3], high: [0.5, -0.7, -0.1], help: [0.25, -0.8, -0.5] }, // elbows down, a little out
+  // elbows down, a little out; the high one under the hand, toward the man (out to the side it is a chicken wing)
+  pole: { low: [0.35, -0.8, -0.3], high: [0.15, -0.8, 0.4], help: [0.25, -0.8, -0.5] },
 };
 const quatFrom = (() => {
   const m0 = new THREE.Matrix4(),
