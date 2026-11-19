@@ -317,3 +317,11 @@ Not done yet:
   after numbers in docs/perf-baseline.md, the final report).
 - Known costs to recover in Phase 4: SMAA (+3–9% on High/Medium), player-map downloads up 2 MB since all three variants
   are now used.
+
+### Phase 2 gate
+
+Tests 308 passing, build green, golden clips for unversioned plays unchanged. Reactions sheet reviewed: the three's raised
+arm holds clearly; the beaten defender's hands on hips read; the dunker's flex was blocked by the finish (its
+performance outlived its own fade) and now plays on the run back (fixed in its own commit). Measured (`phase2` against
+`before`, frame median): High +2–6%, Medium +6–10%, Low within ±15% of a 1.3–2.7 ms frame (noise at that size). Of that,
+SMAA (phase 1) is 3–9% and the new motion about 0.2 ms; Phase 4 has to pay it back with interest.
