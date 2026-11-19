@@ -672,8 +672,12 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0, g = ga
       chest.updateWorldMatrix(true, false);
       // the dribbling hand goes where the dribble puts it (ctx.dribbleHand, basketball.js dribbleAt), over the ball: on it
       // in the push, waiting above it while it bounces. Every other hand on the ball goes to the ball.
-      const at = arms === 'dribble' && ctx.dribbleHand != null ? _at.copy(ball).setY(ctx.dribbleHand) : ball;
-      T = chest.worldToLocal(at.addScaledVector(n, r + 0.07));
+      // (a copy: ctx.ball is the Arena's ball itself; this used to add to it and turn it into this player's chest space,
+      // which spoiled the second hand's target and every player animated after him that frame)
+      const at = _at.copy(ball);
+      if (arms === 'dribble' && ctx.dribbleHand != null) at.setY(ctx.dribbleHand);
+      // the guide hand on a shot rests on the ball's side, fingers up it: a little further out so they stay on its surface
+      T = chest.worldToLocal(at.addScaledVector(n, r + 0.07 + (arms === 'shoot' && j === 1 ? 0.02 : 0)));
       if (T.distanceTo(S) < (rest.L1 + rest.L2) * 1.2) {
         want = 1;
         (m.ikT[j] ??= new THREE.Vector3()).copy(T);
