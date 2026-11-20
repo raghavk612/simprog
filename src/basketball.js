@@ -1628,6 +1628,7 @@ function physical(c, time, p) {
   p.ball = { x: LB(B.x), y: LB(B.y), z: LB(B.z) };
   p.ballModel = 'physical';
   p.ballRadius = BALL_R;
+  if (B.throwAt != null) p.passThrow = B.throwAt; // the pass leaves the passer's hands (seconds): his arms follow it
   p.holder = B.holder[near];
   p.hand = B.held[near] ? [B.handX[near], B.handY[near], B.handZ[near]] : null;
   if (B.dribbling[near]) {

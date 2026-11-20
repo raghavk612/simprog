@@ -288,3 +288,34 @@ Gate: tests 334, build, motion:qa passed (`docs/motion/qa-m3.json`: v3 worst acc
 identical to the pre-motion reference on all 9,280 frames. Precompute: median 4.8 ms, p95 6.5 ms, worst 26 ms (the
 first, cold play): +0.8 ms for the team plan and the exact ball while held. Perf (pre-motion tag in a worktree, then M3,
 back to back; `docs/perf/premotion-m3.json`, `m3.json`): every scene within +1% or faster.
+
+## M4: integrate and tune
+
+Checked in the gym with version 3 (`ui-shots/sheets-m4`: passes, finishes, defense, locomotion, close-ups) and by the
+numbers; what did not fit the new timing was fixed:
+
+- The pass. `src/actions.js` assumed version 2's ball, which leaves the passer's hands at the start of the play; the
+  version 3 ball is held until it is thrown (the swing pass about 0.2-0.4 s in). The pose now says when (`passThrow`, from
+  the ball sim); until then the passer's hands are on the ball, either side of it, and his lean builds over the last
+  0.15 s; then they go out from where the ball left into the follow-through over 0.12 s. Versions 1 and 2 take the old
+  values exactly (a first try computed `from + (follow - from) * 1`, which is not bit-identical: the trace caught it).
+- A long pass is thrown harder (9.5 units/s short, up to 13): the catch play's swing pass was a lob to 2.8 units, it is a
+  line drive to about 2.2 now. Bounce passes only under 7 units (a 12-unit bounce pass is not a pass anyone throws).
+- The catch gives: the ball carries a third of its speed into the hands and is brought in to the chest over 0.22 s (it
+  stopped dead in a frame).
+- Off-ball looping, measured (`.claude/scratch/loops.mjs`, off-ball players): fast turns (> 4 rad/s) are 6.5-7% of
+  moving frames above 0.5 units/s, 1.5% above 1.5 and 0.02% above 2.5 units/s: the loops in the diagrams are walking-pace
+  repositioning (a defender turning where he stands), not running loops. Tried: smoothing every off-ball intention in time
+  (Gaussian 0.12 s) before the bodies follow it: fast turns 7.0 -> 6.5% only, and it put players under the board again in
+  block scrambles (a QA failure): reverted.
+- Finishes (layup, euro, floater, hook, spin, dunk, alley-oop, pick-and-roll, putback), contests, the block, the rebound,
+  the screen, sprints, jogs, slides: read correctly in the gym with the new movement (the drive's defender now contests from
+  beside the layup; the dunker has his chaser behind him).
+
+New test: the version 3 pass (hands on the ball until the throw, a line drive, a catch with give).
+
+Gate: tests 335, build, motion:qa passed (`docs/motion/qa-m4.json`), golden unchanged, trace `--v 2` identical on all
+9,280 frames. Precompute: median 4.8 ms, p95 6.4 ms. Perf (back to back against the pre-motion tag;
+`docs/perf/premotion-m4.json`, `m4.json`): retina every scene 0 to -6%, laptop High within +1%; laptop Medium title +4%
+and Low +7 to +20% in that run, including the title (which none of this touches) while retina got faster: re-measured
+laptop Medium and Low back to back 4 times (`premotion-m4l.json`, `m4l.json`): Low 0% on every scene, Medium 0 to +2%.

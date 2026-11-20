@@ -62,7 +62,10 @@ export function actionFrames(clip, time, pose) {
       d = Math.hypot(lx, lz) || 1,
       dir = [lx / d, 0, lz / d],
       overhead = fam === 'dunk',
-      tp = time, // seconds into the play: the ball leaves his hands at the start
+      // seconds since the ball left his hands: at the start of the play (motion versions 1 and 2), or when the version 3
+      // ball is thrown (pose.passThrow); until then his hands are on it
+      holding = pose.passThrow != null && time < pose.passThrow,
+      tp = time - (pose.passThrow ?? 0),
       w = 1 - sm((tp - 0.55) / 0.3),
       reach = overhead
         ? [dir[0] * 0.35, 2.15, Math.max(0.2, dir[2] * 0.35)]
@@ -75,20 +78,42 @@ export function actionFrames(clip, time, pose) {
       // across his body: the hands a little apart, square to the receiver
       const lat = [dir[2] * sx * 0.12, 0, -dir[0] * sx * 0.12],
         follow = [reach[0] + lat[0], reach[1] - (overhead ? 0 : 0.05), reach[2] + lat[2]];
-      hands[h] = {
-        p: F.W(follow),
-        flex: overhead ? 0.9 : 0.6,
-        pron: overhead ? 0.2 : 1.1,
-        pole: null,
-        w: w * sm(tp / 0.08),
-      };
+      if (holding) {
+        // on the ball, either side of it (his left and right in his frame)
+        const [bx, bz] = F.toLocal(ball.x, ball.z);
+        hands[h] = {
+          p: F.W([bx - sx * 0.14, ball.y - (p.y || 0), bz]),
+          flex: 0.2,
+          pron: 0.8,
+          pole: null,
+          w: 1,
+        };
+      } else {
+        // version 3: out from where the ball left his hands (at his chest, or overhead) into the follow-through
+        const k = pose.passThrow != null ? sm(tp / 0.12) : 1,
+          from = [-sx * 0.14, overhead ? 2.1 : 1.22, 0.32],
+          q = pose.passThrow != null ? from.map((v, i) => v + (follow[i] - v) * k) : follow; // versions 1 and 2: exactly as before
+        hands[h] = {
+          p: F.W(q),
+          flex: overhead ? 0.9 : 0.6,
+          pron: overhead ? 0.2 : 1.1,
+          pole: null,
+          w: w * (pose.passThrow != null ? 1 : sm(tp / 0.08)),
+        };
+      }
     }
-    if (w > 0.01)
+    if (holding || w > 0.01)
       out.push({
         actor: passer,
         hands,
-        body: { lean: 0.16 * bell(tp, 0, 0.12, 0.6), twist: Math.atan2(dir[0], dir[2]) * 0.4 * w },
-        weight: w,
+        // stepping into it: the lean builds as he throws (version 3: over the last 0.15 s he holds it)
+        body: {
+          lean: holding
+            ? 0.16 * sm((time - pose.passThrow + 0.15) / 0.15)
+            : 0.16 * bell(tp, pose.passThrow != null ? -0.01 : 0, 0.12, 0.6),
+          twist: Math.atan2(dir[0], dir[2]) * 0.4 * (holding ? 1 : w),
+        },
+        weight: holding ? 1 : w,
       });
     // the catch: the receiver's hands come up to meet it
     const tc = t - passWindow[1],

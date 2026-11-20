@@ -61,3 +61,31 @@ test('motion version 3 ball: a made shot passes through the rim, near the play a
   assert.deepEqual(a3.ballAtRim, a2.ballAtRim);
   assert.deepEqual(a3.ballAtRelease, a2.ballAtRelease);
 });
+
+test('motion version 3 pass: in the passer’s hands until he throws it, a line drive, caught with give', async () => {
+  const { actionFrames } = await import('../src/actions.js'),
+    c = { ...L.clipOf('catch', { outcome: 'made' }, 'contested', 'home', 1), v: 3 },
+    throwAt = B.sampleClip(c, 0).passThrow;
+  assert.ok(throwAt > 0 && throwAt < 0.3 * 4.4);
+  for (const t of [0, throwAt * 0.5, throwAt - 0.02]) {
+    const p = B.sampleClip(c, t),
+      act = actionFrames(c, t, p).find(a => a.actor === 1);
+    assert.equal(p.holder, 1);
+    for (const h of ['R', 'L']) {
+      const q = act.hands[h].p;
+      assert.ok(Math.hypot(q[0] - p.ball.x, q[1] - p.ball.y, q[2] - p.ball.z) < 0.2, `${h} hand on the ball`);
+    }
+  }
+  // a long pass flies low (no lob), and the ball does not stop dead in the hands
+  const S = L.samples(c),
+    flight = S.filter(p => p.holder < 0 && p.phase.startsWith('Pass'));
+  assert.ok(Math.max(...flight.map(p => p.ball.y)) < 2.6);
+  const f = S.findIndex((p, k) => k > 0 && p.holder === 0 && S[k - 1].holder < 0),
+    v = k =>
+      Math.hypot(
+        S[k].ball.x - S[k - 1].ball.x,
+        S[k].ball.y - S[k - 1].ball.y,
+        S[k].ball.z - S[k - 1].ball.z,
+      ) * 60;
+  assert.ok(v(f) > 1 && v(f) < 8, 'the hands give with it (neither dead nor flying on)');
+});

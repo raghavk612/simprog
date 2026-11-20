@@ -366,33 +366,41 @@ export function simulateBall(o) {
   o.dribbleMan ??= i => (i === off ? o.def : off);
   // ---- before the shot: the pass in, the dribble, a steal ----
   let tDribble = 0,
-    p0 = null;
+    p0 = null,
+    throwAt = null; // when a pass leaves the passer's hands (seconds)
   if (o.pass) {
     const { from, at, kind } = o.pass,
       catchP = chest(off, at),
       fromP = (t, h = 1.22) =>
         inFrame(o.pos(from, t), o.yaw(from, t), [0, kind === 'overhead' ? 2.1 : h, 0.32]),
-      speed = kind === 'overhead' ? 11 : 9.5,
       dist = Math.hypot(catchP[0] - fromP(at)[0], catchP[2] - fromP(at)[2]),
+      // a longer pass is thrown harder (a skip pass is a line drive, not a lob): 9.5 units/s for a short one, up to 13
+      speed = kind === 'overhead' ? 11 : clamp(9.5 + (dist - 6) * 0.6, 9.5, 13),
       T = clamp(dist / speed, 0.28, at - 0.1),
       tThrow = at - T;
+    throwAt = tThrow;
     for (let f = 0; f < frameOf(tThrow); f++) {
       const p = fromP(f / FPS);
       put(f, p, from, p);
     }
-    arc(frameOf(tThrow), frameOf(at), fromP(tThrow), catchP, T, kind === 'bounce', tThrow);
+    arc(frameOf(tThrow), frameOf(at), fromP(tThrow), catchP, T, kind === 'bounce' && dist < 7, tThrow); // bounce passes are short
     tDribble = at;
     p0 = catchP;
   }
   const dribbleEnd = o.steal ? o.steal.poke : o.gather;
   if (!p0) p0 = null;
   if (p0 && dribbleEnd - tDribble < 0.5) {
-    // caught with no time to dribble (a catch and shoot): the ball stays in his hands, brought in to the chest
-    for (let f = frameOf(tDribble); f < frameOf(dribbleEnd); f++) {
+    // caught with no time to dribble (a catch and shoot): the ball stays in his hands, brought in to the chest; the hands
+    // give with it (it carries a third of its speed into them, then they bring it in)
+    const fc = frameOf(tDribble),
+      prev = Math.max(0, fc - 1),
+      vin = [0, 1, 2].map(j => ((p0[j] - [X, Y, Z][j][prev]) * FPS) / Math.max(1, fc - prev)),
+      GIVE = 0.22;
+    for (let f = fc; f < frameOf(dribbleEnd); f++) {
       const t = f / FPS,
-        w = sm((t - tDribble) / 0.18),
+        u = clamp((t - tDribble) / GIVE, 0, 1),
         c = chest(off, t),
-        p = [p0[0] + (c[0] - p0[0]) * w, p0[1] + (c[1] - p0[1]) * w, p0[2] + (c[2] - p0[2]) * w];
+        p = [0, 1, 2].map(j => hermite(p0[j], vin[j] * 0.33, c[j], 0, u, GIVE));
       put(f, p, off, p);
     }
   } else
@@ -575,6 +583,7 @@ export function simulateBall(o) {
       dribbleY: DY,
       dribbling: DRB,
       moves,
+      throwAt,
     };
   }
 }
