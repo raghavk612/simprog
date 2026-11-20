@@ -20,10 +20,11 @@ import {
   decalMaterial,
   faceTexture,
   KIT_INFLATE,
+  TRIM_INFLATE,
 } from './materials.js';
 import { AthleteMaps, ATLAS_OF, mapsOn, setMaterialMaps } from './playerMaps.js';
+import { prepareCloth } from './clothFit.js';
 
-export const PLAYER_STYLES = ['classic', 'realistic'];
 export const BODY_PARTS = ['jersey', 'head', 'hair', 'number', 'nameplate', 'capBadge', 'legs', 'arms'];
 // Which body variant a roster position wears (realistic style). Unknown positions fall back to forward.
 export const variantFor = position => {
@@ -36,14 +37,19 @@ export function classicBody(kit, i, color) {
   const g = new THREE.Group(),
     parts = { legs: [], arms: [] };
   const skin = [0x9c6946, 0xe4b58b, 0x66432d, 0xb67e57, 0xd39871][i % 5];
-  const jersey = kit.mat(color);
-  const limb = (radius, length, c) =>
-    new THREE.Mesh(new THREE.CapsuleGeometry(radius, length, 4, 8), kit.mat(c));
+  const jersey = kit.mat(color),
+    skins = [];
+  const limb = (radius, length, c) => {
+    const m = new THREE.Mesh(new THREE.CapsuleGeometry(radius, length, 4, 8), kit.mat(c));
+    if (c === skin) skins.push(m.material);
+    return m;
+  };
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.22, 0.65, 8), jersey);
   body.position.y = 1.18;
   g.add(body);
   parts.jersey = jersey;
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.205, 12, 10), kit.mat(skin));
+  skins.push(head.material);
   head.position.y = 1.78;
   g.add(head);
   parts.head = head;
@@ -129,6 +135,7 @@ export function classicBody(kit, i, color) {
     forearm.position.y = -0.12;
     elbow.add(forearm);
     const hand = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 6), kit.mat(skin));
+    skins.push(hand.material);
     hand.position.y = -0.27;
     elbow.add(hand);
     shoulder.userData.elbow = elbow;
@@ -137,7 +144,9 @@ export function classicBody(kit, i, color) {
   g.traverse(o => {
     if (o.isMesh) o.castShadow = true;
   });
-  return { root: g, parts, style: 'classic', variant: 'classic', key: 'classic' };
+  // the person's skin tone (the figure is not rebuilt when the player in it changes)
+  const setSkin = hex => skins.forEach(m => m.color.setHex(hex));
+  return { root: g, parts, style: 'classic', variant: 'classic', key: 'classic', setSkin };
 }
 
 /* Puts a body into a player's outer group, replacing the previous one, and points the player's userData at the new parts.
@@ -215,6 +224,9 @@ export function validBody(body) {
 /* ---- Athletes: the rigged bodies built in Houdini (assets-src/players) and rigged by scripts/build_players.py ---- */
 export const BODY_VARIANTS = ['guard', 'forward', 'center'];
 export const SKIN_TONES = [0x8a5a3c, 0xc99a7a, 0x5a3825, 0xa8754f, 0xbf8a63, 0x3f2a1e, 0xdcb59b];
+/* The same seven tones for the classic figure's plain material (no skin shading or environment light on Low, so it needs
+   lighter values to read as the same person; the first five are the figure's original tones). */
+export const CLASSIC_SKIN = [0x9c6946, 0xe4b58b, 0x66432d, 0xb67e57, 0xd39871, 0x55392a, 0xf0c9ae];
 export const HAIR_STYLES = ['buzz', 'crop', 'afro', 'rows'];
 const HAIR_COLORS = [0x161210, 0x161210, 0x221813, 0x2e2118, 0x161210, 0x4a3424];
 const hash = s => {
@@ -222,32 +234,75 @@ const hash = s => {
   for (const c of String(s)) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
   return h >>> 0;
 };
-/* A player's look (hair style and colour, headband, arm and leg sleeves), the same every time for the same player. */
+/* A player's look (hair style and colour, headband, arm and leg sleeves, skin tone and the face's small differences), the
+   same every time for the same player, whichever body slot he is drawn in. */
 export function lookFor(seed) {
-  const h = hash(seed);
+  const h = hash(seed),
+    h2 = hash(`${seed}|face`);
   return {
     hair: HAIR_STYLES[h % 4],
     hairColor: HAIR_COLORS[(h >>> 4) % HAIR_COLORS.length],
     headband: (h >>> 8) % 5 === 0,
     armSleeve: (h >>> 11) % 4 === 0,
     legSleeve: (h >>> 14) % 6 === 0,
+    skin: h2 % SKIN_TONES.length,
+    face: (h2 >>> 4) % 997,
   };
 }
 export const lookKey = l =>
-  l ? `${l.hair}${l.headband ? '+band' : ''}${l.armSleeve ? '+arm' : ''}${l.legSleeve ? '+leg' : ''}` : '';
+  l
+    ? `${l.hair}${l.headband ? '+band' : ''}${l.armSleeve ? '+arm' : ''}${l.legSleeve ? '+leg' : ''}${l.skin != null ? `|s${l.skin}f${l.face ?? 0}` : ''}`
+    : '';
+/* Who a player is, for his look: the Kangs by roster id; visitors by name (their ids are only their slot on the floor). */
+export const personSeed = (person, slot = 0) =>
+  person?.home === false && person.name && person.name !== 'Visitors'
+    ? `v:${person.name}`
+    : (person?.id ?? person?.name ?? slot);
+
+/* ---- Height: the body variant nearest the player's real height, scaled to it ---- */
+// the models' heights in inches (glTF extras height, units of 1 ft = 0.3306): guard 6'3", forward 6'7", center 6'11";
+// the classic figure stands 6'2"
+export const VARIANT_INCHES = { guard: 75.2, forward: 79.1, center: 83.1, classic: 73.7 };
+/* Scaling a body changes how far it reaches: at the jump shot's release a player more than 5% shorter than his model would
+   not reach the ball the play puts above his head, so the scale stays within 5% and the variant takes up the rest. */
+export const HEIGHT_SCALE = [0.95, 1.05];
+/* "6' 3\"" -> 75 (inches); anything else (e.g. "Not listed") -> null. */
+export function parseHeight(h) {
+  const m = /^\s*(\d)\s*'\s*(\d{1,2})?/.exec(String(h ?? ''));
+  return m ? +m[1] * 12 + +(m[2] || 0) : null;
+}
+/* The body for a person: {variant, scale, inches}. The variant follows his position unless his height is more than 3 in
+   from that model, then the model nearest his height; visitors (no position or height on the rosters) get a variant and a
+   height within 2 in of its model from their name. style 'classic' always uses the classic figure. */
+export function bodyFor(person, seed = personSeed(person), style = 'athletes') {
+  const h = hash(seed),
+    inches = parseHeight(person?.height);
+  let variant = person?.position
+    ? variantFor(person.position)
+    : ['guard', 'guard', 'forward', 'forward', 'center'][h % 5];
+  if (inches && Math.abs(VARIANT_INCHES[variant] - inches) > 3)
+    variant = BODY_VARIANTS.reduce((a, v) =>
+      Math.abs(VARIANT_INCHES[v] - inches) < Math.abs(VARIANT_INCHES[a] - inches) ? v : a,
+    );
+  const model = VARIANT_INCHES[style === 'classic' ? 'classic' : variant],
+    tall = inches ?? VARIANT_INCHES[variant] + (((h >>> 7) % 5) - 2),
+    scale = Math.max(HEIGHT_SCALE[0], Math.min(HEIGHT_SCALE[1], tall / model));
+  return { variant, scale: Math.round(scale * 1000) / 1000, inches: tall };
+}
 /* The three rigged bodies, loaded once and shared by the gym and the practice drills (about 3 MB), each with its baked
    detail maps (gltf.maps, src/playerMaps.js): the kit and gear atlases start loading with the bodies, the skin atlas in the
    size the first body asks for. Bodies do not wait for the maps; they put them on when they arrive. */
 let athleteTemplates = null,
   athleteLoading = null;
 export const loadedAthletes = () => athleteTemplates;
-export function loadAthletes() {
+export function loadAthletes(level = 'high') {
   if (athleteTemplates) return Promise.resolve(athleteTemplates);
   return (athleteLoading ??= Promise.all(
     BODY_VARIANTS.map(v =>
       new GLTFLoader().loadAsync(`${import.meta.env?.BASE_URL ?? '/'}models/players/${v}.glb`).then(g => {
         g.maps = new AthleteMaps(v);
-        g.maps.prefetch('high', ['kit', 'gear']);
+        // the kit and gear atlases start with the bodies, at the size the level shows (none without detail maps)
+        if (mapsOn(level)) g.maps.prefetch(level, ['kit', 'gear']);
         return [v, g];
       }),
     ),
@@ -257,19 +312,6 @@ export function loadAthletes() {
       athleteLoading = null;
       throw e;
     }));
-}
-/* Frees the templates and their detail maps (bodies made from them must be disposed first). */
-export function disposeAthleteTemplates(templates = athleteTemplates) {
-  for (const g of Object.values(templates || {})) {
-    g.maps?.dispose();
-    g.scene?.traverse(o => {
-      if (o.isMesh) {
-        o.geometry?.dispose();
-        o.material?.dispose?.();
-      }
-    });
-  }
-  if (templates === athleteTemplates) athleteTemplates = athleteLoading = null;
 }
 
 /* The locker-room lettering for one side of the jersey, transparent round the letters, in the same layout and colours as
@@ -367,6 +409,7 @@ export function kitLettering(kitKey, side, number, name) {
    Geometry stays shared with the template (only materials and decals belong to the body).
    level: the graphics level the body starts at ('medium' / 'high' put the baked detail maps on; setDetail changes it). */
 export function athleteBody(template, kit, i, color, variant, look = lookFor(i), { level = null } = {}) {
+  prepareCloth(template); // the flat bindings and the skin under the clothes (src/clothFit.js), once per variant
   const root = cloneSkinned(template.scene),
     bones = {},
     objs = {};
@@ -411,14 +454,14 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
   }
   // skin: one material for the head and body, with the face painted on (see materials.js faceTexture): it is lit like the
   // rest of the skin, hides with the head, and its painted shadow under the jaw carries onto the throat
-  const tone = SKIN_TONES[i % SKIN_TONES.length];
+  const tone = SKIN_TONES[(look.skin ?? i) % SKIN_TONES.length];
   let face = null;
   if (info.face && bones.head) {
     root.updateMatrixWorld(true);
     const c = bones.head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3().fromArray(info.face));
     const [fw, fh] = info.faceSize || [0.156, 0.2];
     face = {
-      map: faceTexture(tone, i, { ...(info.faceMarks || {}), aspect: fw / fh }),
+      map: faceTexture(tone, look.face ?? i, { ...(info.faceMarks || {}), aspect: fw / fh }),
       center: c,
       size: new THREE.Vector2(fw, fh),
     };
@@ -429,8 +472,9 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
     sole = soleMaterial(0x1d1d22),
     hairMat = hairMaterial(look.hairColor ?? 0x161210),
     band = fabricMaterial(0xffffff),
-    sleeve = fabricMaterial(0x111114),
-    trim = fabricMaterial(0xe9b858);
+    sleeve = fabricMaterial(0x111114, 0.01, { cut: true }),
+    legSleeve = fabricMaterial(0x111114, 0.01, { cut: true }),
+    trim = fabricMaterial(0xe9b858, TRIM_INFLATE, { push: true, sway: true });
   const pick = { kit: jersey, skin, shoes, sole, hair: hairMat, band, sleeve, trim }; // trim: the binding round the neck, armholes and hems
   // keep one hair style and the chosen options; drop the rest
   const keep = new Set(
@@ -443,15 +487,47 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
   );
   for (const [name, o] of Object.entries(objs))
     if (/^(hair_|headband_|sleeve_)/.test(name) && !keep.has(name)) o.parent?.remove(o);
+  const tall = info.height || 2.2,
+    cullSphere = new THREE.Sphere(new THREE.Vector3(0, tall * 0.55, 0), tall * 0.85);
   root.traverse(o => {
     if (o.isMesh) {
       const name = o.material?.name;
-      o.material = pick[name] || skin;
+      o.material = name === 'sleeve' && /^sleeve_leg/.test(o.name) ? legSleeve : pick[name] || skin;
       o.castShadow = true;
       o.receiveShadow = true;
-      o.frustumCulled = false;
+      // culled against a fixed sphere round the whole body (standing, arms up, a jump's tucked legs): a skinned mesh's own
+      // bounds are the bind pose's, and working them out from the pose every frame would cost more than it saves
+      o.frustumCulled = true;
+      o.boundingSphere = cullSphere;
     }
   });
+  // the finger curl (materials.js hands): which bones are the wrists, where the knuckles are
+  const hands = template.userData?.clothFit?.hands,
+    H = skin.userData.hands;
+  if (hands && H) {
+    H.kWrist.value.set(hands.R.wrist, hands.L.wrist);
+    H.kKnR.value.set(...hands.R.knuckle, hands.R.length);
+    H.kKnL.value.set(...hands.L.knuckle, hands.L.length);
+  }
+  // the shorts sway between their waistband and hem (materials.js sway). Jersey and shorts share the kit material: the
+  // jersey's lower edge sits inside that range and is tucked in, so it moves with them
+  const sh = template.userData?.clothFit?.shorts;
+  if (sh && jersey.userData.sway) jersey.userData.sway.kSwayRange.value.set(sh.top - 0.06, sh.bottom);
+  trim.userData.sway = jersey.userData.sway; // the hem's binding sways with the shorts (the same spring and range)
+  // the skin under the clothes he wears is not drawn (src/clothFit.js)
+  if (skin.userData.coverOn)
+    skin.userData.coverOn.value.set(1, look.armSleeve ? 1 : 0, look.legSleeve ? 1 : 0);
+  // each sleeve is drawn between its two planes and the skin under it hidden between them, 3 mm inside, so the edge is
+  // straight and no skin shows at it (src/clothFit.js sleeveRims)
+  const rims = template.userData?.clothFit?.sleeves || {};
+  for (const [r, mat, uni] of [
+    [rims.arm, sleeve, 'kArmRim'],
+    [rims.leg, legSleeve, 'kLegRim'],
+  ])
+    if (r) {
+      mat.userData.cut?.value.set(r.top, r.bottom);
+      skin.userData.coverOn?.[uni].value.set(r.top - 0.003, r.bottom + 0.003);
+    }
   // head and hair (with the headband) hide together in Player view
   const hair = new THREE.Group();
   hair.name = 'hair';
@@ -501,7 +577,7 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
   const applyMaps = () => {
     store?.use(detail.level);
     const on = !!store && mapsOn(detail.level) && detail.lod === 0;
-    for (const [key, m] of Object.entries(pick)) {
+    for (const [key, m] of [...Object.entries(pick), ['sleeve', legSleeve]]) {
       const atlas = ATLAS_OF[key];
       let tex = on ? store.get(atlas, detail.level) : null;
       if (on && !tex) {
@@ -580,5 +656,11 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
     setLod,
     setDetail,
     lodMeshes,
+    // how far each hand's fingers curl (0 open, about 0.45 round the ball, 1 a fist): motion.js sets it every frame
+    setGrip: (r, l) => H?.kGrip.value.set(r, l),
+    // how far each hand's fingers fan apart (0 together, 1 spread wide): motion.js sets it every frame
+    setSpread: (r, l) => H?.kSpread.value.set(r, l),
+    // the shorts' lag (body units, his own frame: x his left, y up, z forward): motion.js sets it every frame
+    setSway: (x, y, z) => jersey.userData.sway?.kSway.value.set(x, y, z),
   });
 }

@@ -129,3 +129,143 @@ test('players keep their distance, and one sent through another goes round him w
   assert.ok(fastest < 12, `fastest ${fastest}`); // a sidestep, not a teleport
   assert.ok(last.x > 1.5 && Math.abs(last.z) < 0.2); // and he ends up where the play wanted, past A
 });
+test('defensive stance: hands in front of the body, never out to the side; one high one low on the ball, both low in help', async () => {
+  const THREE = await import('three');
+  const { animateAthlete } = await import('../src/motion.js');
+  const { loadBody } = await import('../assets-src/players/cloudmesh/ball_samples.mjs');
+  for (const v of ['guard', 'center']) {
+    const { body, player } = await loadBody(v);
+    const b = body.bones,
+      at = n => b[n].getWorldPosition(new THREE.Vector3()),
+      drive = ball => {
+        player.userData.motionState = undefined;
+        for (let f = 0; f < 90; f++)
+          animateAthlete(
+            player,
+            { arms: 'defend', y: 0 },
+            { dt: 1 / 60, motion: true, ball: ball.clone(), holder: false },
+          );
+        player.updateMatrixWorld(true);
+        return {
+          eR: at('elbow_R'),
+          eL: at('elbow_L'),
+          R: at('wrist_R'),
+          L: at('wrist_L'),
+          sR: at('shoulder_R'),
+          sL: at('shoulder_L'),
+          chest: at('chest'),
+        };
+      };
+    // he faces +z; +x is his left. On the ball: the handler dribbling a step in front, a little to his left
+    const on = drive(new THREE.Vector3(0.35, 0.9, 1.1));
+    for (const [w, s] of [
+      [on.R, on.sR],
+      [on.L, on.sL],
+    ]) {
+      assert.ok(w.z > s.z + 0.15, `${v}: hand in front of the shoulder (${(w.z - s.z).toFixed(2)})`);
+      assert.ok(Math.abs(w.x) < Math.abs(s.x) + 0.2, `${v}: hand not out to the side (${w.x.toFixed(2)})`);
+    }
+    const [hi, lo] = on.R.y > on.L.y ? [on.R, on.L] : [on.L, on.R];
+    assert.ok(
+      hi.y > on.sR.y - 0.05 && lo.y < on.chest.y - 0.1,
+      `${v}: one hand up, one low (${hi.y.toFixed(2)} / ${lo.y.toFixed(2)})`,
+    );
+    assert.ok(lo === on.L, `${v}: the low hand is on the ball's side (his left)`);
+    // the high hand reaches out at the man with its elbow under it, not out to the side (a chicken wing)
+    assert.ok(on.R.z > on.sR.z + 0.4, `${v}: high hand well out in front (${(on.R.z - on.sR.z).toFixed(2)})`);
+    assert.ok(
+      Math.abs(on.eR.x) < Math.abs(on.sR.x) + 0.08 && on.eR.y < on.R.y,
+      `${v}: high elbow under the hand (${on.eR.x.toFixed(2)} vs shoulder ${on.sR.x.toFixed(2)})`,
+    );
+    // help: the ball far away
+    const help = drive(new THREE.Vector3(6, 1, 6));
+    for (const [w, s] of [
+      [help.R, help.sR],
+      [help.L, help.sL],
+    ]) {
+      assert.ok(w.y < help.chest.y && w.z > s.z + 0.1, `${v}: help hands low and in front`);
+      assert.ok(Math.abs(w.x) < Math.abs(s.x) + 0.15, `${v}: help hands no wider than the shoulders`);
+    }
+  }
+});
+test('gait: a planted foot stays put on the floor at a walk, a jog, a run and a sprint (stride fitted to the leg)', async () => {
+  const THREE = await import('three');
+  const { animateAthlete, gaitFor, fitGait, footAt } = await import('../src/motion.js');
+  const { loadBody } = await import('../assets-src/players/cloudmesh/ball_samples.mjs');
+  // the stance/swing cycle is continuous, and duty 0.5 is the old half-and-half cycle
+  for (const d of [0.3, 0.5, 0.62]) {
+    const a = footAt(d * 2 * Math.PI - 1e-9, 1.2, 0.2, d),
+      b = footAt(d * 2 * Math.PI + 1e-9, 1.2, 0.2, d);
+    assert.ok(Math.abs(a.forward - b.forward) < 1e-6 && b.up < 1e-6);
+  }
+  assert.deepEqual(footAt(1.3, 1.1, 0.1), footAt(1.3, 1.1, 0.1, 0.5));
+  // running leaves a flight phase, walking overlaps
+  assert.ok(gaitFor(7).duty < 0.5 && gaitFor(1.2).duty > 0.5);
+  assert.ok(gaitFor(7).stride > gaitFor(3).stride && gaitFor(7).elbow > gaitFor(1).elbow);
+  for (const v of ['guard', 'center']) {
+    const { body, player } = await loadBody(v);
+    for (const speed of [1.2, 3, 5, 7]) {
+      player.userData.motionState = undefined;
+      player.position.set(0, 0, 0);
+      let sum = 0,
+        n = 0;
+      const prev = {};
+      for (let f = 0; f < 240; f++) {
+        player.position.z += speed / 60;
+        animateAthlete(player, { arms: 'relax', y: 0 }, { dt: 1 / 60, motion: true, ball: null });
+        player.updateMatrixWorld(true);
+        const m = player.userData.motionState,
+          R = body.motionRest,
+          g = fitGait(gaitFor(m.speed), R.legs.L, R.legs.L.hipY - m.crouch * R.legs.L.hipY),
+          T = 2 * Math.PI;
+        ['R', 'L'].forEach((s, j) => {
+          const p = (((m.phase + (j ? Math.PI : 0)) % T) + T) % T,
+            prog = p / (g.duty * T),
+            mid = f > 90 && prog > 0.1 && prog < 0.85,
+            a = body.bones['ankle_' + s].getWorldPosition(new THREE.Vector3());
+          if (mid && prev[s]) {
+            sum += Math.hypot(a.x - prev[s].x, a.z - prev[s].z);
+            n++;
+          }
+          prev[s] = mid ? a : null;
+        });
+      }
+      const slip = sum / n / (speed / 60);
+      assert.ok(
+        n > 30 && slip < 0.05,
+        `${v} at ${speed}: planted foot slides ${(slip * 100).toFixed(1)}% of the travel`,
+      );
+    }
+  }
+});
+
+test('fingers: spread wide on defence and for a target, together when relaxed or in a fist', async () => {
+  const THREE = await import('three');
+  const { animateAthlete } = await import('../src/motion.js');
+  const { loadBody } = await import('../assets-src/players/cloudmesh/ball_samples.mjs');
+  const { body, player } = await loadBody('guard');
+  let spread = null;
+  body.setSpread = (r, l) => (spread = [r, l]);
+  const run = (pose, perform = null) => {
+    player.userData.motionState = undefined;
+    for (let f = 0; f < 60; f++)
+      animateAthlete(player, { y: 0, ...pose }, { dt: 1 / 60, motion: true, ball: null, perform });
+    return spread;
+  };
+  assert.ok(
+    run({ arms: 'defend' }).every(s => s > 0.7),
+    'defence: both hands spread',
+  );
+  assert.ok(
+    run({ arms: 'relax' }).every(s => s < 0.05),
+    'relaxed: together',
+  );
+  const at = new THREE.Vector3(0.2, 1.4, 0.5),
+    target = { p: at, pole: null, w: 1, spread: 0.9 },
+    fist = { p: at.clone(), pole: null, w: 1, grip: 1 };
+  const shown = run(
+    { arms: 'relax' },
+    { gait: true, body: {}, feet: {}, look: null, hands: { R: target, L: fist } },
+  );
+  assert.ok(shown[0] > 0.8 && shown[1] < 0.05, `a target hand spreads, a fist does not (${shown})`);
+});

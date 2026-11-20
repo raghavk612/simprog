@@ -134,7 +134,14 @@ test('athlete bodies: every variant file loads as a rigged body the Arena can dr
     b.root.traverse(o => {
       if (o.isSkinnedMesh) {
         tris += o.geometry.index.count / 3;
-        assert.equal(o.frustumCulled, false);
+        // culled against a fixed sphere that holds the whole body, arms raised (the bind pose's own bounds would clip)
+        assert.equal(o.frustumCulled, true);
+        const sp = o.boundingSphere;
+        assert.ok(
+          sp.radius >= b.height * 0.8 && Math.abs(sp.center.y - b.height * 0.55) < 1e-6,
+          `${v}: cull sphere`,
+        );
+        assert.ok(sp.center.y + sp.radius > b.height + 0.6, 'reaches above a raised hand');
       }
     });
     assert.ok(tris > 10000 && tris < 15000, `${v}: ${tris} triangles in budget`);
@@ -364,4 +371,40 @@ test('athlete hands: rigid on the wrist, and the fingers stay off the ball when 
       assert.ok(closest > 0.002, `${v} ${pose}: hand ${closest.toFixed(4)} from the ball`);
     }
   }
+});
+test('bodies follow the person: variant and height from the roster, look and skin from who he is, not his slot', async () => {
+  const { parseHeight, bodyFor, personSeed, lookFor, lookKey, VARIANT_INCHES, HEIGHT_SCALE } =
+    await import('../src/players.js');
+  assert.equal(parseHeight(`6' 3"`), 75);
+  assert.equal(parseHeight(`5' 10"`), 70);
+  assert.equal(parseHeight('Not listed'), null);
+  // a 6'7" "guard" gets the forward model; a 6'0" guard the guard model scaled down (within the reach limit)
+  assert.equal(bodyFor({ position: 'Guard', height: `6' 7"` }, 'a').variant, 'forward');
+  const g = bodyFor({ position: 'Guard', height: `6' 0"` }, 'b');
+  assert.equal(g.variant, 'guard');
+  assert.ok(Math.abs(g.scale - 72 / VARIANT_INCHES.guard) < 0.002);
+  const s = bodyFor({ position: 'Guard', height: `5' 7"` }, 'c');
+  assert.equal(s.scale, HEIGHT_SCALE[0], 'never shorter than the arms can reach the ball at the release');
+  assert.equal(bodyFor({ position: 'Center', height: 'Not listed' }, 'd').variant, 'center');
+  // visitors: no position or height on the rosters; a variant and a height near it from the name, the same every time
+  const v = bodyFor({ home: false, name: 'Deng Deng' });
+  assert.deepEqual(v, bodyFor({ home: false, name: 'Deng Deng' }));
+  assert.ok(Math.abs(v.inches - VARIANT_INCHES[v.variant]) <= 2);
+  // the seed: Kangs by roster id, visitors by name (their ids are their slot on the floor)
+  assert.equal(personSeed({ id: 7, name: 'A', home: true }), 7);
+  assert.equal(personSeed({ id: -2, name: 'Deng Deng', home: false }), 'v:Deng Deng');
+  assert.equal(personSeed({ id: -2, name: 'Visitors', home: false }), -2);
+  // skin and face are part of the look (and its key), so a player keeps his own wherever he is drawn
+  const skins = new Set(Array.from({ length: 40 }, (_, i) => lookFor(`p${i}`).skin));
+  assert.ok(skins.size >= 5, 'skin tones vary between players');
+  assert.equal(lookFor(12).skin, lookFor(12).skin);
+  assert.match(lookKey(lookFor(12)), /\|s\d+f\d+$/);
+  assert.equal(lookKey({ hair: 'afro', headband: true, armSleeve: true, legSleeve: false }), 'afro+band+arm');
+});
+test('classic figure: its skin follows the person (setSkin), it is not rebuilt', () => {
+  const b = classicBody(kit, 0, 0x6832ab);
+  b.setSkin(0x3f2a1e);
+  assert.equal(b.parts.head.material.color.getHex(), 0x3f2a1e);
+  assert.equal(b.parts.arms[0].children[0].material.color.getHex(), 0x3f2a1e);
+  assert.notEqual(b.parts.jersey.color.getHex(), 0x3f2a1e);
 });

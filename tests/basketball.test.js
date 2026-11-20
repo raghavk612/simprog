@@ -248,3 +248,60 @@ test('after a steal the stealer keeps the ball into the next play; an outlet pas
     }
   }
 });
+test('motion version 2: off-ball players hold their spots and move with purpose; unversioned plays keep the old sway', async () => {
+  const { sampleClip, MOTION_VERSION, CLIP_SECONDS: S } = await import('../src/basketball.js');
+  assert.ok(MOTION_VERSION >= 2);
+  const c = { kind: 'drive', team: 'home', lane: 1, contest: 'contested', outcome: 'made', points: 2 };
+  const at = (v, k, u) => sampleClip({ ...c, v }, u * S).actors[k];
+  // the slot (4) holds still before his V-cut, then jabs in and pops out
+  const a0 = at(2, 4, 0.02),
+    a1 = at(2, 4, 0.1);
+  assert.ok(Math.hypot(a1.x - a0.x, a1.z - a0.z) < 1e-9, 'holds his spot');
+  assert.ok(at(2, 4, 0.21).x > a0.x + 0.8, 'jabs toward the basket');
+  assert.ok(at(2, 4, 0.38).x < a0.x - 0.5, 'pops back out');
+  // the cutter makes a hard cut: most of the ground is covered in the middle of it
+  const cut = u => at(2, 2, u),
+    d1 = Math.hypot(cut(0.32).x - cut(0.28).x, cut(0.32).z - cut(0.28).z),
+    d2 = Math.hypot(cut(0.14).x - cut(0.1).x, cut(0.14).z - cut(0.1).z);
+  assert.ok(d1 > 4 * d2, 'a burst, not a drift');
+  // version 1 drifts the whole play on a slow sine (never still); version 2 holds a stance and moves at its moments
+  const still = (v, k) => {
+    let n = 0;
+    for (let u = 0; u < 1; u += 0.01) if (Math.abs(at(v, k, u + 0.01).x - at(v, k, u).x) < 1e-6) n++;
+    return n / 100;
+  };
+  for (const k of [3, 4]) {
+    assert.equal(still(undefined, k), 0, 'version 1 never stops drifting');
+    assert.ok(still(2, k) > 0.4, `version 2 holds his spot most of the play (${still(2, k)})`);
+  }
+  // the catch-and-shoot's defender sags off, then closes out by the catch
+  const cs = { ...c, kind: 'catch', v: 2 },
+    gap = u => {
+      const p = sampleClip(cs, u * S).actors;
+      return Math.hypot(p[5].x - p[0].x, p[5].z - p[0].z);
+    };
+  assert.ok(gap(0.08) > gap(0.36) + 0.8, 'sagging, then closed out');
+});
+test('flightPath: the trail follows exactly the parabola the play flies (without re-sampling the play)', async () => {
+  const { flightPath, sampleClip, shotTiming, CLIP_SECONDS: S } = await import('../src/basketball.js');
+  for (const kind of ['catch', 'drive', 'dunk', 'hook'])
+    for (const outcome of ['made', 'miss']) {
+      const c = {
+          kind,
+          team: 'away',
+          lane: -1,
+          contest: 'contested',
+          outcome,
+          points: outcome === 'made' ? 2 : 0,
+          v: 2,
+        },
+        T = shotTiming(kind),
+        f = flightPath(c);
+      for (let t = T.release * S + 0.01; t < 0.86 * S; t += 0.05) {
+        const a = f(t),
+          b = sampleClip(c, t).ball;
+        assert.ok(Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z) < 1e-6, `${kind} ${outcome} at ${t}`);
+      }
+      assert.equal(flightPath(c), f, 'once per play');
+    }
+});

@@ -91,7 +91,7 @@ export const MAPS = {
 };
 
 /* ---------- shader patch: triplanar bump detail on the rest pose, plus optional wrap lighting (subsurface look) ---------- */
-const PARS = `
+export const DETAIL_PARS = `
 varying vec3 vKRest; varying vec3 vKRestN;
 uniform sampler2D kDetailMap; uniform float kDetailScale; uniform float kDetailBump; uniform float kFadeFar;
 float kHeight(vec3 p, vec3 n){
@@ -99,11 +99,50 @@ float kHeight(vec3 p, vec3 n){
  return texture2D(kDetailMap, p.yz).r * w.x + texture2D(kDetailMap, p.xz).r * w.y + texture2D(kDetailMap, p.xy).r * w.z;
 }
 vec3 kPerturb(vec3 surf_pos, vec3 surf_norm, vec2 dHdxy, float faceDir){
- vec3 vSigmaX = normalize(dFdx(surf_pos)); vec3 vSigmaY = normalize(dFdy(surf_pos));
+ // a zero screen derivative (a pixel quad on a silhouette or edge-on) would normalise to NaN; the reflection lookups of
+ // the environment light then turn that into NaN pixels, which bloom spreads over the whole frame (a black flash)
+ vec3 dx = dFdx(surf_pos), dy = dFdy(surf_pos);
+ if (dot(dx, dx) < 1e-14 || dot(dy, dy) < 1e-14) return surf_norm;
+ vec3 vSigmaX = normalize(dx); vec3 vSigmaY = normalize(dy);
  vec3 R1 = cross(vSigmaY, surf_norm); vec3 R2 = cross(surf_norm, vSigmaX);
  float fDet = dot(vSigmaX, R1) * faceDir;
  vec3 vGrad = sign(fDet) * (dHdxy.x * R1 + dHdxy.y * R2);
- return normalize(abs(fDet) * surf_norm - vGrad);
+ vec3 n = abs(fDet) * surf_norm - vGrad;
+ return dot(n, n) > 1e-14 ? normalize(n) : surf_norm;
+}`;
+/* The finger curl (hands): rotation about the knuckle line's front-back axis, more toward the fingertips. The right hand's
+   palm faces +x in the bind pose, so its fingers turn toward +x; the left's toward -x. */
+const HAND_CURL = `
+uniform vec2 kWrist; uniform vec4 kKnR; uniform vec4 kKnL; uniform vec2 kGrip; uniform vec2 kSpread;
+vec3 kRotZ(vec3 v, float a){ float c = cos(a), s = sin(a); return vec3(v.x * c - v.y * s, v.x * s + v.y * c, v.z); }
+float kCurl(vec3 p, out vec3 piv){
+ piv = vec3(0.0);
+ #ifdef USE_SKINNING
+ if (skinWeight.x < 0.99) return 0.0;
+ vec4 kn; float g; float sd;
+ if (abs(skinIndex.x - kWrist.x) < 0.5) { kn = kKnR; g = kGrip.x; sd = 1.0; }
+ else if (abs(skinIndex.x - kWrist.y) < 0.5) { kn = kKnL; g = kGrip.y; sd = -1.0; }
+ else return 0.0;
+ piv = kn.xyz;
+ float below = kn.y - p.y;
+ return below > 0.0 ? sd * g * 1.6 * clamp(below / kn.w, 0.0, 1.0) : 0.0;
+ #else
+ return 0.0;
+ #endif
+}
+// the fingers fanned apart across the hand's width (z in the bind pose, the hand hanging palm in), more toward the tips
+float kFan(vec3 p){
+ #ifdef USE_SKINNING
+ if (skinWeight.x < 0.99) return 0.0;
+ vec4 kn; float sp;
+ if (abs(skinIndex.x - kWrist.x) < 0.5) { kn = kKnR; sp = kSpread.x; }
+ else if (abs(skinIndex.x - kWrist.y) < 0.5) { kn = kKnL; sp = kSpread.y; }
+ else return 0.0;
+ float below = kn.y - p.y;
+ return below > 0.0 ? (p.z - kn.z) * sp * 0.5 * clamp(below / kn.w, 0.0, 1.0) : 0.0;
+ #else
+ return 0.0;
+ #endif
 }`;
 /* Baked detail maps (src/playerMaps.js) hold the normal in RGB and the ambient occlusion in A of one texture, which is both
    normalMap and aoMap; three's aomap_fragment reads R, so every athlete material reads A instead. kAoFade (0..1) lets the
@@ -128,7 +167,9 @@ function withAoAlpha(material) {
 /* strands: the hair's anisotropic highlight runs along the head's up direction (as it did on the old cylindrical UVs). The
    GLB's tangents now follow the atlas charts, which point anywhere, so the direction is the skinned rest-pose up instead. */
 /* inflate (game units): clothing is pushed out along its normals after skinning starts, so the skin under it never pokes
-   through when joints bend (the rest-pose gap is only about a centimetre). */
+   through when joints bend (the rest-pose gap is only about a centimetre). push: along a direction of its own instead
+   (attribute kPush, src/clothFit.js trimPush): the binding is a tube, whose own normals point every way round it, so
+   pushing along them made it fatter rather than lifting it off the body. */
 /* print: lettering printed into the fabric. Two textures (front and back) projected in the rest pose, so the print moves
    and folds with the jersey and can never sink into the body. material.userData.print holds the uniforms to update. */
 function patch(
@@ -144,8 +185,41 @@ function patch(
     inflate = 0,
     print = false,
     strands = false,
+    cover = false,
+    hands = false,
+    sway = false,
+    push = false,
+    cut = false,
   } = {},
 ) {
+  // sway: the loose shorts lag and flutter (a spring motion.js drives from the body's acceleration, kSway, in the body's
+  // own space), more toward the hem: nothing at the waistband, all of it at the hem (kSwayRange: waist and hem heights)
+  if (sway)
+    material.userData.sway = {
+      kSway: { value: new THREE.Vector3() },
+      kSwayRange: { value: new THREE.Vector2(1, 0.7) },
+    };
+  // hands: the fingers curl toward the palm about the knuckle line (src/clothFit.js handFit), by kGrip per hand (0 open,
+  // about 0.45 round the ball, 1 a fist), before skinning: the hand mesh is rigid on the wrist and has no finger joints
+  if (hands)
+    material.userData.hands = {
+      kWrist: { value: new THREE.Vector2(-9, -9) },
+      kKnR: { value: new THREE.Vector4(0, 0, 0, 1) },
+      kKnL: { value: new THREE.Vector4(0, 0, 0, 1) },
+      kGrip: { value: new THREE.Vector2(0.3, 0.3) },
+      kSpread: { value: new THREE.Vector2(0, 0) }, // 0 fingers together, 1 spread wide
+    };
+  // cover: skin wholly under clothing the player wears is not drawn (src/clothFit.js kCover; kCoverOn picks the sleeves).
+  // A mesh without the attribute reads zeros: nothing skipped.
+  if (cover)
+    material.userData.coverOn = Object.assign(
+      { value: new THREE.Vector3(1, 0, 0) },
+      // the sleeves' planes (src/clothFit.js sleeveRims): skin of the sleeved limb between them is not drawn, for a
+      // straight edge (x top, y bottom, in the bind pose; the arm hangs, so they run across the limb)
+      { kArmRim: { value: new THREE.Vector2(-9, 9) }, kLegRim: { value: new THREE.Vector2(-9, 9) } },
+    );
+  // cut: a sleeve drawn only between two heights of the bind pose (the same planes the skin is hidden between)
+  if (cut) material.userData.cut = { value: new THREE.Vector2(9, -9) };
   if (print)
     material.userData.print = {
       kPrintF: { value: null },
@@ -174,11 +248,23 @@ function patch(
         kFaceSize: { value: face.size },
       });
     if (print) Object.assign(shader.uniforms, material.userData.print);
+    if (cover) {
+      shader.uniforms.kCoverOn = material.userData.coverOn;
+      shader.uniforms.kArmRim = material.userData.coverOn.kArmRim;
+      shader.uniforms.kLegRim = material.userData.coverOn.kLegRim;
+    }
+    if (cut) shader.uniforms.kCut = material.userData.cut;
+    if (hands) Object.assign(shader.uniforms, material.userData.hands);
+    if (sway) Object.assign(shader.uniforms, material.userData.sway);
     shader.vertexShader = shader.vertexShader
       .replace(
         '#include <common>',
         '#include <common>\nvarying vec3 vKRest; varying vec3 vKRestN;' +
-          (strands ? ' varying vec3 vKUp;' : ''),
+          (strands ? ' varying vec3 vKUp;' : '') +
+          (cover ? ' attribute vec3 kCover; varying vec3 vKCover;' : '') +
+          (hands ? HAND_CURL : '') +
+          (sway ? ' uniform vec3 kSway; uniform vec2 kSwayRange;' : '') +
+          (push ? ' attribute vec3 kPush;' : ''),
       )
       .replace(
         '#include <skinnormal_vertex>',
@@ -191,18 +277,41 @@ function patch(
  vKUp = normalize((modelViewMatrix * vec4(kUp, 0.0)).xyz);`
           : '#include <skinnormal_vertex>',
       )
-      .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\nvKRestN = objectNormal;')
+      .replace(
+        '#include <beginnormal_vertex>',
+        '#include <beginnormal_vertex>' +
+          (hands
+            ? `\n { vec3 kPiv; float kA = kCurl(position, kPiv); objectNormal = kRotZ(objectNormal, kA);
+  #ifdef USE_TANGENT
+  objectTangent = kRotZ(objectTangent, kA);
+  #endif
+ }`
+            : '') +
+          '\nvKRestN = objectNormal;',
+      )
       .replace(
         '#include <begin_vertex>',
-        '#include <begin_vertex>\nvKRest = transformed;' +
-          (inflate > 0 ? `\ntransformed += objectNormal * ${inflate.toFixed(4)};` : ''),
+        '#include <begin_vertex>' +
+          (hands
+            ? '\n { transformed.z += kFan(position); vec3 kPiv; float kA = kCurl(position, kPiv); if (kA != 0.0) transformed = kPiv + kRotZ(transformed - kPiv, kA); }'
+            : '') +
+          '\nvKRest = transformed;' +
+          (sway
+            ? '\n { float kW = clamp((kSwayRange.x - position.y) / max(kSwayRange.x - kSwayRange.y, 1e-3), 0.0, 1.0); transformed += kSway * kW * kW; }'
+            : '') +
+          (cover ? '\nvKCover = kCover;' : '') +
+          (inflate > 0 ? `\ntransformed += ${push ? 'kPush' : 'objectNormal'} * ${inflate.toFixed(4)};` : ''),
       );
     let frag = shader.fragmentShader
       .replace(
         '#include <common>',
         '#include <common>\n' +
-          PARS +
+          DETAIL_PARS +
           (strands ? '\nvarying vec3 vKUp;' : '') +
+          (cover
+            ? '\nvarying vec3 vKCover; uniform vec3 kCoverOn; uniform vec2 kArmRim; uniform vec2 kLegRim;'
+            : '') +
+          (cut ? '\nuniform vec2 kCut;' : '') +
           (face ? '\nuniform sampler2D kFaceMap; uniform vec3 kFaceCenter; uniform vec2 kFaceSize;' : '') +
           (print
             ? '\nuniform sampler2D kPrintF; uniform sampler2D kPrintB; uniform vec2 kPrintFC; uniform vec2 kPrintBC; uniform vec2 kPrintSize; uniform float kPrintMinY; uniform float kPrintOn;'
@@ -270,6 +379,20 @@ function patch(
  }
  #endif`,
       );
+    if (cover)
+      frag = frag.replace(
+        '#include <clipping_planes_fragment>',
+        `#include <clipping_planes_fragment>
+ if (vKCover.x * kCoverOn.x > 0.999) discard;
+ if (vKCover.y * kCoverOn.y > 0.5 && vKRest.y < kArmRim.x && vKRest.y > kArmRim.y) discard;
+ if (vKCover.z * kCoverOn.z > 0.5 && vKRest.y < kLegRim.x && vKRest.y > kLegRim.y) discard;`,
+      );
+    if (cut)
+      frag = frag.replace(
+        '#include <clipping_planes_fragment>',
+        `#include <clipping_planes_fragment>
+ if (vKRest.y > kCut.x || vKRest.y < kCut.y) discard;`,
+      );
     frag = aoAlpha(frag);
     if (wrap > 0)
       frag = frag.replace(
@@ -286,7 +409,7 @@ function patch(
     shader.fragmentShader = frag;
   };
   material.customProgramCacheKey = () =>
-    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}-${strands ? 1 : 0}`;
+    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}-${strands ? 1 : 0}-${cover ? 1 : 0}-${hands ? 1 : 0}-${sway ? 1 : 0}-${push ? 1 : 0}-${cut ? 1 : 0}`;
   return material;
 }
 
@@ -304,7 +427,17 @@ export function skinMaterial(color, face = null) {
       clearcoatRoughness: 0.35,
       name: 'skin',
     }),
-    { map: MAPS.skin(), scale: 9, bump: 0.35, fadeFar: 7, wrap: 0.35, scatter: [0.75, 0.32, 0.22], face },
+    {
+      map: MAPS.skin(),
+      scale: 9,
+      bump: 0.35,
+      fadeFar: 7,
+      wrap: 0.35,
+      scatter: [0.75, 0.32, 0.22],
+      face,
+      cover: true,
+      hands: true,
+    },
   );
 }
 export const KIT_INFLATE = 0.012; // how far the jersey and shorts are pushed off the skin (decals sit on top of it)
@@ -320,7 +453,7 @@ export function clothMaterial(color) {
       specularIntensity: 0.3,
       name: 'kit',
     }),
-    { map: MAPS.mesh(), scale: 22, bump: 0.18, fadeFar: 3.2, inflate: KIT_INFLATE, print: true },
+    { map: MAPS.mesh(), scale: 22, bump: 0.18, fadeFar: 3.2, inflate: KIT_INFLATE, print: true, sway: true },
   );
 }
 // Shoes: smooth leather-like upper with a little gloss; matte rubber sole.
@@ -351,8 +484,11 @@ export function hairMaterial(color) {
     { map: MAPS.strands(), scale: 14, bump: 0.8, fadeFar: 6, strands: true },
   );
 }
-// Sleeves and headband: compression fabric, smoother and a touch shinier than the jersey.
-export const fabricMaterial = color =>
+// Sleeves and headband: compression fabric, smoother and a touch shinier than the jersey. The binding (trim) uses it too,
+// lifted off the body a little further than the jersey (KIT_INFLATE) along the body's normal (push), so it rides on the
+// cloth's edge, at the width it was modelled, instead of dipping under it.
+export const TRIM_INFLATE = 0.014;
+export const fabricMaterial = (color, inflate = 0.01, { push = false, sway = false, cut = false } = {}) =>
   patch(
     new THREE.MeshPhysicalMaterial({
       color,
@@ -361,7 +497,7 @@ export const fabricMaterial = color =>
       sheenRoughness: 0.35,
       name: 'sleeve',
     }),
-    { map: MAPS.mesh(), scale: 30, bump: 0.15, fadeFar: 3, inflate: 0.01 },
+    { map: MAPS.mesh(), scale: 30, bump: 0.15, fadeFar: 3, inflate, push, sway, cut },
   );
 // Ball: pebbled orange leather.
 export function ballMaterial() {

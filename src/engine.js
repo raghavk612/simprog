@@ -11,7 +11,7 @@ import {
   lockedShare,
 } from './skills.js';
 export { BASIC_MOVES, SKILL_TREE, skillNode, unlockedMoves, canUnlock };
-import { SHOTS, choosePlay, describePlay, family, isDunk } from './basketball.js';
+import { SHOTS, choosePlay, describePlay, family, isDunk, MOTION_VERSION } from './basketball.js';
 import { CORE_KITS, SPECIAL_KITS, KIT_NAMES } from './kits.js';
 export const VERSION = 3;
 export const cap = (x, min = 0, max = 100) => Math.max(min, Math.min(max, x));
@@ -916,6 +916,7 @@ function makePlay(s, team, shooter, helper, defender, opp, m) {
     assisted,
     shotChance: Math.round(chance * 100),
     impacts,
+    v: MOTION_VERSION, // how the 3D gym moves the players for it (basketball.js sampleClip); no effect on the outcome
   };
   const said = describePlay(play, rng);
   play.commentary = said.text;
@@ -1496,6 +1497,7 @@ export function validSave(s) {
           ['made', 'miss', 'block', 'steal'].includes(c.outcome) &&
           (c.recovery === undefined || ['offense', 'defense'].includes(c.recovery)) &&
           (c.putback === undefined || ['made', 'miss'].includes(c.putback)) &&
+          (c.v === undefined || (Number.isInteger(c.v) && c.v >= 1 && c.v <= 9)) &&
           num(c.points, 0, 3) &&
           num(c.shotChance, 0, 100) &&
           (c.cm === undefined ||

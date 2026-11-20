@@ -4,7 +4,9 @@
    "center_gear.png": 1408992,
    "center_kit.png": 790243,
    "center_skin.png": 2021313,
-   "center_skin_1k.png": 812982
+   "center_skin_1k.png": 812982,
+   "center_kit_512.png": 342751,
+   "center_gear_512.png": 507887
   },
   "sizes": {
    "gear": 1024,
@@ -12,7 +14,9 @@
    "skin": 2048
   },
   "small": {
-   "skin": 1024
+   "skin": 1024,
+   "kit": 512,
+   "gear": 512
   },
   "uvHash": "728d674f854fbdcc"
  },
@@ -21,7 +25,9 @@
    "forward_gear.png": 1397151,
    "forward_kit.png": 811960,
    "forward_skin.png": 2034729,
-   "forward_skin_1k.png": 820062
+   "forward_skin_1k.png": 820062,
+   "forward_kit_512.png": 349297,
+   "forward_gear_512.png": 506508
   },
   "sizes": {
    "gear": 1024,
@@ -29,7 +35,9 @@
    "skin": 2048
   },
   "small": {
-   "skin": 1024
+   "skin": 1024,
+   "kit": 512,
+   "gear": 512
   },
   "uvHash": "6975e5506569ae75"
  },
@@ -38,7 +46,9 @@
    "guard_gear.png": 1412085,
    "guard_kit.png": 812562,
    "guard_skin.png": 2078857,
-   "guard_skin_1k.png": 829109
+   "guard_skin_1k.png": 829109,
+   "guard_kit_512.png": 344599,
+   "guard_gear_512.png": 513488
   },
   "sizes": {
    "gear": 1024,
@@ -46,7 +56,9 @@
    "skin": 2048
   },
   "small": {
-   "skin": 1024
+   "skin": 1024,
+   "kit": 512,
+   "gear": 512
   },
   "uvHash": "0c005c2e1969f41d"
  }

@@ -1,0 +1,52 @@
+# Open questions and risks (realism pass)
+
+No phase gate failed three times, so nothing here blocked a phase. These are the decisions this pass left to the owners,
+and the risks it knows about. Each points at the log entry with the details (docs/realism-log.md).
+
+## Decisions for the owners
+
+1. **High downloads +13% (15.8 → 17.8 MB).** Phase 1.4 put all three athlete variants on court (bodies follow each
+   person's position), so High now fetches the third variant's 2k maps. Options: accept it (the service worker caches
+   them after the first visit); give the third variant the 1k skin on High; or share one variant's kit and gear atlases.
+   Medium went the other way (−24%), and Low is unchanged.
+   **Resolved (owner): accept.** The demo runs from the offline precached copy, so the size is not a concern; the third
+   body type's textures are not shrunk or shared.
+2. **Lite is an Auto-only level** (4.4). Settings still offers Auto, Low, Medium and High. Lite (the athletes and the
+   broadcast lighting without crowd, bloom, depth of field, mirror and AO) might be worth offering by name to a school
+   with weak Chromebooks.
+   **Resolved (owner): not exposed.** Lite stays automatic-only, as it is now.
+3. **Texture compression** (4.5). The player maps are lossless PNG. KTX2/Basis would cut GPU memory and downloads
+   further, but needs an encoder (`basisu` or `toktx`) in the asset pipeline and a transcoder in the bundle. The Houdini
+   source directory the brief names (`/Users/raghav/coding/kangs-assets`) is not on this machine, so no asset was
+   re-exported.
+   **Resolved (owner): skip.** No encoder is added to the asset pipeline; the risk of corrupting normal maps is not worth it.
+
+## Known weaknesses (see the final report for the ranking)
+
+4. **Jersey trim reads thick up close.** **Resolved (polish pass, P1):** the binding was swollen by pushing a tube along
+   its own normals; it is now lifted along the body's and is thin and even. Two residuals, both needing the player
+   pipeline (its Python packages are not installed here, and a change to the triangles needs a full re-bake of the maps):
+   - the binding loop shows corners at half a metre (a ring every ~6 cm along the tube: `add_trim step` in
+     scripts/build_players.py);
+   - the kit has holes 2–6 cm across where its panels meet at the shorts' side seam; a slit opens there when the hip flexes
+     hard and the thigh shows through. A runtime cover (skin hidden under the holes, the kit double-sided) worked but cost
+     1–3% of a High frame and was reverted. Closing the holes belongs in the build (`scripts/build_players.py`).
+5. **The close-up defender's high hand rests by his head.** **Resolved (polish pass, P2):** it reaches out at the man
+   with the elbow under it; the close-ups gained a front view.
+6. **Low, Player-view replay is 0.1 ms slower than the baseline** (4.9): within run-to-run noise, from Phase 2's motion
+   running for all ten players.
+
+## Risks
+
+7. **Measured on one machine** (an M1 Pro). The "laptop" configuration copies a school laptop's window size, not its GPU.
+   The auto-quality ladder (4.4) is the guard on weaker hardware: it steps down to Lite or Low within a few seconds.
+   **Resolved (owner):** no other hardware is available. Weak hardware is to be emulated as far as possible (Chrome
+   DevTools Protocol CPU throttling at 4× and 6×, a small viewport, a low devicePixelRatio), confirming that the Auto
+   ladder steps down and recovers correctly, with the results logged.
+8. **three.js r180 GTAOPass bug**: it throws when given a depth texture in its constructor (4.2). Not used now; worth
+   knowing before upgrading three.js or reusing the main depth for AO.
+   **Resolved (owner): noted.** three.js is not upgraded; its version is pinned exactly in package.json.
+9. **One commit with a failing test**: 9bb42b6 (crowd shadows off on High) left a graphics test failing; the next commit
+   (0956a6e) fixed the test. Every other commit on the branch passes `npm test`. Relevant only to a `git bisect`.
+10. **Bundle warning**: Vite still warns about chunks over 500 kB (`players`, three.js and the gym, 647 kB; `index`,
+    519 kB). Both are needed for the first frame (4.6).

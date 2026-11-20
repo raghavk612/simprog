@@ -20,7 +20,7 @@ test('quality levels map to renderer profiles; High keeps the current look', () 
   assert.deepEqual(qualityProfile('high', 3), {
     pixelRatio: 2,
     shadowSize: 2048,
-    crowd: 'full',
+    crowd: 'noshadow', // the stands never cast shadows (measured: no cost with the broadcast look, a saved pass without)
     shadows: true,
   });
   assert.deepEqual(qualityProfile('medium', 3), {
@@ -52,9 +52,10 @@ test('quality levels map to renderer profiles; High keeps the current look', () 
   assert.equal(qualityProfile('nonsense', NaN).pixelRatio, 1);
   assert.equal(qualityProfile('high', 0).pixelRatio, 1);
 });
-test('lowerLevel drops exactly one step and stops at Low', () => {
+test('lowerLevel drops exactly one step down the ladder (Medium, then Lite: athletes kept) and stops at Low', () => {
   assert.equal(lowerLevel('high'), 'medium');
-  assert.equal(lowerLevel('medium'), 'low');
+  assert.equal(lowerLevel('medium'), 'lite');
+  assert.equal(lowerLevel('lite'), 'low');
   assert.equal(lowerLevel('low'), 'low');
 });
 test('median ignores outliers', () => {
@@ -106,11 +107,21 @@ test('broadcast look: High has reflections and ambient occlusion, Medium only bl
     spots: 6,
     contact: true,
     dof: true,
+    aa: 'smaa',
   });
   const m = lookFeatures('medium');
+  assert.equal(
+    m.aa,
+    'smaa',
+    'the broadcast look smooths its edges on Medium too (the canvas MSAA does not reach it)',
+  );
   assert.equal(m.reflections, false);
   assert.equal(m.ao, false);
-  assert.equal(m.bloom, true);
+  assert.equal(
+    m.bloom,
+    false,
+    'bloom only on High: about 10% of a Medium frame for a glow the broadcast angles hardly show',
+  );
   assert.equal(m.spots, 3);
   assert.equal(m.dof, true, 'depth of field only runs on replays and close angles, so Medium can afford it');
   assert.equal(lookFeatures('low'), null);
@@ -158,4 +169,40 @@ test('player detail follows on-screen size in pixels: a Follow-view player on a 
   assert.equal(lodFor(LOD_PIXELS.far + 5, 0), 0);
   assert.equal(lodFor(LOD_PIXELS.far + 5, 1), 1);
   assert.equal(lodFor(LOD_PIXELS.near + 1, 1), 0);
+});
+
+test('auto quality: steps down while slow, recovers after three fast windows, and stops trying after a failed step up', async () => {
+  const { autoStep, PROBE, LOCK_WINDOWS, lookFeatures, qualityProfile, effectivePlayers } =
+    await import('../src/graphics.js');
+  const slow = PROBE.slowMs + 5,
+    fast = PROBE.fastMs - 2,
+    ok = (PROBE.slowMs + PROBE.fastMs) / 2;
+  let r = autoStep('high', slow);
+  assert.equal(r.level, 'medium');
+  r = autoStep(r.level, slow, r.state);
+  assert.equal(r.level, 'lite', 'a weak device gets past Medium (it used to stop there)');
+  assert.equal(effectivePlayers('athletes', 'lite'), 'athletes', 'Lite still draws the athletes');
+  assert.equal(qualityProfile('lite').crowd, 'hidden');
+  assert.equal(lookFeatures('lite').bloom, false);
+  assert.equal(lookFeatures('lite').dof, false);
+  r = autoStep(r.level, slow, r.state);
+  assert.equal(r.level, 'low');
+  // recovery: three fast windows in a row, a medium one resets the count
+  r = autoStep('lite', fast);
+  r = autoStep(r.level, fast, r.state);
+  r = autoStep(r.level, ok, r.state);
+  assert.equal(r.level, 'lite');
+  for (let i = 0; i < 3; i++) r = autoStep(r.level, fast, r.state);
+  assert.equal(r.level, 'medium', 'steps back up');
+  // the step up proves slow: back down, and no more tries
+  r = autoStep(r.level, slow, r.state);
+  assert.equal(r.level, 'lite');
+  for (let i = 0; i < 6; i++) r = autoStep(r.level, fast, r.state);
+  assert.equal(r.level, 'lite', 'locked after a failed step up');
+  // for about a minute, not for good: once the load has gone it tries again
+  for (let i = 6; i < LOCK_WINDOWS - 1; i++) r = autoStep(r.level, fast, r.state);
+  assert.equal(r.level, 'lite', 'still locked');
+  for (let i = 0; i < 4; i++) r = autoStep(r.level, fast, r.state);
+  assert.equal(r.level, 'medium', 'tries the step up again after the lock');
+  assert.equal(autoStep('high', fast).level, 'high', 'High is the top');
 });

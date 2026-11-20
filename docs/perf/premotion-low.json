@@ -1,0 +1,195 @@
+{
+ "label": "premotion-low",
+ "date": "2026-11-20T03:00:07.187Z",
+ "commit": "7efceea",
+ "chunks": {
+  "main": {
+   "file": "index-TFMrOobR.js",
+   "bytes": 518920,
+   "gzip": 192780
+  },
+  "all": [
+   {
+    "file": "players-BD4jVDOd.js",
+    "bytes": 652338,
+    "gzip": 175134
+   },
+   {
+    "file": "index-TFMrOobR.js",
+    "bytes": 518920,
+    "gzip": 192780
+   },
+   {
+    "file": "hi-DcBaNf4O.js",
+    "bytes": 142299,
+    "gzip": 35055
+   },
+   {
+    "file": "ja-BalP39lq.js",
+    "bytes": 92801,
+    "gzip": 33124
+   },
+   {
+    "file": "en-CsCHTl-a.js",
+    "bytes": 86865,
+    "gzip": 34478
+   },
+   {
+    "file": "fr-BvRWeMMh.js",
+    "bytes": 83589,
+    "gzip": 30750
+   },
+   {
+    "file": "es-C1Oz6RhE.js",
+    "bytes": 79968,
+    "gzip": 29940
+   },
+   {
+    "file": "it-DJXXQMtA.js",
+    "bytes": 79066,
+    "gzip": 29625
+   },
+   {
+    "file": "zh-CX41w5dk.js",
+    "bytes": 70652,
+    "gzip": 31135
+   },
+   {
+    "file": "drillscenes-DjGVYXZn.js",
+    "bytes": 57022,
+    "gzip": 22511
+   }
+  ],
+  "totalJs": 1863520
+ },
+ "runs": {
+  "laptop/low": {
+   "title": {
+    "frames": 300,
+    "medianMs": 1.6000000014901161,
+    "p95Ms": 2,
+    "calls": 118,
+    "callsMax": 120,
+    "triangles": 18318,
+    "trianglesMax": 18322,
+    "heapMB": 22.15631675720215,
+    "level": "low",
+    "players": "classic",
+    "pixelRatio": 1,
+    "canvas": [
+     1366,
+     768
+    ]
+   },
+   "live": {
+    "frames": 600,
+    "medianMs": 1.9000000059604645,
+    "p95Ms": 3.5,
+    "calls": 169,
+    "callsMax": 190,
+    "triangles": 25406,
+    "trianglesMax": 26726,
+    "heapMB": 24.38136100769043,
+    "level": "low",
+    "players": "classic",
+    "pixelRatio": 1,
+    "canvas": [
+     1366,
+     768
+    ]
+   },
+   "replay": {
+    "frames": 60,
+    "medianMs": 1.5,
+    "p95Ms": 1.9000000059604645,
+    "calls": 77,
+    "callsMax": 97,
+    "triangles": 12030,
+    "trianglesMax": 18014,
+    "heapMB": 21.850716590881348,
+    "level": "low",
+    "players": "classic",
+    "pixelRatio": 1,
+    "canvas": [
+     1366,
+     768
+    ],
+    "shot": null
+   },
+   "bytes": {
+    "total": 1884686,
+    "other": 1291,
+    "css": 30820,
+    "js": 404482,
+    "fonts": 465397,
+    "images": 913340,
+    "props": 61947,
+    "data": 7409
+   }
+  },
+  "retina/low": {
+   "title": {
+    "frames": 300,
+    "medianMs": 1.6999999955296516,
+    "p95Ms": 2.100000001490116,
+    "calls": 115,
+    "callsMax": 116,
+    "triangles": 16514,
+    "trianglesMax": 18304,
+    "heapMB": 22.061626434326172,
+    "level": "low",
+    "players": "classic",
+    "pixelRatio": 1,
+    "canvas": [
+     1440,
+     900
+    ]
+   },
+   "live": {
+    "frames": 600,
+    "medianMs": 2,
+    "p95Ms": 3.3000000044703484,
+    "calls": 166,
+    "callsMax": 184,
+    "triangles": 25212,
+    "trianglesMax": 26654,
+    "heapMB": 24.57131576538086,
+    "level": "low",
+    "players": "classic",
+    "pixelRatio": 1,
+    "canvas": [
+     1440,
+     900
+    ]
+   },
+   "replay": {
+    "frames": 60,
+    "medianMs": 1.6000000014901161,
+    "p95Ms": 2.1999999955296516,
+    "calls": 76,
+    "callsMax": 97,
+    "triangles": 12018,
+    "trianglesMax": 18014,
+    "heapMB": 21.955012321472168,
+    "level": "low",
+    "players": "classic",
+    "pixelRatio": 1,
+    "canvas": [
+     1440,
+     900
+    ],
+    "shot": null
+   },
+   "bytes": {
+    "total": 1884529,
+    "other": 1134,
+    "css": 30820,
+    "js": 404482,
+    "fonts": 465397,
+    "images": 913340,
+    "props": 61947,
+    "data": 7409
+   }
+  }
+ }
+}

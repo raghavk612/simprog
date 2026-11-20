@@ -1,0 +1,449 @@
+{
+ "label": "before-same",
+ "date": "2026-11-19T14:29:17.274Z",
+ "commit": "ef072c8",
+ "chunks": {
+  "main": {
+   "file": "index-BbR-JSld.js",
+   "bytes": 1120001,
+   "gzip": 331923
+  },
+  "all": [
+   {
+    "file": "index-BbR-JSld.js",
+    "bytes": 1120001,
+    "gzip": 331923
+   },
+   {
+    "file": "hi-DA7ctOQd.js",
+    "bytes": 142294,
+    "gzip": 35052
+   },
+   {
+    "file": "ja-8fY_3VZ-.js",
+    "bytes": 92796,
+    "gzip": 33119
+   },
+   {
+    "file": "en-CcfcgKzt.js",
+    "bytes": 84749,
+    "gzip": 33497
+   },
+   {
+    "file": "fr-CKZC9idb.js",
+    "bytes": 83584,
+    "gzip": 30746
+   },
+   {
+    "file": "es-Cz3-6ojl.js",
+    "bytes": 79968,
+    "gzip": 29939
+   },
+   {
+    "file": "it-DoBfgFZD.js",
+    "bytes": 79066,
+    "gzip": 29625
+   },
+   {
+    "file": "zh-xg9A0qfn.js",
+    "bytes": 70647,
+    "gzip": 31131
+   }
+  ],
+  "totalJs": 1753105
+ },
+ "runs": {
+  "laptop/high": {
+   "title": {
+    "frames": 300,
+    "medianMs": 11.100000000034925,
+    "p95Ms": 12.599999999976717,
+    "calls": 585,
+    "callsMax": 587,
+    "triangles": 2444953,
+    "trianglesMax": 2444977,
+    "heapMB": 28.69024085998535,
+    "level": "high",
+    "players": "athletes",
+    "pixelRatio": 1,
+    "canvas": [
+     1366,
+     768
+    ]
+   },
+   "live": {
+    "frames": 600,
+    "medianMs": 10.599999999976717,
+    "p95Ms": 12.400000000023283,
+    "calls": 705,
+    "callsMax": 711,
+    "triangles": 2102319,
+    "trianglesMax": 2450143,
+    "heapMB": 37.72609806060791,
+    "level": "high",
+    "players": "athletes",
+    "pixelRatio": 1,
+    "canvas": [
+     1366,
+     768
+    ]
+   },
+   "replay": {
+    "frames": 60,
+    "medianMs": 11.700000000011642,
+    "p95Ms": 12.799999999988358,
+    "calls": 575,
+    "callsMax": 575,
+    "triangles": 2446061,
+    "trianglesMax": 2446061,
+    "heapMB": 35.43819618225098,
+    "level": "high",
+    "players": "athletes",
+    "pixelRatio": 1,
+    "canvas": [
+     1366,
+     768
+    ],
+    "shot": "replayClose"
+   },
+   "bytes": {
+    "total": 15747278,
+    "other": 1214,
+    "js": 367147,
+    "css": 30820,
+    "fonts": 508127,
+    "images": 913340,
+    "props": 61947,
+    "playerModels": 3108533,
+    "data": 7409,
+    "playerMaps": 10748741
+   }
+  },
+  "laptop/medium": {
+   "title": {
+    "frames": 300,
+    "medianMs": 6.400000000023283,
+    "p95Ms": 7.400000000023283,
+    "calls": 375,
+    "callsMax": 375,
+    "triangles": 1225563,
+    "trianglesMax": 1225563,
+    "heapMB": 36.210219383239746,
+    "level": "medium",
+    "players": "athletes",
+    "pixelRatio": 1,
+    "canvas": [
+     1366,
+     768
+    ]
+   },
+   "live": {
+    "frames": 600,
+    "medianMs": 6.099999999976717,
+    "p95Ms": 7.5,
+    "calls": 420,
+    "callsMax": 424,
+    "triangles": 1053527,
+    "trianglesMax": 1227813,
+    "heapMB": 34.290886878967285,
+    "level": "medium",
+    "players": "athletes",
+    "pixelRatio": 1,
+    "canvas": [
+     1366,
+     768
+    ]
+   },
+   "replay": {
+    "frames": 60,
+    "medianMs": 6.7000000000116415,
+    "p95Ms": 8.099999999976717,
+    "calls": 364,
+    "callsMax": 364,
+    "triangles": 1227035,
+    "trianglesMax": 1227035,
+    "heapMB": 40.7374324798584,
+    "level": "medium",
+    "players": "athletes",
+    "pixelRatio": 1,
+    "canvas": [
+     1366,
+     768
+    ],
+    "shot": "replayClose"
+   },
+   "bytes": {
+    "total": 13282702,
+    "other": 1057,
+    "css": 30820,
+    "js": 367147,
+    "fonts": 508127,
+    "images": 913340,
+    "props": 61947,
+    "playerModels": 3108533,
+    "data": 7409,
+    "playerMaps": 8284322
+   }
+  },
+  "laptop/low": {
+   "title": {
+    "frames": 300,
+    "medianMs": 2,
+    "p95Ms": 2.5,
+    "calls": 220,
+    "callsMax": 236,
+    "triangles": 16530,
+    "trianglesMax": 17954,
+    "heapMB": 27.414864540100098,
+    "level": "low",
+    "players": "classic",
+    "pixelRatio": 1,
+    "canvas": [
+     1366,
+     768
+    ]
+   },
+   "live": {
+    "frames": 600,
+    "medianMs": 2.5,
+    "p95Ms": 3.8999999999650754,
+    "calls": 322,
+    "callsMax": 343,
+    "triangles": 25406,
+    "trianglesMax": 26726,
+    "heapMB": 27.50285243988037,
+    "level": "low",
+    "players": "classic",
+    "pixelRatio": 1,
+    "canvas": [
+     1366,
+     768
+    ]
+   },
+   "replay": {
+    "frames": 60,
+    "medianMs": 1.2999999999883585,
+    "p95Ms": 2.300000000046566,
+    "calls": 72,
+    "callsMax": 146,
+    "triangles": 4778,
+    "trianglesMax": 11368,
+    "heapMB": 28.732099533081055,
+    "level": "low",
+    "players": "classic",
+    "pixelRatio": 1,
+    "canvas": [
+     1366,
+     768
+    ],
+    "shot": null
+   },
+   "bytes": {
+    "total": 1847117,
+    "other": 1057,
+    "css": 30820,
+    "js": 367147,
+    "fonts": 465397,
+    "images": 913340,
+    "props": 61947,
+    "data": 7409
+   }
+  },
+  "retina/high": {
+   "title": {
+    "frames": 300,
+    "medianMs": 21,
+    "p95Ms": 21.79999999998836,
+    "calls": 580,
+    "callsMax": 583,
+    "triangles": 2444913,
+    "trianglesMax": 2444949,
+    "heapMB": 38.08413314819336,
+    "level": "high",
+    "players": "athletes",
+    "pixelRatio": 1.65,
+    "canvas": [
+     2376,
+     1485
+    ]
+   },
+   "live": {
+    "frames": 600,
+    "medianMs": 21.600000000034925,
+    "p95Ms": 23.400000000023283,
+    "calls": 694,
+    "callsMax": 707,
+    "triangles": 2456063,
+    "trianglesMax": 2456525,
+    "heapMB": 32.513437271118164,
+    "level": "high",
+    "players": "athletes",
+    "pixelRatio": 1.65,
+    "canvas": [
+     2376,
+     1485
+    ]
+   },
+   "replay": {
+    "frames": 60,
+    "medianMs": 23.099999999976717,
+    "p95Ms": 26,
+    "calls": 575,
+    "callsMax": 575,
+    "triangles": 2446061,
+    "trianglesMax": 2446061,
+    "heapMB": 45.560851097106934,
+    "level": "high",
+    "players": "athletes",
+    "pixelRatio": 1.65,
+    "canvas": [
+     2376,
+     1485
+    ],
+    "shot": "replayClose"
+   },
+   "bytes": {
+    "total": 15747121,
+    "other": 1057,
+    "css": 30820,
+    "js": 367147,
+    "fonts": 508127,
+    "images": 913340,
+    "props": 61947,
+    "playerModels": 3108533,
+    "data": 7409,
+    "playerMaps": 10748741
+   }
+  },
+  "retina/medium": {
+   "title": {
+    "frames": 300,
+    "medianMs": 8.900000000023283,
+    "p95Ms": 10.099999999976717,
+    "calls": 372,
+    "callsMax": 374,
+    "triangles": 1225537,
+    "trianglesMax": 1225551,
+    "heapMB": 34.02030086517334,
+    "level": "medium",
+    "players": "athletes",
+    "pixelRatio": 1.35,
+    "canvas": [
+     1944,
+     1215
+    ]
+   },
+   "live": {
+    "frames": 600,
+    "medianMs": 8.79999999993015,
+    "p95Ms": 10.099999999976717,
+    "calls": 415,
+    "callsMax": 422,
+    "triangles": 1230405,
+    "trianglesMax": 1230637,
+    "heapMB": 36.726094245910645,
+    "level": "medium",
+    "players": "athletes",
+    "pixelRatio": 1.35,
+    "canvas": [
+     1944,
+     1215
+    ]
+   },
+   "replay": {
+    "frames": 60,
+    "medianMs": 9.599999999976717,
+    "p95Ms": 11.699999999953434,
+    "calls": 364,
+    "callsMax": 364,
+    "triangles": 1227035,
+    "trianglesMax": 1227035,
+    "heapMB": 44.26189994812012,
+    "level": "medium",
+    "players": "athletes",
+    "pixelRatio": 1.35,
+    "canvas": [
+     1944,
+     1215
+    ],
+    "shot": "replayClose"
+   },
+   "bytes": {
+    "total": 13282702,
+    "other": 1057,
+    "js": 367147,
+    "css": 30820,
+    "fonts": 508127,
+    "images": 913340,
+    "props": 61947,
+    "playerModels": 3108533,
+    "data": 7409,
+    "playerMaps": 8284322
+   }
+  },
+  "retina/low": {
+   "title": {
+    "frames": 300,
+    "medianMs": 2,
+    "p95Ms": 2.599999999976717,
+    "calls": 200,
+    "callsMax": 215,
+    "triangles": 14726,
+    "trianglesMax": 16148,
+    "heapMB": 25.2626314163208,
+    "level": "low",
+    "players": "classic",
+    "pixelRatio": 1,
+    "canvas": [
+     1440,
+     900
+    ]
+   },
+   "live": {
+    "frames": 600,
+    "medianMs": 2.599999999976717,
+    "p95Ms": 3.799999999930151,
+    "calls": 319,
+    "callsMax": 337,
+    "triangles": 25212,
+    "trianglesMax": 26654,
+    "heapMB": 25.71633815765381,
+    "level": "low",
+    "players": "classic",
+    "pixelRatio": 1,
+    "canvas": [
+     1440,
+     900
+    ]
+   },
+   "replay": {
+    "frames": 60,
+    "medianMs": 1.400000000023283,
+    "p95Ms": 2.299999999930151,
+    "calls": 70,
+    "callsMax": 129,
+    "triangles": 4766,
+    "trianglesMax": 9658,
+    "heapMB": 27.135656356811523,
+    "level": "low",
+    "players": "classic",
+    "pixelRatio": 1,
+    "canvas": [
+     1440,
+     900
+    ],
+    "shot": null
+   },
+   "bytes": {
+    "total": 1847117,
+    "other": 1057,
+    "css": 30820,
+    "js": 367147,
+    "fonts": 465397,
+    "images": 913340,
+    "props": 61947,
+    "data": 7409
+   }
+  }
+ }
+}

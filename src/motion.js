@@ -33,15 +33,84 @@ export function ankleOf(thigh, shin, hip, knee) {
 }
 /* Stride length for a speed (game units per second): short steps when shuffling, long ones at a sprint. */
 export const strideFor = speed => Math.min(1.5, 0.42 + speed * 0.2);
-/* Foot target in the stride cycle. phase 0..2π: first half planted (moves back exactly as the body moves forward), second half swinging. */
-export function footAt(phase, stride, lift) {
-  const p = ((phase % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-  if (p < Math.PI) return { forward: stride / 2 - (p / Math.PI) * stride, up: 0 };
-  const s = (p - Math.PI) / Math.PI,
-    e = s * s * (3 - 2 * s);
-  return { forward: -stride / 2 + e * stride, up: lift * Math.sin(s * Math.PI) };
+/* The gait for a ground speed (units/s: a walk is about 1.2, a jog 3, a run 5, a sprint 7; 1 unit = 1 ft x 3.02):
+   stride  - distance per step (one foot to the other); real runners lengthen it with speed (a sprint step is ~2 m)
+   duty    - the part of the cycle each foot is planted: over half when walking (both feet down in between), under half
+             when running, which leaves a flight phase with both feet up. A planted foot covers only duty x 2 x stride of
+             ground, so even a sprint's long strides stay within the leg's reach and the feet do not slide.
+   lift    - how high the swinging foot comes up (a heel kick at a sprint)
+   bob     - how far the pelvis rises and falls (units)
+   arm     - arm swing (radians) and elbow bend, from a loose walk to a sprinter's 90-degree pump
+   lean    - forward lean of the trunk (radians) */
+export function gaitFor(speed) {
+  const s = Math.max(0, Math.min(9, speed || 0)),
+    k = x => Math.max(0, Math.min(1, x)),
+    run = k((s - 1.6) / 4.4); // 0 at a walk, 1 at a sprint
+  return {
+    stride: Math.min(2.0, 0.42 + s * 0.24),
+    duty: 0.62 - 0.3 * run,
+    lift: 0.07 + 0.2 * run,
+    bob: 0.025 + 0.03 * run,
+    arm: 0.22 + 0.55 * run,
+    elbow: 0.3 + 1.15 * k((s - 1.2) / 3),
+    lean: 0.03 + 0.2 * run,
+    run,
+  };
+}
+/* Fits a gait to a body: a planted foot can only be as far ahead of or behind the hip as the leg reaches at the hip's
+   height (we have no toes to roll over), so a stance longer than that would leave the foot short of its spot and sliding.
+   Running shortens the stance (a longer flight, down to a quarter of the cycle); walking takes quicker, shorter steps.
+   leg = {thigh, shin, ankleY}, hipY = the hip's height now (units of the body). */
+export function fitGait(g, leg, hipY) {
+  const reach = (leg.thigh + leg.shin) * 0.985,
+    drop = Math.max(0.2, hipY - leg.ankleY),
+    cmax = Math.sqrt(Math.max(0.0025, reach * reach - drop * drop));
+  if (g.duty * g.stride <= cmax) return g;
+  let duty = g.duty,
+    stride = g.stride;
+  if (g.run > 0.05) duty = Math.max(0.25, Math.min(duty, cmax / stride));
+  if (duty * stride > cmax) stride = cmax / duty;
+  return { ...g, duty, stride };
+}
+/* Foot target in the stride cycle. phase 0..2π is one cycle: two steps, 2 x stride of travel. The foot is planted for the
+   first duty x 2π, moving back exactly as far as the body moves forward (from +duty x stride to -duty x stride), then
+   swings forward to the next contact, lifting `lift` (earlier in the swing at a run: the heel comes up first). duty 0.5 is
+   the old half-and-half cycle. */
+export function footAt(phase, stride, lift, duty = 0.5) {
+  const T = 2 * Math.PI,
+    p = ((phase % T) + T) % T,
+    c = duty * stride,
+    st = duty * T;
+  if (p < st) return { forward: c - (p / Math.PI) * stride, up: 0 };
+  const s = (p - st) / (T - st),
+    e = s * s * (3 - 2 * s),
+    q = duty < 0.5 ? Math.pow(s, 0.75) : s; // a running swing lifts early
+  return { forward: -c + e * 2 * c, up: lift * Math.sin(q * Math.PI) };
+}
+/* The pelvis's rise and fall over the cycle (-1..1, times gait.bob). Walking vaults over the planted leg: highest at
+   mid-stance. Running sinks as the leg takes the weight and rises through the flight. */
+export function gaitBob(phase, duty) {
+  const T = 2 * Math.PI,
+    p = ((phase % T) + T) % T,
+    st = duty * T;
+  let walk = 0,
+    run = 0;
+  for (const q of [p, (p + Math.PI) % T])
+    if (q < st) {
+      const s = q / st;
+      walk = Math.max(walk, Math.sin(Math.PI * s));
+      run -= Math.sin(Math.PI * s);
+    }
+  if (duty < 0.5) {
+    const q = p % Math.PI,
+      gap = Math.PI - st;
+    if (q >= st && gap > 1e-6) run += Math.sin((Math.PI * (q - st)) / gap);
+  }
+  const w = Math.max(0, Math.min(1, (0.5 - duty) / 0.12 + 0.5));
+  return walk * (1 - w) + run * w;
 }
 const damp = (cur, target, rate, dt) => cur + (target - cur) * (1 - Math.exp(-rate * dt));
+const smooth01 = x => ((x = Math.max(0, Math.min(1, x))), x * x * (3 - 2 * x));
 
 /* ---- Personal space: players keep about 3 ft apart, and go round each other instead of through ---- */
 export const SPACE = { min: 0.95, contest: 0.85, block: 0.5 }; // game units centre to centre (1 ft = 0.33); a shot
@@ -143,27 +212,32 @@ export function facingWeight(speed, arms, off = 0) {
 /* Two-bone arm IK in the chest's space. S = shoulder, T = wrist target, L1/L2 = upper arm and forearm, pole = where the elbow
    should point. Returns the upper-arm direction u, the forearm bend direction b (both unit) and the elbow bend angle
    (0 = straight), or null if the target sits on the shoulder. */
+const _sd = new THREE.Vector3(),
+  _sp = new THREE.Vector3(),
+  _su = new THREE.Vector3(),
+  _sE = new THREE.Vector3(),
+  _sf = new THREE.Vector3(),
+  _sb = new THREE.Vector3(),
+  _sol = { u: _su, b: _sb, bend: 0, elbow: _sE };
+/* (The result's vectors are reused by the next call: use them before calling it again.) */
 export function solveArm(S, T, L1, L2, pole) {
-  const d = T.clone().sub(S),
+  const d = _sd.copy(T).sub(S),
     len = d.length();
   if (len < 1e-5) return null;
   const D = Math.min(Math.max(len, Math.abs(L1 - L2) + 1e-3), L1 + L2 - 1e-6),
     dn = d.multiplyScalar(1 / len);
-  const p = pole.clone().sub(dn.clone().multiplyScalar(pole.dot(dn)));
-  if (p.lengthSq() < 1e-8) p.set(0, 0, 1).sub(dn.clone().multiplyScalar(dn.z));
+  const p = _sp.copy(pole).addScaledVector(dn, -pole.dot(dn));
+  if (p.lengthSq() < 1e-8) p.set(0, 0, 1).addScaledVector(dn, -dn.z);
   p.normalize();
   const a = Math.acos(Math.max(-1, Math.min(1, (L1 * L1 + D * D - L2 * L2) / (2 * L1 * D)))),
-    u = dn
-      .clone()
-      .multiplyScalar(Math.cos(a))
-      .add(p.clone().multiplyScalar(Math.sin(a)));
-  const E = S.clone().add(u.clone().multiplyScalar(L1)),
-    f = dn.clone().multiplyScalar(D).add(S).sub(E).normalize();
-  const b = f.clone().sub(u.clone().multiplyScalar(f.dot(u)));
+    u = _su.copy(dn).multiplyScalar(Math.cos(a)).addScaledVector(p, Math.sin(a));
+  const E = _sE.copy(S).addScaledVector(u, L1),
+    f = _sf.copy(dn).multiplyScalar(D).add(S).sub(E).normalize();
+  const b = _sb.copy(f).addScaledVector(u, -f.dot(u));
   if (b.lengthSq() < 1e-8) b.copy(p);
   b.normalize();
-  const bend = Math.PI - Math.acos(Math.max(-1, Math.min(1, (L1 * L1 + L2 * L2 - D * D) / (2 * L1 * L2))));
-  return { u, b, bend, elbow: E };
+  _sol.bend = Math.PI - Math.acos(Math.max(-1, Math.min(1, (L1 * L1 + L2 * L2 - D * D) / (2 * L1 * L2))));
+  return _sol;
 }
 /* Arm poses for each play situation, per side (j: 0 = right, 1 = left): shoulder flex x (negative = forward/up), abduction z
    (positive = away from the body) and elbow flex e (negative = bent). */
@@ -171,15 +245,26 @@ const ARM = {
   relax: () => [0, 0.1, -0.25],
   shoot: (j, m) => (j === 0 ? [-2.75, 0.05, -0.15] : [-1.75, 0.45, -0.6]), // follow-through: shooting arm up and through, guide hand falls away
   hook: j => (j === 0 ? [-2.9, 0.55, -0.2] : [-1.2, 0.7, -0.9]), // hook over the top, off arm up to shield
-  block: (j, m) => (j === m.high ? [-2.85, 0.15, -0.12] : [-1.85, 0.45, -0.45]), // one hand high on the ball, the other wide
+  block: (j, m) => (j === m.high ? [-2.85, 0.15, -0.12] : [-2.2, 0.32, -0.55]), // one hand high on the ball, the other up beside it
   rebound: () => [-2.55, 0.3, -0.45], // both up, elbows soft
-  defend: (j, m, t) =>
-    j === m.high
-      ? [-1.25 + Math.sin(t * 3.1) * 0.12, 0.75, -0.8]
-      : [-0.45 + Math.sin(t * 2.3 + 1) * 0.1, 0.95, -0.55], // active hands, one high one low
+  // a starting point only: the defensive stance itself is placed by hand targets (DEFEND, animateArms)
+  defend: () => [-0.85, 0.3, -1.1],
   pass: () => [-1.35, -0.08, -0.35], // chest pass: arms through, hands together
   screen: () => [-0.6, -0.38, -1.5], // arms crossed in front, braced
   dribble: () => [-0.7, 0.35, -1.0], // off arm out front as a guard; the dribble hand is set by IK
+};
+/* The defensive stance, as wrist targets from each shoulder in the chest's space (+x his left, +y up, +z forward), with
+   side = +1 for the left arm. On the ball: the hand on the ball's side low and out front to trace the dribble, the other
+   up at face height in the passing lane, elbows bent and in front of the body. Help (off the ball): both hands up in
+   front at chest height, a little wider than the shoulders ("pistols"). Never the arms straight out to the side.
+   Scaled by the arm's length (rest L1 + L2), so the same stance fits the guard and the center. */
+export const DEFEND = {
+  low: [0.16, -0.66, 0.55], // traces the dribble
+  high: [0.12, 0.4, 0.82], // up in the passing lane, reaching out at the ball handler (a hand by the head reads as idle)
+  help: [0.06, -0.62, 0.48], // pistols: hands in front at the hips, just outside the shoulders
+  onBall: [2.0, 3.2], // distance to the ball (units): fully on-ball inside the first, help beyond the second
+  // elbows down, a little out; the high one under the hand, toward the man (out to the side it is a chicken wing)
+  pole: { low: [0.35, -0.8, -0.3], high: [0.15, -0.8, 0.4], help: [0.25, -0.8, -0.5] },
 };
 const quatFrom = (() => {
   const m0 = new THREE.Matrix4(),
@@ -194,6 +279,22 @@ const quatFrom = (() => {
     return out.setFromRotationMatrix(m1.multiply(m0.transpose()));
   };
 })();
+// scratch vectors for the per-frame work (nothing is allocated per player per frame); each is used and done with inside
+// one step, never kept
+const _fw = new THREE.Vector3(),
+  _left = new THREE.Vector3(),
+  _tmp = new THREE.Vector3(),
+  _at = new THREE.Vector3(),
+  _pole = new THREE.Vector3(),
+  _bb = new THREE.Vector3(),
+  _tb = new THREE.Vector3(),
+  _t2 = new THREE.Vector3(),
+  _tp = new THREE.Vector3(),
+  _cw = new THREE.Vector3(),
+  _cw2 = new THREE.Vector3(),
+  _pp = new THREE.Vector3(),
+  _nrm = [new THREE.Vector3(), new THREE.Vector3()],
+  UP = new THREE.Vector3(0, 1, 0);
 const _v = new THREE.Vector3(),
   _w = new THREE.Vector3(),
   _q = new THREE.Quaternion(),
@@ -268,7 +369,13 @@ export function animateAthlete(player, pose, ctx) {
       m.dir = dir;
     } else dir = m.dir || 0;
   }
-  m.last = { x: here.x, z: here.z };
+  if (m.last) {
+    m.last.x = here.x;
+    m.last.z = here.z;
+  } else m.last = { x: here.x, z: here.z };
+  // a player drawn taller or shorter than his model (the Arena scales him, players.js bodyFor): his stride is measured in
+  // his own body's units, so the planted foot moves back exactly as far as he moves
+  moved /= player.scale.x || 1;
   const speed = dt > 0 ? moved / dt : 0;
   m.speed = damp(m.speed, Math.min(speed, 9), 6, dt);
   m.t += dt;
@@ -281,22 +388,81 @@ export function animateAthlete(player, pose, ctx) {
     pb = PF?.body || {};
   const run = Math.min(1, m.speed / 5),
     airborne = Math.min(1, Math.max(0, pose.y) / 0.18) * (PF && !PF.gait ? 1 - pw : 1);
-  const stride = strideFor(m.speed);
+  const g = fitGait(gaitFor(m.speed), R.legs.L, R.legs.L.hipY - m.crouch * R.legs.L.hipY),
+    stride = g.stride,
+    gw = smooth01((m.speed - 0.1) / 0.8); // how much of the gait shows: none standing, all of it from a slow walk
   if (ctx.motion) m.phase += (moved / Math.max(stride, 0.2)) * Math.PI;
+  // starts, stops and cuts: the speed along his facing and its change (lean into a start, back on a stop), and how fast
+  // he is turning (lean into the turn, more the faster he runs)
+  if (dt > 0) {
+    const vf = (moved / dt) * Math.cos(dir),
+      yaw = player.rotation.y,
+      turn = m.yawLast == null ? 0 : Math.atan2(Math.sin(yaw - m.yawLast), Math.cos(yaw - m.yawLast)) / dt;
+    m.acc = damp(m.acc ?? 0, Math.max(-25, Math.min(25, (vf - (m.vf ?? vf)) / dt)), 5, dt);
+    m.vf = vf;
+    m.turn = damp(m.turn ?? 0, Math.max(-12, Math.min(12, turn)), 6, dt);
+    // motion version 3 gives his real acceleration (src/playsim.js): the lean follows it as it happens rather than a
+    // measured, damped guess a moment late; along his facing for the lean into a start or back on a stop, across his
+    // motion for the lean into a turn (the yaw rate times speed it stands in for)
+    if (Number.isFinite(pose.ax) && Number.isFinite(pose.vx)) {
+      const af = pose.ax * Math.sin(yaw) + pose.az * Math.cos(yaw),
+        sp = Math.hypot(pose.vx, pose.vz),
+        lat = sp > 0.3 ? (pose.vx * pose.az - pose.vz * pose.ax) / sp : 0;
+      m.acc = damp(m.acc, Math.max(-25, Math.min(25, af)), 14, dt);
+      m.turn = damp(m.turn, Math.max(-12, Math.min(12, -lat / Math.max(1, m.speed))), 14, dt);
+    }
+    m.yawLast = yaw;
+    m.exert = damp(m.exert ?? 0, run, run > (m.exert ?? 0) ? 0.4 : 0.12, dt); // breathing deepens after a hard run
+    // the shorts: a damped spring pushed by the body's acceleration (they lag a start, swing on a stop and a cut, and
+    // flutter as he lands from a jump), in his own frame (x his left, z forward)
+    const k = player.scale.x || 1,
+      vel = [
+        (here.x - (m.px ?? here.x)) / dt / k,
+        (pose.y - (m.py ?? pose.y)) / dt / k,
+        (here.z - (m.pz ?? here.z)) / dt / k,
+      ],
+      acc = vel.map((v, i) => Math.max(-40, Math.min(40, (v - (m.pv?.[i] ?? v)) / dt)));
+    m.px = here.x;
+    m.py = pose.y;
+    m.pz = here.z;
+    m.pv = vel;
+    m.cloth ??= { x: [0, 0, 0], v: [0, 0, 0] };
+    const C = m.cloth,
+      steps = Math.max(1, Math.ceil(dt / (1 / 120)));
+    for (let n = 0; n < steps; n++) {
+      const h = dt / steps;
+      for (let i = 0; i < 3; i++) {
+        const a = -140 * C.x[i] - 10 * C.v[i] - acc[i] * 0.0025;
+        C.v[i] += a * h;
+        C.x[i] = Math.max(-0.05, Math.min(0.05, C.x[i] + C.v[i] * h));
+      }
+    }
+    if (ctx.motion) {
+      const yaw = player.rotation.y,
+        c = Math.cos(yaw),
+        sn = Math.sin(yaw);
+      u.body.setSway?.(C.x[0] * c - C.x[2] * sn, C.x[1], C.x[0] * sn + C.x[2] * c);
+    } else u.body.setSway?.(0, 0, 0);
+  }
   // stance targets by what the player is doing
   const arms = pose.arms || 'relax',
     dribble = arms === 'dribble',
     defend = arms === 'defend';
-  const crouchT = airborne > 0 ? 0.02 : defend ? 0.17 : dribble ? 0.13 : 0.07 + run * 0.05,
+  const crouchT = airborne > 0 ? 0.02 : defend ? 0.17 : dribble ? 0.13 : 0.07 + run * 0.07,
     wideT = defend ? 0.2 : dribble ? 0.08 : 0.03,
-    leanT = run * 0.2 + (dribble ? 0.22 : 0) + (defend ? 0.12 : 0);
+    leanT =
+      g.lean * gw +
+      (dribble ? 0.22 : 0) +
+      (defend ? 0.12 : 0) +
+      (airborne > 0 ? 0 : Math.max(-0.14, Math.min(0.18, (m.acc ?? 0) * 0.02)) * gw);
   m.crouch = damp(m.crouch, crouchT, 7, dt);
   m.wide = damp(m.wide, wideT, 7, dt);
   m.lean = damp(m.lean, leanT, 6, dt);
   const still = 1 - run;
-  m.sway = Math.sin(m.t * 1.1) * still * (ctx.motion ? 1 : 0); // slow weight shift when standing
-  // pelvis: crouch, a bob at twice the stride rate, weight shift to one side
-  const bob = ctx.motion ? Math.abs(Math.sin(m.phase)) * 0.035 * run : 0,
+  // a slow weight shift from foot to foot when standing, never quite periodic
+  m.sway = (0.7 * Math.sin(m.t * 0.9) + 0.3 * Math.sin(m.t * 2.3 + 1.7)) * still * (ctx.motion ? 1 : 0);
+  // pelvis: crouch, the gait's rise and fall, weight shift to one side
+  const bob = ctx.motion ? gaitBob(m.phase, g.duty) * g.bob * gw : 0,
     h = R.legs.L.hipY;
   const pdrop = (pb.drop || 0) * pw;
   b.pelvis.position.set(
@@ -304,7 +470,7 @@ export function animateAthlete(player, pose, ctx) {
     R.pelvis.y - m.crouch * h + bob - pdrop,
     R.pelvis.z,
   );
-  b.pelvis.rotation.set(0, ctx.motion ? -Math.sin(m.phase) * 0.1 * run : 0, -m.sway * 0.03);
+  b.pelvis.rotation.set(0, ctx.motion ? -Math.sin(m.phase) * (0.06 + 0.08 * g.run) * gw : 0, -m.sway * 0.03);
   // legs: stride targets, planted while in stance; in the air the knees tuck
   for (const [j, s] of [
     [0, 'R'],
@@ -314,13 +480,22 @@ export function animateAthlete(player, pose, ctx) {
       hipBone = b['hip_' + s],
       knee = b['knee_' + s],
       ankle = b['ankle_' + s];
-    const foot =
-      run > 0.02 && ctx.motion
-        ? footAt(m.phase + (j ? Math.PI : 0), stride, 0.1 + 0.12 * run)
-        : { forward: (j ? 0.06 : -0.04) * (1 - m.wide * 2), up: 0 };
+    // the gait's foot, faded into the standing stance as he slows (no snap when he stops)
+    const rest = { forward: (j ? 0.06 : -0.04) * (1 - m.wide * 2), up: 0 },
+      walk = ctx.motion && gw > 0 ? footAt(m.phase + (j ? Math.PI : 0), stride, g.lift, g.duty) : rest,
+      foot = { forward: rest.forward + (walk.forward - rest.forward) * gw, up: walk.up * gw };
     // the stride runs along the direction of travel: forward/back in the leg's plane, sideways through the hip (a shuffle)
-    const fwd = foot.forward * Math.cos(dir),
-      side = foot.forward * Math.sin(dir);
+    // the pelvis twists with the stride: it carries the hip forward or back and turns the leg's plane with it. The target
+    // (relative to the body's root, under the hip) is taken from the twisted hip and turned into the pelvis's frame, so a
+    // planted foot stays exactly where it is on the floor
+    const th = b.pelvis.rotation.y,
+      ct = Math.cos(th),
+      sn = Math.sin(th),
+      hipX = R.pelvis.x + hipBone.position.x,
+      rx = foot.forward * Math.sin(dir) + hipX * (1 - ct),
+      rz = foot.forward * Math.cos(dir) + hipX * sn,
+      fwd = rx * sn + rz * ct,
+      side = rx * ct - rz * sn;
     const hipWorldY = L.hipY - m.crouch * h + bob - pdrop,
       drop = hipWorldY - L.ankleY - foot.up + (s === 'L' ? -1 : 1) * m.sway * 0.012;
     let sol = solveLeg(
@@ -330,7 +505,7 @@ export function animateAthlete(player, pose, ctx) {
       Math.sqrt(Math.max(drop * drop - side * side, drop * drop * 0.5)),
     );
     if (airborne > 0) {
-      const tuck = jumpLegs(arms, ctx.family, s);
+      const tuck = jumpLegs(arms, ctx.family, s, ctx.airLegs, ctx.airLead);
       sol = {
         hip: sol.hip + (tuck.hip - sol.hip) * airborne,
         knee: sol.knee + (tuck.knee - sol.knee) * airborne,
@@ -342,7 +517,7 @@ export function animateAthlete(player, pose, ctx) {
     // performing: the leg reaches the move's planted foot (world target -> this player's space), the foot turned its way
     if (PF && !PF.gait && pw > 0 && PF.feet?.[s]) {
       const F = PF.feet[s],
-        lf = (player.updateMatrixWorld(), player.worldToLocal(_w.copy(F.p))),
+        lf = (player.updateWorldMatrix(true, false), player.worldToLocal(_w.copy(F.p))), // his own matrix only, not every bone's
         hip = hipBone.position,
         hx = R.pelvis.x + hip.x,
         hz = R.pelvis.z + hip.z,
@@ -370,17 +545,22 @@ export function animateAthlete(player, pose, ctx) {
     ); // flat on the floor; toes point in the air
   }
   // torso: lean into the run, shoulders counter-twist against the hips
+  // banking: into a turn (his left is +x; turning left tilts the trunk left), more the faster he runs
+  const bank = ctx.motion ? Math.max(-0.22, Math.min(0.22, -(m.turn ?? 0) * m.speed * 0.018)) * gw : 0,
+    breath = ctx.motion
+      ? Math.sin(m.t * (1.3 + 1.6 * (m.exert ?? 0))) * (0.012 + 0.025 * (m.exert ?? 0)) * (1 - gw * 0.7)
+      : 0;
   b.spine.rotation.set(
     m.lean * 0.55 + (pb.lean || 0) * 0.6 * pw,
-    (ctx.motion ? Math.sin(m.phase) * 0.12 * run : 0) + (pb.twist || 0) * 0.4 * pw,
-    m.sway * 0.025 * (1 - pw) + (pb.side || 0) * pw,
+    (ctx.motion ? Math.sin(m.phase) * (0.08 + 0.08 * g.run) * gw : 0) + (pb.twist || 0) * 0.4 * pw,
+    m.sway * 0.025 * (1 - pw) + bank * (1 - pw) + (pb.side || 0) * pw,
   );
   b.chest.rotation.set(
-    m.lean * 0.35 + (pb.lean || 0) * 0.4 * pw,
-    (ctx.motion ? Math.sin(m.phase) * 0.08 * run : 0) + (pb.twist || 0) * 0.6 * pw,
+    m.lean * 0.35 + (pb.lean || 0) * 0.4 * pw - breath,
+    (ctx.motion ? Math.sin(m.phase) * (0.05 + 0.06 * g.run) * gw : 0) + (pb.twist || 0) * 0.6 * pw,
     0,
   );
-  animateArms(player, pose, ctx, m, R, run, dt, PF, pw);
+  animateArms(player, pose, ctx, m, R, run, dt, PF, pw, g, gw);
   // head: turn toward the ball (limited), eyes level against the torso lean
   if (b.head) {
     let yaw = 0;
@@ -399,7 +579,7 @@ export function animateAthlete(player, pose, ctx) {
       let py = -(pb.twist || 0) * 0.8,
         pp = 0;
       if (PF.look) {
-        const l = (player.updateMatrixWorld(), player.worldToLocal(_w.copy(PF.look)));
+        const l = (player.updateWorldMatrix(true, false), player.worldToLocal(_w.copy(PF.look)));
         py = Math.max(-1.1, Math.min(1.1, Math.atan2(l.x, l.z)));
         pp = Math.max(-0.6, Math.min(0.5, Math.atan2(l.y - 1.75, Math.hypot(l.x, l.z))));
       }
@@ -413,9 +593,19 @@ export function animateAthlete(player, pose, ctx) {
   }
 }
 
+/* Leg shapes in the air for the finishes (src/finishes.js names one per moment; lead = the side of the knee that drives
+   up, the shooting hand's): hip flexion (- = thigh forward), knee bend, toe point. */
+export const AIR_LEGS = {
+  kneeR: { lead: { hip: -1.35, knee: 1.65, toe: 0.35 }, trail: { hip: 0.18, knee: 0.55, toe: 0.6 } }, // a layup's knee drive
+  hook: { lead: { hip: -1.05, knee: 1.35, toe: 0.4 }, trail: { hip: 0.08, knee: 0.4, toe: 0.6 } },
+  tuck: { lead: { hip: -0.6, knee: 1.05, toe: 0.45 }, trail: { hip: -0.5, knee: 0.95, toe: 0.45 } }, // two feet, knees up
+  softTuck: { lead: { hip: -0.4, knee: 0.75, toe: 0.5 }, trail: { hip: -0.25, knee: 0.6, toe: 0.55 } },
+  dunk: { lead: { hip: -0.45, knee: 1.25, toe: 0.5 }, trail: { hip: -0.3, knee: 1.15, toe: 0.5 } }, // knees bent, feet back
+};
 /* Leg shape in the air, by move: jump shooters keep the legs long with toes pointed; on drives and dunks the lead knee drives
-   up and the trail leg folds back; blocks and rebounds tuck both knees. */
-function jumpLegs(arms, family, side) {
+   up and the trail leg folds back; blocks and rebounds tuck both knees. A finish (ctx.airLegs) names its own shape. */
+function jumpLegs(arms, family, side, air = null, lead = 'R') {
+  if (air && AIR_LEGS[air]) return AIR_LEGS[air][side === lead ? 'lead' : 'trail'];
   if (arms === 'shoot' && ['drive', 'dunk', 'roll', 'floater'].includes(family))
     return side === 'R' ? { hip: -1.25, knee: 1.5, toe: 0.35 } : { hip: 0.12, knee: 0.6, toe: 0.6 };
   if (arms === 'shoot' || arms === 'hook') return { hip: -0.12, knee: 0.28, toe: 0.65 };
@@ -427,7 +617,7 @@ function jumpLegs(arms, family, side) {
    holding, gathering and shooting. When the ball leaves (a shot or pass), the IK fades and the follow-through takes over.
    The dribbling hand leads the ball rather than chasing it: it follows the dribble's hand height (ctx.dribbleHand), the
    forearm turns the palm down onto the ball and the wrist works on the dribble's beat (dribbleWrist). */
-function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0) {
+function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0, g = gaitFor(0), gw = 0) {
   const u = player.userData,
     b = u.body.bones,
     chest = b.chest;
@@ -440,33 +630,33 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0) {
     [0, 0.1, -0.25],
   ];
   m.ik ??= [0, 0];
+  m.grip ??= [0.35, 0.35];
+  m.spread ??= [0, 0];
   m.ikT ??= [null, null];
   const t = ctx.motion ? m.t : 0;
   // where the ball is relative to this player, and which hands should be on it
   const ball = ctx.ball,
     holder = !!ctx.holder && !!ball,
     yaw = player.rotation.y,
-    fw = _v.set(Math.sin(yaw), 0, Math.cos(yaw)).clone(),
-    left = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-  const r = ctx.ballRadius || 0.13,
-    up = new THREE.Vector3(0, 1, 0);
-  let normals = [null, null];
+    fw = _fw.set(Math.sin(yaw), 0, Math.cos(yaw)),
+    left = _left.set(Math.cos(yaw), 0, -Math.sin(yaw));
+  const r = ctx.ballRadius || 0.13;
+  const normals = [null, null];
   if (holder) {
     if (arms === 'dribble') {
-      const j = ball.clone().sub(player.position).dot(left) > 0 ? 1 : 0;
-      normals[j] = up.clone();
+      const j = _tmp.copy(ball).sub(player.position).dot(left) > 0 ? 1 : 0;
+      normals[j] = _nrm[j].copy(UP);
     } else if (arms === 'shoot' || arms === 'hook') {
-      normals[0] = fw
-        .clone()
-        .negate()
-        .multiplyScalar(0.75)
-        .add(up.clone().multiplyScalar(-0.35))
-        .add(left.clone().multiplyScalar(-0.3))
+      normals[0] = _nrm[0]
+        .copy(fw)
+        .multiplyScalar(-0.75)
+        .addScaledVector(UP, -0.35)
+        .addScaledVector(left, -0.3)
         .normalize();
-      if (arms === 'shoot') normals[1] = left.clone();
+      if (arms === 'shoot') normals[1] = _nrm[1].copy(left);
     } else {
-      normals[0] = left.clone().negate();
-      normals[1] = left.clone();
+      normals[0] = _nrm[0].copy(left).negate();
+      normals[1] = _nrm[1].copy(left);
     }
   }
   u.arms.forEach((a, j) => {
@@ -474,9 +664,10 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0) {
       side = j ? 1 : -1;
     let [x, z, e] = (ARM[arms] || ARM.relax)(j, m, t);
     if (arms === 'relax') {
-      x = ctx.motion ? -Math.sin(m.phase + (j ? Math.PI : 0)) * 0.55 * run : 0;
-      z = 0.1 + 0.08 * m.crouch * 4;
-      e = -0.25 - 0.6 * run;
+      // the arms swing against the legs: loose and low at a walk, bent to 90 degrees and pumping at a sprint
+      x = ctx.motion ? -Math.sin(m.phase + (j ? Math.PI : 0)) * g.arm * gw - 0.08 * g.run * gw : 0;
+      z = 0.1 + 0.08 * m.crouch * 4 - 0.04 * g.run * gw;
+      e = -0.25 - (g.elbow - 0.25) * gw;
     }
     const st = m.arm[j];
     st[0] = damp(st[0], x, 10, dt);
@@ -493,11 +684,15 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0) {
       chest.updateWorldMatrix(true, false);
       // the dribbling hand goes where the dribble puts it (ctx.dribbleHand, basketball.js dribbleAt), over the ball: on it
       // in the push, waiting above it while it bounces. Every other hand on the ball goes to the ball.
-      const at = arms === 'dribble' && ctx.dribbleHand != null ? ball.clone().setY(ctx.dribbleHand) : ball;
-      T = chest.worldToLocal(at.add(n.clone().multiplyScalar(r + 0.07)));
+      // (a copy: ctx.ball is the Arena's ball itself; this used to add to it and turn it into this player's chest space,
+      // which spoiled the second hand's target and every player animated after him that frame)
+      const at = _at.copy(ball);
+      if (arms === 'dribble' && ctx.dribbleHand != null) at.setY(ctx.dribbleHand);
+      // the guide hand on a shot rests on the ball's side, fingers up it: a little further out so they stay on its surface
+      T = chest.worldToLocal(at.addScaledVector(n, r + 0.07 + (arms === 'shoot' && j === 1 ? 0.02 : 0)));
       if (T.distanceTo(S) < (rest.L1 + rest.L2) * 1.2) {
         want = 1;
-        m.ikT[j] = T.clone();
+        (m.ikT[j] ??= new THREE.Vector3()).copy(T);
       }
     }
     m.ik[j] = damp(m.ik[j], want, want ? 14 : 7, dt);
@@ -506,10 +701,10 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0) {
       {
         const pole =
           arms === 'dribble'
-            ? new THREE.Vector3(side * 0.3, -0.2, -1) // dribbling: the elbow points back, close to the body
+            ? _pole.set(side * 0.3, -0.2, -1) // dribbling: the elbow points back, close to the body
             : T.y > S.y + 0.1
-              ? new THREE.Vector3(side * 0.45, -0.1, 1)
-              : new THREE.Vector3(side * 0.6, -0.25, -1);
+              ? _pole.set(side * 0.45, -0.1, 1)
+              : _pole.set(side * 0.6, -0.25, -1);
         const sol = solveArm(S, T, rest.L1, rest.L2, pole.normalize());
         if (sol) {
           quatFrom(rest.u0, rest.b0, sol.u, sol.b, _q);
@@ -527,19 +722,22 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0) {
       wrist.rotation.set(0, 0, dribbling ? -side * dribbleWrist(ctx.dribble) * dribbling : 0);
     }
     if (dribbling) a.userData.elbow.rotation.y = -side * 1.35 * dribbling; // pronation (palms face the body at rest)
+    // the defensive stance: hands placed in front of the body by IK, between the on-ball and the help stance
+    m.defW = damp(m.defW ?? 0, arms === 'defend' ? 1 : 0, 8, dt);
+    if (m.defW > 0.01 && rest) defendArm(player, a, j, side, rest, m, ctx, t, S);
     // going up to block: the high hand goes for the ball when it is close (a swat when the play is a block, a swipe that
     // misses when it is not), its arm reaching straight at it when it is just out of reach
     if (arms === 'block' && ball && !holder && j === m.high && rest) {
       chest.updateWorldMatrix(true, false);
-      const B = chest.worldToLocal(ball.clone()),
+      const B = chest.worldToLocal(_bb.copy(ball)),
         reach = rest.L1 + rest.L2,
-        toBall = B.clone().sub(S),
+        toBall = _tb.copy(B).sub(S),
         dist = toBall.length(),
         near = Math.max(0, Math.min(1, (reach * 1.9 - dist) / (reach * 0.7)));
       m.swat = damp(m.swat ?? 0, near, 12, dt);
       if (m.swat > 0.01 && dist > 1e-3) {
-        const T2 = S.clone().add(toBall.multiplyScalar(Math.min(1, (reach * 0.98) / dist))),
-          sol = solveArm(S, T2, rest.L1, rest.L2, new THREE.Vector3(side * 0.5, -0.2, 1).normalize());
+        const T2 = _t2.copy(S).add(toBall.multiplyScalar(Math.min(1, (reach * 0.98) / dist))),
+          sol = solveArm(S, T2, rest.L1, rest.L2, _pole.set(side * 0.5, -0.2, 1).normalize());
         if (sol) {
           quatFrom(rest.u0, rest.b0, sol.u, sol.b, _q);
           a.quaternion.slerp(_q, m.swat);
@@ -554,15 +752,18 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0) {
     if (wt > 0.001 && rest) {
       chest.updateWorldMatrix(true, false);
       // (own vectors: the target and the elbow direction must not share the scratch vector)
-      const Tp = chest.worldToLocal(H.p.clone()),
+      const Tp = chest.worldToLocal(_tp.copy(H.p)),
         pole = H.pole
-          ? chest
-              .worldToLocal(H.pole.clone().add(chest.getWorldPosition(new THREE.Vector3())))
-              .sub(chest.worldToLocal(chest.getWorldPosition(new THREE.Vector3())))
-              .normalize()
+          ? (() => {
+              const c = chest.getWorldPosition(_cw);
+              return chest
+                .worldToLocal(_pp.copy(H.pole).add(c))
+                .sub(chest.worldToLocal(_cw2.copy(c)))
+                .normalize();
+            })()
           : Tp.y > S.y + 0.1
-            ? new THREE.Vector3(side * 0.5, -0.15, 1)
-            : new THREE.Vector3(side * 0.3, -0.2, -1);
+            ? _pole.set(side * 0.5, -0.15, 1)
+            : _pole.set(side * 0.3, -0.2, -1);
       const sol = solveArm(S, Tp, rest.L1, rest.L2, pole.normalize());
       if (sol) {
         quatFrom(rest.u0, rest.b0, sol.u, sol.b, _q);
@@ -573,7 +774,73 @@ function animateArms(player, pose, ctx, m, R, run, dt, PF = null, pw = 0) {
       }
       if (wrist) wrist.rotation.z += (-side * (H.flex ?? 0) - wrist.rotation.z) * wt;
     }
+    // the fingers (materials.js finger curl): relaxed, open on defence, spread on the dribble, wrapped round a ball he
+    // holds, or as a performance says (a fist, a clap)
+    const grip =
+      H && wt > 0.3
+        ? (H.grip ?? (m.ik[j] > 0.3 ? 0.4 : 0.22))
+        : arms === 'defend'
+          ? 0.12
+          : dribbling > 0.5
+            ? 0.18
+            : m.ik[j] > 0.3
+              ? 0.42
+              : 0.35;
+    m.grip[j] = damp(m.grip[j], grip, 12, dt);
+    // and spread: wide on defence and when a performance shows an open hand (a target for the pass, a contest, a reach
+    // for the rebound), a little on the dribble, together otherwise (a fist, round the ball, relaxed)
+    const spread =
+      H && wt > 0.3 ? (H.spread ?? 0) : arms === 'defend' ? 0.8 : dribbling > 0.5 && m.ik[j] <= 0.3 ? 0.3 : 0;
+    m.spread[j] = damp(m.spread[j], spread, 12, dt);
   });
+  u.body.setGrip?.(m.grip[0], m.grip[1]);
+  u.body.setSpread?.(m.spread[0], m.spread[1]);
+}
+/* One arm of the defensive stance (DEFEND): the wrist target eases (so hands never snap between stances), then arm IK.
+   m.onBall: 1 near the ball, 0 in help; m.lowHand: which hand traces the ball (the ball's side, with some hysteresis). */
+const _d = new THREE.Vector3(),
+  _p = new THREE.Vector3();
+function defendArm(player, a, j, side, rest, m, ctx, t, S) {
+  const reach = rest.L1 + rest.L2;
+  if (j === 0) {
+    // once per frame (the right arm comes first): how close the ball is, and which side it is on
+    let near = 0,
+      lateral = 0;
+    if (ctx.ball) {
+      const dx = ctx.ball.x - player.position.x,
+        dz = ctx.ball.z - player.position.z,
+        y = player.rotation.y;
+      lateral = dx * Math.cos(y) - dz * Math.sin(y); // + = his left
+      const d = Math.hypot(dx, dz),
+        [a0, a1] = DEFEND.onBall;
+      near = Math.max(0, Math.min(1, (a1 - d) / (a1 - a0)));
+    }
+    m.onBall = damp(m.onBall ?? near, near, 4, ctx.dt || 0);
+    m.ballSide = lateral;
+    if (m.lowHand == null || Math.abs(lateral) > 0.25) m.lowHand = lateral > 0 ? 1 : 0;
+  }
+  const ob = m.onBall ?? 0,
+    low = j === m.lowHand,
+    on = low ? DEFEND.low : DEFEND.high,
+    poleOn = low ? DEFEND.pole.low : DEFEND.pole.high,
+    // active hands: the low hand drifts toward the ball and works on a quick beat, the high hand moves a little
+    lean = low ? Math.max(-0.12, Math.min(0.12, (m.ballSide || 0) * 0.15)) * ob : 0,
+    beat = ctx.motion ? (low ? Math.sin(t * 6.3 + j) * 0.035 : Math.sin(t * 2.9 + 1) * 0.025) : 0,
+    want = [0, 1, 2].map(k => (DEFEND.help[k] + (on[k] - DEFEND.help[k]) * ob) * reach);
+  want[0] = want[0] * side + lean;
+  want[1] += beat;
+  const pole = [0, 1, 2].map(k => DEFEND.pole.help[k] + (poleOn[k] - DEFEND.pole.help[k]) * ob);
+  m.defT ??= [null, null];
+  const T = (m.defT[j] ??= new THREE.Vector3()),
+    goal = _d.set(S.x + want[0], S.y + want[1], S.z + want[2]);
+  if (m.defT[j].lengthSq() === 0) T.copy(goal);
+  else T.lerp(goal, 1 - Math.exp(-12 * (ctx.dt || 0)));
+  const sol = solveArm(S, T, rest.L1, rest.L2, _p.set(pole[0] * side, pole[1], pole[2]).normalize());
+  if (!sol) return;
+  quatFrom(rest.u0, rest.b0, sol.u, sol.b, _q);
+  a.quaternion.slerp(_q, m.defW);
+  const el = a.userData.elbow.rotation;
+  el.x += (-sol.bend - el.x) * m.defW;
 }
 /* Wrist flex while dribbling (radians, + = toward the palm), from a dribbleAt result. The wrist stays cocked back so the
    palm lies on the ball, with a small flick (about 15 degrees) through the push, easing back while the ball bounces. */

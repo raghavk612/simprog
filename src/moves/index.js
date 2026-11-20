@@ -20,6 +20,5 @@ export const MOVES = [
   ...finger,
   ...jumper,
 ];
-export const moveById = id => MOVES.find(m => m.id === id);
 export { Routine, seeded, walkUpMove } from './routine.js';
 export { prepare, sample, mirrorMove, dribbleMove, topOf } from './core.js';

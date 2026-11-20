@@ -8,14 +8,17 @@ export const effectivePlayers = (choice, level) =>
 export const arenaPlayers = (choice, level, mode) =>
   effectivePlayers(mode === 'title' ? 'athletes' : choice, level);
 // pixelRatio is a ceiling for devicePixelRatio; shadowSize 0 turns the sun's shadow off; crowd is 'full' | 'noshadow' | 'hidden'.
+// lite: a step Auto takes between Medium and Low on weak hardware (not in the Settings menu): the athletes stay, the crowd,
+// bloom, depth of field and detail maps go, the canvas is 1x and the shadow map small
 const PROFILES = {
   low: { pixelRatio: 1, shadowSize: 0, crowd: 'hidden' },
+  lite: { pixelRatio: 1, shadowSize: 512, crowd: 'hidden' },
   medium: { pixelRatio: 1.5, shadowSize: 1024, crowd: 'noshadow' },
-  high: { pixelRatio: 2, shadowSize: 2048, crowd: 'full' },
+  high: { pixelRatio: 2, shadowSize: 2048, crowd: 'noshadow' },
 };
 // Pixel budget per level: on very large canvases (e.g. a full-screen Retina window, 5.7 million pixels at 2x) the ratio is
 // lowered so the canvas stays under this many pixels, never below 1x. Measured on a Mac: High at 5.7 MP (3484×1644) ran at ~56 fps (18 ms); the budget brings that canvas to 1.6x.
-export const MAX_PIXELS = { high: 3.7e6, medium: 2.4e6, low: Infinity };
+export const MAX_PIXELS = { high: 3.7e6, medium: 2.4e6, lite: Infinity, low: Infinity };
 // 'auto' starts at the current (High) look and may be lowered later by autoDowngrade. size = the canvas's CSS size, if known.
 export const qualityProfile = (level, dpr = 1, size = null) => {
   const p = PROFILES[level] || PROFILES.high,
@@ -27,9 +30,50 @@ export const qualityProfile = (level, dpr = 1, size = null) => {
     pixelRatio = Math.max(1, Math.floor(Math.sqrt(max / area) * 20) / 20);
   return { ...p, pixelRatio, shadows: p.shadowSize > 0 };
 };
-export const lowerLevel = level => (level === 'high' ? 'medium' : 'low');
-// Frame-time probe: ignore the shader-compile warm-up, collect about two seconds, then decide once.
-export const PROBE = { warmup: 12, seconds: 2, minFrames: 20, maxFrames: 600, slowMs: 1000 / 28 };
+/* The ladder Auto moves on, cheapest first. */
+export const AUTO_LEVELS = ['low', 'lite', 'medium', 'high'];
+export const lowerLevel = level => AUTO_LEVELS[Math.max(0, AUTO_LEVELS.indexOf(level) - 1)] ?? 'low';
+export const raiseLevel = level =>
+  AUTO_LEVELS[Math.min(AUTO_LEVELS.length - 1, AUTO_LEVELS.indexOf(level) + 1)];
+// Frame-time probe: ignore the shader-compile warm-up, collect about two seconds, then decide. slowMs: slower than about
+// 28 fps steps down; fastMs: three windows in a row faster than about 50 fps (with a display at 60 Hz) steps back up.
+export const PROBE = {
+  warmup: 12,
+  seconds: 2,
+  minFrames: 20,
+  maxFrames: 600,
+  slowMs: 1000 / 28,
+  fastMs: 1000 / 50,
+};
+/* Auto quality, one decision per measured window: slow -> one step down the ladder (High, Medium, Lite, Low: the crowd,
+   bloom and mirror go before the athletes do); three fast windows in a row -> one step back up (recovery, e.g. once the
+   browser has finished warming up); if a step up turns out slow, back down and no step up for LOCK_WINDOWS windows
+   (about a minute: no flicker between two levels, but a load that has gone, a video in another tab, a warm-up, does not
+   keep the game on a lower level for the rest of the session). state carries {good: fast windows in a row, trial: the
+   level just stepped up to, locked: windows left before another step up}. Pure, so it is tested. */
+export const LOCK_WINDOWS = 30;
+export function autoStep(level, med, state = {}) {
+  const i = AUTO_LEVELS.indexOf(level),
+    s = { good: 0, trial: null, locked: 0, ...state };
+  if (s.locked > 0) s.locked--;
+  if (i < 0) return { level, state: s };
+  if (med > PROBE.slowMs) {
+    if (s.trial === level) s.locked = LOCK_WINDOWS;
+    s.trial = null;
+    s.good = 0;
+    return { level: lowerLevel(level), state: s };
+  }
+  s.trial = null;
+  if (med < PROBE.fastMs && !(s.locked > 0) && i < AUTO_LEVELS.length - 1) {
+    s.good++;
+    if (s.good >= 3) {
+      s.good = 0;
+      s.trial = raiseLevel(level);
+      return { level: s.trial, state: s };
+    }
+  } else s.good = 0;
+  return { level, state: s };
+}
 export function medianMs(times) {
   const a = times.filter(Number.isFinite).sort((x, y) => x - y);
   if (!a.length) return 0;
@@ -47,11 +91,45 @@ export const probeDone = (
   times.length >= maxFrames ||
   (times.length >= minFrames && times.reduce((a, b) => a + b, 0) >= seconds * 1000);
 // Broadcast look (with the 3D athletes): what each level turns on. Low draws the classic gym.
+// aa: edge smoothing for the post-processed image (the canvas's own MSAA does not reach it). SMAA keeps lines and lettering
+// crisp for about 2-4% of a frame; 4x MSAA on the composer's targets cost 40-55% and FXAA blurred the lettering
+// (measured with scripts/perf.mjs and the aa contact sheet, docs/realism-log.md).
 export function lookFeatures(level) {
   if (level === 'high')
-    return { reflections: true, ao: true, bloom: true, grade: true, spots: 6, contact: true, dof: true };
+    return {
+      reflections: true,
+      ao: true,
+      bloom: true,
+      grade: true,
+      spots: 6,
+      contact: true,
+      dof: true,
+      aa: 'smaa',
+    };
+  // Medium: no bloom. It cost about a tenth of a Medium frame at 2x for a glow on the light banks that the broadcast
+  // angles hardly show (measured; docs/realism-log.md 4.7)
   if (level === 'medium')
-    return { reflections: false, ao: false, bloom: true, grade: true, spots: 3, contact: true, dof: true };
+    return {
+      reflections: false,
+      ao: false,
+      bloom: false,
+      grade: true,
+      spots: 3,
+      contact: true,
+      dof: true,
+      aa: 'smaa',
+    };
+  if (level === 'lite')
+    return {
+      reflections: false,
+      ao: false,
+      bloom: false,
+      grade: true,
+      spots: 3,
+      contact: true,
+      dof: false,
+      aa: 'smaa',
+    };
   return null;
 }
 /* Player level of detail by on-screen size in device pixels. The far mesh (30% of the triangles, scripts/player_lods.mjs)

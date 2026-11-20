@@ -24,3 +24,13 @@ export function visitorCast(roster, clip, opp) {
     };
   });
 }
+
+/* The full roster record for a Kangs player on the floor: a play's lineup carries only id, name and number, so the
+   position and height (which pick and size his body) come from the season's roster. Unknown players are returned as given. */
+export function rosterRecord(state, person) {
+  if (!person) return person;
+  const r = person.id != null ? state?.players?.find(p => p.id === person.id) : null;
+  return r
+    ? { ...person, position: person.position ?? r.position, height: person.height ?? r.height }
+    : person;
+}

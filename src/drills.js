@@ -4,7 +4,10 @@
 import { t, tu, list } from './i18n/index.js';
 import { getA11y } from './settings.js';
 import { play } from './audio.js';
-import { mount3d } from './drillscenes.js';
+// the 3D drill scenes (drillscenes.js, drills3d.js: about 100 kB of source) load when a drill first opens, not with the
+// game (scripts/perf.mjs: main chunk size)
+let scenes = null;
+const loadScenes = () => (scenes ??= import('./drillscenes.js'));
 
 // Names, instructions and quiz questions live in the language files (drill.*); only the mechanics are described here.
 export const DRILLS = {
@@ -72,17 +75,27 @@ export function mountDrill(root, key, onDone) {
       current = mount2d();
     },
   };
-  try {
-    current = mount3d(kit, root, spec, onDone);
-  } catch (err) {
-    console.warn('3D drill unavailable, using the 2D drill', err);
+  let closed = false;
+  const fallback = err => {
+    if (err) console.warn('3D drill unavailable, using the 2D drill', err);
+    if (closed || current) return;
     root.innerHTML = '';
-  }
-  if (!current) {
     swapped = true;
     current = mount2d();
-  }
+  };
+  loadScenes()
+    .then(({ mount3d }) => {
+      if (closed || swapped) return;
+      try {
+        current = mount3d(kit, root, spec, onDone);
+      } catch (err) {
+        return fallback(err);
+      }
+      if (!current) fallback();
+    })
+    .catch(fallback);
   return () => {
+    closed = true;
     const c = current;
     current = null;
     c?.();

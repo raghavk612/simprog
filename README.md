@@ -69,6 +69,42 @@ Skills, injuries, GPA, morale, tryout prospects, assistant roles, scouting profi
 
 Each level plays its real 2026–27 schedule in published order. The last four games form an elimination run (state run for Varsity, title run for JV and C-Team); to qualify you need at least 46% wins before it (7 of 14 for Varsity, 6 of 13 for JV, 4 of 8 for C-Team). The run is a simulated bracket built from the published opponent order, not the real WIAA or KingCo tournament. There is no multi-year progression. Other opponents receive fictional background fixtures for the campaign standings.
 
+## How the 3D gym is built
+
+The engine decides, the gym shows: `src/engine.js` records each play (who shoots what, from where, made or missed), and
+`src/basketball.js` `sampleClip` turns a play and a time into where all ten players and the ball are. It is pure and
+deterministic, so a replay looks the same every time; each play carries a motion version (`v`), and a play recorded before
+a change to the movement still replays exactly as it did.
+
+- Motion version 3 (the current one) moves bodies physically. Each play is worked out once, at 60 Hz, when it starts
+  (about 5 ms; the next play in idle time): `src/choreo.js` is the team around the ball (spacing, V-cuts, backdoor cuts,
+  curls, ball screens set and held, ball-you-man defense with help and rotation, box-outs, fast-break lanes);
+  `src/playsim.js` turns those intentions into bodies with a top speed, acceleration, braking, grip and jerk, a reaction
+  lag for defenders, predictive avoidance and contact, and never an overlap; `src/ballsim.js` is the real ball (a dribble
+  that bounces at the speed of the run and changes hands away from the defender, passes, the rim, blocks, steals, who holds
+  it and where the hand is). The play's promises stay exact: the release, the flight to the rim, the rebound spot, who ends
+  with the ball. `npm run motion:qa` checks a thousand seeded plays against human limits and those promises, and
+  `npm run motion:render` draws their paths, frame strips and ball plots ([docs/motion/](docs/motion/),
+  [docs/motion-log.md](docs/motion-log.md)).
+- `src/arena.js` is the gym (setup, graphics level, the frame loop); `src/arena/` holds the rest by concern: building the
+  gym, the cast of bodies and identities, playback, posing, the ball, the idle and title gym, cameras.
+- Movement is procedural: `src/motion.js` (gait fitted to each leg, arm IK, defensive stance, jumps), `src/finishes.js`
+  (layups, euro, floater, hook, spin, dunks with rim hang, putbacks), `src/actions.js` (passes, catches, steals, rebounds,
+  contests), `src/reactions.js` (fist pump, three, flex, clap, hands on hips), `src/moves/` (the title's ball-handling).
+  None of them changes a result.
+- Bodies: `src/players.js` (the classic figure and the rigged athletes, one interface), `src/clothFit.js` (skin hidden
+  under the kit, hands and shorts measured), `src/playerMaps.js` (detail maps by level), `src/classicBatch.js` (the
+  classic figures drawn instanced on Low).
+- Graphics: `src/graphics.js` defines Low, Medium and High; Auto steps down a ladder High → Medium → Lite → Low when
+  frames are slow and back up when they are fast (Lite keeps the athletes and drops the costly extras). `src/broadcast.js`
+  is the broadcast look (lighting, SMAA, bloom and depth of field on High), `src/director.js` the TV camera.
+
+Checking the gym: `npm run perf` measures frame time, draw calls and downloads at each level
+([docs/perf-baseline.md](docs/perf-baseline.md)); `npm run sheets` renders contact sheets of every kind of movement
+([docs/sheets/](docs/sheets/)); `npm run trace` hashes what every frame is drawn from, to prove a refactor changes nothing;
+`tests/golden.test.js` pins every play's poses. The realism pass that built most of this is logged in
+[docs/realism-log.md](docs/realism-log.md).
+
 ## 3D assets / Unity
 
 The center-court logo is the Lake Washington Kangs kangaroo mark (`public/images/kangs-logo.png`, white background removed so the court shows through), supplied by the creators. Kenney's CC0 Furniture Kit includes FBX, OBJ, DAE and GLB assets. Five model types are imported using Three.js GLTFLoader: bench, chair, table, cabinet and plant. The same pack can be imported into Unity using FBX. This project uses its browser-ready GLB files; it does **not** execute Unity scenes or prefabs.

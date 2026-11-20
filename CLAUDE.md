@@ -15,6 +15,11 @@ npm run check:ui -- --shots   # same, plus a screenshot of each page in ui-shots
 node scripts/i18n-set.mjs changes.json   # set, add or delete (null) keys in all 7 locales at once
 npm run moves:check                      # measurements and problems of every ball-handling move (src/moves)
 npm run moves:sheet -- --move crossover  # render a move as a contact sheet (cameras x moments) in ui-shots/moves/
+npm run perf                             # frame time, draw calls, downloads per graphics level (docs/perf/<label>.json)
+npm run sheets -- --out ui-shots/sheets  # contact sheets of every kind of movement and the close-ups
+npm run trace -- --out a.json            # hash of every frame's state; --compare a.json proves a refactor exact
+npm run motion:qa                        # 1,032 seeded plays: human limits, no overlaps, the ball, anchors, old versions exact
+npm run motion:render -- --out ui-shots/motion   # path diagrams, frame strips and ball plots per play family
 ```
 
 ## Map
@@ -23,7 +28,12 @@ npm run moves:sheet -- --move crossover  # render a move as a contact sheet (cam
   `TIMEOUTS`, `SCOUT_COST`, `ECON` live here; use them instead of repeating numbers.
 - `src/ui/`: the interface. `shell.js` `render()` rebuilds the whole page from `state` after every change, then
   restores focus, scroll and open `<details>`. Anything else held only in the DOM is lost on the next render.
-- `src/arena.js` and friends: the 3D gym. `src/drills*.js`: practice mini-games.
+- `src/arena.js` and `src/arena/*.js`: the 3D gym (setup and frame loop; gym, cast, playback, pose, ball, idle, cameras,
+  each module's header says what it covers). Motion: `src/motion.js`, `src/finishes.js`, `src/actions.js`,
+  `src/reactions.js`, all presentation only. `sampleClip` (`src/basketball.js`) is pure; new movement goes behind a new
+  `MOTION_VERSION` so old plays replay exactly (`tests/golden.test.js` pins them; `npm run trace -- --v 2` checks the gym).
+  Version 3 is simulated once per play: `src/choreo.js` (the team's intentions), `src/playsim.js` (bodies),
+  `src/ballsim.js` (the ball); `docs/motion-log.md` says how. `src/drills*.js`: practice mini-games.
 - `src/moves/`: ball-handling set pieces (crossovers, between the legs, spin move...) as data plus physics, chained by a
   `Routine` (the title screen's dribbler). `src/moves/README.md` says how a move is written and checked; look at moves with
   `npm run moves:sheet`, not only the numbers.

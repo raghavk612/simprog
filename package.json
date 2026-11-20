@@ -13,10 +13,17 @@
     "format:check": "prettier --check \"src/**/*.{js,css}\" \"tests/*.js\" \"scripts/*.mjs\"",
     "check:ui": "node scripts/ui-check.mjs",
     "moves:check": "node scripts/moves-check.mjs",
-    "moves:sheet": "node scripts/moves-sheet.mjs"
+    "moves:sheet": "node scripts/moves-sheet.mjs",
+    "perf": "node scripts/perf.mjs",
+    "sheets": "node scripts/contact-sheet.mjs",
+    "trace": "node scripts/arena-trace.mjs",
+    "ladder": "node scripts/auto-ladder.mjs",
+    "motion:qa": "node scripts/motion-qa.mjs",
+    "motion:render": "node scripts/motion-render.mjs",
+    "golden:update": "UPDATE_GOLDEN=1 node --test tests/golden.test.js"
   },
   "dependencies": {
-    "three": "^0.180.0"
+    "three": "0.180.0"
   },
   "devDependencies": {
     "meshoptimizer": "^0.22.0",

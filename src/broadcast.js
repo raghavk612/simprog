@@ -12,6 +12,8 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { SMAAPass } from 'three/addons/postprocessing/SMAAPass.js';
+import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
 import { RIG, toGame } from './broadcastRig.js';
 import { DepthGrab, DofPass } from './dof.js';
 import { lookFeatures } from './graphics.js';
@@ -294,10 +296,15 @@ export class BroadcastLook {
     }
     const size = r.getSize(new THREE.Vector2()),
       pr = r.getPixelRatio();
+    // anti-aliasing (the canvas's own MSAA does not reach a composer): 'msaa' multisamples the scene targets, 'fxaa' and
+    // 'smaa' smooth the finished image after tone mapping (lookFeatures picks one per level)
+    const aa = dbg.aa ?? f.aa ?? null;
+    this.aa = aa;
     // full-precision depth: the default 16-bit buffer cannot separate the contact shadows (6 mm up) from the floor
     const rt = new THREE.WebGLRenderTarget(size.x * pr, size.y * pr, {
       type: THREE.HalfFloatType,
       depthBuffer: true,
+      samples: aa === 'msaa' ? 4 : 0,
     });
     rt.depthTexture = new THREE.DepthTexture(size.x * pr, size.y * pr, THREE.FloatType);
     const c = (this.composer = new EffectComposer(r, rt));
@@ -328,6 +335,9 @@ export class BroadcastLook {
       );
     if (f.grade) c.addPass(new ShaderPass(GRADE));
     c.addPass(new OutputPass());
+    // edge smoothing works on the display-referred image, so it comes after tone mapping and sRGB
+    if (aa === 'fxaa') c.addPass((this.fxaa = new ShaderPass(FXAAShader)));
+    if (aa === 'smaa') c.addPass((this.smaa = new SMAAPass()));
     this.resize(size.x, size.y);
   }
   /* Depth of field (replays and close angles): focus on a world point with an aperture; eases in and out. 0 / null switches it off. */
@@ -393,6 +403,7 @@ export class BroadcastLook {
     this.composer.setPixelRatio(pr);
     this.composer.setSize(w, h);
     this.ao?.setSize(w * pr, h * pr);
+    this.fxaa?.material.uniforms.resolution.value.set(1 / (w * pr), 1 / (h * pr));
     if (this.reflector) {
       const rw = Math.max(256, Math.round(w * pr * 0.5)),
         rh = Math.max(256, Math.round(h * pr * 0.5));
@@ -433,6 +444,8 @@ export class BroadcastLook {
     this.composer = null;
     this.ao = null;
     this.bloom = null;
+    this.smaa?.dispose();
+    this.fxaa = this.smaa = null;
     this.dof?.dispose();
     this.dof = null;
     this.env = null;
