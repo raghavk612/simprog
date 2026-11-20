@@ -1,0 +1,133 @@
+{
+ "label": "m2rm",
+ "date": "2026-11-20T03:47:00.471Z",
+ "commit": "d1c2947",
+ "chunks": {
+  "main": {
+   "file": "index-BeLVhmSa.js",
+   "bytes": 519851,
+   "gzip": 193178
+  },
+  "all": [
+   {
+    "file": "players-DqDni6h4.js",
+    "bytes": 652338,
+    "gzip": 175134
+   },
+   {
+    "file": "index-BeLVhmSa.js",
+    "bytes": 519851,
+    "gzip": 193178
+   },
+   {
+    "file": "hi-mJ9LSejO.js",
+    "bytes": 142299,
+    "gzip": 35057
+   },
+   {
+    "file": "en-CXQaOj24.js",
+    "bytes": 111340,
+    "gzip": 44654
+   },
+   {
+    "file": "ja-CD9dx9v1.js",
+    "bytes": 92801,
+    "gzip": 33125
+   },
+   {
+    "file": "fr-0qr-qBwv.js",
+    "bytes": 83589,
+    "gzip": 30752
+   },
+   {
+    "file": "es-GQ3Dtk4A.js",
+    "bytes": 79968,
+    "gzip": 29941
+   },
+   {
+    "file": "it-CzyzvNnO.js",
+    "bytes": 79066,
+    "gzip": 29627
+   },
+   {
+    "file": "zh-UnPOHop7.js",
+    "bytes": 70652,
+    "gzip": 31137
+   },
+   {
+    "file": "drillscenes-DrNuhN4Q.js",
+    "bytes": 57022,
+    "gzip": 22511
+   }
+  ],
+  "totalJs": 1888926
+ },
+ "runs": {
+  "retina/medium": {
+   "title": {
+    "frames": 300,
+    "medianMs": 8.5,
+    "p95Ms": 9.299999997019768,
+    "calls": 340,
+    "callsMax": 342,
+    "triangles": 608242,
+    "trianglesMax": 608256,
+    "heapMB": 41.64713096618652,
+    "level": "medium",
+    "players": "athletes",
+    "pixelRatio": 1.35,
+    "canvas": [
+     1944,
+     1215
+    ]
+   },
+   "live": {
+    "frames": 600,
+    "medianMs": 8.399999998509884,
+    "p95Ms": 9.799999997019768,
+    "calls": 405,
+    "callsMax": 408,
+    "triangles": 643597,
+    "trianglesMax": 643623,
+    "heapMB": 44.029398918151855,
+    "level": "medium",
+    "players": "athletes",
+    "pixelRatio": 1.35,
+    "canvas": [
+     1944,
+     1215
+    ]
+   },
+   "replay": {
+    "frames": 60,
+    "medianMs": 9,
+    "p95Ms": 10,
+    "calls": 350,
+    "callsMax": 350,
+    "triangles": 640021,
+    "trianglesMax": 640021,
+    "heapMB": 37.760653495788574,
+    "level": "medium",
+    "players": "athletes",
+    "pixelRatio": 1.35,
+    "canvas": [
+     1944,
+     1215
+    ],
+    "shot": "replayClose"
+   },
+   "bytes": {
+    "total": 10075630,
+    "other": 1291,
+    "css": 30820,
+    "js": 415059,
+    "fonts": 508127,
+    "images": 913340,
+    "props": 61947,
+    "playerModels": 3108533,
+    "data": 7409,
+    "playerMaps": 5029104
+   }
+  }
+ }
+}

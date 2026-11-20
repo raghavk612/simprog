@@ -15,6 +15,7 @@ export const idleMethods = {
      plays his show (titleShow) to the camera, the ball goes to the dribbler. titled: the title screen is showing; still:
      its pause (WCAG 2.2.2) holds everything where it is. */
   idleFrame(dt, titled, still) {
+    this.ballPhysical = false; // the idle gym's ball is the old dribble (Arena.settleBall)
     // Idle gym: dribbling and movement only. No invisible automatic shot loop.
     // Players jog back to their spots and the ball is passed to the dribbler; nothing snaps unless motion is off.
     // On the title screen the dribbler (people[2]) plays to the camera at HERO instead of his usual spot.

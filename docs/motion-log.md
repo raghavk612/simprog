@@ -153,3 +153,77 @@ past by him); the off-ball men still follow version 2's hop-and-hold intentions 
 Gate: tests 325, build, motion:qa passed, golden unchanged, trace `--v 2` identical to the pre-motion reference on all
 9,280 frames. Perf (pre-motion tag in a worktree, then this, back to back): every scene within ±2% at High and Medium; Low
 5–7% faster (a v3 sample is cheaper than a v2 one).
+
+## M2: the ball and who has it
+
+`src/ballsim.js` works out the ball once per play (after the players' movement, 60 Hz), and `physical()` in
+`src/basketball.js` reads it: the pose gains `holder`, `hand` (the hand's point on the ball while held), `dribble` (the
+dribbling hand's height and contact), `ballModel: 'physical'` and `ballRadius`. Version 1 and 2 plays keep their own ball.
+
+- The real ball: radius 0.13 (24 cm), not the old 0.3 drawn size rule; the gym places a physical ball where it is, with
+  no extra drop. Gravity is the play's own.
+- Dribble: pushed down from the hand, falling, bouncing off the floor keeping 0.85 of its speed and rising back into the
+  hand; the push is solved per bounce (`dribbleFlight`) so the ball arrives in the hand at the beat. The beat follows the
+  dribbler's speed (1.5 bounces a second standing to 2.5 at a sprint, integrated so each bounce has its own length). The
+  ball is on the hand away from his defender; when the defender crosses to that side it changes hands on the bounce: a
+  crossover, or (tight) between the legs or behind the back, seeded per play. Decision: these moves are ball paths with
+  the arms following by IK; the full-body set pieces of `src/moves` (the title dribbler) are not retargeted into games.
+- Passes: chest, bounce (when a defender is in the lane) and the fast break's overhead outlet, thrown from the passer's
+  hands to where the receiver's hands will be at the catch moment the play already had.
+- The shot: the gather and the flight to the rim are the play's own, exactly (the anchors are hard).
+- At the rim: a make swishes or rattles (30%), drops through the net and bounces away; a miss clanks, caroms long off the
+  floor, or rolls off, and comes down into the rebounder's hands on the rebound spot at the play's end.
+- Blocks: the contact is the play's; the ball is swatted on an arc to the side that wins it (bouncing first when far or
+  when a direct arc would cross the board), into his hands; a putback is a physical arc to the rim. Steals: a poke that
+  deflects the ball into the stealer's reach and his own dribble, to the end of the play.
+- The backboard: a keep-out box behind the rim plane (players and any held ball are kept in front of it; arcs that would
+  cross it bounce first).
+- Decisions logged: anchors per outcome (a block has no ball at the rim and its ball at the end belongs to the winner; a
+  steal has no release); no bank shots yet (a miss never touches the board).
+
+Fixes while closing the gate (from the QA scan of the fastest ball frames and the pictures):
+- The stealer's dribble stopped one frame before the play's end (the last frame had no holder); it fills it now.
+- A sprinting dribbler's ball was up to 0.8 units ahead of him (0.3 plus 0.08 s of his speed): out of an arm's reach, and
+  the first push after a catch snapped it there in a twentieth of a second (21.7 m/s). The lead is capped at 0.15 and the
+  first push eases over the whole contact.
+- Pass and poke arcs were timed from their first whole frame instead of the throw, so they arrived up to two frames late
+  and the catch snapped the rest of the way; an arc now takes the moment it really leaves.
+- A block's winner standing beside the board: the held ball's keep-out switched off at the board's edge (a 0.36 jump);
+  it fades out over 0.4 units now.
+- A catch and shoot bounced the ball once between the catch and the gather (the dribble filled any gap); with under half
+  a second to the gather the receiver now holds it, brought in to the chest.
+- The gather copied the play's own pocket, which starts at the knees (0.4 units); it now starts where the ball is and
+  converges on the play's path by the release (exact there).
+
+New tests: `tests/ballsim.test.js` (the dribble's flight and restitution; a physical ball never under the floor or
+through the board, no jumps, in the hand while held; who ends with it by outcome; release and rim anchors equal to
+version 2).
+
+QA (1,032 clips; `docs/motion/qa-m2.json`), ball rows (the player rows are as M1's within noise):
+
+| metric | v2 mean | v2 worst | v3 mean | v3 worst |
+|---|---|---|---|---|
+| largest ball move in a frame (units) | 0.17 | 0.27 | 0.18 | 0.32 |
+| ball top speed (m/s) | 9.62 | 15.09 | 10.31 | 17.76 |
+| ball to hand while held, max (units) | 0.86 | 1.24 | 0.18 | 0.20 |
+| ball to hand while held, mean (units) | 0.41 | 0.70 | 0.09 | 0.20 |
+| ball below the floor (frames) | 0.00 | 0.00 | 0.00 | 0.00 |
+| ball through the backboard (frames) | 0.13 | 4.00 | 0.00 | 0.00 |
+| floor bounce restitution | 0.80 | 0.08 | 0.84 | 0.80 |
+
+The ball's top speed (17.8 m/s worst) is a block's swat; a hard outlet is about 11 m/s. The 0.20 hand distance is the
+palm on top of a dribbled ball (by design).
+
+Precompute (players and ball, 936 fresh plays): median 4.0 ms, p95 5.9 ms, worst 20 ms (always the first play: the
+code is cold). Unchanged by the ball: its simulation is a small share of the play's.
+
+Pictures (`ui-shots/motion-m2`, `ui-shots/sheets-m2`): dribbles bounce at a steady beat to 1.0 units with the hand line
+touching on every catch; the steal keeps the beat through the poke; the block swats to the floor, bounces, is gathered by a
+rising winner and put back over the rim; the catch and shoot holds the ball at the chest, then rises into the shot. Still
+weak: a catch stops the ball dead (no give in the hands; M4), the passer's sheet camera does not frame the ball, and the
+block winner can stand behind the backboard plane (M3: positions near the rim).
+
+Gate: tests 329, build, motion:qa passed, golden unchanged, trace `--v 2` identical to the pre-motion reference on all
+9,280 frames. Perf (pre-motion tag in a worktree, then M2, back to back; `docs/perf/premotion-m2.json`, `m2.json`): every
+scene within ±2% or faster except retina/medium title at +4%, re-measured back to back 4 times at 0%
+(`premotion-m2rm.json`, `m2rm.json`). The last four fixes above only touch the per-play precompute, not the frame loop.

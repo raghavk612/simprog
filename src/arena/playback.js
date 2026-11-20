@@ -215,6 +215,12 @@ export const playbackMethods = {
      player drawn taller or shorter than his model; passed along an arc when it changes hands (blendBall). o: the
      offence's first slot; fin: the shooter's finish frame (src/finishes.js) or null; tr: the run between plays or null. */
   placePlayBall({ pose, clip, o, clipTime, fin, tr }) {
+    // motion version 3: the ball is where its own physics puts it (src/ballsim.js), from where it was as the play began
+    if (pose.ballModel === 'physical' && !tr) {
+      const b = this.blendBall(pose.ball, clipTime);
+      this.ball.position.set(b.x, b.y, b.z);
+      return;
+    }
     const u = clipTime / CLIP_SECONDS;
     // While a player is still easing into place the ball stays in his hands (the handler, or the defender after a steal).
     const sm = x => ((x = Math.max(0, Math.min(1, x))), x * x * (3 - 2 * x)),
@@ -292,9 +298,14 @@ export const playbackMethods = {
     this.blendMotion = this.motion;
     const pose = sampleClip(clip, this.motion ? clipTime : presentation.resolved ? CLIP_SECONDS : 0);
     if (!this.transit) {
-      this.dribble = dribbleAt(pose.bounce); // in a play the hand keeps the play's beat
+      // in a play the hand keeps the play's beat; motion version 3 dribbles a real bounce (src/ballsim.js) and says
+      // where the hand is
+      this.dribble = pose.dribble ?? dribbleAt(pose.bounce);
       this.dribbleHand = this.dribble.hand;
+      // and who has the ball (version 3 knows; the old plays leave Arena.frame's guess, the nearest player)
+      if (pose.holder !== undefined) this.holder = pose.holder >= 0 ? this.people[pose.holder] : null;
     }
+    this.ballPhysical = !this.transit && pose.ballModel === 'physical';
     const o = clip.team === 'home' ? 0 : 5,
       ease = !this.motion ? 1 : this.paused ? 0 : 1 - Math.exp(-dt * this.speed * 22);
     const tr = this.transit;

@@ -8,7 +8,9 @@ import {
   GAP,
   playKey,
   SIM_FPS,
+  seedOf,
 } from './playsim.js';
+import { simulateBall, BALL_R } from './ballsim.js';
 export const CLIP_SECONDS = 4.4; // one side's play; the run between plays happens before it (Arena.startTransit)
 /* The motion version stamped on every new play (engine.js makePlay, field v). sampleClip moves the players of a play with
    no version (recorded before it existed) exactly as it always did, so old saves and replays never change:
@@ -1156,7 +1158,7 @@ function sampleAuthored(c, time) {
 const MOTIONS = new Map(),
   BY_CLIP = new WeakMap();
 /* Where the play's ball leaves the shooter's hands (the release point sampleAuthored computes), for the block's plan. */
-function releaseOf(c) {
+export function releaseOf(c) {
   const T = shotTiming(c.kind),
     side = c.team === 'home' ? 1 : -1,
     { end } = shooterRoute(c),
@@ -1321,10 +1323,73 @@ export function motionOf(c) {
       ...(c.outcome === 'steal'
         ? { shooterUntil: sec(0.3), chase: { who: off, target: def, from: sec(0.3) } }
         : {}),
+      // a block: once he lands he is a free player (often he goes after his own blocked shot)
+      ...(c.outcome === 'block' ? { shooterUntil: sec(T.land) } : {}),
       offense: off,
       players,
       anchors,
       gapOf,
+    });
+    // the ball (src/ballsim.js), on the simulated players
+    const fr = SIM_FPS,
+      at = (arr, i, t) => {
+        const x = Math.min(sim.frames - 1, Math.max(0, t * fr)),
+          f = Math.min(sim.frames - 2, Math.floor(x)),
+          u = x - f;
+        return arr[f * 10 + i] + (arr[(f + 1) * 10 + i] - arr[f * 10 + i]) * u;
+      },
+      plan = c.outcome === 'block' ? blockPlan(c, releaseOf(c)) : null,
+      pr = seedOf(playKey(c) + '|pass');
+    const ball = simulateBall({
+      duration: S,
+      g: BALL.g,
+      off,
+      def,
+      lane: c.lane || 1,
+      pos: (i, t) => [at(sim.x, i, t), at(sim.z, i, t)],
+      vel: (i, t) => [at(sim.vx, i, t), at(sim.vz, i, t)],
+      yaw: (i, t) => sim.authoredAt.yaw(i, t),
+      authoredBall: t => sim.authoredAt.ball(t),
+      // exact, for the gather into the shot pocket (the 30 Hz table smooths over the release)
+      exactBall: t => {
+        const b = sampleAuthored(c, t).ball;
+        return [b.x, b.y, b.z];
+      },
+      authoredPos: (i, t) => sim.authoredAt.pos(i, t),
+      pass: c.afterSteal
+        ? null
+        : fam === 'catch'
+          ? { from: off + 1, at: sec(0.3), kind: pr % 10 < 3 ? 'bounce' : 'chest' }
+          : fam === 'dunk'
+            ? { from: off + 1, at: sec(0.2), kind: 'overhead' }
+            : null,
+      gather: sec(T.gather),
+      release: sec(T.release),
+      arrive: sec(BALL.arrive),
+      releasePoint: releaseOf(c),
+      flightT: T.flight,
+      rim: { x: 12.15 * side, y: BALL.rim, z: 0 },
+      outcome: c.outcome,
+      points: c.points,
+      land: { x: 9 * side, y: BALL.rim - 1.8, z: -2 * (c.lane || 1) },
+      rebounder: def + (c.team === 'home' ? 4 : 0),
+      steal: c.outcome === 'steal' ? { poke: sec(0.3), secure: sec(0.37) } : null,
+      block: plan
+        ? {
+            hit: sec(blockHit(c.kind)),
+            catch: sec(plan.CATCH),
+            win: plan.win.i,
+            kept: !!plan.kept,
+            go: plan.putback ? sec(plan.putback.GO) : 0,
+            arr: plan.putback ? sec(plan.putback.ARR) : 0,
+            made: c.putback === 'made',
+          }
+        : null,
+      board: 12.15 + 1.25 * 0.328,
+      boardHalf: 3 * 0.328,
+      boardLo: BALL.rim - 0.328,
+      boardHi: BALL.rim + 2.5 * 0.328,
+      seed: seedOf(playKey(c) + '|ball'),
     });
     // the pairs that can ever come closer than SPACE.min (the rest never do: checked once here)
     const contactPairs = [];
@@ -1336,6 +1401,7 @@ export function motionOf(c) {
       }
     m = {
       sim,
+      ball,
       contactPairs,
       anchors,
       off,
@@ -1390,21 +1456,21 @@ function physical(c, time, p) {
     const g = m.gapOf(i, j, time);
     if (g < GAP) p.contacts.push([i, j, g]);
   }
-  // the ball goes where its holder goes: the shooter's dribble and gather (after the pass reaches him), the stealer's
-  // dribble once he has it
-  const t = time / S;
-  let ws = t < T.release ? 1 : 0;
-  if (!c.afterSteal && fam === 'catch') ws *= smooth((t - 0.25) / 0.1);
-  if (!c.afterSteal && fam === 'dunk') ws *= smooth((t - 0.17) / 0.08);
-  if (c.outcome === 'steal') ws *= 1 - smooth((t - 0.27) / 0.09);
-  const wm = c.outcome === 'steal' ? smooth((t - 0.27) / 0.09) : 0,
-    bx = dx[off] * ws + dx[def] * wm,
-    bz = dz[off] * ws + dz[def] * wm;
-  if (bx || bz) {
-    p.ball = { x: p.ball.x + bx, y: p.ball.y, z: p.ball.z + bz };
-    if (p.shotHands)
-      for (const h of Object.values(p.shotHands))
-        if (h?.p) h.p = [h.p[0] + dx[off], h.p[1], h.p[2] + dz[off]];
-  }
+  // the ball (src/ballsim.js): where it is, who has it, the hand on it, the dribbling hand's height
+  const B = m.ball,
+    bx = Math.min(B.frames - 1, Math.max(0, time * SIM_FPS)),
+    bf = Math.min(B.frames - 2, Math.floor(bx)),
+    bu = bx - bf,
+    near = bu < 0.5 ? bf : bf + 1,
+    LB = arr => arr[bf] + (arr[bf + 1] - arr[bf]) * bu;
+  p.ball = { x: LB(B.x), y: LB(B.y), z: LB(B.z) };
+  p.ballModel = 'physical';
+  p.ballRadius = BALL_R;
+  p.holder = B.holder[near];
+  p.hand = B.held[near] ? [B.handX[near], B.handY[near], B.handZ[near]] : null;
+  if (B.dribbling[near]) {
+    const contact = !!B.held[near] && B.holder[near] >= 0;
+    p.dribble = { ball: p.ball.y, hand: B.dribbleY[near], contact, progress: contact ? 0.5 : bu };
+  } else p.dribble = null;
   return p;
 }

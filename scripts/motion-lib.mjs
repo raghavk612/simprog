@@ -135,7 +135,27 @@ export function anchors(clip, S) {
       ballAtRim: pt(at(B.BALL.arrive).ball),
       ballAtEnd: pt(S[FRAMES - 1].ball),
     };
-  if (clip.outcome === 'block') out.ballAtBlock = pt(at(B.blockHit(clip.kind)).ball);
+  // a block never reaches the rim: what it promises is the contact (and who ends with the ball, below)
+  if (clip.outcome === 'block') {
+    out.ballAtBlock = pt(at(B.blockHit(clip.kind)).ball);
+    delete out.ballAtRim;
+  }
+  // the end of the play: a miss lands on its rebound spot (exact); after a made basket or putback the ball is free (it
+  // drops through the net; nothing is promised about where it rolls); a block the defence wins ends in the winner's hands
+  // (the player nearest the ball at the end, within reach, is on the defence)
+  if (clip.points > 0 || (clip.outcome === 'block' && clip.putback)) delete out.ballAtEnd;
+  if (clip.outcome === 'block' && !clip.putback) {
+    const end = S[FRAMES - 1];
+    let best = 9,
+      who = -1;
+    end.actors.forEach((a, i) => {
+      const d = Math.hypot(end.ball.x - a.x, end.ball.z - a.z);
+      if (d < best) [best, who] = [d, i];
+    });
+    delete out.ballAtEnd;
+    out.defenceHasBall =
+      best < 0.9 && (who < off || who >= off + 5) ? 'yes' : `no (${who}, ${best.toFixed(2)} away)`;
+  }
   // a steal has no shot: what it promises is the ball taken when it is, and the stealer ending with it
   if (clip.outcome === 'steal') {
     const end = S[FRAMES - 1],
@@ -151,7 +171,7 @@ export function anchors(clip, S) {
 /* Compares anchors: phases, resolved and flying frames exactly; points within tol (game units). Returns the differences. */
 export function anchorDiff(a, b, tol = 0.05) {
   const out = [];
-  for (const k of ['phases', 'resolvedAt', 'flyingAt', 'stealerHasBall'])
+  for (const k of ['phases', 'resolvedAt', 'flyingAt', 'stealerHasBall', 'defenceHasBall'])
     if (a[k] !== b[k]) out.push(`${k}: ${a[k]} vs ${b[k]}`);
   for (const k of Object.keys(a))
     if (Array.isArray(a[k]) && Array.isArray(b[k])) {
@@ -268,13 +288,20 @@ export function metrics(clip, S) {
       out.curvature += curv / moving / 10;
       out.corners += corners / moving / 10;
     }
+    const touchFrames = new Uint8Array(FRAMES);
+    for (let g = 0; g < FRAMES; g++) touchFrames[g] = touchAt(S, clip, i, g, off, def) ? 1 : 0;
+    const touchNear = f => {
+      for (let g = Math.max(0, f - 9); g <= Math.min(FRAMES - 1, f + 9); g++) if (touchFrames[g]) return true;
+      return false;
+    };
     for (let f = 1; f < vx.length; f++) {
       const ax = (vx[f] - vx[f - 1]) / dt,
         az = (vz[f] - vz[f - 1]) / dt,
         a = Math.hypot(ax, az) * M,
         // in contact around this frame: within 8 cm of the closest another player may come (a bump is not his own
         // running: its acceleration is reported apart, as contact)
-        touching = [f - 1, f, f + 1].some(g => g >= 0 && g < FRAMES && touchAt(S, clip, i, g, off, def));
+        // (within the 0.15 s either side over which the motion's last smoothing spreads a bump: src/playsim.js)
+        touching = touchNear(f);
       (touching ? accsContact : accs).push(a);
       if (f > 1) {
         const ax0 = (vx[f - 1] - vx[f - 2]) / dt,

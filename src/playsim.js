@@ -27,7 +27,8 @@ const BODY = [
   { top: 7.2, acc: 4.7, brake: 7.4, lat: 6.4 },
 ];
 export const JERK = 110; // m/s^3: how fast a player's acceleration can change (a plant takes about a tenth of a second)
-const COURT = { x: 13.85, z: 7.9 }, // units: the baselines (5.25 ft behind the rims) and sidelines
+const COURT = { x: 13.85, z: 7.9 },
+  BEHIND = { x: 12.3, z: 2.4 }, // units: the space behind a backboard (its face at 12.56, 3 ft either side of the rim) // units: the baselines (5.25 ft behind the rims) and sidelines
   SPACING = 1.9, // units: how far a teammate stays off the ball handler
   SLACK = 0.012, // units: how far two may press into each other's space before the floor moves them (QA allows 0.02)
   EFFORT = 11.8, // units/s^2 (11 m/s^2): the most a player's legs can change his velocity, all forces together
@@ -37,7 +38,7 @@ const COURT = { x: 13.85, z: 7.9 }, // units: the baselines (5.25 ft behind the 
   GAP = 0.95; // units: the closest two players come (motion.js SPACE.min); a declared contact (gapOf) may come closer
 
 /* A small hash of a string to a seed, and a seeded RNG (mulberry32): the same play always gets the same players. */
-function seedOf(s) {
+export function seedOf(s) {
   let h = 2166136261 >>> 0;
   for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619) >>> 0;
   return h;
@@ -260,20 +261,56 @@ export function simulatePlay({
     TG = 30, // the authored pose is sampled at 30 Hz and interpolated (it is smooth, and sampling it is the cost)
     NT = Math.round(duration * TG) + 1,
     gx = new Float64Array(NT * 10),
-    gz = new Float64Array(NT * 10);
+    gz = new Float64Array(NT * 10),
+    gyaw = new Float64Array(NT * 10),
+    gb = new Float64Array(NT * 3);
   for (let k = 0; k < NT; k++) {
-    const A = authored(Math.min(duration, k / TG)).actors;
+    const P = authored(Math.min(duration, k / TG)),
+      A = P.actors;
     for (let i = 0; i < 10; i++) {
       gx[k * 10 + i] = A[i].x;
       gz[k * 10 + i] = A[i].z;
+      gyaw[k * 10 + i] = A[i].yaw;
     }
+    gb[k * 3] = P.ball.x;
+    gb[k * 3 + 1] = P.ball.y;
+    gb[k * 3 + 2] = P.ball.z;
   }
+  // the authored play at any moment (30 Hz, interpolated): a player's spot and facing, and the ball, for the ball's own
+  // simulation (src/ballsim.js)
+  const at30 = t => {
+      const x = Math.min(NT - 1, Math.max(0, t * TG)),
+        k = Math.min(NT - 2, Math.floor(x));
+      return [k, x - k];
+    },
+    authoredAt = {
+      pos: (i, t) => {
+        const [k, u] = at30(t);
+        return [
+          gx[k * 10 + i] + (gx[(k + 1) * 10 + i] - gx[k * 10 + i]) * u,
+          gz[k * 10 + i] + (gz[(k + 1) * 10 + i] - gz[k * 10 + i]) * u,
+        ];
+      },
+      yaw: (i, t) => {
+        const [k, u] = at30(t),
+          a = gyaw[k * 10 + i],
+          b = gyaw[(k + 1) * 10 + i];
+        return a + Math.atan2(Math.sin(b - a), Math.cos(b - a)) * u;
+      },
+      ball: t => {
+        const [k, u] = at30(t);
+        return [0, 1, 2].map(j => gb[k * 3 + j] + (gb[(k + 1) * 3 + j] - gb[k * 3 + j]) * u);
+      },
+    };
   const goal = (i, t, out) => {
     const x = Math.min(NT - 1, Math.max(0, t * TG)),
       k = Math.min(NT - 2, Math.floor(x)),
       u = x - k;
     out[0] = gx[k * 10 + i] + (gx[(k + 1) * 10 + i] - gx[k * 10 + i]) * u;
     out[1] = gz[k * 10 + i] + (gz[(k + 1) * 10 + i] - gz[k * 10 + i]) * u;
+    // a spot behind a backboard's plane comes in front of it (the play's authored spots put a loose ball's chaser there,
+    // and from back there a ball to or from him would go through the board)
+    if (Math.abs(out[0]) > BEHIND.x && Math.abs(out[1]) < 2.4) out[0] = Math.sign(out[0]) * BEHIND.x;
     // his teammates space off the ball handler: a spot within 1.5 of where he is (or will finish) moves out to 1.5, on
     // the same side (a cutter clears the driver's lane instead of standing in it)
     if (shooterAt && i !== shooter && i >= offense && i < offense + 5 && t <= shooterUntil) {
@@ -407,8 +444,10 @@ export function simulatePlay({
           for (const [a] of anchors[i] || [])
             if (a > t) {
               goal(i, a, g);
-              const need = Math.hypot(g[0] - px[i], g[1] - pz[i]) / Math.max(0.05, a - t);
-              if (need > 0.33 * P.top || anc > 0) target = g;
+              // the run takes the distance at a strong pace (65% of his top speed) plus a third of a second to get up to
+              // speed and stop: once the time left is less than that (and a margin), he goes
+              const run = Math.hypot(g[0] - px[i], g[1] - pz[i]) / (0.65 * P.top) + 0.35;
+              if (a - t < 1.25 * run || anc > 0) target = g;
               break;
             }
         if (target) {
@@ -441,7 +480,7 @@ export function simulatePlay({
             // the push starts where he would have to start braking to stop short of him (plus 0.6): at a run that is
             // well out, standing next to him it is close
             closing = Math.max(0, -((vx[i] - vx[j]) * ex + (vz[i] - vz[j]) * ez) / (d || 1)),
-            reach = gap + 0.6 + (closing * closing) / (2 * 0.5 * P.brake);
+            reach = gap + 0.6 + Math.min(2, (closing * closing) / (2 * 0.5 * P.brake)); // at most 2 further out
           if (d < reach && d > 1e-6) {
             // a body pushing off another is a force, not a change of plan: an acceleration away that rises smoothly as
             // they close (zero at reach, PUSH at the gap), added after the jerk limit
@@ -499,6 +538,12 @@ export function simulatePlay({
           wz = Math.abs(pz[i]) - (COURT.z - 0.6);
         if (wx > 0) rx -= Math.sign(px[i]) * PUSH * Math.min(1, wx / 0.6) ** 2;
         if (wz > 0) rz -= Math.sign(pz[i]) * PUSH * Math.min(1, wz / 0.6) ** 2;
+        // nobody goes behind a backboard's plane near it (a ball to or from him would go through the board): back in
+        // front of it
+        const bx = Math.abs(px[i]) - BEHIND.x,
+          bz = BEHIND.z - Math.abs(pz[i]);
+        if (bx > -0.3 && bz > 0)
+          rx -= Math.sign(px[i]) * PUSH * Math.min(1, (bx + 0.3) / 0.3) * Math.min(1, bz / 0.4);
         let wax = (dvx - vx[i]) / STEER,
           waz = (dvz - vz[i]) / STEER;
         // along and across his motion: speed up within the tapering acceleration, slow down within the braking, turn
@@ -637,7 +682,7 @@ export function simulatePlay({
       AX[o] = ((VX[b * 10 + i] - VX[a * 10 + i]) / (b - a)) * SIM_FPS;
       AZ[o] = ((VZ[b * 10 + i] - VZ[a * 10 + i]) / (b - a)) * SIM_FPS;
     }
-  return { frames: N, x: X, z: Z, vx: VX, vz: VZ, ax: AX, az: AZ };
+  return { frames: N, x: X, z: Z, vx: VX, vz: VZ, ax: AX, az: AZ, authoredAt };
 }
 /* How much of a window [a, b] (seconds) holds at time t: 0 well before, 1 inside, easing in over the 0.45 s before it and
    out over the 0.35 s after it (smootherstep: no jump in speed or acceleration), and held to the end of the play if the

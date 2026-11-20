@@ -77,7 +77,17 @@ export const ballMethods = {
   },
   /* The plays place the ball for the classic 0.28 ball; near the floor the smaller real ball drops by the difference so its bounces still touch the wood. Drawing only: the ball's position is untouched. */
   settleBall() {
-    if (!this.ballReal || !this.ball) return;
+    if (!this.ball) return;
+    // motion version 3 places the real 24 cm ball itself: drawn as is; the classic toy ball (twice the size) is lifted
+    // near the floor so it does not sink into it
+    if (this.ballPhysical) {
+      this.ballSpinner.position.y = this.ballReal ? 0 : ballDrop(this.ball.position.y);
+      return;
+    }
+    if (!this.ballReal) {
+      this.ballSpinner.position.y = 0;
+      return;
+    }
     const s = this.ball.scale.x,
       y = this.ball.position.y,
       drop = ballDrop(y);
