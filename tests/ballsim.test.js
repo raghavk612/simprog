@@ -26,7 +26,10 @@ test('motion version 3 ball: physical, never under the floor or through the boar
     const c = { ...clip, v: 3 },
       S = L.samples(c),
       m = L.metrics(c, S);
-    assert.ok(S.every(p => p.ballModel === 'physical' && p.ballRadius === BALL_R), id);
+    assert.ok(
+      S.every(p => p.ballModel === 'physical' && p.ballRadius === BALL_R),
+      id,
+    );
     assert.equal(m.ballBelowFloor, 0, `${id}: below the floor`);
     assert.equal(m.ballThroughBoard, 0, `${id}: through the board`);
     assert.ok(m.ballJump <= 0.45, `${id}: ball jumps ${m.ballJump.toFixed(2)}`);
@@ -44,7 +47,10 @@ test('motion version 3 ball: who has it at the end follows the outcome', () => {
     if (o === 'steal') assert.ok(end.holder >= 0, `${id}: the stealer has it`);
     if (o === 'miss') assert.ok(end.holder >= 0, `${id}: the rebounder has it`);
     if (o === 'made') assert.equal(end.holder, -1, `${id}: a make ends loose under the net`);
-    assert.ok(S.every(p => Number.isInteger(p.holder)), id);
+    assert.ok(
+      S.every(p => Number.isInteger(p.holder)),
+      id,
+    );
   }
 });
 
