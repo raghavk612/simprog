@@ -465,7 +465,7 @@ export function simulateBall(o) {
       held = t => {
         // in his hands as the play has them (the authored ball relative to where the play has him), where he is; held out
         // in front of the backboard's plane if he is behind it (his putback must not start behind the board)
-        const a = o.authoredBall(t),
+        const a = o.exactBall(t), // exact: the 30 Hz table would blend the swat's flight into the hold across the catch
           wa = o.authoredPos(W, t),
           wp = o.pos(W, t),
           p = [a[0] + wp[0] - wa[0], a[1], a[2] + wp[1] - wa[1]],
@@ -498,7 +498,7 @@ export function simulateBall(o) {
       put(f, p, W, p);
     }
     // the putback itself: an arc from his hands to the rim, arriving when the play's does
-    const start = held(B.go),
+    const start = held(B.go - 1e-4), // as he held it (at the moment itself the play's ball is its own flight)
       rimAt = o.authoredBall(B.arr);
     arc(fgo, farr, start, [o.rim.x, rimAt[1], o.rim.z], (farr - fgo) / FPS);
     if (B.made) afterRim(farr, true, [o.rim.x, rimAt[1], o.rim.z]);

@@ -27,10 +27,12 @@ const BODY = [
   { top: 7.2, acc: 4.7, brake: 7.4, lat: 6.4 },
 ];
 export const JERK = 110; // m/s^3: how fast a player's acceleration can change (a plant takes about a tenth of a second)
-const COURT = { x: 13.85, z: 7.9 },
-  BEHIND = { x: 12.3, z: 2.4 }, // units: the space behind a backboard (its face at 12.56, 3 ft either side of the rim) // units: the baselines (5.25 ft behind the rims) and sidelines
+const COURT = { x: 13.85, z: 7.9 }, // units: the baselines (5.25 ft behind the rims) and sidelines
+  // units: the space behind a backboard (its face at 12.56, 3 ft either side of the rim), wide enough that a ball from
+  // just outside it to the rim clears the board
+  BEHIND = { x: 12.3, z: 3.2 },
   SPACING = 1.9, // units: how far a teammate stays off the ball handler
-  SLACK = 0.012, // units: how far two may press into each other's space before the floor moves them (QA allows 0.02)
+  SLACK = 0.006, // units: how far two may press into each other's space before the floor moves them (QA allows 0.02, and the final smoothing takes some)
   EFFORT = 11.8, // units/s^2 (11 m/s^2): the most a player's legs can change his velocity, all forces together
   PUSH = 11, // units/s^2: the push off a player at the closest he may come (a firm shove; it rises smoothly from 0.6 out)
   LOOK = 0.3, // s: how far ahead of now a player aims along where the play wants him (he cuts corners, like a person)
@@ -255,7 +257,12 @@ export function simulatePlay({
   players,
   anchors,
   gapOf,
+  screens = [], // [i, from, to] (seconds): a screener holding his spot for the ball handler (no spacing off him, no dodge)
 }) {
+  const screening = (i, t) => {
+    for (const [k, a, b] of screens) if (k === i && t >= a && t <= b) return true;
+    return false;
+  };
   const N = Math.round(duration * SIM_FPS) + 1,
     dt = 1 / SIM_FPS,
     TG = 30, // the authored pose is sampled at 30 Hz and interpolated (it is smooth, and sampling it is the cost)
@@ -310,10 +317,18 @@ export function simulatePlay({
     out[1] = gz[k * 10 + i] + (gz[(k + 1) * 10 + i] - gz[k * 10 + i]) * u;
     // a spot behind a backboard's plane comes in front of it (the play's authored spots put a loose ball's chaser there,
     // and from back there a ball to or from him would go through the board)
-    if (Math.abs(out[0]) > BEHIND.x && Math.abs(out[1]) < 2.4) out[0] = Math.sign(out[0]) * BEHIND.x;
+    // (over a band a unit wider than the keep-out, so a run to a spot beside it goes round in front of the board)
+    if (Math.abs(out[0]) > BEHIND.x && Math.abs(out[1]) < BEHIND.z + 1) out[0] = Math.sign(out[0]) * BEHIND.x;
     // his teammates space off the ball handler: a spot within 1.5 of where he is (or will finish) moves out to 1.5, on
     // the same side (a cutter clears the driver's lane instead of standing in it)
-    if (shooterAt && i !== shooter && i >= offense && i < offense + 5 && t <= shooterUntil) {
+    if (
+      shooterAt &&
+      i !== shooter &&
+      i >= offense &&
+      i < offense + 5 &&
+      t <= shooterUntil &&
+      !screening(i, t)
+    ) {
       const [sx, sz] = shooterAt(t),
         ex = out[0] - sx,
         ez = out[1] - sz,
@@ -491,6 +506,7 @@ export function simulatePlay({
           }
           // the shooter's run is known: dodge where he will be (sampled every 0.1 s for a second), not a straight guess
           if (j === shooter && t <= shooterUntil && shooterAt) {
+            if (screening(i, t)) continue; // the screener holds: the handler comes off his shoulder
             let hit = -1;
             for (let k = 1; k <= 10 && hit < 0; k++) {
               const tk = t + k * 0.1,
@@ -532,6 +548,13 @@ export function simulatePlay({
           dvz += sz * urgency * P.top * 0.9;
           dvx -= (rvx / Math.sqrt(rv2)) * urgency * Math.sqrt(rv2) * 0.35;
           dvz -= (rvz / Math.sqrt(rv2)) * urgency * Math.sqrt(rv2) * 0.35;
+        }
+        // the backboard is a wall: near it, his wish (and his dodging) to go further toward the baseline fades out (he goes round in front)
+        {
+          const sx = Math.sign(px[i]),
+            ox = Math.abs(px[i]) - (BEHIND.x - 0.5),
+            oz = BEHIND.z + 0.5 - Math.abs(pz[i]);
+          if (ox > 0 && oz > 0 && dvx * sx > 0) dvx *= Math.max(0, 1 - ox / 0.5);
         }
         // the court: a push back in from the baselines and sidelines (nobody runs out of bounds to make room)
         const wx = Math.abs(px[i]) - (COURT.x - 0.6),

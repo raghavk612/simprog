@@ -99,6 +99,16 @@ function pathsSVG(name, clip, S) {
   const off = clip.team === 'home' ? 0 : 5,
     mirror = clip.team === 'home' ? 1 : -1;
   let body = court(mirror);
+  // version 3: each player's part in the team's plan (src/choreo.js), at the end of his path
+  const plan = (clip.v ?? 1) >= 3 ? B.choreoOf(clip) : null,
+    role = i => {
+      const k = (i - off + 10) % 5,
+        o = i >= off && i < off + 5;
+      if (k === 0) return o ? 'S' : 'D';
+      if (!plan) return String(i);
+      if (o) return `${k} ${plan.action[k] || ''}`.trim();
+      return `d${k}${plan.helper === k ? ' help' : plan.rotator === k ? ' rotate' : ''}`;
+    };
   for (let i = 0; i < 10; i++) {
     const offense = i >= off && i < off + 5;
     for (let f = 1; f < S.length; f++) {
@@ -115,7 +125,7 @@ function pathsSVG(name, clip, S) {
     const a0 = S[0].actors[i],
       a1 = S.at(-1).actors[i];
     body += `<circle cx="${sx(a0.x)}" cy="${sz(a0.z)}" r="7" fill="none" stroke="${offense ? '#6832ab' : '#1d5fbf'}" stroke-width="2"/>`;
-    body += `<text x="${sx(a1.x) + 7}" y="${sz(a1.z) - 6}" font-size="12" fill="${offense ? '#6832ab' : '#1d5fbf'}" font-weight="700">${i === off ? 'S' : i === 5 - off ? 'D' : i}</text>`;
+    body += `<text x="${sx(a1.x) + 7}" y="${sz(a1.z) - 6}" font-size="12" fill="${offense ? '#6832ab' : '#1d5fbf'}" font-weight="700">${role(i)}</text>`;
   }
   let d = '';
   for (let f = 0; f < S.length; f++)

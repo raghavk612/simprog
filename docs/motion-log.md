@@ -227,3 +227,64 @@ Gate: tests 329, build, motion:qa passed, golden unchanged, trace `--v 2` identi
 9,280 frames. Perf (pre-motion tag in a worktree, then M2, back to back; `docs/perf/premotion-m2.json`, `m2.json`): every
 scene within ±2% or faster except retina/medium title at +4%, re-measured back to back 4 times at 0%
 (`premotion-m2rm.json`, `m2rm.json`). The last four fixes above only touch the per-play precompute, not the frame loop.
+
+## M3: the team around the ball
+
+`src/choreo.js` (new) is the off-ball players' intention for version 3: a seeded plan per play, evaluated in the attack
+frame, that replaces version 2's hop-and-hold spots and the defenders' base spots inside `sampleAuthored` (version 3
+only). The play's hard moments stay on top of it, unchanged: the shooter, his man's contest and block, the pass, the steal,
+the loose ball, the rebounder (`src/playsim.js` makes all of it a body's movement, as in M1).
+
+- Offense: four spaced players with a part each, named in the path diagrams. The weak wing drifts to the corner as a
+  drive comes; the strong corner lifts to the wing out of the driver's way; the safety drifts along the arc and gets back
+  on the shot; the cutter does a V-cut (in slowly, plant, out hard), a backdoor cut (jump shots only: never through a
+  driver's lane) or a curl off a pin-down set by the slot. Waypoints are a timed curve (Catmull-Rom, a `stop` is reached
+  at rest) and are retimed so no stretch asks for more than 4 units/s (3 out of a stop).
+- The ball screen (pick and roll): the screener comes up from the top of the key, is set (still, arms 'screen') before
+  the handler arrives, a body's width (1.05) off the handler's real path, holds until he is past, then rolls to the rim
+  or pops behind the arc (30%). The sim exempts a screener from the teammate spacing and from dodging the handler while he
+  screens (`screens`), so the handler comes off his shoulder. The handler's man goes over (screen-side hip; caught on the
+  screen when the gap is tight, as here) or under (the rim side, with room); the screener's man drops into the paint.
+- Defense: ball-you-man (one pass away he denies, two away he sags into the help line), on the rim side of his man. On a
+  drive the weak-side man nearest the rim helps (in front of the rim, to the weak side of the ball's line) and the other
+  weak-side man rotates toward his man. The pin-down is switched or trailed. The driver's own man is on the driver's hip
+  from the first step (beside him, half a step behind) and beside him at the rim, not under it; on a fast break he chases
+  a stride behind. On the shot everyone finds his man and boxes out (back into him, between him and the rim; declared
+  contacts at 0.62 for the crashers).
+- Transition (fast break): lanes filled wide, a trailer to the top, a rim runner last; the outlet passer trails to the
+  top of the key; defenders start up the floor with their men, sprint back to the paint at their own moments, then match
+  up. After a steal the play flips: the robbed team sprints back, the stealers' team fills lanes the other way.
+- Facing: each player's `look` (a player or the ball) is aimed from where the bodies really are (`physical()`).
+
+Fixes while closing the gate (from the QA, `.claude/scratch` scans and the pictures):
+- The block plan (who chases the loose ball, the putback's timing) is the play's own: it now reads version 2's spots, so
+  a version 3 block resolves on the same frame as before (it moved 2-3 frames when it read the new spots).
+- Loose-ball meeting spots under or behind the backboard are moved out in front of it and a body's width off the shooter
+  (held to his landing); the ball is held at the moved spot; the putback's arc starts from the ball as held; the ball sim
+  reads the play's exact ball while held (the 30 Hz table blended the swat into the hold across the catch).
+- The keep-out behind a board is 3.2 wide (was 2.4) and targets are brought in front of it over a band a unit wider; near
+  it a player's wish (and his dodging) to go further toward the baseline fades out. Player-frames behind a board's face
+  over the QA set: version 2 3,816 (72 plays), version 3 1,605 (77 plays, most of them block scrambles).
+- The help spot's sideways step went to the strong side (a sign error): into the post defender. The marker of a drive
+  stood between the driver and the rim and was pushed under it: he is on the hip now.
+- Infeasible waypoints (up to 10 units/s: a passer's relocation mirrored to the wrong side, crash runs across the floor,
+  the roll, the screener's start) fixed in the data and guarded by retiming. Crash spots come from where the player is, in
+  front of the rim. SLACK 0.012 -> 0.006 (the final smoothing used the rest of the QA's 0.02 margin).
+
+New tests: `tests/choreo.test.js` (the timed path and its stops, retiming, ball-you-man deny and sag, the plan is
+deterministic, the screener is set on his spot as the handler comes off it, box-out contacts, nobody behind a board's face
+on plays at the rim).
+
+Pictures (`ui-shots/motion-m3`), against the checklist: paths curve and change speed (the V-cut's plant is a hairpin with
+the dots bunched), the arc and both corners are held through the play and nobody clumps before the shot; the screen is a
+still screener the handler passes at 1.3 and his man is caught and recovers by the finish; the fast break fills three
+lanes with players arriving apart; help and rotation read as moves toward the ball. Still weak (for M4): the off-ball
+defenders shuffle in small loops where their target swings (help switching to box-out, ball-you-man as the ball moves);
+the rebound scramble after a block still sends players under the board; the catch play's skip pass is long (the play's
+own).
+
+Gate: tests 334, build, motion:qa passed (`docs/motion/qa-m3.json`: v3 worst acceleration 10.96 m/s² free running, jerk
+150 m/s³, closest pair 0.49 (a block's contact), no overlaps, ball checks as M2), golden unchanged, trace `--v 2`
+identical to the pre-motion reference on all 9,280 frames. Precompute: median 4.8 ms, p95 6.5 ms, worst 26 ms (the
+first, cold play): +0.8 ms for the team plan and the exact ball while held. Perf (pre-motion tag in a worktree, then M3,
+back to back; `docs/perf/premotion-m3.json`, `m3.json`): every scene within +1% or faster.

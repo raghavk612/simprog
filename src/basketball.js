@@ -11,6 +11,7 @@ import {
   seedOf,
 } from './playsim.js';
 import { simulateBall, BALL_R } from './ballsim.js';
+import { choreoPlan, choreograph } from './choreo.js';
 export const CLIP_SECONDS = 4.4; // one side's play; the run between plays happens before it (Arena.startTransit)
 /* The motion version stamped on every new play (engine.js makePlay, field v). sampleClip moves the players of a play with
    no version (recorded before it existed) exactly as it always did, so old saves and replays never change:
@@ -609,6 +610,115 @@ function offBallV2(A, offense, side, lane, t, fam, T) {
     );
 }
 
+/* ---- Motion version 3: the team around the ball (src/choreo.js) ----
+   The plan's inputs for a play, once per clip object (sampleAuthored runs every frame). */
+const CTXS = new WeakMap();
+function choreoCtx(c) {
+  let ctx = CTXS.get(c);
+  if (!ctx) {
+    const key = playKey(c),
+      run = shooterRun(c),
+      T = shotTiming(c.kind);
+    ctx = {
+      key,
+      seed: seedOf(key + '|choreo'),
+      fam: family(c.kind),
+      T,
+      rel: T.release,
+      at: u => run.at(u * CLIP_SECONDS),
+      lane: c.lane || 1,
+      side: c.team === 'home' ? 1 : -1,
+      offense: c.team === 'home' ? 0 : 5,
+      defense: c.team === 'home' ? 5 : 0,
+      outcome: c.outcome,
+      points: c.points,
+      afterSteal: !!c.afterSteal,
+      S: CLIP_SECONDS,
+    };
+    CTXS.set(c, ctx);
+  }
+  return ctx;
+}
+/* A version-3 play's team plan (src/choreo.js): each off-ball player's action and waypoints, the screens, the help, the
+   box-outs. For the motion pictures and checks. */
+export const choreoOf = c => choreoPlan(choreoCtx(c));
+/* Version 3, the shooter's man: beside a finisher at the rim instead of between him and it (from under the rim he would
+   be pushed through the backboard), and on a ball screen over it (on the handler's hip, a step behind) or under it (the
+   rim side, giving room). */
+function markerV3(marker, shooter, side, c, t, separation) {
+  const ctx = choreoCtx(c),
+    plan = choreoPlan(ctx),
+    sx = shooter.x * side,
+    sz = shooter.z,
+    rx = 12.15 - sx,
+    rz = -sz,
+    d = Math.hypot(rx, rz) || 1;
+  let mx = marker.x * side,
+    mz = marker.z;
+  const sc = plan.screen;
+  if (sc && t > sc.u0 - 0.06 && t < sc.u1 + 0.16) {
+    const w = smooth((t - sc.u0 + 0.06) / 0.06) * (1 - smooth((t - sc.u1 - 0.06) / 0.1));
+    if (sc.cover === 'under') {
+      const g = guardSpot(shooter, side, separation + 1.4);
+      mx += (g.x * side - mx) * w;
+      mz += (g.z - mz) * w;
+    } else {
+      // over the top: on his screen-side hip, chasing him through the gap (caught on the screen if it is tight)
+      const a = ctx.at(Math.max(0, t - 0.02)),
+        vx = sx - a[0],
+        vz = sz - a[1],
+        vl = Math.hypot(vx, vz) || 1,
+        ux = vx / vl,
+        uz = vz / vl,
+        k = (sc.p[0] - sx) * -uz + (sc.p[1] - sz) * ux > 0 ? 1 : -1; // the screen's side of his run
+      mx += (sx - ux * 0.45 - uz * 0.9 * k - mx) * w;
+      mz += (sz - uz * 0.45 + ux * 0.9 * k - mz) * w;
+    }
+  }
+  // a drive beats him: from the first step he is on the driver's hip (beside him, half a step behind, on the floor's
+  // side), not in front of him; on a fast break he chases from behind
+  const fam = ctx.fam;
+  if (fam === 'drive' || fam === 'floater' || fam === 'roll' || fam === 'dunk') {
+    const a = ctx.at(Math.max(0, t - 0.02)),
+      vx = sx - a[0],
+      vz = sz - a[1],
+      vl = Math.hypot(vx, vz);
+    if (vl > 1e-4) {
+      const ux = vx / vl,
+        uz = vz / vl;
+      let px = -uz,
+        pz = ux;
+      if (px > 0 || (px === 0 && pz * sz > 0)) ((px = -px), (pz = -pz));
+      const brk = fam === 'dunk',
+        hx = sx + px * (brk ? 0.6 : 0.85) - ux * (brk ? 1.3 : 0.35),
+        hz = sz + pz * (brk ? 0.6 : 0.85) - uz * (brk ? 1.3 : 0.35),
+        wh = smooth((t - (brk ? 0.05 : 0.22)) / 0.14);
+      mx += (hx - mx) * wh;
+      mz += (hz - mz) * wh;
+    }
+  }
+  // near the rim: beside him, on the floor's side (toward half court), not under the board (a fast break's chaser stays
+  // a stride behind: at a sprint, sent beside the dunker he would run on under the rim)
+  const w = fam === 'dunk' ? 0 : smooth((2.6 - d) / 1.1);
+  if (w > 0) {
+    let px = -rz / d,
+      pz = rx / d;
+    if (px > 0) ((px = -px), (pz = -pz));
+    mx += (sx + px * 0.95 - mx) * w;
+    mz += (sz + pz * 0.95 - mz) * w;
+  }
+  marker.x = Math.min(11.6, mx) * side;
+  marker.z = mz;
+}
+
+/* A spot under or behind a backboard, moved out in front of it (version 3: where a body can stand). Court frame. */
+function frontOfBoard(p, side) {
+  const x = p.x * side,
+    az = Math.abs(p.z);
+  if (x < 11.4 || az > 4.2) return p;
+  const z = (p.z < 0 ? -1 : 1) * Math.max(az, 2.4);
+  return { ...p, x: Math.min(x, 11.4 - Math.max(0, 2.4 - az) * 0.3) * side, z };
+}
 /* ---- A block, worked out once per play (sampleClip uses it at every moment) ----
    Everything about a block that does not depend on the moment: where the ball meets the blocker's hand, how hard and where
    it is swatted, which two players go for the loose ball and where they meet it (from where the same play unblocked has
@@ -701,8 +811,18 @@ export function blockPlan(c, release) {
       remember(
         UNBLOCKED,
         ukey,
-        sampleAuthored({ ...c, outcome: 'made', points: 2, recovery: undefined, putback: undefined }, HIT * S)
-          .actors,
+        // the play's own spots (version 3's team movement is presentation on top: the block's plan stays the play's)
+        sampleAuthored(
+          {
+            ...c,
+            outcome: 'made',
+            points: 2,
+            recovery: undefined,
+            putback: undefined,
+            v: Math.min(c.v ?? 1, 2),
+          },
+          HIT * S,
+        ).actors,
       ),
     nearest = list =>
       list.map(o => ({ ...o, d: Math.hypot(o.p.x - at.x, o.p.z - at.z) })).sort((a, b) => a.d - b.d)[0],
@@ -851,6 +971,19 @@ function sampleAuthored(c, time) {
   if (v2) offBallV2(actors, offense, side, lane, t, fam, T);
   // Defenders start on their man's guard spot (guardSpot): between him and the basket.
   for (let k = 0; k < 5; k++) Object.assign(actors[defense + k], guardSpot(actors[offense + k], side));
+  // Motion version 3: the team around the ball (src/choreo.js) replaces the off-ball spots and the defenders' base spots
+  const v3 = (c.v ?? 1) >= 3;
+  if (v3) {
+    const ctx = choreoCtx(c),
+      lane0 = c.lane || 1,
+      ballNow =
+        fam === 'catch' && !c.afterSteal && t < 0.3
+          ? [lerp(3, at[0], smooth(t / 0.3)), lerp(-5.5, at[1], smooth(t / 0.3))]
+          : fam === 'dunk' && !c.afterSteal && t < 0.2
+            ? [lerp(-4.5, at[0], smooth(t / 0.2)), lerp(3 * lane0, at[1], smooth(t / 0.2))]
+            : at;
+    choreograph(actors, choreoPlan(ctx), ctx, t, ballNow);
+  }
   // Every value below is continuous in t: actors and ball ease between beats instead of snapping.
   const shooter = actors[offense],
     marker = actors[defense];
@@ -868,6 +1001,7 @@ function sampleAuthored(c, time) {
   // man (fast, then short chopping steps)
   const closeout = v2 && fam === 'catch' ? 1 - Math.pow(1 - clamp((t - 0.1) / 0.24), 2.4) : 1;
   Object.assign(marker, guardSpot(shooter, side, separation + (3.1 - separation) * (1 - closeout)));
+  if (v3) markerV3(marker, shooter, side, c, t, separation);
   marker.run = 0.85 - 0.75 * smooth((t - 0.45 - d) / 0.08);
   // the contest: a real jump under gravity, at its top just as the ball leaves the shooter's hand (a block is timed to
   // the ball itself, below)
@@ -879,18 +1013,20 @@ function sampleAuthored(c, time) {
   const defenseJump = c.outcome === 'block' ? 0 : leap(t, c.contest === 'open' ? 0.22 : 0.62, HIT);
   marker.y = defenseJump;
   marker.arms = t > 0.48 + d && t < 0.82 + d ? 'block' : 'defend';
-  if (fam === 'drive' || fam === 'floater' || fam === 'roll') {
+  if (!v3 && (fam === 'drive' || fam === 'floater' || fam === 'roll')) {
     marker.z += Math.sin(t * 12) * 0.35; // slides with the driver's moves
     marker.x += Math.sin(t * Math.PI) * side * 0.3; // and gives ground toward the basket
   }
   // A second defender slides from the weak side to help at the basket.
   const help = actors[defense + 2];
-  help.x = lerp(9, 11, t) * side;
-  help.z = lerp(-4 * lane, -0.9 * lane, smooth(t / 0.6));
+  if (!v3) {
+    help.x = lerp(9, 11, t) * side;
+    help.z = lerp(-4 * lane, -0.9 * lane, smooth(t / 0.6));
+  }
   help.arms = t > 0.48 + d && t < 0.8 + d ? 'block' : 'defend';
   help.y = defenseJump * 0.6;
   const screen = actors[offense + 1];
-  if (fam === 'roll') {
+  if (fam === 'roll' && !v3) {
     // set beside the handler's path (about 3.5 ft off it), so he runs off the screener's shoulder instead of through him
     screen.x = 4.8 * side;
     screen.z = 2.5 * lane;
@@ -911,10 +1047,11 @@ function sampleAuthored(c, time) {
     actors[offense + 2].z = lerp(-5, 3, smooth(t)) * lane;
   }
   // the cutter's man trails him; the weak-side defender sags into the lane, then closes out to his man
-  Object.assign(actors[defense + 3], {
-    x: lerp(10.2 * side, actors[defense + 3].x, smooth(t)),
-    z: lerp(-1.8 * lane, actors[defense + 3].z, smooth(t)),
-  });
+  if (!v3)
+    Object.assign(actors[defense + 3], {
+      x: lerp(10.2 * side, actors[defense + 3].x, smooth(t)),
+      z: lerp(-1.8 * lane, actors[defense + 3].z, smooth(t)),
+    });
   const mix = (a, b, w) => ({ x: lerp(a.x, b.x, w), y: lerp(a.y, b.y, w), z: lerp(a.z, b.z, w) });
   const bounce = (t * CLIP_SECONDS) / DRIBBLE.period; // the dribble's clock, in bounces
   let ball = { x: shooter.x + 0.38 * side, y: dribbleAt(bounce).ball, z: shooter.z + 0.15 };
@@ -999,25 +1136,11 @@ function sampleAuthored(c, time) {
     blockEnd = null;
   if (c.outcome === 'block') {
     const S = CLIP_SECONDS,
-      {
-        contact,
-        rimX,
-        toRim,
-        H,
-        spot,
-        hang,
-        dir,
-        kept,
-        CATCH,
-        v,
-        at,
-        win,
-        lose,
-        meet,
-        beaten,
-        putback,
-        hand,
-      } = blockPlan(c, release),
+      { contact, rimX, toRim, H, spot, hang, dir, kept, CATCH, v, at, win, lose, putback, hand } = blockPlan(
+        c,
+        release,
+      ),
+      plan0 = blockPlan(c, release),
       w = smooth((t - (HIT - hang - 0.1)) / 0.08); // in place before he takes off
     marker.x = lerp(marker.x, spot.x, w);
     marker.z = lerp(marker.z, spot.z, w);
@@ -1026,6 +1149,27 @@ function sampleAuthored(c, time) {
       W = actors[win.i],
       Lp = actors[lose.i],
       wm = smooth((t - HIT + 0.01) / (CATCH - HIT + 0.01));
+    // version 3: the loose ball is met in front of the backboard (bodies cannot stand under or behind it)
+    // and a body's width off the shooter (held to his landing until he is down)
+    const clear = p => {
+        const dx = p.x - shooter.x,
+          dz = p.z - shooter.z,
+          dl = Math.hypot(dx, dz);
+        return dl >= 1.15 || dl < 1e-6
+          ? p
+          : { ...p, x: shooter.x + (dx / dl) * 1.15, z: shooter.z + (dz / dl) * 1.15 };
+      },
+      meet = v3 ? clear(frontOfBoard(plan0.meet, side)) : plan0.meet,
+      beaten = v3 ? clear(frontOfBoard(plan0.beaten, side)) : plan0.beaten,
+      // where he holds it: the swat's landing; version 3, at his own meeting spot (a step on from it toward the landing)
+      hold = (() => {
+        if (!v3 || (meet.x === plan0.meet.x && meet.z === plan0.meet.z)) return at;
+        const dx = at.x - meet.x,
+          dz = at.z - meet.z,
+          dl = Math.hypot(dx, dz) || 1,
+          k = Math.min(1, 0.3 / dl);
+        return { x: meet.x + dx * k, z: meet.z + dz * k };
+      })();
     W.x = lerp(W.x, meet.x, wm);
     W.z = lerp(W.z, meet.z, wm);
     W.run = Math.max(W.run, Math.sin(wm * Math.PI) * 0.95);
@@ -1049,10 +1193,10 @@ function sampleAuthored(c, time) {
     } else if (t > CATCH + 0.03) W.yaw = Math.atan2(-side, 0); // the defense has it: he turns up the floor
     if (t > HIT) {
       if (t < CATCH) ball = fly(contact, v, (t - HIT) * S);
-      else if (!putback) ball = { x: at.x, y: chest, z: at.z };
+      else if (!putback) ball = { x: hold.x, y: chest, z: hold.z };
       else if (t < putback.GO) {
         const k = smooth((t - CATCH) / (putback.GO - CATCH));
-        ball = { x: at.x, y: lerp(chest, putback.from.y, k), z: at.z };
+        ball = { x: hold.x, y: lerp(chest, putback.from.y, k), z: hold.z };
       } else if (t < putback.ARR) ball = fly(putback.from, putback.v, (t - putback.GO) * S);
       else {
         const tau = (t - putback.ARR) * S;
@@ -1294,6 +1438,14 @@ export function motionOf(c) {
     if (!c.afterSteal && fam === 'dunk') anchors[off + 1].push([0, sec(0.18)]);
     // how close two may come (game units): 0.95 (motion.js SPACE.min); the shooter and his man 0.85 (a contest), 0.5
     // while a block is in the air, 0.55 for a steal's reach; a screener and the man he screens 0.6
+    // the team's contacts (src/choreo.js): a pin-down screen, box-outs on the shot (offense, defense, from, to, gap)
+    const team = choreoPlan(choreoCtx(c)).contacts.map(([a, b, u0, u1, g]) => [
+      off + a,
+      def + b,
+      sec(u0),
+      sec(u1),
+      g,
+    ]);
     const blockFrom = sec(T.takeoff - 0.08),
       gapOf = (i, j, t) => {
         const onBall = (i === off && j === def) || (i === def && j === off);
@@ -1305,6 +1457,11 @@ export function motionOf(c) {
           return 0.85;
         }
         if (fam === 'roll' && ((i === off + 1 && j === def) || (i === def && j === off + 1))) return 0.6;
+        for (const [a, b, t0, t1, g] of team)
+          if ((i === a && j === b) || (i === b && j === a)) {
+            const w = smooth((t - t0) / 0.3) * (1 - smooth((t - t1) / 0.3));
+            if (w > 0) return GAP - (GAP - g) * w;
+          }
         // the two going for a blocked shot's loose ball fight for it, shoulder to shoulder
         if (
           loose &&
@@ -1329,6 +1486,11 @@ export function motionOf(c) {
       players,
       anchors,
       gapOf,
+      // the ball screen (src/choreo.js): the screener holds his spot as the handler comes off it
+      screens: (() => {
+        const sc = choreoPlan(choreoCtx(c)).screen;
+        return sc ? [[off + 1, sec(sc.u0 - 0.08), sec(sc.u1 + 0.02)]] : [];
+      })(),
     });
     // the ball (src/ballsim.js), on the simulated players
     const fr = SIM_FPS,
@@ -1472,5 +1634,14 @@ function physical(c, time, p) {
     const contact = !!B.held[near] && B.holder[near] >= 0;
     p.dribble = { ball: p.ball.y, hand: B.dribbleY[near], contact, progress: contact ? 0.5 : bu };
   } else p.dribble = null;
+  // who each player watches (src/choreo.js `look`: a player, or 10 the ball), from where the bodies really are
+  for (let i = 0; i < 10; i++) {
+    const a = p.actors[i],
+      k = a.look;
+    if (k === undefined) continue;
+    const tx = k === 10 ? p.ball.x : p.actors[k].x,
+      tz = k === 10 ? p.ball.z : p.actors[k].z;
+    if (Math.hypot(tx - a.x, tz - a.z) > 0.05) a.yaw = Math.atan2(tx - a.x, tz - a.z);
+  }
   return p;
 }
