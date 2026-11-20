@@ -13,11 +13,13 @@ const load = v => {
 };
 test('cloth fit: skin under the kit and sleeves is marked, skin at the openings and on the face and hands is not', async () => {
   for (const v of ['guard', 'forward', 'center']) {
+    // its own CPU time, not the wall clock (the suite runs files in parallel: a busy machine is not a slow fit)
     const g = await load(v),
-      t0 = performance.now(),
+      c0 = process.cpuUsage(),
       r = prepareCloth(g),
-      ms = performance.now() - t0;
-    assert.ok(ms < 400, `${v}: worked out at load in ${ms.toFixed(0)} ms`);
+      c = process.cpuUsage(c0),
+      ms = (c.user + c.system) / 1000;
+    assert.ok(ms < 400, `${v}: worked out at load in ${ms.toFixed(0)} ms of CPU`);
     assert.equal(prepareCloth(g), r, 'once per template');
     const named = {};
     g.scene.traverse(o => o.isMesh && (named[o.name] = o));
