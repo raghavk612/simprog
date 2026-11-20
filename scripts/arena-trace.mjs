@@ -5,6 +5,7 @@
 // matrices. Each frame is stepped at a fixed 1/60 s (scripts/gym-harness.mjs) and reduced to a hash.
 //   node scripts/arena-trace.mjs --out ui-shots/trace-before.json
 //   node scripts/arena-trace.mjs --out ui-shots/trace-after.json --compare ui-shots/trace-before.json
+//   node scripts/arena-trace.mjs --v 2 --compare ui-shots/trace-v2.json   # plays stamped with a motion version
 // Scenes: the title (the hero's show), a live possession in each camera mode, a replay, and plays covering every finish,
 // pass, steal, block and reaction; at High with the athletes and at Low with the classic figures.
 import fs from 'node:fs';
@@ -97,7 +98,11 @@ const steps = (page, n) =>
   }, n);
 
 const { save, event } = fixture(),
-  play = (home, away = { kind: 'pullup', outcome: 'miss', points: 0 }) => restage(event, home, away),
+  // --v N: every staged play at motion version N (the engine stamps the current one): --v 2 checks old plays still
+  // replay exactly as before
+  V = opt('v') ? { v: +opt('v') } : {},
+  play = (home, away = { kind: 'pullup', outcome: 'miss', points: 0 }) =>
+    restage(event, { ...home, ...V }, { ...away, ...V }),
   PLAYS = {
     drive: play({ kind: 'drive', outcome: 'made', points: 2, contest: 'contested' }),
     dunk: play(

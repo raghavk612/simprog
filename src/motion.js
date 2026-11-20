@@ -401,6 +401,16 @@ export function animateAthlete(player, pose, ctx) {
     m.acc = damp(m.acc ?? 0, Math.max(-25, Math.min(25, (vf - (m.vf ?? vf)) / dt)), 5, dt);
     m.vf = vf;
     m.turn = damp(m.turn ?? 0, Math.max(-12, Math.min(12, turn)), 6, dt);
+    // motion version 3 gives his real acceleration (src/playsim.js): the lean follows it as it happens rather than a
+    // measured, damped guess a moment late; along his facing for the lean into a start or back on a stop, across his
+    // motion for the lean into a turn (the yaw rate times speed it stands in for)
+    if (Number.isFinite(pose.ax) && Number.isFinite(pose.vx)) {
+      const af = pose.ax * Math.sin(yaw) + pose.az * Math.cos(yaw),
+        sp = Math.hypot(pose.vx, pose.vz),
+        lat = sp > 0.3 ? (pose.vx * pose.az - pose.vz * pose.ax) / sp : 0;
+      m.acc = damp(m.acc, Math.max(-25, Math.min(25, af)), 14, dt);
+      m.turn = damp(m.turn, Math.max(-12, Math.min(12, -lat / Math.max(1, m.speed))), 14, dt);
+    }
     m.yawLast = yaw;
     m.exert = damp(m.exert ?? 0, run, run > (m.exert ?? 0) ? 0.4 : 0.12, dt); // breathing deepens after a hard run
     // the shorts: a damped spring pushed by the body's acceleration (they lag a start, swing on a stop and a cut, and

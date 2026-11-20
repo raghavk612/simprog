@@ -69,3 +69,87 @@ Critique of the before pictures (drive shown; the others agree):
   the end; 247 overlapping pair-frames per clip on average (the Arena's push-apart hides them). Fails "nobody overlaps".
 - Ball: the dribble is physical but for the old 0.28 ball (floor contact 0.3); nothing says who holds it; the pass is a
   sine arc; the miss is a single carom to the rebound spot.
+
+## M1: movement model (motion version 3)
+
+`src/playsim.js`, used by `basketball.js` for plays with `v >= 3` (the engine now stamps 3; versions 1 and 2 are the
+authored play, unchanged: `sampleAuthored`, and the old-version trace and QA hashes are identical). Per play, once
+(`motionOf`, cached by the play's key and per clip object), at a fixed 60 Hz step:
+
+- **The authored play becomes the intention.** Every player but the shooter steers toward where version 2 wants him 0.3 s
+  from now, through a body's limits: top speed, acceleration that tapers as he speeds up, braking, sideways grip (a turn
+  radius that grows with the square of speed), a jerk limit (110 m/s³), and one cap on all forces together (11 m/s²).
+  Each slot has its body (guards 8.3 m/s and 5.8 m/s² down to bigs 7.2 and 4.7) and a seeded ±5% top speed and ±8%
+  acceleration. **Decision:** slot 0 to 4 stands in for position (the play does not know who plays where).
+- **Defenders react late:** each has a seeded 0.15–0.25 s lag, as stale information: he acts on where his man was heading
+  that long ago, carried on (late on every change of direction, not behind on a straight run). A first version lagged
+  the whole target and put the fast-break defender inside the dunker.
+- **The shooter runs his authored route at a body's pace** (`runProfile`): a time-optimal speed along the route (as hard
+  as the body accelerates, braking to stop on the release spot, slower where it bends), capped so the run takes exactly
+  the time the play gives, smoothed so acceleration changes gradually and he starts and stops without a jolt. The release
+  spot and moment are exact; version 3's sampleAuthored places him on this run, so everything placed from him (his
+  defender, the dribble, the gather, a steal) follows where he is. **Decisions:** only the release spot is a promise, so
+  the route's corners are rounded; a waypoint within 0.7 of the spot (a back-step too small to see) goes; if a route still
+  does not fit in the time within the body's limits, its sharpest waypoint is pulled halfway toward its neighbours, or
+  dropped if it is a reversal, until it does (the pull-up's and step-back's reversal into the spot asked two to three
+  times a player's braking; the crossover drive keeps a milder weave). A fast break starts at 70% of top speed (the run up
+  the floor before the play).
+- **Anchors are reached by running, not by being placed:** the block's leap spot, the two going for the loose ball, the
+  rebounder, the stealer and a passer each have a moment and spot; a player heads straight for it once getting there in
+  time would take more than a third of his top speed, and arrives with an arrival controller (as fast as he can while
+  able to stop on it). Tried and dropped: blending to the authored spot afterwards and pulling the simulated position in
+  (both moved bodies faster than any body moves: 15–30 m/s).
+- **Nobody walks through anybody:** a push off anyone within reach that rises smoothly to a firm shove at the closest two
+  may come, reaching further the faster they close (where a body would have to start braking); steering round anyone met
+  in the next second at current speeds, and round the shooter along his known run; teammates keep 1.9 off the ball
+  handler (the cutter clears the driver's lane); a soft wall at the baselines and sidelines; and a floor that moves two
+  bodies apart only when they overlap by more than 1.2 cm. The closest two may come: 0.95 (motion.js SPACE.min); the
+  shooter and his man 0.85, easing to 0.5 for a block and 0.55 for a steal's reach; a screener and his man, and the two
+  fighting for a loose ball, 0.6. The pose declares these (`contacts`) and the gym's own push uses them. A robbed shooter
+  stops running his play and chases the stealer.
+- **A last smoothing** (a Gaussian of 0.05 s, both ways in time) of every path but the shooter's turns the odd one-frame
+  correction where two bodies meet into a few frames of give.
+- **The animation reads the motion:** the pose carries each player's velocity and acceleration (`vx vz ax az`); motion.js
+  leans into starts and back on stops from the real acceleration along his facing, and into turns from the real sideways
+  acceleration, as it happens rather than from a measured, damped guess.
+- **QA decision:** acceleration and jerk caps are judged on frames where a player runs free; frames within 8 cm of
+  another player's allowed distance are contact (1% of player-frames) and their worst values are reported apart (a bump
+  is not a player's own running).
+
+QA (1,032 clips; `docs/motion/qa-m1.json`):
+
+| metric | v2 mean | v2 worst | v3 mean | v3 worst |
+|---|---|---|---|---|
+| max speed (m/s) | 9.22 | 13.51 | 5.42 | 7.52 |
+| acceleration p99.9, free running (m/s²) | 111 | 322 | 10.53 | 11.38 |
+| jerk p99.9, free running (m/s³) | 7186 | 20272 | 104 | 169 |
+| acceleration in contact, max (m/s²) | 111 | 339 | 6.27 | 23.30 |
+| jerk in contact, max (m/s³) | 6333 | 20244 | 78.82 | 311 |
+| share of player-frames in contact | 0.21 | 0.38 | 0.01 | 0.06 |
+| acceleration p95 (m/s²) | 17.71 | 23.16 | 7.67 | 8.82 |
+| jerk p95 (m/s³) | 315 | 672 | 52.37 | 66.34 |
+| turn rate while moving (rad/s) | 0.40 | 0.77 | 0.99 | 1.48 |
+| sharp corners at speed (share of moving frames) | 0.01 | 0.04 | 0.00 | 0.00 |
+| closest two players (units) | 0.13 | 0.01 | 0.87 | 0.49 |
+| overlapping pair-frames | 247 | 511 | 0.00 | 0.00 |
+| largest ball move in a frame (units) | 0.17 | 0.27 | 0.18 | 0.28 |
+| ball top speed (m/s) | 9.62 | 15.09 | 9.97 | 15.36 |
+| ball to hand while held, max (units) | 0.86 | 1.24 | 0.92 | 1.24 |
+| ball to hand while held, mean (units) | 0.41 | 0.70 | 0.43 | 0.71 |
+| ball below the floor (frames) | 0.00 | 0.00 | 0.00 | 0.00 |
+| ball through the backboard (frames) | 0.13 | 4.00 | 0.13 | 4.00 |
+| floor bounce restitution | 0.80 | 0.08 | 0.80 | 0.08 |
+
+Precompute: median 4 ms, p95 11–12 ms, worst 18 ms (a block play) on this machine; the gym works out a possession's first
+play when it starts and the second in idle time while the first plays. A v3 sample then costs 3 µs (a v2 one 14 µs: v3
+reads the shooter's run from a 120 Hz table instead of rebuilding his route).
+
+Pictures (`ui-shots/motion-m1`, the after set comes in M5): paths now curve; speed plots show the shooter accelerating
+for about 1.6 s to 5 m/s, cruising and braking to a stop for the gather, his defender a beat behind, the cutter building to
+5 m/s and planting; corners slow (the V-cut's point is blue); the help defender runs a curve at 4.5 m/s instead of a
+straight line at 9. Still to do (M3): the on-ball defender drifts behind the rim as a driver or dunker finishes (pushed
+past by him); the off-ball men still follow version 2's hop-and-hold intentions (small loops round each hold).
+
+Gate: tests 325, build, motion:qa passed, golden unchanged, trace `--v 2` identical to the pre-motion reference on all
+9,280 frames. Perf (pre-motion tag in a worktree, then this, back to back): every scene within ±2% at High and Medium; Low
+5–7% faster (a v3 sample is cheaper than a v2 one).

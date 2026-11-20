@@ -17,6 +17,7 @@ import {
   blockHit,
   blockPlan,
   flightPath,
+  motionOf,
 } from '../basketball.js';
 import { keepApart, SPACE } from '../motion.js';
 import { finishFrame, putbackFrame } from '../finishes.js';
@@ -67,6 +68,15 @@ export const playbackMethods = {
     // after a steal the stealer already has the ball: the next play starts with him, not with a pass in to him
     // (otherwise he dribbles up the floor and then the ball goes back to the passer)
     if (this.clips[0]?.outcome === 'steal') this.clips[1] = { ...this.clips[1], afterSteal: true };
+    // motion version 3 works each play out once (basketball.js motionOf, a few milliseconds): the first now, as the
+    // possession starts, the second while the first plays, so neither lands in the middle of a frame
+    const clips = this.clips;
+    if ((clips[0]?.v ?? 1) >= 3) {
+      motionOf(clips[0]);
+      const later = () => this.clips === clips && motionOf(clips[1]);
+      if (typeof requestIdleCallback === 'function') requestIdleCallback(later, { timeout: 1500 });
+      else setTimeout(later, 200);
+    }
   },
   clear() {
     this.endFly();
@@ -301,12 +311,15 @@ export const playbackMethods = {
       kept = keepApart((this.spacing ??= {}), wanted, {
         pinned: new Set([o]),
         dt: this.motion ? this.frameDt : 0,
+        // motion version 3 keeps players apart itself and says which pairs may come closer (pose.contacts: a contest,
+        // a block, a steal's reach, a screen); this frame-by-frame push only covers the ease from the last play's spots
         gap: (i, j) =>
-          (i === o && j === mk) || (i === mk && j === o)
+          pose.contacts?.find(([a, b]) => (a === i && b === j) || (a === j && b === i))?.[2] ??
+          ((i === o && j === mk) || (i === mk && j === o)
             ? clip.outcome === 'block'
               ? SPACE.block
               : SPACE.contest
-            : SPACE.min,
+            : SPACE.min),
       });
     // a jump shooter's arms take the shot's form (basketball.js shotHands: the title jumper's), his legs their own jump
     const feet = (this.shooterFeet ??= new THREE.Vector3()).set(kept[o].x, pose.actors[o].y, kept[o].z),

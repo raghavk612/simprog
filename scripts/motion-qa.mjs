@@ -38,7 +38,13 @@ const t0 = performance.now(),
   set = [...L.clipSet(), ...(await L.engineClips(120))],
   base = fs.existsSync(BASE) ? JSON.parse(fs.readFileSync(BASE, 'utf8')) : { clips: {} },
   fails = [],
-  fail = (id, what) => fails.length < 400 && fails.push(`${id}: ${what}`),
+  allFails = [],
+  failClips = [],
+  fail = (id, what) => {
+    allFails.push(what.replace(/[-\d.]+/g, 'N'));
+    failClips.push(id);
+    if (fails.length < 400) fails.push(`${id}: ${what}`);
+  },
   rows = { v2: [], cur: [] },
   frozen = { version: CUR, clips: {} };
 let sampled = 0;
@@ -67,7 +73,9 @@ for (const { id, clip } of set) {
   if (CUR >= 3) {
     const c = { ...clip, v: CUR },
       S = L.samples(c),
-      back = L.samples(c, (cl, t) => B.sampleClip(cl, (L.FRAMES - 1) / L.FPS - t)).reverse(),
+      back = Array.from({ length: L.FRAMES }, (_, k) =>
+        B.sampleClip(c, (L.FRAMES - 1 - k) / L.FPS),
+      ).reverse(),
       m = L.metrics(c, S);
     sampled += 2 * L.FRAMES;
     if (L.hashSamples(S) !== L.hashSamples(back))
@@ -79,12 +87,19 @@ for (const { id, clip } of set) {
     if (m.overlapFrames)
       fail(id, `players overlap in ${m.overlapFrames} pair-frames (closest ${m.minSep.toFixed(2)})`);
     if (m.ballJump > CAPS.ballJump) fail(id, `ball jumps ${m.ballJump.toFixed(2)} in a frame`);
+    // the ball's own checks apply to the physical ball (M2: the pose says so with ballModel); the authored ball is version
+    // 2's, already measured above
+    const physicalBall = S.some(p => p.ballModel === 'physical');
     if (m.ballBelowFloor) fail(id, `ball below the floor in ${m.ballBelowFloor} frames`);
-    if (m.ballThroughBoard) fail(id, `ball through the backboard in ${m.ballThroughBoard} frames`);
-    if (m.handDist > CAPS.handDist) fail(id, `ball ${m.handDist.toFixed(2)} from the hand holding it`);
-    for (const e of m.bounces)
-      if (e < CAPS.restitution[0] || e > CAPS.restitution[1])
-        fail(id, `bounce keeps ${e.toFixed(2)} of its speed`);
+    if (physicalBall && m.ballThroughBoard)
+      fail(id, `ball through the backboard in ${m.ballThroughBoard} frames`);
+    // the hand check needs the pose to say who holds the ball (the ball model, M2); the old guess is not checked
+    if (S.some(p => p.holder !== undefined) && m.handDist > CAPS.handDist)
+      fail(id, `ball ${m.handDist.toFixed(2)} from the hand holding it`);
+    if (physicalBall)
+      for (const e of m.bounces)
+        if (e < CAPS.restitution[0] || e > CAPS.restitution[1])
+          fail(id, `bounce keeps ${e.toFixed(2)} of its speed`);
     for (const d of L.anchorDiff(L.anchors(c, S), a2)) fail(id, `anchor ${d}`);
     rows.cur.push({ id, clip: c, m });
   }
@@ -94,8 +109,11 @@ const secs = (performance.now() - t0) / 1000;
 /* The metrics table: the mean over clips and the worst clip, per metric. */
 const KEYS = [
   ['speed', 'max speed (m/s)'],
-  ['accel', 'acceleration p99.9 (m/s²)'],
-  ['jerk', 'jerk p99.9 (m/s³)'],
+  ['accel', 'acceleration p99.9, free running (m/s²)'],
+  ['jerk', 'jerk p99.9, free running (m/s³)'],
+  ['accelContact', 'acceleration in contact, max (m/s²)'],
+  ['jerkContact', 'jerk in contact, max (m/s³)'],
+  ['contactShare', 'share of player-frames in contact'],
   ['accelP95', 'acceleration p95 (m/s²)'],
   ['jerkP95', 'jerk p95 (m/s³)'],
   ['curvature', 'turn rate while moving (rad/s)'],
@@ -164,8 +182,13 @@ if (opt('freeze')) {
 if (!fs.existsSync(BASE))
   fail('baseline', 'docs/motion/qa-baseline.json is missing (npm run motion:qa -- --freeze)');
 if (fails.length) {
-  console.error(`\nmotion:qa FAILED (${fails.length}${fails.length >= 400 ? '+' : ''}):`);
-  for (const f of fails.slice(0, 40)) console.error('  ' + f);
+  const kinds = {};
+  for (const f of allFails) kinds[f] = (kinds[f] || 0) + 1;
+  console.error(`\nmotion:qa FAILED: ${allFails.length} problems in ${new Set(failClips).size} clips`);
+  for (const [k, n] of Object.entries(kinds).sort((a, b) => b[1] - a[1]))
+    console.error(`  ${String(n).padStart(5)} x ${k}`);
+  console.error('first ones:');
+  for (const f of fails.slice(0, +(opt('show') || 40))) console.error('  ' + f);
   process.exit(1);
 }
 console.log('\nmotion:qa passed');

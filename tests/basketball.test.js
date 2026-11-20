@@ -250,7 +250,7 @@ test('after a steal the stealer keeps the ball into the next play; an outlet pas
 });
 test('motion version 2: off-ball players hold their spots and move with purpose; unversioned plays keep the old sway', async () => {
   const { sampleClip, MOTION_VERSION, CLIP_SECONDS: S } = await import('../src/basketball.js');
-  assert.equal(MOTION_VERSION, 2);
+  assert.ok(MOTION_VERSION >= 2);
   const c = { kind: 'drive', team: 'home', lane: 1, contest: 'contested', outcome: 'made', points: 2 };
   const at = (v, k, u) => sampleClip({ ...c, v }, u * S).actors[k];
   // the slot (4) holds still before his V-cut, then jabs in and pops out

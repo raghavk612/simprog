@@ -136,15 +136,25 @@ export function anchors(clip, S) {
       ballAtEnd: pt(S[FRAMES - 1].ball),
     };
   if (clip.outcome === 'block') out.ballAtBlock = pt(at(B.blockHit(clip.kind)).ball);
+  // a steal has no shot: what it promises is the ball taken when it is, and the stealer ending with it
+  if (clip.outcome === 'steal') {
+    const end = S[FRAMES - 1],
+      d = Math.hypot(end.ball.x - end.actors[5 - off].x, end.ball.z - end.actors[5 - off].z);
+    delete out.shooterAtRelease;
+    delete out.ballAtRelease;
+    delete out.ballAtRim;
+    delete out.ballAtEnd;
+    out.stealerHasBall = d < 0.9 ? 'yes' : `no (${d.toFixed(2)} away)`;
+  }
   return out;
 }
 /* Compares anchors: phases, resolved and flying frames exactly; points within tol (game units). Returns the differences. */
 export function anchorDiff(a, b, tol = 0.05) {
   const out = [];
-  for (const k of ['phases', 'resolvedAt', 'flyingAt'])
+  for (const k of ['phases', 'resolvedAt', 'flyingAt', 'stealerHasBall'])
     if (a[k] !== b[k]) out.push(`${k}: ${a[k]} vs ${b[k]}`);
   for (const k of Object.keys(a))
-    if (Array.isArray(a[k])) {
+    if (Array.isArray(a[k]) && Array.isArray(b[k])) {
       const d = Math.hypot(...a[k].map((v, i) => v - b[k][i]));
       if (d > tol) out.push(`${k}: off by ${d.toFixed(3)}`);
     }
@@ -183,6 +193,21 @@ export function holderOf(p) {
   return { i: who, hand: [hx, b.y + 0.12, hz] };
 }
 
+/* Whether player i is in contact in frame f: within 8 cm of the closest another player may come (motion.js SPACE, or a
+   contact the pose declares). */
+function touchAt(S, clip, i, f, off, def) {
+  const a = S[f].actors[i];
+  for (let j = 0; j < 10; j++) {
+    if (j === i) continue;
+    const b = S[f].actors[j],
+      d = Math.hypot(a.x - b.x, a.z - b.z),
+      decl = S[f].contacts?.find(([p, q]) => (p === i && q === j) || (p === j && q === i)),
+      onBall = (i === off && j === def) || (i === def && j === off),
+      floor = decl ? decl[2] : onBall ? (clip.outcome === 'block' ? SPACE.block : SPACE.contest) : SPACE.min;
+    if (d < floor + 0.08) return true;
+  }
+  return false;
+}
 /* The metrics of one clip's samples. Speeds and accelerations in metres and seconds. */
 export function metrics(clip, S) {
   const dt = 1 / FPS,
@@ -211,7 +236,9 @@ export function metrics(clip, S) {
       bounces: [],
     };
   const accs = [],
-    jerks = [];
+    jerks = [],
+    accsContact = [],
+    jerksContact = [];
   for (let i = 0; i < 10; i++) {
     const P = S.map(p => p.actors[i]);
     for (const a of P) if (![a.x, a.y, a.z, a.yaw].every(Number.isFinite)) out.nan++;
@@ -244,12 +271,15 @@ export function metrics(clip, S) {
     for (let f = 1; f < vx.length; f++) {
       const ax = (vx[f] - vx[f - 1]) / dt,
         az = (vz[f] - vz[f - 1]) / dt,
-        a = Math.hypot(ax, az) * M;
-      accs.push(a);
+        a = Math.hypot(ax, az) * M,
+        // in contact around this frame: within 8 cm of the closest another player may come (a bump is not his own
+        // running: its acceleration is reported apart, as contact)
+        touching = [f - 1, f, f + 1].some(g => g >= 0 && g < FRAMES && touchAt(S, clip, i, g, off, def));
+      (touching ? accsContact : accs).push(a);
       if (f > 1) {
         const ax0 = (vx[f - 1] - vx[f - 2]) / dt,
           az0 = (vz[f - 1] - vz[f - 2]) / dt;
-        jerks.push(Math.hypot(ax - ax0, az - az0) * (M / dt));
+        (touching ? jerksContact : jerks).push(Math.hypot(ax - ax0, az - az0) * (M / dt));
       }
     }
     pl.push(P);
@@ -260,6 +290,9 @@ export function metrics(clip, S) {
   };
   out.accel = pct(accs, 0.999);
   out.jerk = pct(jerks, 0.999);
+  out.accelContact = accsContact.length ? Math.max(...accsContact) : 0;
+  out.jerkContact = jerksContact.length ? Math.max(...jerksContact) : 0;
+  out.contactShare = accsContact.length / (accs.length + accsContact.length || 1);
   out.accelP95 = pct(accs, 0.95);
   out.jerkP95 = pct(jerks, 0.95);
   // separation: every pair, every frame; the on-ball pair (shooter and his defender) may come to SPACE.contest
@@ -267,10 +300,10 @@ export function metrics(clip, S) {
     for (let i = 0; i < 10; i++)
       for (let j = i + 1; j < 10; j++) {
         const d = Math.hypot(pl[i][f].x - pl[j][f].x, pl[i][f].z - pl[j][f].z),
-          contact = S[f].contacts?.some(([a, b]) => (a === i && b === j) || (a === j && b === i)),
+          contact = S[f].contacts?.find(([a, b]) => (a === i && b === j) || (a === j && b === i)),
           onBall = (i === off && j === def) || (i === def && j === off),
           floor = contact
-            ? 0.45
+            ? contact[2]
             : onBall
               ? clip.outcome === 'block'
                 ? SPACE.block
