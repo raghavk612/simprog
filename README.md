@@ -76,6 +76,16 @@ The engine decides, the gym shows: `src/engine.js` records each play (who shoots
 deterministic, so a replay looks the same every time; each play carries a motion version (`v`), and a play recorded before
 a change to the movement still replays exactly as it did.
 
+- Motion version 3 (the current one) moves bodies physically. Each play is worked out once, at 60 Hz, when it starts
+  (about 5 ms; the next play in idle time): `src/choreo.js` is the team around the ball (spacing, V-cuts, backdoor cuts,
+  curls, ball screens set and held, ball-you-man defense with help and rotation, box-outs, fast-break lanes);
+  `src/playsim.js` turns those intentions into bodies with a top speed, acceleration, braking, grip and jerk, a reaction
+  lag for defenders, predictive avoidance and contact, and never an overlap; `src/ballsim.js` is the real ball (a dribble
+  that bounces at the speed of the run and changes hands away from the defender, passes, the rim, blocks, steals, who holds
+  it and where the hand is). The play's promises stay exact: the release, the flight to the rim, the rebound spot, who ends
+  with the ball. `npm run motion:qa` checks a thousand seeded plays against human limits and those promises, and
+  `npm run motion:render` draws their paths, frame strips and ball plots ([docs/motion/](docs/motion/),
+  [docs/motion-log.md](docs/motion-log.md)).
 - `src/arena.js` is the gym (setup, graphics level, the frame loop); `src/arena/` holds the rest by concern: building the
   gym, the cast of bodies and identities, playback, posing, the ball, the idle and title gym, cameras.
 - Movement is procedural: `src/motion.js` (gait fitted to each leg, arm IK, defensive stance, jumps), `src/finishes.js`

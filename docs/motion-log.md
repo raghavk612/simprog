@@ -319,3 +319,48 @@ Gate: tests 335, build, motion:qa passed (`docs/motion/qa-m4.json`), golden unch
 `docs/perf/premotion-m4.json`, `m4.json`): retina every scene 0 to -6%, laptop High within +1%; laptop Medium title +4%
 and Low +7 to +20% in that run, including the title (which none of this touches) while retina got faster: re-measured
 laptop Medium and Low back to back 4 times (`premotion-m4l.json`, `m4l.json`): Low 0% on every scene, Medium 0 to +2%.
+
+## M5: verify and document
+
+After set: `docs/motion/after/` (36 images: paths, frame strip and ball plot for the eight families plus a miss, a block,
+a steal and the away team's catch), beside the before set in `docs/motion/before/` (version 2, M0). Viewed against the
+checklist: paths curve and change speed through visible starts, cruises and stops (the dots bunch at plants and holds);
+cuts plant (the V-cut's hairpin); the arc and both corners are held, the weak side drifts and the strong corner lifts as
+drives come; the ball screen is a still screener the handler comes off, his man caught on it; defenders sit ball-you-man,
+help and rotate a beat late and box out on the shot; the ball dribbles at the run's beat with the hand meeting it, is held
+by the passer until it is thrown, flies on true arcs, rattles or swishes, and comes down into the rebounder's hands on the
+rebound spot. Weak (ranked in the final report): walking-pace loops of off-ball defenders, block scrambles that still go
+under the board, the ball plots' 4.2-unit ceiling flattening the shot's apex in the picture.
+
+Before/after (`npm run motion:qa`, 1,032 plays; `docs/motion/qa-after.json`; version 2 is the shipped movement and is
+bit-identical before and after, so its column is the before):
+
+| metric | before (v2) mean | before worst | after (v3) mean | after worst |
+|---|---|---|---|---|
+| top speed (m/s) | 9.22 | 13.5 | 5.38 | 8.03 |
+| acceleration p99.9, free running (m/s²) | 103 | 339 | 10.7 | 11.0 |
+| jerk p99.9, free running (m/s³) | 6607 | 20272 | 109 | 151 |
+| acceleration in contact, max (m/s²) | 131 | 341 | 5.66 | 37.6 |
+| acceleration p95 (m/s²) | 17.3 | 22.5 | 8.48 | 10.3 |
+| jerk p95 (m/s³) | 288 | 616 | 58.9 | 79.3 |
+| sharp corners at speed (share of moving frames) | 0.01 | 0.04 | 0.00 | 0.00 |
+| closest two players (units) | 0.13 | 0.01 | 0.89 | 0.49 |
+| overlapping pair-frames per play | 247 | 511 | 0.00 | 0.00 |
+| largest ball move in a frame (units) | 0.17 | 0.27 | 0.19 | 0.34 |
+| ball to hand while held, max (units) | 0.86 | 1.24 | 0.18 | 0.20 |
+| ball to hand while held, mean (units) | 0.41 | 0.70 | 0.09 | 0.20 |
+| ball through the backboard (frames per play) | 0.13 | 4.00 | 0.00 | 0.00 |
+| floor bounce restitution | 0.80 | 0.08 | 0.84 | 0.80 |
+
+The version 2 column is `sampleClip` itself; on screen the gym also pushed version 2's players apart frame by frame
+(`keepApart`), which removed most of its overlaps at the price of the jerks; version 3 needs no push (its positions are
+apart already).
+
+Perf, final (the finished code against the pre-motion tag in a worktree, back to back, 3 repeats;
+`docs/perf/premotion-after.json`, `after.json`): no scene slower; median frame time 0 to -6% on every scene (laptop Low
+replay -13%), draw calls within 8 of before (live +4 to +8, replay -2 to -3; not investigated), triangles unchanged.
+Precompute per play: median 4.8 ms, p95 6.4 ms, worst 26 ms (the first play, cold code); the gym works out a
+possession's first play when it starts and the second in idle time.
+
+Gate: tests 335, build, motion:qa passed on 1,032 plays, golden unchanged, trace `--v 2` identical to the pre-motion
+reference on all 9,280 frames. No phase gate failed three times; nothing was added to docs/OPEN-QUESTIONS.md.
