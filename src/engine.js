@@ -656,6 +656,7 @@ export function startMatch(s) {
   open(s);
   if (s.pendingEvent) throw Error('Answer the coach’s inbox first.');
   validateLineup(s);
+  endBreak(s);
   const nm = s.nextMods;
   if (s.press) s.press.done = true;
   if (nm) {
@@ -1825,7 +1826,9 @@ export function parseSeasonCode(text) {
   return { difficulty: Object.keys(CODE_LEVEL).find(k => CODE_LEVEL[k] === m[1]), seed };
 }
 /* ---- "What should I do now?": one prioritised suggestion. id picks the sentence, view or action says where the button goes. Order: season over, game in progress, unanswered inbox or press questions, ineligible players in the rotation, preparation slots (practice first while all are free, scout while some are left, practice again once scouted), a lineup that is not legal, then tip-off. ---- */
-/* The season's three breaks, the only times the program can sign players, hire staff or buy upgrades. When game 1 is the tutorial, preseason waits until that game is played. */
+/* The season's three breaks: the game stops at each to walk the coach through the Shop (tryouts, staff, skill tree, gear,
+   jerseys), which is open at any time. When game 1 is the tutorial, preseason waits until that game is played. A break
+   still open at tip-off ends there, so one skipped from Game day never comes back. */
 export const BREAK_IDS = ['pre', 'mid', 'playoff'];
 export function breakWeeks(s) {
   const cut = seasonPlan(s).cut;

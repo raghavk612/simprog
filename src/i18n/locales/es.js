@@ -120,7 +120,13 @@ export default {
     skills: 'Árbol de habilidades',
     bracket: 'Cuadro',
     standings: 'Clasificación',
-    groups: { week: 'Esta semana', team: 'Equipo', program: 'Programa', season: 'Temporada' },
+    groups: {
+      week: 'Esta semana',
+      team: 'Equipo',
+      program: 'Programa',
+      season: 'Temporada',
+      shop: 'Tienda',
+    },
   },
   top: {
     brand: 'El camino al campeonato',
@@ -523,7 +529,7 @@ export default {
     locked: 'Bloqueada',
     kitLabelLocked: '{{kit}}, bloqueada. {{how}}',
     unlockedTitle: 'Nueva camiseta desbloqueada',
-    unlockedMsg: 'Ya puedes lucir la camiseta {{kit}}. Elígela en el próximo parón.',
+    unlockedMsg: 'Ya puedes lucir la camiseta {{kit}}. Elígela en Camisetas, dentro de la Tienda.',
     showcase:
       'Seis camisetas expuestas: local, visitante y medianoche arriba; retro, noche de despedida y blackout abajo, bloqueadas hasta ganarlas. Usa las flechas izquierda y derecha para cambiar el jugador cuyo nombre aparece en ellas.',
     jerseyPlayer: 'Nombre y número en las camisetas',
@@ -694,7 +700,6 @@ export default {
       post: 'Pospartido',
       end: 'Informe de la temporada',
     },
-    track: { prepare: 'Preparar', play: 'Jugar', post: 'Pospartido' },
     done: { pre: 'Empezar la temporada', mid: 'Volver a la temporada', playoff: 'A los playoffs' },
     run: 'Empezar la semana',
     toGame: 'Ir al partido',
@@ -736,6 +741,7 @@ export default {
       skills:
         'Los movimientos nuevos añaden jugadas que tu equipo usa en los partidos. Elige uno para ver qué hace.',
       kit: 'Última parada: elige tus camisetas. Empieza la temporada cuando quieras.',
+      gear: 'El equipamiento da a un jugador un extra de habilidad, energía o moral. Compra una pieza y elige quién la lleva.',
     },
   },
   timeout: {
@@ -1237,6 +1243,7 @@ export default {
       dismiss: 'Asistente despedido',
       saved: 'Guardado',
       upgrade: 'Mejora comprada',
+      gear: 'Equipamiento comprado',
     },
   },
   team: { varsity: 'Varsity', jv: 'Junior Varsity', c: 'Equipo C' },
@@ -1548,7 +1555,7 @@ export default {
       assistant: 'entrenador asistente',
       note: 'Las sesiones de entrenamiento se desbloquean ganando un ejercicio de habilidad (triples, tiros libres, tiempo o un quiz de reglas), nunca se compran. Entrenar mejora la habilidad pero gasta energía. Los jugadores liberados no dan reembolso.',
       costs:
-        'Los partidos también cuestan: {{upkeep}} por el asistente y {{travel}} por cada viaje. Pruebas, cuerpo técnico y mejoras se abren en los tres parones.',
+        'Los partidos también cuestan: {{upkeep}} por el asistente y {{travel}} por cada viaje. Pruebas, cuerpo técnico, mejoras, equipamiento y movimientos nuevos están en la Tienda en todo momento; los tres parones te guían por ella.',
     },
     gd: {
       lead: 'Dirige cada posesión o déjala jugarse en directo.',

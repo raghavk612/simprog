@@ -24,7 +24,8 @@ write templates over as many lines as you like. Put text from the save or the da
 | `store.js`           | `state`, `data`, `view` and their setters, `save()`, the live-game `ui` flags |
 | `page.js`            | `#app`, `#modal`, the 3D `arena`                                              |
 | `markup.js`          | `html`, `esc`, `btn`, `header`, icons, small text helpers                     |
-| `shell.js`           | routes (`NAV`, `PAGES`), top bar, `render()`, `go()`, camera buttons          |
+| `nav.js`             | routes (`NAV`) and their tabs, what a Shop page shows during a break          |
+| `shell.js`           | `PAGES`, top bar, `render()`, `go()`, camera buttons                          |
 | `actions.js`         | what every `data-action` button and form field does                           |
 | `keyboard.js`        | shortcut keys                                                                 |
 | `screens/home.js`    | Home: the next step and the week's timeline                                   |
@@ -34,8 +35,8 @@ write templates over as many lines as you like. Put text from the save or the da
 | `screens/results.js` | the result dialog after a game                                                |
 | `postgame.js`        | press room and coach's inbox                                                  |
 | `screens/roster.js`  | Team: lineup, full stats, player profile                                      |
-| `screens/breaks.js`  | break screens: Tryouts, Staff, Skill tree                                     |
-| `screens/locker.js`  | break screen: Locker room, 3D jerseys, captain                                |
+| `screens/breaks.js`  | Shop: Tryouts, Staff, Skill tree, Gear                                        |
+| `screens/locker.js`  | Shop: Locker room, 3D jerseys, captain                                        |
 | `screens/season.js`  | Season tab: journal, bracket, standings, data, report card                    |
 | `screens/landing.js` | title screen, starting and continuing a season                                |
 | `tutorial.js`        | the guided first game (`BEATS`)                                               |
@@ -48,7 +49,7 @@ write templates over as many lines as you like. Put text from the save or the da
 
 ## Adding things
 
-- **A page:** write `myPage()` in `screens/`, add it to `PAGES` and to a group in `NAV` (`shell.js`), and add
+- **A page:** write `myPage()` in `screens/`, add it to `PAGES` (`shell.js`) and to a group in `NAV` (`nav.js`), and add
   `nav.<route>` to every locale. The tutorial and the judge demo open pages by route name, so check
   `BEATS` and `DEMO_VIEWS` when renaming one. `tests/nav.test.js` checks all of this.
 - **A button:** `btn(t('my.label'), 'my-action', 'primary')`, then add `'my-action'` to `ACTIONS` (or to

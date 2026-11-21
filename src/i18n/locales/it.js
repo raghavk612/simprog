@@ -119,7 +119,13 @@ export default {
     skills: 'Albero abilità',
     bracket: 'Tabellone',
     standings: 'Classifica',
-    groups: { week: 'Questa settimana', team: 'Squadra', program: 'Programma', season: 'Stagione' },
+    groups: {
+      week: 'Questa settimana',
+      team: 'Squadra',
+      program: 'Programma',
+      season: 'Stagione',
+      shop: 'Negozio',
+    },
   },
   top: {
     brand: 'La strada verso il campionato',
@@ -520,7 +526,7 @@ export default {
     locked: 'Bloccata',
     kitLabelLocked: '{{kit}}, bloccata. {{how}}',
     unlockedTitle: 'Nuova maglia sbloccata',
-    unlockedMsg: 'La maglia {{kit}} è tua. Sceglila alla prossima pausa.',
+    unlockedMsg: 'La maglia {{kit}} è tua. Sceglila in Divise, nel Negozio.',
     showcase:
       'Sei maglie esposte: casa, trasferta e mezzanotte in alto; vintage, serata dei senior e blackout in basso, bloccate finché non le guadagni. Usa le frecce sinistra e destra per cambiare il giocatore il cui nome compare sulle maglie.',
     jerseyPlayer: 'Nome e numero sulle maglie',
@@ -691,7 +697,6 @@ export default {
       post: 'Dopopartita',
       end: 'Report della stagione',
     },
-    track: { prepare: 'Prepara', play: 'Gioca', post: 'Dopopartita' },
     done: { pre: 'Inizia la stagione', mid: 'Torna alla stagione', playoff: 'Verso i playoff' },
     run: 'Avvia la settimana',
     toGame: 'Vai alla partita',
@@ -734,6 +739,7 @@ export default {
       skills:
         'Le nuove mosse aggiungono giocate che la tua squadra usa in partita. Scegline una per vedere cosa fa.',
       kit: 'Ultima tappa: scegli le divise. Inizia la stagione quando sei pronto.',
+      gear: 'L’equipaggiamento dà a un giocatore un bonus di abilità, energia o morale. Compra un pezzo, poi scegli chi lo indossa.',
     },
   },
   timeout: {
@@ -1244,6 +1250,7 @@ export default {
       dismiss: 'Assistente licenziato',
       saved: 'Salvato',
       upgrade: 'Potenziamento acquistato',
+      gear: 'Equipaggiamento acquistato',
     },
   },
   team: { varsity: 'Varsity', jv: 'Junior Varsity', c: 'Squadra C' },
@@ -1558,7 +1565,7 @@ export default {
       assistant: 'allenatore in seconda',
       note: 'Le sessioni di allenamento si sbloccano vincendo un esercizio di abilità (tiri da tre, tiri liberi, tempismo o quiz sulle regole), mai comprandole. L’allenamento aumenta l’abilità ma costa energia. I giocatori svincolati non danno rimborso.',
       costs:
-        'Anche le partite costano: {{upkeep}} per il vice e {{travel}} per ogni trasferta. Provini, staff e potenziamenti si aprono nelle tre pause.',
+        'Anche le partite costano: {{upkeep}} per il vice e {{travel}} per ogni trasferta. Provini, staff, potenziamenti, equipaggiamento e nuove mosse sono nel Negozio in ogni momento; le tre pause ti ci accompagnano.',
     },
     gd: {
       lead: 'Chiama ogni possesso oppure lascialo giocare in diretta.',

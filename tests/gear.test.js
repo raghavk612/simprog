@@ -100,3 +100,10 @@ test('strength colors have explicit stable boundaries', () => {
   assert.equal(strengthLevel(79.9), 'medium');
   assert.equal(strengthLevel(80), 'high');
 });
+test('the gear page: Buy and Equip are card actions (secondary), so the page keeps one primary button', async () => {
+  const { gearBody } = await import('../src/gearView.js'),
+    html = gearBody(game(), 0);
+  assert.match(html, /data-action="gear-buy"/);
+  for (const m of html.matchAll(/<button class="([^"]*)" data-action="gear-(?:buy|equip)"/g))
+    assert.match(m[1], /^secondary\b/, m[1]);
+});

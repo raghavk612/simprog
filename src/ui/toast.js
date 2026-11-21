@@ -98,6 +98,7 @@ export function actionToast(a, was) {
     release: ['release', 'warn', 'staff'],
     dismiss: ['dismiss', 'warn', 'staff'],
     upgrade: ['upgrade', 'success', 'staff'],
+    'gear-buy': ['gear', 'success', 'staff'],
   };
   const [key, type, icon] = map[a] || ['saved', 'success'];
   notify(msg, { title: t(`toast.titles.${key}`), type, icon, chips });

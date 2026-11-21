@@ -45,7 +45,7 @@ import {
 import { toggleTitlePause, toggleStartForm, enterSeason, titlePreview } from './screens/landing.js';
 import { profile, cycleRoster, toggleFullRoster, selectPlayer } from './screens/roster.js';
 import { togglePlan, startPractice, nextDrill } from './screens/prep.js';
-import { unlockSkill, pickSkill } from './screens/breaks.js';
+import { unlockSkill, pickSkill, setGearPlayer, setGearFilter } from './screens/breaks.js';
 import {
   wearKit,
   stepJerseyPlayer,
@@ -132,9 +132,10 @@ const ACTIONS = {
   },
   'practice-next': click(() => nextDrill()),
 
-  // Breaks: skill tree and locker room
+  // Shop: skill tree, gear and locker room
   'skill-select': el => pickSkill(el.dataset.key),
   'skill-unlock': el => unlockSkill(el.dataset.key),
+  'gear-filter': select(el => setGearFilter(el.dataset.filter)),
   kit: el => wearKit(el.dataset.kit),
   'kit-locked': el => wearKit(el.dataset.kit),
   'jersey-step': el => stepJerseyPlayer(+el.dataset.step),
@@ -188,6 +189,15 @@ const SEASON_ACTIONS = {
   upgrade: el => {
     E.buyUpgrade(state, el.dataset.key);
   },
+  'gear-buy': el => {
+    E.buyGear(state, el.dataset.key);
+  },
+  'gear-equip': el => {
+    E.equipGear(state, +el.dataset.id, el.dataset.key);
+  },
+  'gear-remove': el => {
+    E.unequipGear(state, +el.dataset.id, el.dataset.slot);
+  },
   dismiss: () => {
     if (state.match) throw Error('Finish the current game first.');
     state.assistant = null;
@@ -216,6 +226,9 @@ const CUES = {
   recruit: 'signing',
   hire: 'signing',
   upgrade: 'signing',
+  'gear-buy': 'signing',
+  'gear-equip': 'select',
+  'gear-remove': 'select',
   'auto-lineup': 'confirm',
   huddle: 'timeout',
   'start-match': 'whistle',
@@ -223,7 +236,7 @@ const CUES = {
   dismiss: 'select',
 };
 // Season actions that also show a notification with what changed.
-const TOASTS = ['recruit', 'hire', 'upgrade', 'release', 'dismiss'];
+const TOASTS = ['recruit', 'hire', 'upgrade', 'gear-buy', 'release', 'dismiss'];
 
 export async function onAction(e) {
   const el = e.target.closest('button[data-action],a[data-action],button[data-view]');
@@ -253,7 +266,7 @@ export async function onAction(e) {
   }
 }
 
-// Fields: the title screen's difficulty, the locker's "whose jersey", starters, and the live game's system and tempo.
+// Fields: the title screen's difficulty, the locker's "whose jersey", whose gear, starters, and the live game's system and tempo.
 export function onChange(e) {
   const el = e.target;
   if (el.id === 'difficulty' && view === 'landing') {
@@ -262,6 +275,11 @@ export function onChange(e) {
   }
   if (el.id === 'jersey-player' && state) {
     setJerseyPlayer(+el.value);
+    return;
+  }
+  if (el.id === 'gear-player' && state) {
+    play('select');
+    setGearPlayer(+el.value);
     return;
   }
   try {
