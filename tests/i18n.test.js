@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import en from '../src/i18n/locales/en.js';
 import { GRAPHICS_LEVELS } from '../src/graphics.js';
+import { NAV } from '../src/ui/nav.js';
 import { THREE_SPOTS, FT_SPOT } from '../src/shotphysics.js';
 import {
   LANGUAGES,
@@ -147,7 +148,7 @@ test('every key built at run time resolves to a string for each value it can tak
     need.push(`flow.now.${v}`);
   for (const v of ['pre', 'mid', 'playoff', 'prepare', 'play', 'post', 'end']) need.push(`flow.step.${v}`);
   for (const v of ['pre', 'mid', 'playoff']) need.push(`flow.btn.${v}`, `flow.done.${v}`);
-  for (const v of ['prepare', 'play', 'post']) need.push(`flow.track.${v}`);
+  for (const g of Object.keys(NAV)) need.push(`nav.groups.${g}`); // the top tabs and the tab rows' names
   for (const v of ['made', 'miss', 'block', 'steal']) need.push(`outcome.${v}`);
   for (const v of ['skill', 'energy', 'morale', 'chemistry', 'shotType', 'space', 'tactics', 'repertoire'])
     need.push(`impact.${v}`);
@@ -212,7 +213,7 @@ test('every key built at run time resolves to a string for each value it can tak
   for (const v of ['finished', 'live', 'inbox', 'press', 'issues', 'practice', 'scout', 'lineup', 'tipoff'])
     need.push(`nudge.btn.${v}`); // the button on Home's next step
   for (const v of ['upgrade', 'budget']) need.push(`log.${v}`);
-  need.push('toast.titles.upgrade');
+  need.push('toast.titles.upgrade', 'toast.titles.gear');
   for (const v of ['shooting', 'bond', 'defense', 'recovery', 'study'])
     need.push(`drill.${v}.name`, `drill.${v}.how`);
   for (const v of ['fresh', 'rested', 'tired', 'exhausted']) need.push(`rv.energy.${v}`);

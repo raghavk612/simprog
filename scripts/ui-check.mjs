@@ -29,12 +29,13 @@ const VIEWS = [
   'recruit',
   'staff',
   'skills',
+  'gear',
   'locker',
 ];
 const VIEWPORTS = { desktop: [1440, 900], phone: [390, 844] };
 const MIN_CONTRAST = 4.5; // WCAG AA for normal text; large text needs 3 (see required() in lowContrast)
 
-// Saves to open: preseason (break pages open), and one game into the season.
+// Saves to open: preseason (a break is open), and one game into the season.
 function fixtures() {
   const data = JSON.parse(fs.readFileSync(`${root}public/data/kangs.json`, 'utf8'));
   const pre = E.createGame(data, 'Taylor', 'standard', 7);
@@ -139,7 +140,7 @@ for (const [device, [w, h]] of Object.entries(VIEWPORTS))
       await page.waitForSelector('[data-action="continue"]');
       await page.click('[data-action="continue"]');
       for (const v of VIEWS) {
-        // Open the page the way a data-view button would (break pages fall back to Home outside a break).
+        // Open the page the way a data-view button would.
         await page.evaluate(v => {
           const b = document.createElement('button');
           b.dataset.view = v;

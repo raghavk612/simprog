@@ -122,11 +122,12 @@ const MOUSE = {
     '<rect x="7" y="3" width="10" height="16" rx="5"/><path d="M12 6.5v3"/><path d="M10 13.5l2 2 2-2"/>',
   tap: '<path d="M9 11V5.5a1.5 1.5 0 013 0V10l4.6 1a2 2 0 011.6 2.3L17.5 18a3 3 0 01-3 2.5H11a3 3 0 01-2.4-1.2L5.3 15a1.4 1.4 0 012.1-1.9L9 14.5"/>',
 };
-// The top bar's tabs, in order. Each opens the first page of its group in NAV (shell.js).
+// The top bar's tabs, in order. Each opens the first page of its group in NAV (nav.js).
 export const TAB_ICONS = {
   week: '<path d="M4 11l8-6.5 8 6.5"/><path d="M6 9.8V19h12V9.8M10 19v-5h4v5"/>',
   team: '<circle cx="9" cy="8" r="3"/><path d="M3.5 19c.6-3.3 2.7-5 5.5-5s4.9 1.7 5.5 5"/><circle cx="17" cy="9" r="2.4"/><path d="M15.8 14.2c2.4.1 4 1.6 4.7 4.8"/>',
   season: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M8 14h3M8 17h6"/>',
+  shop: '<path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 10V6.5a3 3 0 016 0V10"/>',
 };
 // Prep's practice plans, in the order of E.plans.
 export const PLAN_ICONS = [

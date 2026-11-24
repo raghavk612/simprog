@@ -110,7 +110,13 @@ export default {
     skills: '技能树',
     bracket: '对阵表',
     standings: '排名',
-    groups: { week: '本周', team: '球队', program: '项目', season: '赛季' },
+    groups: {
+      week: '本周',
+      team: '球队',
+      program: '项目',
+      season: '赛季',
+      shop: '商店',
+    },
   },
   top: {
     brand: '通往冠军之路',
@@ -472,7 +478,7 @@ export default {
     locked: '未解锁',
     kitLabelLocked: '{{kit}}，未解锁。{{how}}',
     unlockedTitle: '解锁新球衣',
-    unlockedMsg: '{{kit}}球衣已可穿着。请在下次休整时选择。',
+    unlockedMsg: '{{kit}}球衣已可穿着。请在商店的球衣页面选择。',
     showcase:
       '展示六件球衣：上排为主场、客场和午夜款；下排为复古款、毕业生之夜和全黑款，获得前处于锁定状态。按左右方向键可更换球衣上的球员。',
     jerseyPlayer: '球衣上的姓名和号码',
@@ -631,7 +637,6 @@ export default {
       post: '赛后',
       end: '赛季报告',
     },
-    track: { prepare: '准备', play: '比赛', post: '赛后' },
     done: { pre: '开始赛季', mid: '回到赛季', playoff: '进军季后赛' },
     run: '开始本周',
     toGame: '前往比赛',
@@ -671,6 +676,7 @@ export default {
       staff: '一次只能有一名助理，他每周都会帮忙。下面的升级只需购买一次。',
       skills: '新动作会增加球队在比赛中的战术。选一个看看它的作用。',
       kit: '最后一站：选好球衣。准备好了就开始赛季。',
+      gear: '装备能提升一名球员的技能、体能或士气。买一件，然后选择由谁穿戴。',
     },
   },
   timeout: {
@@ -1109,6 +1115,7 @@ export default {
       dismiss: '助理教练已被解雇',
       saved: '已保存',
       upgrade: '升级已购买',
+      gear: '装备已购买',
     },
   },
   team: { varsity: 'Varsity', jv: 'Junior Varsity', c: 'C 队' },
@@ -1385,7 +1392,8 @@ export default {
       cap: '名单上限',
       assistant: '助理教练',
       note: '训练要靠赢得技能小游戏来解锁（三分、罚球、时机或规则问答），不能用钱买。训练能提升技术，但会消耗体能。解约球员不会退还代币。',
-      costs: '比赛也要花代币：助理维护费{{upkeep}}，每次客场{{travel}}。试训、教练组和升级在三次休整时开放。',
+      costs:
+        '比赛也要花代币：助理维护费{{upkeep}}，每次客场{{travel}}。试训、教练组、升级、装备和新动作随时都在商店里；三次休整会带你逐一浏览。',
     },
     gd: {
       lead: '你可以逐个回合指挥，也可以让比赛自动进行。',

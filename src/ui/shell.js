@@ -17,24 +17,18 @@ import { arena, app, host, $, modal } from './page.js';
 import { html, esc, pill, micon, btn, hint, cap1, logoPair, svg, TAB_ICONS } from './markup.js';
 import { state, view, setView, ui } from './store.js';
 import { landing, titlePreview, syncTitlePause } from './screens/landing.js';
-import { home } from './screens/home.js';
+import { home, nextStepButton } from './screens/home.js';
 import { roster } from './screens/roster.js';
 import { practice } from './screens/prep.js';
-import { recruit, staffView, skillsView } from './screens/breaks.js';
+import { recruit, staffView, skillsView, gear } from './screens/breaks.js';
+import { NAV, navGroup, subTabs, breakFoot, subnavGo } from './nav.js';
 import { game } from './screens/game.js';
 import { journal, bracketView, standingsView, dataView } from './screens/season.js';
 import { demo, renderDemoGuide, leaveDemo } from './demo.js';
 import { syncPresentation } from './playback.js';
 import { notify } from './toast.js';
 
-// Route names, grouped by top-bar tab. What can be opened at any time is the top row. Prep and Game day are reached through the next step, and the break screens exist only during a break. Every screen is still its own route, so the tutorial and the judge demo can jump straight to one.
-const NAV = {
-  week: ['home', 'practice', 'game'],
-  team: ['roster'],
-  season: ['season', 'bracket', 'standings', 'data'],
-  break: ['recruit', 'staff', 'skills', 'locker'],
-};
-// The page each route draws.
+// The page each route draws (the routes and their tabs are in nav.js).
 const PAGES = {
   home,
   roster,
@@ -42,6 +36,7 @@ const PAGES = {
   recruit,
   staff: staffView,
   skills: skillsView,
+  gear,
   game,
   locker,
   season: journal,
@@ -49,7 +44,6 @@ const PAGES = {
   standings: standingsView,
   data: dataView,
 };
-const navGroup = v => Object.keys(NAV).find(g => NAV[g].includes(v)) || 'week';
 // Settings that the 3D gym and the jerseys follow.
 export function applyArena() {
   const a = getA11y();
@@ -104,56 +98,42 @@ function statusStrip() {
       ${item(cap1(t('toast.slots')), state.actions)}
     </div>`;
 }
-// The row under the top bar, with the status strip on every page. Prep and Game day show where the week has got to;
-// a break and the Season tab have their own tabs; Home and Team have only the strip.
-function subnav(group) {
-  const pause = group === 'break' ? E.breakDue(state) : null,
-    tabs =
-      group === 'break' || group === 'season'
-        ? html`
-          <nav aria-label="${esc(pause ? t(`flow.step.${pause}`) : t(`nav.groups.${group}`))}">
-            ${pause ? `<b class="break-name">${t(`flow.step.${pause}`)}</b>` : ''}
-            ${NAV[group].map(v => `<button data-view="${v}" class="sub-item ${view === v ? 'active' : ''}" ${view === v ? 'aria-current="page"' : ''}>${t(`nav.${v}`)}</button>`).join('')}
-          </nav>`
-        : group === 'week' && view !== 'home'
-          ? weekTrack()
-          : '<span></span>';
+// The row under the top bar: the open group's tabs (during a break, under the break's name), the status strip, and on a
+// Shop page the way forward (ending the break, or the week's next step), since those pages have no primary button.
+function subnav() {
+  const go = subnavGo(state, view),
+    pause = go === 'break' ? E.breakDue(state) : null,
+    tabs = subTabs(view),
+    label = pause ? t(`flow.step.${pause}`) : t(`nav.groups.${navGroup(view)}`);
   return html`
     <div class="subnav">
-      ${tabs}
+      ${
+        tabs.length
+          ? html`
+            <nav aria-label="${esc(label)}">
+              ${pause ? `<b class="break-name">${t(`flow.step.${pause}`)}</b>` : ''}
+              ${tabs.map(v => `<button data-view="${v}" class="sub-item ${view === v ? 'active' : ''}" ${view === v ? 'aria-current="page"' : ''}>${t(`nav.${v}`)}</button>`).join('')}
+            </nav>`
+          : '<span></span>'
+      }
       <div class="subnav-end">
         ${statusStrip()}
-        ${pause ? btn(t(`flow.done.${pause}`), 'break-done', 'primary small') : ''}
+        ${go === 'break' ? btn(t(`flow.done.${pause}`), 'break-done', 'primary small') : go === 'next' ? nextStepButton('primary small').html : ''}
       </div>
     </div>`;
 }
-// The foot of every break page: the break is optional, so it says so, and offers the next tab, or leaving the break on the last one.
-function breakNext() {
-  const pause = E.breakDue(state),
-    next = NAV.break[NAV.break.indexOf(view) + 1];
+// The foot of a Shop page during a break: the break is optional, so it says so, and offers the next tab, or leaving the
+// break on the last one.
+function breakNext(foot) {
   return html`
     <div class="break-next">
       <p>${t('flow.breakHint')}</p>
       ${
-        next
-          ? `<button class="secondary" data-view="${next}">${t('flow.breakNext', { tab: t(`nav.${next}`) })} <span aria-hidden="true">→</span></button>`
-          : btn(t(`flow.done.${pause}`), 'break-done', 'primary')
+        foot.next
+          ? `<button class="secondary" data-view="${foot.next}">${t('flow.breakNext', { tab: t(`nav.${foot.next}`) })} <span aria-hidden="true">→</span></button>`
+          : btn(t(`flow.done.${foot.pause}`), 'break-done', 'primary')
       }
     </div>`;
-}
-function weekTrack() {
-  const at = view === 'game' ? 1 : 0;
-  return html`
-    <ol class="week-track" aria-label="${esc(t('nav.groups.week'))}">
-      ${['prepare', 'play', 'post']
-        .map(
-          (k, i) => html`
-            <li class="${i < at ? 'past' : i === at ? 'now' : ''}" ${i === at ? 'aria-current="step"' : ''}>
-              ${t(`flow.track.${k}`)}
-            </li>`,
-        )
-        .join('')}
-    </ol>`;
 }
 // Focus and scroll survive a re-render, so keyboard users are not thrown back to the top after every action.
 // The focused element is found again by these attributes.
@@ -199,9 +179,8 @@ function detailsKeys() {
     return { d, key: `${k}#${seen[k]}` };
   });
 }
-// Draws the current page. Break screens exist only during a break; otherwise they fall back to Home.
+// Draws the current page.
 export function render() {
-  if (state && NAV.break.includes(view) && !E.breakDue(state)) setView('home');
   disposeProspectJerseys();
   const keep =
     renderedView === view
@@ -225,8 +204,8 @@ export function render() {
   if (view === 'landing') {
     app.innerHTML = landing();
   } else {
-    const group = navGroup(view),
-      top = group === 'break' ? 'week' : group;
+    const top = navGroup(view),
+      foot = breakFoot(state, view);
     app.innerHTML = html`
       <div class="shell">
         <div class="workspace">
@@ -245,10 +224,10 @@ export function render() {
               ${btn(t('top.help'), 'rules', '', hint('rules'))}
             </div>
           </header>
-          ${subnav(group)}
+          ${subnav()}
           <main class="content" id="main" tabindex="-1">
             ${(PAGES[view] || home)()}
-            ${group === 'break' ? breakNext() : ''}
+            ${foot ? breakNext(foot) : ''}
           </main>
         </div>
       </div>`;

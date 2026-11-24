@@ -1,7 +1,9 @@
-// Break screens (preseason, midseason, playoffs): Tryouts and Staff. The locker room is in locker.js.
+// Shop pages: Tryouts, Staff, Skill tree and Gear (the locker room is in locker.js). Open at any time; the three breaks
+// (preseason, midseason, playoffs) walk through them.
 import { tu, t } from '../../i18n/index.js';
 import { tv } from '../../narrative.js';
 import { skillTreeCard, selectSkill, skillNeighbour } from '../../skillsView.js';
+import { gearBody } from '../../gearView.js';
 import * as E from '../../engine.js';
 import { play } from '../../audio.js';
 import { announce } from '../../a11y.js';
@@ -11,7 +13,8 @@ import { render } from '../shell.js';
 import { notify } from '../toast.js';
 import { $ } from '../page.js';
 
-// Tryouts. Each card's buttons are secondary: the page's one primary action is leaving the break (top right).
+// Tryouts. Each card's buttons are secondary: the page's one primary action is top right (leaving the break, or the
+// week's next step).
 export function recruit() {
   const full = state.players.length >= E.ROSTER_MAX;
   return html`
@@ -41,6 +44,20 @@ export function recruit() {
           .join('') || `<section class="card">${t('recruit.none')}</section>`
       }
     </div>`;
+}
+// Gear: buy items with tokens and choose who wears them. Whose loadout is shown and the shop filter live here, not in the save.
+let gearPlayer = null,
+  gearFilter = 'all';
+export function gear() {
+  return `${header(tu('gear.kicker'), t('nav.gear'), t('gear.intro'))}${gearBody(state, gearPlayer, gearFilter)}`;
+}
+export function setGearPlayer(id) {
+  gearPlayer = id;
+  render();
+}
+export function setGearFilter(f) {
+  gearFilter = f === 'owned' ? 'owned' : 'all';
+  render();
 }
 // The skill tree: unlock new moves with tokens (the tree itself is drawn by skillsView.js).
 export function skillsView() {

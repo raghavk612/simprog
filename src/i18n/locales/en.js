@@ -52,7 +52,13 @@ export default {
     bracket: 'Bracket',
     standings: 'Standings',
     data: 'Real Kangs data',
-    groups: { week: 'This week', team: 'Team', program: 'Program', season: 'Season' },
+    groups: {
+      week: 'This week',
+      team: 'Team',
+      program: 'Program',
+      season: 'Season',
+      shop: 'Shop',
+    },
   },
   top: {
     brand: 'Road to the Championship',
@@ -512,7 +518,7 @@ export default {
     locked: 'Locked',
     kitLabelLocked: '{{kit}}, locked. {{how}}',
     unlockedTitle: 'New jersey unlocked',
-    unlockedMsg: 'The {{kit}} jersey is yours to wear. Pick it at the next break.',
+    unlockedMsg: 'The {{kit}} jersey is yours to wear. Pick it on the Jerseys page in the Shop.',
     showcase:
       'Six jerseys on display: home, away and midnight above; throwback, senior night and blackout below, locked until earned. Press the left and right arrow keys to change the player named on them.',
     jerseyPlayer: 'Name and number on the jerseys',
@@ -675,7 +681,6 @@ export default {
       post: 'Postgame',
       end: 'Season report',
     },
-    track: { prepare: 'Prepare', play: 'Play', post: 'Postgame' },
     done: { pre: 'Start the season', mid: 'Back to the season', playoff: 'On to the playoffs' },
     run: 'Run the week',
     toGame: 'Go to the game',
@@ -716,6 +721,7 @@ export default {
       staff: 'One assistant at a time, and they help every week. The upgrades below are one-time buys.',
       skills: 'New moves add plays your team runs in games. Pick one to see what it does.',
       kit: 'Last stop: pick your jerseys. Start the season when you’re ready.',
+      gear: 'Gear gives one player a boost to skill, energy or morale. Buy a piece, then pick who wears it.',
     },
   },
   timeout: {
@@ -1057,6 +1063,7 @@ export default {
       dismiss: 'Assistant dismissed',
       saved: 'Saved',
       upgrade: 'Upgrade bought',
+      gear: 'Gear bought',
     },
   },
   team: { varsity: 'Varsity', jv: 'Junior Varsity', c: 'C-Team' },
@@ -1363,7 +1370,7 @@ export default {
       assistant: 'assistant coach',
       note: 'Practice sessions are unlocked by winning a skill drill (three-pointers, free throws, timing or a rules quiz), never bought. Practice builds skill but costs energy. Released players give no refund.',
       costs:
-        'Games cost tokens too: {{upkeep}} for assistant upkeep and {{travel}} for each away trip. Tryouts, staff and upgrades open at the three breaks.',
+        'Games cost tokens too: {{upkeep}} for assistant upkeep and {{travel}} for each away trip. Tryouts, staff, upgrades, gear and new moves are in the Shop at any time; the three breaks walk you through it.',
     },
     gd: {
       lead: 'Call each possession or let it play live.',

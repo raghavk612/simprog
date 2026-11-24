@@ -120,7 +120,13 @@ export default {
     skills: 'Arbre de compétences',
     bracket: 'Tableau',
     standings: 'Classement',
-    groups: { week: 'Cette semaine', team: 'Équipe', program: 'Programme', season: 'Saison' },
+    groups: {
+      week: 'Cette semaine',
+      team: 'Équipe',
+      program: 'Programme',
+      season: 'Saison',
+      shop: 'Boutique',
+    },
   },
   top: {
     brand: 'La route vers le championnat',
@@ -523,7 +529,7 @@ export default {
     locked: 'Verrouillé',
     kitLabelLocked: '{{kit}}, verrouillé. {{how}}',
     unlockedTitle: 'Nouveau maillot débloqué',
-    unlockedMsg: 'Le maillot {{kit}} est à vous. Choisissez-le à la prochaine pause.',
+    unlockedMsg: 'Le maillot {{kit}} est à vous. Choisissez-le dans Maillots, à la Boutique.',
     showcase:
       'Six maillots exposés : domicile, extérieur et minuit en haut ; rétro, soirée des seniors et blackout en bas, verrouillés tant qu’ils ne sont pas gagnés. Utilisez les flèches gauche et droite pour changer le joueur dont le nom figure dessus.',
     jerseyPlayer: 'Nom et numéro sur les maillots',
@@ -694,7 +700,6 @@ export default {
       post: 'Après-match',
       end: 'Bilan de la saison',
     },
-    track: { prepare: 'Préparer', play: 'Jouer', post: 'Après-match' },
     done: { pre: 'Lancer la saison', mid: 'Retour à la saison', playoff: 'En route pour les playoffs' },
     run: 'Lancer la semaine',
     toGame: 'Aller au match',
@@ -737,6 +742,7 @@ export default {
       skills:
         'Chaque nouveau geste ajoute des actions que votre équipe joue en match. Choisissez-en un pour voir ce qu’il fait.',
       kit: 'Dernière étape : choisissez vos maillots. Lancez la saison quand vous êtes prêt.',
+      gear: 'L’équipement donne à un joueur un bonus de compétence, d’énergie ou de moral. Achetez une pièce, puis choisissez qui la porte.',
     },
   },
   timeout: {
@@ -1257,6 +1263,7 @@ export default {
       dismiss: 'Adjoint renvoyé',
       saved: 'Enregistré',
       upgrade: 'Amélioration achetée',
+      gear: 'Équipement acheté',
     },
   },
   team: { varsity: 'Varsity', jv: 'Junior Varsity', c: 'Équipe C' },
@@ -1578,7 +1585,7 @@ export default {
       assistant: 'entraîneur adjoint',
       note: 'Les séances d’entraînement se débloquent en réussissant un exercice d’adresse (tirs à trois points, lancers francs, timing ou quiz sur les règles), jamais en les achetant. L’entraînement développe le talent mais coûte de l’énergie. Un joueur libéré n’est pas remboursé.',
       costs:
-        'Les matchs coûtent aussi : {{upkeep}} pour l’adjoint et {{travel}} par déplacement. Essais, staff et améliorations s’ouvrent aux trois pauses.',
+        'Les matchs coûtent aussi : {{upkeep}} pour l’adjoint et {{travel}} par déplacement. Essais, staff, améliorations, équipement et nouveaux gestes sont à la Boutique à tout moment ; les trois pauses vous y guident.',
     },
     gd: {
       lead: 'Dirigez chaque possession ou laissez-la se jouer en direct.',

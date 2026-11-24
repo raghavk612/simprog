@@ -127,3 +127,12 @@ test('the judge demo jump skips every break', () => {
   assert.deepEqual(s.breaksDone, E.BREAK_IDS);
   assert.equal(E.breakDue(s), null);
 });
+test('tipping off closes a break that is still open, so a break skipped from Game day never comes back', () => {
+  const s = game();
+  assert.equal(E.breakDue(s), 'pre');
+  E.startMatch(s);
+  assert.deepEqual(s.breaksDone, ['pre']);
+  while (s.match) E.possession(s);
+  s.press = { week: s.week, questions: [], done: true };
+  assert.equal(E.breakDue(s), null);
+});

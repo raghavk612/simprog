@@ -1,5 +1,5 @@
 // The first game is the tutorial, and it counts; then it walks through the preseason break that follows (Tryouts,
-// Staff, Skill tree, Jerseys). It goes one beat at a time: the game holds, the assistant says
+// Staff, Skill tree, Gear, Jerseys). It goes one beat at a time: the game holds, the assistant says
 // one line (tutorial.b.<id> in the locales), and only what they point at can be used. coachTick() runs every 100 ms.
 //
 // A beat in BEATS:
@@ -179,7 +179,8 @@ export const BEATS = [
   // The preseason break: one beat per tab. Everything on the page can be used; "Next: <tab>" moves on.
   breakBeat('tryouts', 'recruit', '.cards.three', 'staff'),
   breakBeat('staff', 'staff', '.office-section', 'skills'),
-  breakBeat('skills', 'skills', '.st-tree', 'locker'),
+  breakBeat('skills', 'skills', '.st-tree', 'gear'),
+  breakBeat('gear', 'gear', '.gear-layout', 'locker'),
   { ...breakBeat('kit', 'locker', '.lk-stage-row'), act: '[data-action="break-done"]', last: true },
 ];
 // A beat for one break tab: it rings the page's main card, glows the button to the next tab, and closes on arriving
