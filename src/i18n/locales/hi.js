@@ -449,7 +449,6 @@ export default {
     why: 'वह शॉट क्यों?',
     whyNone: 'हर पूरा हुआ प्ले यहाँ दिखेगा।',
     whyShot: '{{player}} · {{shot}} · {{n}}% संभावना',
-    strengthShort: 'ताक़त',
     skips: 'अभी टिप-ऑफ़ करने पर छूट जाएगा: {{list}}।',
     skip: {
       slot: '1 बिना इस्तेमाल का तैयारी स्लॉट',
@@ -462,6 +461,12 @@ export default {
     blocked: {
       inbox: 'पहले कोच के इनबॉक्स का जवाब दें।',
       lineup: 'पहले पाँच स्टार्टर चुनें और 160 मिनट बाँटें।',
+    },
+    teamSkill: 'टीम कौशल',
+    odds: {
+      favoured: 'बढ़त में',
+      even: 'बराबरी',
+      underdog: 'कमज़ोर पक्ष',
     },
   },
   tactic: {

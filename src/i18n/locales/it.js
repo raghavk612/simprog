@@ -461,7 +461,6 @@ export default {
     why: 'Perché quel tiro?',
     whyNone: 'Qui compare ogni azione conclusa.',
     whyShot: '{{player}} · {{shot}} · {{n}}% di probabilità',
-    strengthShort: 'Forza',
     skips: 'Iniziare ora salta {{list}}.',
     skip: {
       slot: '1 turno di preparazione inutilizzato',
@@ -474,6 +473,12 @@ export default {
     blocked: {
       inbox: 'Rispondi prima alla casella dell’allenatore.',
       lineup: 'Scegli prima cinque titolari e assegna 160 minuti.',
+    },
+    teamSkill: 'Livello squadra',
+    odds: {
+      favoured: 'Favoriti',
+      even: 'Equilibrato',
+      underdog: 'Sfavoriti',
     },
   },
   tactic: {

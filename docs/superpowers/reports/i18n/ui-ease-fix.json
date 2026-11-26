@@ -1,0 +1,51 @@
+{
+  "en": {
+    "game.strengthShort": null,
+    "game.teamSkill": "Team skill",
+    "game.odds.favoured": "Favoured",
+    "game.odds.even": "Even",
+    "game.odds.underdog": "Underdog"
+  },
+  "es": {
+    "game.strengthShort": null,
+    "game.teamSkill": "Nivel del equipo",
+    "game.odds.favoured": "Favoritos",
+    "game.odds.even": "Parejo",
+    "game.odds.underdog": "En desventaja"
+  },
+  "fr": {
+    "game.strengthShort": null,
+    "game.teamSkill": "Niveau d’équipe",
+    "game.odds.favoured": "Favoris",
+    "game.odds.even": "Équilibré",
+    "game.odds.underdog": "Outsiders"
+  },
+  "it": {
+    "game.strengthShort": null,
+    "game.teamSkill": "Livello squadra",
+    "game.odds.favoured": "Favoriti",
+    "game.odds.even": "Equilibrato",
+    "game.odds.underdog": "Sfavoriti"
+  },
+  "hi": {
+    "game.strengthShort": null,
+    "game.teamSkill": "टीम कौशल",
+    "game.odds.favoured": "बढ़त में",
+    "game.odds.even": "बराबरी",
+    "game.odds.underdog": "कमज़ोर पक्ष"
+  },
+  "ja": {
+    "game.strengthShort": null,
+    "game.teamSkill": "チームスキル",
+    "game.odds.favoured": "優勢",
+    "game.odds.even": "互角",
+    "game.odds.underdog": "劣勢"
+  },
+  "zh": {
+    "game.strengthShort": null,
+    "game.teamSkill": "球队技术",
+    "game.odds.favoured": "占优",
+    "game.odds.even": "势均力敌",
+    "game.odds.underdog": "处于下风"
+  }
+}

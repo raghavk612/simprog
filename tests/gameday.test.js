@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as E from '../src/engine.js';
 import * as P from '../src/press.js';
-import { energyLevel, moraleLevel } from '../src/teamLabels.js';
+import { energyLevel, moraleLevel, matchupLevel, EVEN_WITHIN } from '../src/teamLabels.js';
 
 const data = JSON.parse(fs.readFileSync(new URL('../public/data/kangs.json', import.meta.url)));
 const game = () => {
@@ -121,4 +121,14 @@ test('energy and morale words use one set of thresholds', () => {
     'restless',
     'unhappy',
   ]);
+});
+
+test('the matchup word compares team skill on one scale: favoured, even or underdog', () => {
+  assert.equal(matchupLevel(76, 77), 'even', 'one point apart');
+  assert.equal(matchupLevel(76.6, 76.4 + EVEN_WITHIN + 1), 'even', 'compared as shown: 77 and 79');
+  assert.equal(matchupLevel(80, 80 - EVEN_WITHIN - 1), 'favoured');
+  assert.equal(matchupLevel(70, 70 + EVEN_WITHIN + 1), 'underdog');
+  const s = game(),
+    M = E.modelSnapshot(s);
+  assert.ok(['favoured', 'even', 'underdog'].includes(matchupLevel(M.skill, M.rating)));
 });

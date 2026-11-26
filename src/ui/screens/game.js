@@ -2,7 +2,7 @@
 // play-by-play, box score, "Why that shot?"). Replays of a past possession use the same page. The playing itself is in playback.js.
 import { t, tu, up, formatDate, has } from '../../i18n/index.js';
 import * as E from '../../engine.js';
-import { strengthLevel, energyLevel, moraleLevel } from '../../teamLabels.js';
+import { strengthLevel, energyLevel, moraleLevel, matchupLevel } from '../../teamLabels.js';
 import { tv, feedLines } from '../../narrative.js';
 import { state, plan, stages, teamLabel, hasScore, ui } from '../store.js';
 import {
@@ -258,17 +258,18 @@ function scoreBug(m, o) {
     </div>`;
 }
 // Before tip-off, what a coach needs to judge readiness without opening a drawer: who is stronger on the model's own
-// scale (the rotation's average skill against the opponent's strength), the rotation's energy and morale, and the
+// scale (the rotation's average skill against the opponent's strength, labelled team skill so it is not read as OVR,
+// with favoured / even / underdog), the rotation's energy and morale, and the
 // opponent's style, or a way to scout it while a prep slot is left.
 function readyFacts(o) {
   const v = E.tipoffPreview(state),
     M = E.modelSnapshot(state),
     them = Math.round(M.rating),
-    level = strengthLevel(M.rating);
+    odds = matchupLevel(M.skill, M.rating);
   const row = (label, value) => `<div><dt>${label}</dt><dd>${value}</dd></div>`;
   return html`
     <dl class="ready-facts">
-      ${row(t('game.strengthShort'), `${esc(t('game.kangs'))} <b>${Math.round(M.skill)}</b> · ${esc(o.opponent)} <b>${them}</b> <span class="strength-word ${level}">(${t(`game.strengthLevel.${level}`)})</span>`)}
+      ${row(t('game.teamSkill'), `${esc(t('game.kangs'))} <b>${Math.round(M.skill)}</b> · ${esc(o.opponent)} <b>${them}</b> · <span class="odds-word ${odds}">${t(`game.odds.${odds}`)}</span>`)}
       ${row(t('tipoff.energy'), `<b>${v.energy}</b> · ${t(`rv.energy.${energyLevel(v.energy)}`)}`)}
       ${row(t('tipoff.morale'), `<b>${v.morale}</b> · ${t(`rv.morale.${moraleLevel(v.morale)}`)}`)}
       ${row(t('game.style'), state.scouted ? `<b>${t(`style.${o.style}`)}</b>` : `${t('game.unscouted')}${state.actions > 0 ? ` · <button class="text-button" data-view="practice">${t('prep.film')}</button>` : ''}`)}

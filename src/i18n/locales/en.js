@@ -453,7 +453,6 @@ export default {
     why: 'Why that shot?',
     whyNone: 'Each resolved play shows up here.',
     whyShot: '{{player}} · {{shot}} · {{n}}% chance',
-    strengthShort: 'Strength',
     skips: 'Tipping off now skips {{list}}.',
     skip: {
       slot: '1 unused prep slot',
@@ -466,6 +465,12 @@ export default {
     blocked: {
       inbox: 'Answer the coach’s inbox first.',
       lineup: 'Pick five starters and assign 160 minutes first.',
+    },
+    teamSkill: 'Team skill',
+    odds: {
+      favoured: 'Favoured',
+      even: 'Even',
+      underdog: 'Underdog',
     },
   },
   tactic: {

@@ -464,7 +464,6 @@ export default {
     why: '¿Por qué ese tiro?',
     whyNone: 'Aquí aparecerá cada jugada resuelta.',
     whyShot: '{{player}} · {{shot}} · {{n}}% de probabilidad',
-    strengthShort: 'Fuerza',
     skips: 'Si empiezas ahora, te saltas {{list}}.',
     skip: {
       slot: '1 turno de preparación sin usar',
@@ -477,6 +476,12 @@ export default {
     blocked: {
       inbox: 'Responde primero a la bandeja del entrenador.',
       lineup: 'Elige primero cinco titulares y asigna 160 minutos.',
+    },
+    teamSkill: 'Nivel del equipo',
+    odds: {
+      favoured: 'Favoritos',
+      even: 'Parejo',
+      underdog: 'En desventaja',
     },
   },
   tactic: {

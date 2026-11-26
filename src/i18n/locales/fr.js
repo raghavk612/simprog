@@ -464,7 +464,6 @@ export default {
     why: 'Pourquoi ce tir ?',
     whyNone: 'Chaque action terminée apparaît ici.',
     whyShot: '{{player}} · {{shot}} · {{n}} % de chances',
-    strengthShort: 'Force',
     skips: 'Lancer le match maintenant fait sauter {{list}}.',
     skip: {
       slot: '1 créneau de préparation inutilisé',
@@ -477,6 +476,12 @@ export default {
     blocked: {
       inbox: 'Répondez d’abord à la boîte de réception du coach.',
       lineup: 'Choisissez d’abord cinq titulaires et attribuez 160 minutes.',
+    },
+    teamSkill: 'Niveau d’équipe',
+    odds: {
+      favoured: 'Favoris',
+      even: 'Équilibré',
+      underdog: 'Outsiders',
     },
   },
   tactic: {

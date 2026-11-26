@@ -446,7 +446,6 @@ export default {
     why: 'なぜそのシュート？',
     whyNone: '決着したプレーがここに表示されます。',
     whyShot: '{{player}} · {{shot}} · 成功率 {{n}}%',
-    strengthShort: '強さ',
     skips: '今ティップオフすると次を飛ばします：{{list}}。',
     skip: {
       slot: '未使用の準備枠 1',
@@ -459,6 +458,12 @@ export default {
     blocked: {
       inbox: '先にコーチの受信箱に答えましょう。',
       lineup: '先に先発5人を選び、160分を割り当てましょう。',
+    },
+    teamSkill: 'チームスキル',
+    odds: {
+      favoured: '優勢',
+      even: '互角',
+      underdog: '劣勢',
     },
   },
   tactic: {

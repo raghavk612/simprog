@@ -424,7 +424,6 @@ export default {
     why: '为什么是这次出手？',
     whyNone: '每个已完成的回合都会显示在这里。',
     whyShot: '{{player}} · {{shot}} · 命中率 {{n}}%',
-    strengthShort: '实力',
     skips: '现在跳球将跳过：{{list}}。',
     skip: {
       slot: '1 个未用的备战时段',
@@ -437,6 +436,12 @@ export default {
     blocked: {
       inbox: '请先处理教练收件箱。',
       lineup: '请先选出五名首发并分配 160 分钟。',
+    },
+    teamSkill: '球队技术',
+    odds: {
+      favoured: '占优',
+      even: '势均力敌',
+      underdog: '处于下风',
     },
   },
   tactic: { balanced: '均衡', zone: '联防 / 补防', pressure: '压迫防守', perimeter: '拉开空间 / 投三分' },

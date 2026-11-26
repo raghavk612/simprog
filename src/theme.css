@@ -1753,16 +1753,13 @@ body[data-view='game'] .court-panel {
 .ready-facts b {
   font-weight: 700;
 }
-.ready-facts .strength-word {
+.ready-facts .odds-word {
   font-weight: 600;
 }
-.ready-facts .strength-word.low {
+.ready-facts .odds-word.favoured {
   color: var(--good);
 }
-.ready-facts .strength-word.medium {
-  color: var(--score);
-}
-.ready-facts .strength-word.high {
+.ready-facts .odds-word.underdog {
   color: var(--bad);
 }
 .ready-facts .text-button {

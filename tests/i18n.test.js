@@ -112,6 +112,7 @@ test('every key built at run time resolves to a string for each value it can tak
   for (const v of ['pre', 'mid', 'playoff']) need.push(`game.skip.${v}`);
   for (const v of ['inbox', 'lineup']) need.push(`game.blocked.${v}`);
   for (const v of ['low', 'medium', 'high']) need.push(`game.strengthLevel.${v}`);
+  for (const v of ['favoured', 'even', 'underdog']) need.push(`game.odds.${v}`); // matchupLevel()
   for (const v of ['fresh', 'rested', 'tired', 'exhausted']) need.push(`rv.energy.${v}`);
   for (const v of ['fired', 'content', 'restless', 'unhappy']) need.push(`rv.morale.${v}`);
   for (const v of ['balanced', 'zone', 'pressure', 'perimeter']) need.push(`tactic.${v}`);

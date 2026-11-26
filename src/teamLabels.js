@@ -67,3 +67,10 @@ export const strengthLevel = rating => (rating >= 80 ? 'high' : rating >= 70 ? '
 // The words for a player's (or the rotation's) energy and morale, one set of thresholds everywhere (rv.energy.*, rv.morale.*).
 export const energyLevel = e => (e >= 80 ? 'fresh' : e >= 55 ? 'rested' : e >= 30 ? 'tired' : 'exhausted');
 export const moraleLevel = m => (m >= 80 ? 'fired' : m >= 60 ? 'content' : m >= 40 ? 'restless' : 'unhappy');
+// Game day's matchup word, from the rotation's team skill and the opponent's strength (the same model scale, not
+// players' OVR): within EVEN_WITHIN points as shown (rounded) is even.
+export const EVEN_WITHIN = 2;
+export const matchupLevel = (skill, rating) => {
+  const d = Math.round(skill) - Math.round(rating);
+  return d > EVEN_WITHIN ? 'favoured' : d < -EVEN_WITHIN ? 'underdog' : 'even';
+};
