@@ -10,6 +10,7 @@ import {
   STILL,
   HERO,
   END,
+  titleMenu,
 } from '../src/title.js';
 
 const games = [
@@ -192,4 +193,13 @@ test('the title hero faces the middle of the camera sweep', () => {
   assert.ok(Math.abs(yaw) < Math.PI / 2, 'faces the near (+z) sideline');
   assert.ok(Math.abs(fx * tz - fz * tx) < 1e-9 && fx * tx + fz * tz > 0, 'facing points at the camera');
   assert.equal(heroYaw(), yaw, 'a constant: he never swivels with the sweep');
+});
+test('the title menu has one purple button: Continue with a save, the start button once the form is open', () => {
+  assert.deepEqual(titleMenu(false, true), { continue: null, demoUp: false }, 'no save: only the form');
+  assert.deepEqual(titleMenu(true, false), { continue: 'primary', demoUp: true });
+  assert.deepEqual(
+    titleMenu(true, true),
+    { continue: 'secondary', demoUp: true },
+    'New season opened the form: "Take over the Kangs" is the way forward',
+  );
 });

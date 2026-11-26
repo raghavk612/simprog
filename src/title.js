@@ -1,6 +1,12 @@
 /* Pure helpers for the title screen (no DOM, no Three): which game the scoreboard previews, and the title/fly-in camera shots. */
 import { teamFor } from './engine.js';
 
+/** The title menu's buttons. With a save, Continue is the purple way forward and the judge demo sits beside New season;
+ *  once New season has opened the start form, its "Take over the Kangs" is the one purple button and Continue turns
+ *  secondary. Without a save the form is all there is. */
+export function titleMenu(hasSave, formOpen) {
+  return { continue: hasSave ? (formOpen ? 'secondary' : 'primary') : null, demoUp: !!hasSave };
+}
 /** The game the title screen is about: the save's next game (or last, once finished), else the chosen difficulty's first game at 0-0. */
 export function titleMatchup(state, data, difficulty = 'standard') {
   if (state?.schedule?.length) {
