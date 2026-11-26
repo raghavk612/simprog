@@ -270,10 +270,6 @@ export default {
     group: '練習対象',
     wholeTeam: 'チーム全員',
     effects: '練習の効果',
-    fxSkill: 'スキル {{n}}',
-    fxEnergy: '体力 {{n}}',
-    fxMorale: '士気 {{n}}',
-    fxGpa: 'GPA {{n}}',
     planKicker: '意図をもって計画する',
     planTitle: 'このあと何が起こる？',
     planP1:
@@ -2043,7 +2039,6 @@ export default {
   },
   prep: {
     title: '{{opp}}戦の準備',
-    slots: '残り {{n}}/3 枠',
     sessions: '練習セッション',
     film: '相手の映像',
     filmFx: '{{opp}}の戦い方を調べる。',
@@ -2051,6 +2046,13 @@ export default {
     filmDone: '分析済み',
     practiceDone: '練習済み',
     allPlanned: '全枠を計画済み',
+    pickFirst: '計画に少なくとも1つのセッションを追加してください。',
+    seasonOver: 'シーズンは終了しました。',
+    clinicDesc: '選手たちが午前中に地元の子どもたちを指導します。活動資金になり、観客も増えます。',
+    filmFree: 'フィルムルームで無料',
+    suggest: 'おすすめの計画',
+    repeat: '先週と同じにする',
+    fillNote: '空いている枠だけを埋めます。選んだものはそのままです。',
   },
   nudge: {
     btn: {
@@ -2118,5 +2120,17 @@ export default {
     invalid: '有効なシーズンコードではありません。コードは KNG-J-1A2B3C のような形式です。',
     unavailable: 'このシーズンはシーズンコードの導入前に始まりました。',
     toggle: 'シーズンコードをお持ちですか？',
+  },
+  recap: {
+    title: '変わったこと',
+    ovr: '{{name}}：OVR {{from}} → {{to}}',
+    more: 'ほかに {{n}} 人の評価が変わりました',
+    injuredOne: '{{name}} が負傷し、次の試合を欠場します',
+    injured: '{{name}} が負傷し、{{n}} 試合欠場します',
+    healed: '{{name}} が復帰できる状態に戻りました',
+    tokens: 'プログラムトークン {{n}}',
+    rank: '順位：{{of}} チーム中 {{from}} 位 → {{to}} 位',
+    rankSame: '順位：{{of}} チーム中 {{to}} 位のまま',
+    rankNew: '順位：{{of}} チーム中 {{to}} 位',
   },
 };

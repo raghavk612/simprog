@@ -29,10 +29,10 @@ write templates over as many lines as you like. Put text from the save or the da
 | `actions.js`         | what every `data-action` button and form field does                           |
 | `keyboard.js`        | shortcut keys                                                                 |
 | `screens/home.js`    | Home: the next step and the week's timeline                                   |
-| `screens/prep.js`    | Prep: picking the week and running the drills                                 |
+| `screens/prep.js`    | Prep: picking the week and running the drills (data: `src/prepPlan.js`)       |
 | `screens/game.js`    | Game day page (before tip-off, live, replays)                                 |
 | `playback.js`        | the live game: possessions, Watch live, timeouts, quarter breaks, replays     |
-| `screens/results.js` | the result dialog after a game                                                |
+| `screens/results.js` | the result dialog after a game, and its "What changed" (`src/recap.js`)       |
 | `postgame.js`        | press room and coach's inbox                                                  |
 | `screens/roster.js`  | Team: lineup, full stats, player profile                                      |
 | `screens/breaks.js`  | Shop: Tryouts, Staff, Skill tree, Gear                                        |

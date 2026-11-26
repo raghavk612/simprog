@@ -205,10 +205,6 @@ export default {
     group: 'Training group',
     wholeTeam: 'Whole team',
     effects: 'Training effects',
-    fxSkill: 'Skill {{n}}',
-    fxEnergy: 'Energy {{n}}',
-    fxMorale: 'Morale {{n}}',
-    fxGpa: 'GPA {{n}}',
     planKicker: 'Plan with intention',
     planTitle: 'What happens next?',
     planP1:
@@ -1904,7 +1900,6 @@ export default {
   },
   prep: {
     title: 'Prep for {{opp}}',
-    slots: '{{n}} of 3 slots left',
     sessions: 'Practice sessions',
     film: 'Opponent film',
     filmFx: 'Learn how {{opp}} plays.',
@@ -1912,6 +1907,13 @@ export default {
     filmDone: 'Film studied',
     practiceDone: 'Practice done',
     allPlanned: 'All slots are planned',
+    pickFirst: 'Add at least one session to the plan.',
+    seasonOver: 'The season is over.',
+    clinicDesc: 'Your players coach local kids for a morning. It funds the program and grows the crowd.',
+    filmFree: 'Free with the Film room',
+    suggest: 'Suggested plan',
+    repeat: 'Repeat last week',
+    fillNote: 'Fills open slots only. Your picks stay.',
   },
   nudge: {
     btn: {
@@ -1980,5 +1982,17 @@ export default {
     invalid: 'That is not a valid season code. Codes look like KNG-J-1A2B3C.',
     unavailable: 'This season was started before season codes existed.',
     toggle: 'Have a season code?',
+  },
+  recap: {
+    title: 'What changed',
+    ovr: '{{name}}: OVR {{from}} → {{to}}',
+    more: '{{n}} more players’ ratings changed',
+    injuredOne: '{{name}} is hurt and misses the next game',
+    injured: '{{name}} is hurt for {{n}} games',
+    healed: '{{name}} is fit again',
+    tokens: 'Program tokens {{n}}',
+    rank: 'Standings: #{{from}} → #{{to}} of {{of}}',
+    rankSame: 'Standings: still #{{to}} of {{of}}',
+    rankNew: 'Standings: #{{to}} of {{of}}',
   },
 };

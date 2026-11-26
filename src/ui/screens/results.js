@@ -1,9 +1,10 @@
 // The result dialog after a game, or when a result is opened from the journal: the score, player of the game,
-// highlights to replay, and the full analysis behind "More".
+// highlights to replay, what the week changed with the one next step under it, and the full analysis behind "More".
 import { t, tu, up, has } from '../../i18n/index.js';
 import * as E from '../../engine.js';
 import { reasonText, logText, explanationText } from '../../narrative.js';
-import { state } from '../store.js';
+import { state, ui } from '../store.js';
+import { weekSnapshot, whatChanged } from '../../recap.js';
 import { html, esc, shot, btn } from '../markup.js';
 import { show } from '../dialogs.js';
 import { boxTable } from './game.js';
@@ -45,9 +46,61 @@ function highlightStrip(r, index) {
         .join('')}
     </div>`;
 }
+// "What changed": the save at the start of each week of this session (noteWeek, called from Home, Prep and tip-off),
+// compared with the save once the week's game is over. Kept for the save object it was taken from, so a new or loaded
+// season starts empty; a result opened after a reload simply has no list.
+let weeks = { of: null, start: {}, recap: {} };
+export function noteWeek(s) {
+  if (!s || s.match || s.finished) return;
+  if (weeks.of !== s) weeks = { of: s, start: {}, recap: {} };
+  weeks.start[s.week] ??= weekSnapshot(s);
+  for (const w of Object.keys(weeks.start)) if (+w < s.week - 1) delete weeks.start[w];
+}
+// The list for a result: worked out once, right after its game (the latest result, its week just ended).
+function recapFor(r, index) {
+  if (weeks.of !== state) return null;
+  const done = index === state.results.length - 1 && state.week === r.week + 1 && !state.match;
+  if (!weeks.recap[r.week] && done && weeks.start[r.week])
+    weeks.recap[r.week] = whatChanged(weeks.start[r.week], weekSnapshot(state));
+  return weeks.recap[r.week] || null;
+}
+const arrow = { good: '▲', bad: '▼', same: '•' };
+function recapItem(x) {
+  const [tone, text] =
+    x.k === 'ovr'
+      ? [x.to > x.from ? 'good' : 'bad', t('recap.ovr', { name: esc(x.name), from: x.from, to: x.to })]
+      : x.k === 'ovrMore'
+        ? ['same', t('recap.more', { n: x.n })]
+        : x.k === 'injured'
+          ? ['bad', t(x.n === 1 ? 'recap.injuredOne' : 'recap.injured', { name: esc(x.name), n: x.n })]
+          : x.k === 'healed'
+            ? ['good', t('recap.healed', { name: esc(x.name) })]
+            : x.k === 'tokens'
+              ? [
+                  x.v > 0 ? 'good' : x.v < 0 ? 'bad' : 'same',
+                  t('recap.tokens', { n: x.v > 0 ? `+${x.v}` : x.v < 0 ? `−${-x.v}` : '0' }),
+                ]
+              : x.from == null
+                ? ['same', t('recap.rankNew', { to: x.to, of: x.of })]
+                : x.from === x.to
+                  ? ['same', t('recap.rankSame', { to: x.to, of: x.of })]
+                  : [x.to < x.from ? 'good' : 'bad', t('recap.rank', { from: x.from, to: x.to, of: x.of })];
+  return `<li class="${tone}"><b aria-hidden="true">${arrow[tone]}</b><span>${text}</span></li>`;
+}
+const recapList = list =>
+  list
+    ? html`
+      <section class="recap" aria-labelledby="recap-h">
+        <h3 id="recap-h">${t('recap.title')}</h3>
+        <ol>${list.map(recapItem).join('')}</ol>
+      </section>`
+    : '';
 export function result(index) {
   const r = state.results[index];
   if (!r) return;
+  // The one next step: closing the dialog right after a game opens the press room (main.js runs the postgame).
+  const next =
+    ui.flowPending && E.nextStep(state).id === 'press' ? t('nudge.btn.press') : t('inbox.continue');
   show(
     html`
       <span class="eyebrow">${tu('result.kicker', { outcome: r.won ? t('result.win') : t('result.loss') })}</span>
@@ -56,7 +109,8 @@ export function result(index) {
       <p>${esc(reasonText(r))}</p>
       ${pogCard(r)}
       ${highlightStrip(r, index)}
-      <div class="modal-actions sticky">${btn(t('inbox.continue'), 'close', 'primary')}</div>
+      ${recapList(recapFor(r, index))}
+      <div class="modal-actions sticky">${btn(next, 'close', 'primary')}</div>
       <details class="analysis-drawer">
         <summary>${t('flow.more')}</summary>
         <h3>${t('result.before')}</h3>

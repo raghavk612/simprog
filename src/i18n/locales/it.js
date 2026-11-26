@@ -272,10 +272,6 @@ export default {
     group: 'Gruppo di allenamento',
     wholeTeam: 'Tutta la squadra',
     effects: 'Effetti dell’allenamento',
-    fxSkill: 'Abilità {{n}}',
-    fxEnergy: 'Energia {{n}}',
-    fxMorale: 'Morale {{n}}',
-    fxGpa: 'GPA {{n}}',
     planKicker: 'Pianifica con intenzione',
     planTitle: 'Che cosa succede dopo?',
     planP1:
@@ -2131,7 +2127,6 @@ export default {
   },
   prep: {
     title: 'Preparazione contro {{opp}}',
-    slots: '{{n}} slot su 3 rimasti',
     sessions: 'Sessioni di allenamento',
     film: 'Video dell’avversario',
     filmFx: 'Scopri come gioca {{opp}}.',
@@ -2139,6 +2134,14 @@ export default {
     filmDone: 'Video studiato',
     practiceDone: 'Allenamento fatto',
     allPlanned: 'Tutti gli slot sono pianificati',
+    pickFirst: 'Aggiungi almeno una sessione al piano.',
+    seasonOver: 'La stagione è finita.',
+    clinicDesc:
+      'I tuoi giocatori allenano i ragazzi del quartiere per una mattina. Finanzia il programma e porta pubblico.',
+    filmFree: 'Gratis con la sala video',
+    suggest: 'Piano suggerito',
+    repeat: 'Ripeti la settimana scorsa',
+    fillNote: 'Riempie solo gli slot liberi. Le tue scelte restano.',
   },
   nudge: {
     btn: {
@@ -2208,5 +2211,17 @@ export default {
     invalid: 'Questo non è un codice stagione valido. I codici sono come KNG-J-1A2B3C.',
     unavailable: 'Questa stagione è iniziata prima dei codici stagione.',
     toggle: 'Hai un codice stagione?',
+  },
+  recap: {
+    title: 'Cosa è cambiato',
+    ovr: '{{name}}: valutazione {{from}} → {{to}}',
+    more: 'È cambiata la valutazione di altri {{n}} giocatori',
+    injuredOne: '{{name}} è infortunato e salta la prossima partita',
+    injured: '{{name}} è infortunato per {{n}} partite',
+    healed: '{{name}} è di nuovo in forma',
+    tokens: 'Gettoni del programma {{n}}',
+    rank: 'Classifica: {{from}}° → {{to}}° su {{of}}',
+    rankSame: 'Classifica: ancora {{to}}° su {{of}}',
+    rankNew: 'Classifica: {{to}}° su {{of}}',
   },
 };

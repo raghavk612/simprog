@@ -273,10 +273,6 @@ export default {
     group: 'Grupo de entrenamiento',
     wholeTeam: 'Todo el equipo',
     effects: 'Efectos del entrenamiento',
-    fxSkill: 'Habilidad {{n}}',
-    fxEnergy: 'Energía {{n}}',
-    fxMorale: 'Moral {{n}}',
-    fxGpa: 'GPA {{n}}',
     planKicker: 'Planifica con intención',
     planTitle: '¿Qué pasará después?',
     planP1:
@@ -2113,7 +2109,6 @@ export default {
   },
   prep: {
     title: 'Preparación para {{opp}}',
-    slots: 'Quedan {{n}} de 3 espacios',
     sessions: 'Sesiones de práctica',
     film: 'Video del rival',
     filmFx: 'Descubre cómo juega {{opp}}.',
@@ -2121,6 +2116,14 @@ export default {
     filmDone: 'Video estudiado',
     practiceDone: 'Práctica hecha',
     allPlanned: 'Todos los espacios están planificados',
+    pickFirst: 'Añade al menos una sesión al plan.',
+    seasonOver: 'La temporada ha terminado.',
+    clinicDesc:
+      'Tus jugadores entrenan a niños del barrio durante una mañana. Financia el programa y atrae público.',
+    filmFree: 'Gratis con la sala de video',
+    suggest: 'Plan sugerido',
+    repeat: 'Repetir la semana pasada',
+    fillNote: 'Solo llena los espacios libres. Tus elecciones se mantienen.',
   },
   nudge: {
     btn: {
@@ -2190,5 +2193,17 @@ export default {
     invalid: 'Ese no es un código de temporada válido. Los códigos tienen este aspecto: KNG-J-1A2B3C.',
     unavailable: 'Esta temporada empezó antes de que existieran los códigos de temporada.',
     toggle: '¿Tienes un código de temporada?',
+  },
+  recap: {
+    title: 'Qué cambió',
+    ovr: '{{name}}: media {{from}} → {{to}}',
+    more: 'Cambió la valoración de {{n}} jugadores más',
+    injuredOne: '{{name}} está lesionado y se pierde el próximo partido',
+    injured: '{{name}} está lesionado durante {{n}} partidos',
+    healed: '{{name}} vuelve a estar en forma',
+    tokens: 'Fichas del programa {{n}}',
+    rank: 'Clasificación: n.º {{from}} → n.º {{to}} de {{of}}',
+    rankSame: 'Clasificación: sigue n.º {{to}} de {{of}}',
+    rankNew: 'Clasificación: n.º {{to}} de {{of}}',
   },
 };

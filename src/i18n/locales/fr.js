@@ -273,10 +273,6 @@ export default {
     group: 'Groupe d’entraînement',
     wholeTeam: 'Toute l’équipe',
     effects: 'Effets de l’entraînement',
-    fxSkill: 'Compétence {{n}}',
-    fxEnergy: 'Énergie {{n}}',
-    fxMorale: 'Moral {{n}}',
-    fxGpa: 'GPA {{n}}',
     planKicker: 'Planifiez avec intention',
     planTitle: 'Que se passe-t-il ensuite ?',
     planP1:
@@ -2178,7 +2174,6 @@ export default {
   },
   prep: {
     title: 'Préparation contre {{opp}}',
-    slots: '{{n}} créneaux sur 3 restants',
     sessions: 'Séances d’entraînement',
     film: 'Vidéo de l’adversaire',
     filmFx: 'Découvrez comment joue {{opp}}.',
@@ -2186,6 +2181,14 @@ export default {
     filmDone: 'Vidéo étudiée',
     practiceDone: 'Entraînement fait',
     allPlanned: 'Tous les créneaux sont prévus',
+    pickFirst: 'Ajoutez au moins une séance au plan.',
+    seasonOver: 'La saison est terminée.',
+    clinicDesc:
+      'Vos joueurs entraînent des enfants du quartier pendant une matinée. Cela finance le programme et attire du public.',
+    filmFree: 'Gratuit avec la salle vidéo',
+    suggest: 'Plan suggéré',
+    repeat: 'Reprendre la semaine dernière',
+    fillNote: 'Remplit seulement les créneaux libres. Vos choix restent.',
   },
   nudge: {
     btn: {
@@ -2258,5 +2261,17 @@ export default {
     invalid: 'Ce n’est pas un code de saison valide. Les codes ressemblent à KNG-J-1A2B3C.',
     unavailable: 'Cette saison a commencé avant l’existence des codes de saison.',
     toggle: 'Vous avez un code de saison ?',
+  },
+  recap: {
+    title: 'Ce qui a changé',
+    ovr: '{{name}} : note {{from}} → {{to}}',
+    more: 'La note de {{n}} autres joueurs a changé',
+    injuredOne: '{{name}} est blessé et manque le prochain match',
+    injured: '{{name}} est blessé pour {{n}} matchs',
+    healed: '{{name}} est de nouveau en forme',
+    tokens: 'Jetons du programme {{n}}',
+    rank: 'Classement : {{from}}e → {{to}}e sur {{of}}',
+    rankSame: 'Classement : toujours {{to}}e sur {{of}}',
+    rankNew: 'Classement : {{to}}e sur {{of}}',
   },
 };

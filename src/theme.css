@@ -459,14 +459,27 @@ body[data-view='home'] #arena.home-arena {
   min-height: 60px;
   font: 700 calc(24px * var(--ts, 1) * var(--ls, 1))/1.05 var(--display);
 }
-/* The timeline is a map, not a menu: grey, no hover, nothing to click. */
-.home-path {
+/* The timeline is a map, not a menu: grey, no hover, nothing to click, under a visible "After that". */
+.home-later {
   display: flex;
-  margin: 0;
+  align-items: flex-start;
+  gap: 20px;
   padding: 12px 28px 14px;
-  list-style: none;
   border-top: 1px solid var(--line);
   background: var(--page);
+}
+.home-later .eyebrow {
+  flex: none;
+  margin: 0;
+  line-height: 1.3;
+}
+.home-path {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
   color: var(--ink-3);
   font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
   cursor: default;
@@ -550,10 +563,14 @@ body[data-view='home'] #arena.home-arena {
     min-width: 0;
     width: 100%;
   }
-  .home-path {
+  .home-later {
     flex-direction: column;
     gap: 10px;
     padding: 12px 12px 90px;
+  }
+  .home-path {
+    flex-direction: column;
+    gap: 10px;
   }
   .home-path li {
     padding: 0 0 0 20px;
@@ -1246,8 +1263,10 @@ body:has(#modal[open]) .coach-glow:not(#modal *) {
 .prep-row:first-child {
   border-top: 0;
 }
+/* A pick in the plan is a selected row (soft accent and a bar at its edge), not a purple button. */
 .prep-row.on {
-  background: var(--accent-soft);
+  background: var(--selected-bg, var(--accent-soft));
+  box-shadow: inset 3px 0 0 var(--selected-line, var(--accent));
 }
 .prep-main {
   flex: 1;
@@ -1262,16 +1281,66 @@ body:has(#modal[open]) .coach-glow:not(#modal *) {
   font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
   line-height: 1.35;
 }
-.prep-row .effect-list {
+.prep-fx {
   flex: none;
-  width: 240px;
+  width: 260px;
   gap: 4px;
-  margin: 0;
 }
-.prep-row .effect-list > span {
-  padding: 3px 6px;
-  background: var(--panel-2);
+.prep-fx .chip {
+  padding: 2px 7px;
+  font-size: calc(12px * var(--ts, 1) * var(--ls, 1));
+}
+/* "Suggested plan" and "Repeat last week", above the list. */
+.prep-fill {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.prep-fill small {
   color: var(--ink-2);
+  font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+}
+.prep-fill + ul .prep-row:first-child {
+  border-top: 0;
+}
+/* Why Run the week is disabled, and (phones only, where the slots are hidden) how many picks are in the plan. */
+.prep-side .page-action {
+  display: grid;
+  gap: 6px;
+}
+.prep-side .page-action > button {
+  min-height: 52px;
+}
+.page-why {
+  color: var(--ink-2);
+  font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+}
+.prep-side .page-status {
+  display: none;
+}
+/* On a phone the plan's count sits in the page's action bar (.page-action) and the picked rows are highlighted, so the
+   three slot boxes, which would push Run the week below the fold, are left out. The side column itself sticks above the
+   tab bar: a sticky .page-action can't leave its parent, and the column is otherwise below the list. "Go to the game"
+   is the Game day tab at the top of the page, so the bar holds only the way forward. */
+@media (max-width: 620px) {
+  .prep-grid > .prep-side {
+    position: sticky;
+    top: auto;
+    bottom: calc(var(--tabh) + 8px);
+    z-index: 20;
+  }
+  .prep-side .plan-slots,
+  .prep-side > .prep-go {
+    display: none;
+  }
+  .prep-side .page-status {
+    display: block;
+    color: var(--ink-2);
+    font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+  }
 }
 .prep-row button {
   flex: none;
@@ -1668,7 +1737,7 @@ body[data-view='data'] .table-wrap {
   .prep-row {
     flex-wrap: wrap;
   }
-  .prep-row .effect-list {
+  .prep-fx {
     width: 100%;
     order: 3;
   }
@@ -1722,4 +1791,44 @@ body[data-view='data'] .table-wrap {
   .gear-shop {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+/* ---- The result dialog's "What changed": a short ranked list, a mark and words on every line (not colour alone) ---- */
+.recap {
+  margin: 18px 0 4px;
+}
+.recap h3 {
+  margin: 0 0 8px;
+}
+.recap ol {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.recap li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+  padding: 7px 12px;
+  line-height: 1.35;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel-2);
+  color: var(--ink);
+  font-size: calc(15px * var(--ts, 1) * var(--ls, 1));
+}
+.recap li b {
+  flex: none;
+  width: 1em;
+  text-align: center;
+  color: var(--ink-3);
+}
+.recap li.good b {
+  color: var(--good);
+}
+.recap li.bad b {
+  color: var(--bad);
 }

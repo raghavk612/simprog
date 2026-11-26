@@ -342,9 +342,9 @@ export function talk(s, choice) {
     s.chemistry = cap(s.chemistry + 5);
     log(s, 'You listened to the bench: morale +7, chemistry +5.', 'talkListen');
   } else if (choice === 'fundraise') {
-    s.tokens += 180;
-    s.fans += 40;
-    s.players.forEach(p => (p.energy = cap(p.energy - 5)));
+    s.tokens += CLINIC.tokens;
+    s.fans += CLINIC.fans;
+    s.players.forEach(p => (p.energy = cap(p.energy + CLINIC.energy)));
     log(s, 'Community clinic: +180 tokens, +40 fans, −5 energy.', 'talkFundraise');
   } else {
     s.players.forEach(p => (p.gpa = cap(p.gpa + 0.18, 0, 4)));
@@ -352,9 +352,13 @@ export function talk(s, choice) {
   }
   s.ripples.unshift({ label: 'Team conversation', detail: s.log[0].text, week: s.week, k: s.log[0].k });
 }
+/* What the community clinic (a Prep pick) does, and what film study costs without the Film room upgrade. */
+export const CLINIC = { tokens: 180, fans: 40, energy: -5 };
+export const FILM_COST = 50;
+export const filmCost = s => (hasUpgrade(s, 'film') ? 0 : FILM_COST);
 export function scout(s) {
   if (s.scouted) throw Error('Opponent already scouted.');
-  spend(s, hasUpgrade(s, 'film') ? 0 : 50);
+  spend(s, filmCost(s));
   s.scouted = true;
   log(s, 'Film study revealed the opponent’s preferred style. Tactical reads improved.', 'scout');
 }
