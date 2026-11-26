@@ -3,16 +3,14 @@
 // dialog (src/ui/screens/results.js) shows the list and the one next step under it.
 import * as E from './engine.js';
 
-const KANGS = 'Lake Washington'; // the Kangs' row in state.standings (see E.createGame)
+import { standingsRows } from './ui/lists.js';
+
 const RATINGS_SHOWN = 3;
 
-// The Kangs' place in the standings (1 = first), ranked by winning percentage as the Standings page does.
+// The Kangs' place in the standings (1 = first): the Standings page's own ranking (standingsRows), so the two agree.
 export function standingsRank(s) {
-  const rows = Object.values(s.standings || {});
-  const pct = r => r.w / Math.max(1, r.w + r.l);
-  rows.sort((a, b) => pct(b) - pct(a));
-  const i = rows.findIndex(r => r.name === KANGS);
-  return { rank: i < 0 ? null : i + 1, of: rows.length };
+  const rows = standingsRows(s.standings || {});
+  return { rank: rows.find(r => r.you)?.rank ?? null, of: rows.length };
 }
 
 // What the recap compares, taken at the start of a week and again after its game.

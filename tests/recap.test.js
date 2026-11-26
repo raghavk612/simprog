@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as E from '../src/engine.js';
-import { weekSnapshot, whatChanged } from '../src/recap.js';
+import { weekSnapshot, whatChanged, standingsRank } from '../src/recap.js';
 const data = JSON.parse(fs.readFileSync(new URL('../public/data/kangs.json', import.meta.url)));
 const game = () => {
   const s = E.createGame(data, 'Recap', 'standard', 5);
@@ -90,4 +90,14 @@ test('a real week: practice raises ratings and the game’s income and place are
   assert.ok(rank.to >= 1 && rank.to <= rank.of);
   assert.equal(before.week, 0);
   assert.equal(after.week, 1);
+});
+
+test('the recap’s place is the Standings page’s place (standingsRows: the same percentage, more wins first)', () => {
+  const s = {
+    standings: {
+      'Lake Washington': { name: 'Lake Washington', w: 1, l: 1 },
+      Redmond: { name: 'Redmond', w: 2, l: 2 },
+    },
+  };
+  assert.deepEqual(standingsRank(s), { rank: 2, of: 2 });
 });
