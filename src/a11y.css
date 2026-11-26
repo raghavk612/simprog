@@ -40,7 +40,10 @@
     .subnav .page-action > .primary,
     .scorebug dt,
     .sb-next dd > span,
-    .sb-next dd b
+    .sb-next dd b,
+    .page-head h1,
+    .ph-ghost,
+    .ph-chip dt
   ) {
   font-style: normal;
   font-synthesis-style: none;
@@ -290,9 +293,6 @@ kbd {
   min-width: 0;
 }
 /* Rows that must wrap at large text sizes. */
-.page-heading > div:first-child {
-  min-width: 0;
-}
 .arena-bottom,
 .camera-controls,
 .rule-nav {
@@ -502,7 +502,6 @@ button.small,
 .a11y-simple .arena-top,
 .a11y-simple .workspace > footer,
 .a11y-simple .landing > footer,
-.a11y-simple .page-heading > p,
 .a11y-simple .right-rail .card:last-child:not(:only-child) p,
 .a11y-simple .notice,
 .a11y-simple .quick i,
@@ -1254,6 +1253,32 @@ dialog:has(.settings) .modal-content {
   }
 }
 
+/* ---- Page headers in high contrast: no ghost word, no render, no tint; a white rule closes the band, and the stat
+   chips keep their slanted plates as a white ring (the same device as the slabs). ---- */
+.a11y-high-contrast .ph-ghost,
+.a11y-high-contrast .ph-hero {
+  display: none;
+}
+.a11y-high-contrast .page-head {
+  --ph-art: 0px; /* no render: the chips move to the right end */
+}
+.a11y-high-contrast .page-head::before {
+  background: #000;
+  border-bottom: 2px solid #fff;
+}
+.a11y-high-contrast .ph-chip::before {
+  background: #fff;
+}
+.a11y-high-contrast .ph-chip::after {
+  --si: calc(var(--s) - 4px * var(--slant));
+  content: '';
+  position: absolute;
+  inset: 2px;
+  z-index: -1;
+  background: #000;
+  clip-path: polygon(var(--si) 0, 100% 0, calc(100% - var(--si)) 100%, 0 100%);
+}
+
 /* ---- The game navigation in forced colours (Windows contrast themes): the system draws it. Every decorative plate,
    edge, stripe and track goes; each slab keeps its transparent border, which shows as an outline; the open page is
    Highlight; the scorebug gets a border. ---- */
@@ -1297,5 +1322,22 @@ dialog:has(.settings) .modal-content {
   }
   .coach-glyph {
     stroke: CanvasText;
+  }
+  /* Page headers: the ghost word, the render (url images survive forced colours) and the chips' plates go; each chip
+     keeps a border. */
+  .ph-ghost,
+  .ph-hero,
+  .ph-chip::before,
+  .ph-chip::after {
+    display: none;
+  }
+  .page-head::before {
+    border-bottom: 1px solid CanvasText;
+  }
+  .ph-chip {
+    border: 1px solid CanvasText;
+  }
+  .page-head {
+    --ph-art: 0px;
   }
 }

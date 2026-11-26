@@ -166,7 +166,6 @@ export default {
   roster: {
     fullStats: 'Full stats',
     lineup: 'Back to lineup',
-    kicker: 'The people behind the jersey',
     spots: '{{n}} / 15 roster spots',
     minutes: '{{n}} / 160 minutes',
     auto: 'Build eligible rotation',
@@ -198,7 +197,6 @@ export default {
     freshman: 'Freshman',
   },
   practice: {
-    kicker: 'Develop the whole athlete',
     intro:
       'Pick up to three sessions, then earn each one in a skill drill. Training is unlocked by skill, never bought.',
     group: 'Training group',
@@ -270,7 +268,6 @@ export default {
     culture: { name: 'Culture builder', detail: '+3 morale and chemistry on team dinners' },
   },
   recruit: {
-    kicker: 'Find the next difference maker',
     intro:
       'Sign tryout players to fill open roster spots. Scout first to see potential and work ethic. Tokens only, never real money.',
     tryout: 'Fictional tryout · {{pos}}',
@@ -288,7 +285,6 @@ export default {
     fullShort: 'Roster full',
   },
   gear: {
-    kicker: 'Equipment room',
     intro: 'Build a personal loadout for every player. Spend program tokens, never real money.',
     tagline: 'Small upgrades. Big moments.',
     rules:
@@ -323,7 +319,6 @@ export default {
     equipsOn: 'Equips on {{name}}',
   },
   skills: {
-    kicker: 'Playbook',
     title: 'Skill tree',
     intro:
       'Your players start with five basic moves. Unlock new moves with program tokens — each one adds plays your team can run in games. Defenses read a team with few moves, so every unlock also steadies your shooting a little.',
@@ -376,7 +371,6 @@ export default {
     title: 'Make time for your people.',
     body: 'The bench wants a voice. The team needs resources. Schoolwork is piling up. Choose where you spend one preparation slot.',
     fundraise: 'Host a community clinic',
-    assistantKicker: 'One assistant slot',
     buildStaff: 'Assistant coach',
     assistantBody:
       'Assistant roles are fictional game choices. Their bonuses apply to your preparation sessions.',
@@ -397,8 +391,6 @@ export default {
     speed: 'Viewing speed',
     kangs: 'Kangs',
     visitors: 'Visitors',
-    liveKicker: 'Live from the fieldhouse',
-    prepKicker: 'Prepare. Adapt. Execute.',
     liveTitle: 'Game day. Your call.',
     vs: 'Kangs vs {{opp}}',
     choosePlay: 'Choose a play and watch the possession develop.',
@@ -519,7 +511,6 @@ export default {
     title: 'Team stats',
   },
   replay: {
-    kicker: 'The film room',
     title: 'Watch the play develop.',
     intro: 'Recorded actions and outcomes. Replaying never changes your season.',
     recorded: 'Recorded play',
@@ -592,7 +583,6 @@ export default {
     wearing: 'Wearing: {{kit}}',
   },
   locker: {
-    kicker: 'Wear your identity',
     intro: 'Choose the kit your players wear in the 3D gym. Rename players through their roster profiles.',
     title: 'Team kit',
     kits: 'Jersey kits',
@@ -605,7 +595,6 @@ export default {
     picked: '{{kit}} jersey selected.',
   },
   journal: {
-    kicker: 'The story of your season',
     intro: 'Your simulated record, decisions, standings and defining moments.',
     path: 'Season stages',
     regular: 'Regular season',
@@ -620,7 +609,6 @@ export default {
     scoreboard: 'Results',
     replay: 'Replay',
     noGames: 'Play your opening game to start your story.',
-    standings: 'Program standings',
     table: 'League table',
     tableNote:
       'Fictional campaign standings: other opponents play simulated background fixtures each round. These are not official KingCo standings.',
@@ -643,7 +631,6 @@ export default {
     },
   },
   ending: {
-    kicker: 'The final whistle',
     won: 'You brought it home.',
     over: 'Your season is complete.',
     bannerTitle: 'A banner earned. A program built.',
@@ -654,7 +641,6 @@ export default {
     story: 'Watch your season story',
   },
   data: {
-    kicker: 'Real program. Transparent sources.',
     title: 'Real Kangs data',
     intro:
       'Published {{season}} Varsity, Junior Varsity and C-Team schedules with the latest published rosters, kept separate from your simulation.',
@@ -2045,5 +2031,9 @@ export default {
     slots: 'Slots',
     game: 'GM',
     over: 'Season over',
+  },
+  head: {
+    energy: 'Team energy',
+    opp: 'Opponent strength',
   },
 };

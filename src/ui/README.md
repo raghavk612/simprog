@@ -27,6 +27,7 @@ write templates over as many lines as you like. Put text from the save or the da
 | `nav.js`             | routes (`NAV`) and their tabs, what a Shop page shows during a break          |
 | `shell.js`           | `PAGES`, top bar, the band under it, `render()`, `go()`, camera buttons       |
 | `scorebug.js`        | what the band's scorebug shows (next game, record, tokens, slots, track)      |
+| `pageHead.js`        | what a page header holds (ghost word, group render, stat chips), its entrance |
 | `renderKeep.js`      | what `render()` keeps from the DOM: open drawers, tables' side scroll         |
 | `actions.js`         | what every `data-action` button and form field does                           |
 | `keyboard.js`        | shortcut keys                                                                 |
@@ -64,6 +65,9 @@ write templates over as many lines as you like. Put text from the save or the da
   in `<div class="page-action">` (the button, its disabled reason, at most one short status line; one per page): in the
   flow on a desktop, a bar docked above the tab bar on a phone. A selected tab, filter or toggle uses the
   `--selected-*` tokens in `theme.css`, never the purple fill.
+- **A page's header:** start the page with `header(title, subLine)` (`markup.js`); it draws the band, the ghost word (the
+  page's `nav.<route>` name), the group's render from 1200 px and the page's stat chips (`headChips` in `pageHead.js`:
+  at most three, never a number the scorebug shows). Home has none. The title slides in only when the page changes.
 - **The navigation's look** (`theme.css`, "Game navigation"): slanted slabs at one angle (`--slant`), each slant on a
   decorative `::before` so the button itself stays a rectangle with its focus ring; the open page is an inverted plate
   with a `--tab-edge` bar. Sub-tabs carry a numeral only where their order is real (`tabNumber` in `nav.js`). High

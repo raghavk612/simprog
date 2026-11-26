@@ -34,9 +34,11 @@ test('every theme colour used in the stylesheets is defined', () => {
     for (const m of read(file).matchAll(/var\((--[a-z0-9-]+)/g))
       if (names.some(n => m[1].startsWith(n))) assert.ok(defined.has(m[1]), `${file}: ${m[1]}`);
 });
-test('no fading gradients: only flat colour blocks on jerseys, the whiteboard tray, the timing ruler, the high-contrast stripes and the navigation’s empty stretches', () => {
-  // .bar-fill / .band-fill: the nav design's stripes, faded at their ends, in stretches with no text (decoration only)
-  const allowed = /\.shirt|\.mb-|\.timing-bar|a11y-high-contrast|\.bar-fill|\.band-fill/;
+test('no fading gradients: only flat colour blocks on jerseys, the whiteboard tray, the timing ruler, the high-contrast stripes, the navigation’s empty stretches and the page header’s band', () => {
+  // .bar-fill / .band-fill: the nav design's stripes, faded at their ends, in stretches with no text (decoration only);
+  // .page-head / .ph-hero: the header band's purple tint and the render's fade into it
+  const allowed =
+    /\.shirt|\.mb-|\.timing-bar|a11y-high-contrast|\.bar-fill|\.band-fill|\.page-head|\.ph-hero/;
   for (const file of ['../src/style.css', '../src/a11y.css', '../src/theme.css']) {
     const found = [...read(file).matchAll(/([^{}]*)\{([^{}]*gradient\([^{}]*)\}/g)].filter(
       m => !allowed.test(m[1]),

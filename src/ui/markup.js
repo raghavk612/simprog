@@ -3,7 +3,8 @@
 import { ariaKey, keyLabel } from '../keys.js';
 import { t, has, up } from '../i18n/index.js';
 import { opponentLogo } from '../logos.js';
-import { keys, state } from './store.js';
+import { keys, state, view } from './store.js';
+import { headModel } from './pageHead.js';
 
 // ---- Escaping and templates ----
 export const esc = s =>
@@ -29,16 +30,39 @@ export const svg = (d, cls = '') =>
 export const kbd = k => `<kbd class="key${k.length > 2 ? ' kw' : ''}">${k}</kbd>`;
 export const micon = k => `<span class="mouse-icon">${svg(MOUSE[k])}</span>`;
 export const link = (href, label) => `<a href="${href}" target="_blank" rel="noreferrer">${label}</a>`;
-// The heading at the top of every page.
-export function header(kicker, title, description = '') {
+// The header at the top of every page but Home (pageHead.js says what it holds): a full-bleed band with the title, the
+// sub-line, the page's name as a giant outlined ghost word (decoration, hidden from screen readers), up to three stat
+// chips of the page's own, and from 1200 px the group's render (a phone never downloads it). shell.js render() adds
+// .enter when the page changes (pageHead.js headEnters).
+const HERO = `${import.meta.env?.BASE_URL ?? '/'}images/ui/`;
+const BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+export function header(title, description = '', page = view) {
+  const m = headModel(page, state) || { ghost: `nav.${page}`, hero: '', chips: [] },
+    set = ext => `${HERO}${m.hero}.${ext} 1x, ${HERO}${m.hero}@2x.${ext} 2x`;
   return html`
-    <div class="page-heading">
-      <div>
-        <span class="eyebrow">${kicker}</span>
+    <header class="page-head">
+      <span class="ph-ghost" aria-hidden="true">${has(m.ghost) ? t(m.ghost) : ''}</span>
+      <div class="ph-text">
         <h1 tabindex="-1">${title}</h1>
-        ${description ? `<p>${description}</p>` : ''}
+        ${description ? `<p class="ph-sub">${description}</p>` : ''}
       </div>
-    </div>`;
+      ${
+        m.chips.length
+          ? `<dl class="ph-chips">${m.chips.map(c => `<div class="ph-chip ph-${c.id}"><dt>${t(`head.${c.id}`)}</dt><dd>${c.value}</dd></div>`).join('')}</dl>`
+          : ''
+      }
+      ${
+        m.hero
+          ? html`
+            <picture class="ph-hero">
+              <source media="(max-width: 1199px)" srcset="${BLANK}">
+              <source type="image/avif" srcset="${set('avif')}">
+              <source type="image/webp" srcset="${set('webp')}">
+              <img src="${HERO}${m.hero}.webp" alt="" width="480" height="270" decoding="async">
+            </picture>`
+          : ''
+      }
+    </header>`;
 }
 // Shortcut hint for a button: announced by screen readers and shown as a tooltip.
 export const hint = (name, about = '') =>

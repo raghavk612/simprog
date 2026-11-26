@@ -23,7 +23,7 @@ export function recruit() {
     need = teamNeeds(state),
     weak = need?.rating.key;
   return html`
-    ${header(tu('recruit.kicker'), t('nav.recruit'), t('recruit.intro'))}
+    ${header(t('nav.recruit'), t('recruit.intro'))}
     <div class="toolbar">
       ${pill(t('roster.spots', { n: state.players.length }))}${full ? `<span class="toolbar-note">${t('recruit.full')}</span>` : ''}
     </div>
@@ -72,7 +72,7 @@ const shopBlocked = () =>
 let gearPlayer = null,
   gearFilter = 'all';
 export function gear() {
-  return `${header(tu('gear.kicker'), t('nav.gear'), t('gear.intro'))}${gearBody(state, gearPlayer, gearFilter)}`;
+  return `${header(t('nav.gear'), t('gear.intro'))}${gearBody(state, gearPlayer, gearFilter)}`;
 }
 export function setGearPlayer(id) {
   gearPlayer = id;
@@ -84,7 +84,7 @@ export function setGearFilter(f) {
 }
 // The skill tree: unlock new moves with tokens (the tree itself is drawn by skillsView.js).
 export function skillsView() {
-  return `${header(tu('skills.kicker'), t('nav.skills'))}${skillTreeCard(state)}`;
+  return `${header(t('nav.skills'))}${skillTreeCard(state)}`;
 }
 // Selecting a move shows it in the detail panel; focus follows so the tree stays one Tab stop.
 export function pickSkill(key) {
@@ -126,7 +126,7 @@ const short = (cost, reason) => !!reason && reason === shortText(state, cost);
 export function staffView() {
   const blocked = shopBlocked();
   return html`
-    ${header(tu('office.assistantKicker'), t('nav.staff'))}
+    ${header(t('nav.staff'))}
     <section class="card office-section">
       <div class="office-heading">
         <h2>${t('office.buildStaff')}</h2>

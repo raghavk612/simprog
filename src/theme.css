@@ -108,6 +108,14 @@ html.a11y-high-contrast {
   --shell-pad: max(28px, calc((100% - var(--shell-max)) / 2 + 28px));
   --slant: 0.2126;
   --stripe: color-mix(in srgb, var(--ink) 8%, transparent);
+  /* The room a page header takes above the content (its band plus the gap under it): pages that fit the screen
+     subtract it. The band is 152px, 176px from 1200px where the render sits in it. */
+  --ph-room: 172px;
+}
+@media (min-width: 1200px) {
+  :root {
+    --ph-room: 196px;
+  }
 }
 
 /* ---- base ---- */
@@ -135,9 +143,6 @@ h3 {
   font-family: var(--display);
   font-weight: 700;
   color: var(--ink);
-}
-.page-heading h1 {
-  font-weight: 700;
 }
 p,
 small {
@@ -1479,6 +1484,219 @@ body.live-match .subnav {
     font-size: calc(18px * var(--ts, 1) * var(--ls, 1));
   }
 }
+/* ---- Page headers (markup.js header(), pageHead.js): a full-bleed band on the shared grid with the title, the
+   sub-line, the page's name as a giant outlined ghost word behind the right half, up to three stat chips, and from
+   1200px the group's render at the far right. The band and the ghost word are grid items spanning the header, bled to
+   the window's edges (.workspace clips the overflow); the left half is the text's alone, so nothing readable ever sits
+   on the ghost word (the chips sit on opaque plates). A phone keeps the band to the title (at most 96px) and puts the
+   sub-line under it. The entrance (.enter) plays only when the page changes, never under reduced motion.
+   High contrast and forced colours are in a11y.css. ---- */
+.workspace {
+  overflow-x: clip;
+}
+.content:has(> .page-head:first-child) {
+  padding-top: 0;
+}
+.page-head {
+  --ph-pad: 24px;
+  --ph-art: 0px;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, calc(50% - 24px)) minmax(0, 1fr) auto var(--ph-art);
+  align-items: center;
+  column-gap: 24px;
+  box-sizing: border-box;
+  min-height: 152px;
+  margin: 0 0 20px;
+  padding: var(--ph-pad) 0;
+}
+/* The band: --band with a purple tint from the left edge, fading out by 60%. */
+.page-head::before,
+.ph-ghost {
+  grid-row: 1;
+  grid-column: 1 / -1;
+  align-self: stretch;
+  margin: calc(-1 * var(--ph-pad)) calc(50% - 50vw);
+}
+.page-head::before {
+  content: '';
+  z-index: -2;
+  background: linear-gradient(90deg, var(--accent-soft), transparent 60%) var(--band);
+}
+/* The ghost word starts at the header's centre (50vw from the band's left edge) and runs off the right edge. */
+.ph-ghost {
+  z-index: -1;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding-left: 50vw;
+  color: transparent;
+  -webkit-text-stroke: 0.02em var(--line-2);
+  font: italic 900
+    clamp(calc(96px * var(--ts, 1) * var(--ls, 1)), 12vw, calc(220px * var(--ts, 1) * var(--ls, 1))) / 0.8
+    var(--display);
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+.ph-text {
+  grid-row: 1;
+  grid-column: 1;
+  min-width: 0;
+}
+.page-head h1 {
+  margin: 0;
+  color: var(--ink);
+  font: italic 900 calc(48px * var(--ts, 1) * var(--ls, 1)) / 0.95 var(--display);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.ph-sub {
+  max-width: 60ch;
+  margin: 10px 0 0;
+  color: var(--ink-2);
+  font: 400 calc(16px * var(--ts, 1) * var(--ls, 1)) / 1.45 var(--body);
+}
+/* Stat chips: slanted plates in the page colour, so the ghost word never shows through a number. */
+.ph-chips {
+  grid-row: 1;
+  grid-column: 3;
+  display: flex;
+  gap: 10px;
+  margin: 0;
+}
+.ph-chip {
+  --h: 3.75em;
+  --s: calc(var(--h) * var(--slant));
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  min-height: var(--h);
+  padding: 0 calc(var(--s) + 14px);
+  font-size: calc(16px * var(--ts, 1) * var(--ls, 1));
+}
+.ph-chip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--page);
+  clip-path: polygon(var(--s) 0, 100% 0, calc(100% - var(--s)) 100%, 0 100%);
+}
+.ph-chip dt {
+  color: var(--ink-2);
+  font: 600 calc(12px * var(--ts, 1) * var(--ls, 1)) / 1 var(--body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ph-chip dd {
+  margin: 0;
+  color: var(--score);
+  font: 800 calc(28px * var(--ts, 1) * var(--ls, 1)) / 1 var(--display);
+  font-variant-numeric: tabular-nums;
+}
+/* The group's render (480 × 270, shown at the band's height), faded into the band at its left and its foot. */
+.ph-hero {
+  display: none;
+}
+@media (min-width: 1200px) {
+  .page-head {
+    --ph-art-h: 176px;
+    --ph-art: calc(var(--ph-art-h) * 16 / 9);
+  }
+  .ph-hero {
+    grid-row: 1;
+    grid-column: 4;
+    align-self: end;
+    display: block;
+    margin: calc(-1 * var(--ph-pad)) 0;
+  }
+  .ph-hero img {
+    display: block;
+    width: var(--ph-art);
+    height: var(--ph-art-h);
+    mask-image:
+      linear-gradient(90deg, transparent, var(--page) 30%),
+      linear-gradient(0deg, transparent, var(--page) 18%);
+    mask-composite: intersect;
+  }
+}
+/* Game day before tip-off: the gym, the five and Tip off share the screen, so its band is 128px (a 152px band pushed
+   Tip off below the rail's fold at 1440 × 900). */
+body[data-view='game'] {
+  --ph-room: 156px; /* 128px, or about 140px when the sub-line takes two lines, plus 16px */
+}
+body[data-view='game'] .page-head {
+  --ph-pad: 18px;
+  --ph-art-h: 128px;
+  min-height: 128px;
+  margin-bottom: 16px;
+}
+/* The entrance: the title slides 12px and fades in over 200ms, the ghost word 32px over 260ms. */
+@keyframes ph-title-in {
+  from {
+    opacity: 0;
+    translate: -12px 0;
+  }
+}
+@keyframes ph-ghost-in {
+  from {
+    opacity: 0;
+    translate: -32px 0;
+  }
+}
+.page-head.enter h1 {
+  animation: ph-title-in 200ms cubic-bezier(0.3, 0.7, 0.2, 1) both;
+}
+.page-head.enter .ph-ghost {
+  animation: ph-ghost-in 260ms cubic-bezier(0.3, 0.7, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-head.enter :is(h1, .ph-ghost) {
+    animation: none;
+  }
+}
+@media (max-width: 620px) {
+  /* A phone: the band holds the title alone (at most 96px), the sub-line follows under it; no ghost word (it would
+     sit under the title) and no chips. */
+  .page-head {
+    --ph-pad: 18px;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 26px;
+    min-height: 0;
+    margin-bottom: 16px;
+  }
+  .page-head:has(.ph-sub) {
+    padding-bottom: 0;
+  }
+  .page-head:has(.ph-sub)::before {
+    margin-bottom: -16px;
+  }
+  .ph-text {
+    display: contents;
+  }
+  .page-head h1 {
+    grid-area: 1 / 1;
+    font-size: calc(30px * var(--ts, 1) * var(--ls, 1));
+  }
+  .ph-sub {
+    grid-area: 2 / 1;
+    margin: 0;
+    font-size: calc(15px * var(--ts, 1) * var(--ls, 1));
+  }
+  .ph-ghost,
+  .ph-chips {
+    display: none;
+  }
+}
 /* ---- The page's way forward (.page-action): its one primary button, the reason when it is disabled and at most one
    short status line. In the flow on a desktop; on a phone a bar docked above the tab bar, so the way forward is on
    screen without scrolling. One per page: the shell's next-step slot (nav.js subnavGo) or the page's own. ---- */
@@ -1533,19 +1751,6 @@ body.live-match .subnav {
   max-width: var(--shell-max);
   margin: 0 auto;
   padding: 18px 28px 24px;
-}
-.page-heading {
-  margin-bottom: 14px;
-}
-.page-heading .eyebrow {
-  display: none;
-}
-.page-heading h1 {
-  font-size: calc(32px * var(--ts, 1) * var(--ls, 1));
-}
-.page-heading p {
-  margin-top: 2px;
-  font-size: calc(15px * var(--ts, 1) * var(--ls, 1));
 }
 .toolbar {
   margin-bottom: 12px;
@@ -2058,7 +2263,7 @@ body[data-view='recruit'] .card h2 {
 .gear-shop {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
-  max-height: calc(100dvh - 300px);
+  max-height: calc(100dvh - 210px - var(--ph-room));
   overflow: auto;
 }
 .card.skill-tree {
@@ -2070,7 +2275,7 @@ body[data-view='recruit'] .card h2 {
   align-items: stretch;
 }
 .lk-stage-row .jersey-stage {
-  height: calc(100dvh - 240px);
+  height: calc(100dvh - 150px - var(--ph-room));
   min-height: 420px;
 }
 .lockers-grid {
@@ -2105,11 +2310,11 @@ body[data-view='recruit'] .card h2 {
 }
 .fit-scroll,
 .journal-log.fit-scroll {
-  max-height: calc(100dvh - 330px);
+  max-height: calc(100dvh - 240px - var(--ph-room));
   overflow: auto;
 }
 .standings-grid .fit-scroll {
-  max-height: calc(100dvh - 350px);
+  max-height: calc(100dvh - 260px - var(--ph-room));
 }
 /* Sortable column headers (Full stats, Season data): the whole header cell is the button; the sorted one is in
    full ink with an arrow, and aria-sort says the same to a screen reader. */
@@ -2214,7 +2419,7 @@ body[data-view='data'] .section-title {
   margin: 0 0 8px;
 }
 body[data-view='data'] .table-wrap {
-  max-height: calc(100dvh - 610px);
+  max-height: calc(100dvh - 520px - var(--ph-room));
   min-height: 180px;
 }
 .data-cols {
@@ -2413,7 +2618,7 @@ body[data-view='game'] .page-action {
 @media (min-width: 761px) {
   body:not(.live-match)[data-view='game'] .game-layout {
     grid-template-columns: minmax(0, 1fr) 300px;
-    height: calc(100dvh - 226px);
+    height: calc(100dvh - 136px - var(--ph-room));
     min-height: 420px;
   }
   body:not(.live-match)[data-view='game'] .court-panel {
@@ -2430,7 +2635,7 @@ body[data-view='game'] .page-action {
 
 /* Short laptop screens: drop the second line of each heading and tighten the cards. */
 @media (max-height: 820px) and (min-width: 1151px) {
-  .page-heading p {
+  .ph-sub {
     display: none;
   }
   .squad-head {

@@ -2,7 +2,6 @@ import en from './en.js';
 // Français. Mêmes clés et {{marqueurs}} que en.js.
 export default {
   skills: {
-    kicker: 'Cahier de jeu',
     title: 'Arbre de compétences',
     intro:
       'Vos joueurs commencent avec cinq gestes de base. Débloquez de nouveaux gestes avec les jetons du programme : chacun ajoute des actions que votre équipe peut jouer en match. Les défenses lisent facilement une équipe aux gestes limités, donc chaque déblocage stabilise aussi un peu votre adresse.',
@@ -37,7 +36,6 @@ export default {
     },
   },
   gear: {
-    kicker: 'Salle du matériel',
     intro: 'Équipez chaque joueur avec des jetons du programme, jamais de l’argent réel.',
     tagline: 'Petits bonus. Grands moments.',
     rules:
@@ -235,7 +233,6 @@ export default {
   roster: {
     fullStats: 'Statistiques complètes',
     lineup: 'Retour à la composition',
-    kicker: 'Les personnes derrière le maillot',
     spots: '{{n}} / 15 places dans l’effectif',
     minutes: '{{n}} / 160 minutes',
     auto: 'Créer une rotation éligible',
@@ -267,7 +264,6 @@ export default {
     freshman: 'Troisième',
   },
   practice: {
-    kicker: 'Développez l’athlète complet',
     intro:
       'Choisissez jusqu’à trois séances, puis gagnez chacune dans un exercice d’adresse. L’entraînement se débloque par le talent, jamais par l’achat.',
     group: 'Groupe d’entraînement',
@@ -350,7 +346,6 @@ export default {
     },
   },
   recruit: {
-    kicker: 'Trouvez le prochain joueur décisif',
     intro:
       'Recrutez des joueurs des détections pour remplir les places libres. Observez-les d’abord pour voir leur potentiel et leur éthique de travail. Uniquement des jetons, jamais d’argent réel.',
     tryout: 'Détection fictive · {{pos}}',
@@ -387,7 +382,6 @@ export default {
     title: 'Prenez du temps pour vos joueurs.',
     body: 'Le banc veut être écouté. L’équipe a besoin de moyens. Les devoirs s’accumulent. Choisissez à quoi consacrer un créneau de préparation.',
     fundraise: 'Organiser un stage communautaire',
-    assistantKicker: 'Un poste d’adjoint',
     buildStaff: 'Entraîneur adjoint',
     assistantBody:
       'Les postes d’adjoint sont des choix de jeu fictifs. Leurs bonus s’appliquent à vos séances de préparation.',
@@ -409,8 +403,6 @@ export default {
     speed: 'Vitesse de visionnage',
     kangs: 'Kangs',
     visitors: 'Visiteurs',
-    liveKicker: 'En direct de la salle',
-    prepKicker: 'Préparez. Adaptez-vous. Exécutez.',
     liveTitle: 'Jour de match. À vous de jouer.',
     vs: 'Kangs contre {{opp}}',
     choosePlay: 'Choisissez une action et regardez la possession se dérouler.',
@@ -530,7 +522,6 @@ export default {
     title: 'Statistiques d’équipe',
   },
   replay: {
-    kicker: 'La salle vidéo',
     title: 'Regardez l’action se développer.',
     intro: 'Actions et résultats enregistrés. Revoir une action ne change jamais votre saison.',
     recorded: 'Action enregistrée',
@@ -608,7 +599,6 @@ export default {
     wearing: 'Tenue : {{kit}}',
   },
   locker: {
-    kicker: 'Affichez votre identité',
     intro:
       'Choisissez la tenue que portent vos joueurs dans le gymnase 3D. Renommez les joueurs depuis leur profil dans l’effectif.',
     title: 'Tenue de l’équipe',
@@ -623,7 +613,6 @@ export default {
     picked: 'Maillot {{kit}} sélectionné.',
   },
   journal: {
-    kicker: 'L’histoire de votre saison',
     intro: 'Votre bilan simulé, vos décisions, le classement et les moments marquants.',
     path: 'Étapes de la saison',
     regular: 'Saison régulière',
@@ -638,7 +627,6 @@ export default {
     scoreboard: 'Résultats',
     replay: 'Revoir',
     noGames: 'Jouez votre premier match pour commencer votre histoire.',
-    standings: 'Classement du programme',
     table: 'Classement de la ligue',
     tableNote:
       'Classement fictif de la campagne : les autres adversaires jouent des matchs simulés en arrière-plan à chaque tour. Ce ne sont pas les classements officiels de KingCo.',
@@ -661,7 +649,6 @@ export default {
     },
   },
   ending: {
-    kicker: 'Le coup de sifflet final',
     won: 'Vous l’avez ramené à la maison.',
     over: 'Votre saison est terminée.',
     bannerTitle: 'Une bannière méritée. Un programme construit.',
@@ -673,7 +660,6 @@ export default {
     story: 'Voir l’histoire de votre saison',
   },
   data: {
-    kicker: 'Programme réel. Sources transparentes.',
     title: 'Données réelles des Kangs',
     intro:
       'Calendriers {{season}} publiés des équipes Varsity, Junior Varsity et C avec les dernières listes publiées, séparés de votre simulation.',
@@ -2324,5 +2310,9 @@ export default {
     slots: 'Créneaux',
     game: 'Match',
     over: 'Saison terminée',
+  },
+  head: {
+    energy: 'Énergie de l’équipe',
+    opp: 'Force adverse',
   },
 };

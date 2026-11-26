@@ -208,7 +208,7 @@ function replayView() {
   const p = arena.presentation(),
     e = ui.replayEvent;
   return html`
-    ${header(tu('replay.kicker'), t('replay.title'), t('replay.intro'))}
+    ${header(t('replay.title'), t('replay.intro'))}
     <div class="replay-layout">
       ${stage('game-arena')}
       <div class="score-strip">
@@ -362,7 +362,7 @@ export function game() {
     P = plan(),
     names = stages();
   return html`
-    ${header(m ? tu('game.liveKicker') : tu('game.prepKicker'), m ? t('game.liveTitle') : t('game.vs', { opp: esc(o.opponent) }), `${esc(formatDate(o.date))} · ${esc(o.venue)} · ${state.week >= P.cut ? t('game.eliminationGame', { run: names.run }) : t('game.matchup', { type: esc(o.type ? tv(o.type) : t('game.typeDefault')) })}`)}
+    ${header(m ? t('game.liveTitle') : t('game.vs', { opp: esc(o.opponent) }), `${esc(formatDate(o.date))} · ${esc(o.venue)} · ${state.week >= P.cut ? t('game.eliminationGame', { run: names.run }) : t('game.matchup', { type: esc(o.type ? tv(o.type) : t('game.typeDefault')) })}`)}
     <div class="game-layout">
       <div class="court-panel">
         ${stage('game-arena')} ${

@@ -15,7 +15,7 @@ import { state, view, save, ui, setSort } from './store.js';
 import { arena, modal } from './page.js';
 import { signed } from './markup.js';
 import { dismissText } from '../shopFit.js';
-import { go, render, setCamera } from './shell.js';
+import { go, render, setCamera, wayClick } from './shell.js';
 import { notify, actionToast } from './toast.js';
 import { confirmDialog, openSettings, credits } from './dialogs.js';
 import { rules } from './handbook.js';
@@ -255,8 +255,8 @@ const TOASTS = ['recruit', 'hire', 'upgrade', 'gear-buy', 'release', 'dismiss'];
 // Actions whose button is gone after the redraw: focus moves to the first of these that is there (the next Hire
 // button, else the page's heading), not to the page body.
 const FOCUS_AFTER = {
-  dismiss: ['.office-section [data-action="hire"]:not(:disabled)', '.page-heading h1'],
-  release: ['.page-heading h1'],
+  dismiss: ['.office-section [data-action="hire"]:not(:disabled)', '.page-head h1'],
+  release: ['.page-head h1'],
 };
 function refocus(a) {
   const now = document.activeElement;
@@ -271,6 +271,7 @@ export async function onAction(e) {
   const el = e.target.closest('button[data-action],a[data-action],button[data-view]');
   if (!el) return;
   e.preventDefault();
+  wayClick(el.classList.contains('primary'));
   if (el.dataset.view) {
     play('uiClick');
     go(el.dataset.view);

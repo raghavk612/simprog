@@ -35,6 +35,7 @@ import { practice } from './screens/prep.js';
 import { recruit, staffView, skillsView, gear } from './screens/breaks.js';
 import { NAV, navGroup, subTabs, breakFoot, subnavGo, tabNumber } from './nav.js';
 import { scorebugData } from './scorebug.js';
+import { headEnters } from './pageHead.js';
 import { game } from './screens/game.js';
 import { journal, bracketView, standingsView, dataView } from './screens/season.js';
 import { demo, renderDemoGuide, leaveDemo } from './demo.js';
@@ -189,6 +190,15 @@ const FOCUS_KEYS = [
   'id',
 ];
 let renderedView = null;
+// Whether the click being handled is the purple way forward (actions.js wayClick): the header's entrance never plays on
+// the way to play. Every render() reads it and clears it.
+let viaWay = false;
+export const wayClick = on => {
+  viaWay = !!on;
+};
+const reducedMotion = () =>
+  document.documentElement.classList.contains('a11y-reduced-motion') ||
+  !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 // On a phone the page's .page-action is a bar docked above the tab bar: its height goes into --action-bar-h, so the
 // page keeps that much room at its foot and notifications sit above it (theme.css).
 const actionBar =
@@ -236,6 +246,8 @@ export function render() {
           ),
         }
       : null;
+  const enter = headEnters({ from: renderedView, to: view, way: viaWay, reduced: reducedMotion() });
+  viaWay = false;
   renderedView = view;
   document.body.dataset.view = view;
   document.body.classList.toggle(
@@ -275,6 +287,7 @@ export function render() {
         </div>
       </div>`;
   }
+  if (enter) $('.page-head')?.classList.add('enter');
   const target = $('#arena');
   if (target) {
     arena.mount(target);

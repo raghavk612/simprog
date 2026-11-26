@@ -22,7 +22,7 @@ let prospectJerseys = []; // the tryout jerseys on the current page
 let jerseyId = null; // whose name and number the jerseys show
 let captainPick = null; // the player picked in the captain list, before confirming
 export function locker() {
-  return `${header(tu('locker.kicker'), t('nav.locker'), t('locker.intro'))}${lockerBody({ state, avatar, jerseyId, captainPick })}`;
+  return `${header(t('nav.locker'), t('locker.intro'))}${lockerBody({ state, avatar, jerseyId, captainPick })}`;
 }
 // Wearing a kit: core kits always, special kits once the season has earned them (E.setKit refuses a locked one).
 export function wearKit(k) {

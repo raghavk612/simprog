@@ -127,7 +127,7 @@ export function practice() {
         <button class="secondary wide prep-go" data-view="game">${t('flow.toGame')}</button>`
           : `<div class="page-action"><button class="primary wide prep-go" data-view="game">${t('flow.toGame')}</button></div>`;
   return html`
-    ${header(tu('practice.kicker'), state.finished ? t('nav.practice') : t('prep.title', { opp }))}
+    ${header(state.finished ? t('nav.practice') : t('prep.title', { opp }))}
     <div class="prep-grid">
       <section class="card prep-list">${tools}<ul>${PREP.map(row).join('')}</ul></section>
       <section class="prep-side${way === 'step' ? ' waits' : ''}">

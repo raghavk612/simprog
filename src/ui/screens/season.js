@@ -107,7 +107,7 @@ function bracket() {
 }
 export function journal() {
   return html`
-    ${header(tu('journal.kicker'), t('nav.season'), t('journal.intro'))}
+    ${header(t('nav.season'), t('journal.intro'))}
     ${
       state.finished
         ? html`
@@ -140,7 +140,7 @@ export function journal() {
 }
 export function bracketView() {
   return html`
-    ${header(tu('bracket.kicker'), t('nav.bracket'))}
+    ${header(t('nav.bracket'))}
     <div class="season-path" aria-label="${esc(t('journal.path'))}">
       ${(P => [
         ['01', t('journal.regular'), state.week < P.stretch],
@@ -179,7 +179,7 @@ export function standingsView() {
   const col = k =>
     `<th scope="col" class="num" title="${esc(t(`journal.col.${k}Full`))}"><span aria-hidden="true">${t(`journal.col.${k}`)}</span><span class="sr-only">${t(`journal.col.${k}Full`)}</span></th>`;
   return html`
-    ${header(tu('journal.standings'), t('nav.standings'))}
+    ${header(t('nav.standings'))}
     <div class="standings-grid">
       <section class="card fit-col">
         <h2>${t('journal.table')}</h2>
@@ -379,7 +379,7 @@ export async function saveReportCard() {
 // Game day once the season is over.
 export function endscreen() {
   return html`
-    ${header(tu('ending.kicker'), state.champion ? t('ending.won') : t('ending.over'))} ${stage()}
+    ${header(state.champion ? t('ending.won') : t('ending.over'))} ${stage()}
     <section class="card ending">
       <h2>${state.champion ? t('ending.bannerTitle') : t('ending.lossTitle')}</h2>
       <p>
@@ -401,7 +401,7 @@ export function dataView() {
         : t('data.upcomingGames', { n: left });
     };
   return html`
-    ${header(tu('data.kicker'), t('data.title'), t('data.intro', { season: esc(data.season) }))}
+    ${header(t('data.title'), t('data.intro', { season: esc(data.season) }))}
     <section class="card source-summary">
       <div>
         ${pill(tu('data.badge'), 'good')}

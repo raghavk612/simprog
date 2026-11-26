@@ -273,21 +273,6 @@ footer {
 .workspace > footer {
   margin: 0 32px;
 }
-.page-heading {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-}
-.page-heading .eyebrow {
-  margin-bottom: 9px;
-}
-.page-heading p {
-  max-width: 720px;
-}
-.page-heading > .pill {
-  align-self: flex-start;
-  margin-top: 8px;
-}
 .metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -965,9 +950,6 @@ dialog {
   .cards.three {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .page-heading h1 {
-    font-size: calc(38px * var(--ts, 1) * var(--ls, 1));
-  }
   .landing-content {
     grid-template-columns: 43% 57%;
   }
@@ -1006,12 +988,6 @@ dialog {
   }
   .source-summary > button {
     margin-top: 15px;
-  }
-  .page-heading {
-    align-items: flex-start;
-  }
-  .page-heading > .pill {
-    font-size: calc(11px * var(--ts, 1) * var(--ls, 1));
   }
   .quick {
     padding: 14px 10px;
@@ -1068,15 +1044,6 @@ dialog {
   }
   .workspace {
     margin: 0;
-  }
-  .page-heading {
-    gap: 10px;
-  }
-  .page-heading > .pill {
-    display: none;
-  }
-  .page-heading p {
-    font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
   }
   .metrics > div:nth-child(2) {
     border: 0;
@@ -1397,9 +1364,6 @@ summary {
 body[data-view='home'] #arena {
   border-radius: 3px;
 }
-body[data-view='home'] .page-heading p {
-  display: none;
-}
 body[data-view='home'] .right-rail .card:last-child p {
   font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
   line-height: 1.6;
@@ -1414,7 +1378,7 @@ body.live-match .content {
   padding: 0;
   max-width: none;
 }
-body.live-match .page-heading,
+body.live-match .page-head,
 body.live-match .workspace > footer {
   display: none;
 }
@@ -1887,9 +1851,6 @@ body {
 .card p {
   line-height: 1.55;
 }
-.page-heading p {
-  color: var(--ink-2);
-}
 
 /* brand */
 .brand span {
@@ -1903,16 +1864,6 @@ body {
   .workspace {
     margin-left: 214px;
     width: calc(100% - 214px);
-  }
-}
-
-/* game tracker (replaces the tiny GAME x / y pill) */
-.page-heading {
-  align-items: flex-start;
-}
-@media (max-width: 850px) {
-  .page-heading {
-    flex-wrap: wrap;
   }
 }
 
@@ -3315,13 +3266,6 @@ dialog.confirm-dlg {
   .topbar button {
     white-space: nowrap;
     flex: none;
-  }
-  .page-heading {
-    margin-bottom: 14px;
-  }
-  .page-heading h1 {
-    font-size: calc(30px * var(--ts, 1) * var(--ls, 1));
-    margin-bottom: 4px;
   }
   .metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));

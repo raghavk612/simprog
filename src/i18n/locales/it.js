@@ -2,7 +2,6 @@ import en from './en.js';
 // Italiano. Stesse chiavi e {{segnaposto}} di en.js.
 export default {
   skills: {
-    kicker: 'Playbook',
     title: 'Albero delle abilità',
     intro:
       'I tuoi giocatori partono con cinque mosse di base. Sblocca nuove mosse con i gettoni del programma: ognuna aggiunge giocate che la squadra può usare in partita. Le difese leggono facilmente una squadra con poche mosse, quindi ogni sblocco rende anche un po’ più sicuro il tuo tiro.',
@@ -36,7 +35,6 @@ export default {
     },
   },
   gear: {
-    kicker: 'Sala attrezzatura',
     intro: 'Equipaggia ogni giocatore con gettoni del programma, mai denaro reale.',
     tagline: 'Piccoli bonus. Grandi momenti.',
     rules:
@@ -234,7 +232,6 @@ export default {
   roster: {
     fullStats: 'Statistiche complete',
     lineup: 'Torna alla formazione',
-    kicker: 'Le persone dietro la maglia',
     spots: '{{n}} / 15 posti in rosa',
     minutes: '{{n}} / 160 minuti',
     auto: 'Crea rotazione idonea',
@@ -266,7 +263,6 @@ export default {
     freshman: 'Primo anno',
   },
   practice: {
-    kicker: 'Sviluppa l’atleta completo',
     intro:
       'Scegli fino a tre sessioni, poi guadagnale una a una con un esercizio di abilità. L’allenamento si sblocca con l’abilità, mai comprandolo.',
     group: 'Gruppo di allenamento',
@@ -346,7 +342,6 @@ export default {
     },
   },
   recruit: {
-    kicker: 'Trova il prossimo giocatore decisivo',
     intro:
       'Ingaggia giocatori dai provini per riempire i posti liberi. Osservali prima per vedere potenziale e impegno. Solo gettoni, mai soldi veri.',
     tryout: 'Provino fittizio · {{pos}}',
@@ -383,7 +378,6 @@ export default {
     title: 'Dedica tempo alle tue persone.',
     body: 'La panchina vuole essere ascoltata. La squadra ha bisogno di risorse. I compiti si accumulano. Scegli come usare un turno di preparazione.',
     fundraise: 'Organizzare una clinic per la comunità',
-    assistantKicker: 'Un posto da assistente',
     buildStaff: 'Vice allenatore',
     assistantBody:
       'I ruoli di assistente sono scelte di gioco fittizie. I loro bonus si applicano alle tue sessioni di preparazione.',
@@ -405,8 +399,6 @@ export default {
     speed: 'Velocità di visione',
     kangs: 'Kangs',
     visitors: 'Ospiti',
-    liveKicker: 'In diretta dal palazzetto',
-    prepKicker: 'Preparati. Adattati. Esegui.',
     liveTitle: 'Giorno della partita. Decidi tu.',
     vs: 'Kangs contro {{opp}}',
     choosePlay: 'Scegli uno schema e guarda lo sviluppo del possesso.',
@@ -527,7 +519,6 @@ export default {
     title: 'Statistiche di squadra',
   },
   replay: {
-    kicker: 'La sala video',
     title: 'Guarda come si sviluppa l’azione.',
     intro: 'Azioni ed esiti registrati. Rivedere un’azione non cambia mai la tua stagione.',
     recorded: 'Azione registrata',
@@ -605,7 +596,6 @@ export default {
     wearing: 'Divisa: {{kit}}',
   },
   locker: {
-    kicker: 'Indossa la tua identità',
     intro:
       'Scegli la divisa che i tuoi giocatori indossano nella palestra 3D. Rinomina i giocatori dai loro profili nella rosa.',
     title: 'Divisa della squadra',
@@ -620,7 +610,6 @@ export default {
     picked: 'Divisa {{kit}} selezionata.',
   },
   journal: {
-    kicker: 'La storia della tua stagione',
     intro: 'Il tuo bilancio simulato, le tue decisioni, la classifica e i momenti decisivi.',
     path: 'Fasi della stagione',
     regular: 'Stagione regolare',
@@ -635,7 +624,6 @@ export default {
     scoreboard: 'Risultati',
     replay: 'Rivedi',
     noGames: 'Gioca la tua prima partita per iniziare la tua storia.',
-    standings: 'Classifica del programma',
     table: 'Classifica della lega',
     tableNote:
       'Classifica fittizia della campagna: gli altri avversari giocano partite simulate sullo sfondo a ogni turno. Non sono le classifiche ufficiali del KingCo.',
@@ -658,7 +646,6 @@ export default {
     },
   },
   ending: {
-    kicker: 'Il fischio finale',
     won: 'Ce l’hai portato a casa.',
     over: 'La tua stagione è finita.',
     bannerTitle: 'Uno stendardo meritato. Un programma costruito.',
@@ -670,7 +657,6 @@ export default {
     story: 'Guarda la storia della tua stagione',
   },
   data: {
-    kicker: 'Programma reale. Fonti trasparenti.',
     title: 'Dati reali dei Kangs',
     intro:
       'Calendari {{season}} pubblicati di Varsity, Junior Varsity e Squadra C con gli ultimi roster pubblicati, separati dalla tua simulazione.',
@@ -2274,5 +2260,9 @@ export default {
     slots: 'Turni',
     game: 'Gara',
     over: 'Stagione finita',
+  },
+  head: {
+    energy: 'Energia squadra',
+    opp: 'Forza avversario',
   },
 };

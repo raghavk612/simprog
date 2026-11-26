@@ -155,7 +155,7 @@ export function roster() {
     ${(bad => (bad.length ? `<p class="notice" role="status">${issueText(bad, true)}</p>` : ''))(E.lineupIssues(state))}`;
   if (!rosterFull)
     return html`
-      ${header(tu('roster.kicker'), t('nav.roster'), t('hb.r.lead'))}
+      ${header(t('nav.roster'), t('hb.r.lead'))}
       ${tools}
       <h2 class="squad-head">${t('box.starters')}</h2>
       <div class="squad starters">
@@ -187,7 +187,7 @@ export function roster() {
     `<td class="grade g-${E.grade(row.r[k])[0]}">${top(row, k, E.grade(row.r[k]))}</td>`;
   const head = (k, label, o) => sortHead('stats', sorts.stats, k, label, o);
   return html`
-    ${header(tu('roster.kicker'), t('nav.roster'), t('rv.intro'))} ${tools} ${sel ? rosterCard(sel) : ''} <div class="table-wrap rv-table">
+    ${header(t('nav.roster'), t('rv.intro'))} ${tools} ${sel ? rosterCard(sel) : ''} <div class="table-wrap rv-table">
       <div class="rv-team">
         <span>${tu('rv.team', { team: esc(teamLabel()) })}</span><span>${tu('rv.record', { w: state.wins, l: state.losses, c: Math.round(state.chemistry) })}</span>
       </div>

@@ -2,7 +2,6 @@ import en from './en.js';
 // 简体中文。键和 {{占位符}} 与 en.js 完全一致。
 export default {
   skills: {
-    kicker: '战术手册',
     title: '技能树',
     intro:
       '你的球员一开始掌握五个基础招式。用球队代币解锁新招式——每个招式都会为球队增加比赛中可用的战术。招式少的球队容易被防守看穿，所以每次解锁也会让你的投篮稍微更稳。',
@@ -36,7 +35,6 @@ export default {
     },
   },
   gear: {
-    kicker: '装备室',
     intro: '使用球队代币为每位球员搭配装备，无需真实货币。',
     tagline: '小小提升，关键时刻。',
     rules:
@@ -223,7 +221,6 @@ export default {
   roster: {
     fullStats: '完整数据',
     lineup: '返回阵容',
-    kicker: '球衣背后的人',
     spots: '阵容名额 {{n}} / 15',
     minutes: '{{n}} / 160 分钟',
     auto: '生成符合资格的轮换',
@@ -255,7 +252,6 @@ export default {
     freshman: '初三',
   },
   practice: {
-    kicker: '培养全面的运动员',
     intro: '最多选择三个训练，再通过技能小游戏逐个解锁。训练靠技术解锁，绝不用钱买。',
     group: '训练对象',
     wholeTeam: '全队',
@@ -313,7 +309,6 @@ export default {
     culture: { name: '球队文化建设者', detail: '球队聚餐时 +3 士气和默契' },
   },
   recruit: {
-    kicker: '发现下一个改变局面的人',
     intro: '签下试训球员来填补空缺名额。先侦察，才能看到潜力和职业道德。只用代币，绝不涉及真钱。',
     tryout: '虚构试训 · {{pos}}',
     sign: '签约 · {{cost}} 代币',
@@ -349,7 +344,6 @@ export default {
     title: '为你的人留出时间。',
     body: '替补席希望被倾听。球队需要资源。功课越堆越多。请选择把一个备战时段用在哪里。',
     fundraise: '举办社区训练营',
-    assistantKicker: '一个助理教练名额',
     buildStaff: '助理教练',
     assistantBody: '助理教练的角色是虚构的游戏选项。他们的加成适用于你的备战训练。',
     hired: '已聘用',
@@ -369,8 +363,6 @@ export default {
     speed: '观看速度',
     kangs: 'Kangs',
     visitors: '客队',
-    liveKicker: '球馆直播',
-    prepKicker: '准备，应变，执行。',
     liveTitle: '比赛日，由你指挥。',
     vs: 'Kangs 对阵 {{opp}}',
     choosePlay: '选择一个战术，观看这个回合如何展开。',
@@ -479,7 +471,6 @@ export default {
   },
   stats: { assists: '助攻', blocks: '盖帽', steals: '抢断', rebounds: '篮板', title: '球队统计' },
   replay: {
-    kicker: '录像室',
     title: '观看这次进攻如何展开。',
     intro: '已记录的动作与结果。回放不会改变你的赛季。',
     recorded: '已记录的进攻',
@@ -550,7 +541,6 @@ export default {
     wearing: '当前球衣：{{kit}}',
   },
   locker: {
-    kicker: '穿上属于你的身份',
     intro: '选择球员在 3D 球馆里穿的球衣。可在球员资料中修改球员姓名。',
     title: '球队球衣',
     kits: '球衣款式',
@@ -562,7 +552,6 @@ export default {
     picked: '已选择{{kit}}球衣。',
   },
   journal: {
-    kicker: '你的赛季故事',
     intro: '你的模拟战绩、决策、积分榜和决定性时刻。',
     path: '赛季阶段',
     regular: '常规赛',
@@ -577,7 +566,6 @@ export default {
     scoreboard: '比赛结果',
     replay: '回放',
     noGames: '打完你的首场比赛，开启你的故事。',
-    standings: '项目积分榜',
     table: '联赛积分榜',
     tableNote: '虚构的赛季积分榜：其他对手每轮都会进行模拟的背景比赛。这不是 KingCo 的官方积分榜。',
     trail: '决策记录',
@@ -599,7 +587,6 @@ export default {
     },
   },
   ending: {
-    kicker: '终场哨响',
     won: '你把冠军带回了家。',
     over: '你的赛季已经结束。',
     bannerTitle: '一面赢来的冠军旗帜，一支亲手打造的球队。',
@@ -610,7 +597,6 @@ export default {
     story: '观看你的赛季故事',
   },
   data: {
-    kicker: '真实的球队，透明的来源。',
     title: 'Kangs 真实数据',
     intro:
       '已发布的 {{season}} 赛季 Varsity、Junior Varsity 和 C 队赛程，以及最新公布的名单，与你的模拟分开显示。',
@@ -2035,5 +2021,9 @@ export default {
     slots: '时段',
     game: '场次',
     over: '赛季结束',
+  },
+  head: {
+    energy: '球队体能',
+    opp: '对手强度',
   },
 };
