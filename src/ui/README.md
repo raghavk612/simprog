@@ -57,6 +57,11 @@ write templates over as many lines as you like. Put text from the save or the da
   `SEASON_ACTIONS` if it changes the season) in `actions.js`. Keep existing `data-action` names; tests and the
   lessons use them.
 - **Text:** `t('my.key')`, with the key added to all 7 locale files.
+- **The way forward:** a screen has one purple button. Pages without their own get the week's next step in one slot,
+  the end of the row under the top bar (`subnavGo` in `nav.js` decides which pages). A page with its own primary wraps it
+  in `<div class="page-action">` (the button, its disabled reason, at most one short status line; one per page): in the
+  flow on a desktop, a bar docked above the tab bar on a phone. A selected tab, filter or toggle uses the
+  `--selected-*` tokens in `theme.css`, never the purple fill.
 
 Run `npm test`, and `npm run format` before committing.
 
