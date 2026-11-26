@@ -26,6 +26,18 @@ import { stage } from '../shell.js';
 import { endscreen } from './season.js';
 import { nextStepButton } from './home.js';
 
+// The play-by-play is the game's story, so on a desktop it starts open; once the coach closes it (or opens another
+// drawer, which closes it) it stays as they left it. Kept here, not in the DOM, because render() rebuilds the drawers.
+let feedOpen = true;
+if (typeof document !== 'undefined')
+  document.addEventListener(
+    'toggle',
+    e => {
+      if (e.target.matches?.('.commentary-drawer')) feedOpen = e.target.open;
+    },
+    true,
+  );
+const feedStartsOpen = () => feedOpen && matchMedia('(min-width: 761px)').matches;
 /* ESPN-style box score: starters, bench, team totals. */
 export function boxTable(line, title, compact = false) {
   if (!line) return '';
@@ -354,7 +366,7 @@ export function game() {
               <p class="play-call" aria-live="polite"> ${esc(arena.presentation()?.clip ? shot(arena.presentation().clip) : t('game.choosePlay'))}
               </p>
               <div class="court-drawers">
-                <details class="court-drawer commentary-drawer" name="court-drawers">
+                <details class="court-drawer commentary-drawer" name="court-drawers" ${feedStartsOpen() ? 'open' : ''}>
                   <summary>${t('game.playByPlay')}</summary>
                   <div class="drawer-body play-feed">
                     ${(arena.isPlaying() ? feedLines(m).slice(2) : feedLines(m)).map((x, i) => `<p class="${i === 0 ? 'new' : ''}">${esc(x)}</p>`).join('') || `<p>${t('game.crowdReady')}</p>`}

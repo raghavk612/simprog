@@ -9,16 +9,44 @@ import { announce } from '../a11y.js';
 import { $ } from './page.js';
 import { html, TOAST_ICONS, esc, signed, cap1 } from './markup.js';
 import { state } from './store.js';
+import { ToastHold } from './toastHold.js';
+
+// During a live game (or a replay) notifications wait, except errors and `now` ones, which show in a corner kept free
+// of the score, the drawers and the controls (theme.css). They come out at the next quarter break (releaseToasts from
+// playback.js) or when the game ends; ones already on screen at tip-off wait as well.
+const hold = new ToastHold(),
+  isLive = () => document.body.classList.contains('live-match');
+let wasLive = false;
+function liveChanged() {
+  const live = isLive();
+  if (live === wasLive) return;
+  wasLive = live;
+  const box = $('#toast');
+  if (live)
+    for (const card of [...(box?.children || [])].reverse())
+      if (card.toast && !card.classList.contains('error')) {
+        card.remove();
+        hold.offer(card.toast, true);
+      }
+  if (!live) releaseToasts();
+}
+if (typeof MutationObserver === 'function')
+  new MutationObserver(liveChanged).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+// Shows the notifications that waited during play.
+export function releaseToasts() {
+  for (const x of hold.release()) notify(x.msg, { ...x.opt, now: true });
+}
 
 // Notification cards: a few at a time, each dismissable, paused while hovered. The text and the title are already in the player's language.
 // opt.action = { label, run } adds a button (e.g. Undo) that runs once and closes the card; such a card stays longer.
 export function notify(msg, opt = {}) {
   const box = $('#toast');
-  if (!box) return;
+  if (!box || !hold.offer({ msg, opt }, isLive())) return;
   const type = opt.type || 'info',
     ms = opt.ms ?? (getA11y().timingAssist ? 12000 : opt.action ? 9000 : type === 'error' ? 6500 : 5200);
   const card = document.createElement('div');
   card.className = `toast-card ${type}`;
+  card.toast = { msg, opt };
   card.setAttribute('role', type === 'error' ? 'alert' : 'status');
   card.style.setProperty('--life', ms + 'ms');
   card.innerHTML = html`

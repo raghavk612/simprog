@@ -1459,6 +1459,23 @@ body[data-view='data'] .table-wrap {
   margin-top: 12px;
 }
 
+/* ---- Notifications during the live game: only errors and direct answers show while it plays (toast.js holds the
+   rest for the quarter break), in a corner of the court clear of the score bug, the drawers and the controls. ---- */
+body.live-match #toast {
+  inset: 144px auto auto 24px;
+  width: min(360px, calc(100vw - 48px));
+}
+@media (max-width: 760px) {
+  body.live-match #toast {
+    inset: 96px 12px auto 12px;
+    width: auto;
+  }
+  /* A quarter break's dialog fills the phone: notifications go over the score instead, which waits behind it. */
+  body.live-match:has(#modal[open]) #toast {
+    top: 8px;
+  }
+}
+
 /* ---- Game day before tip-off: the gym, the five and one button ---- */
 /* The drawers anchor to the gym on every screen size (on phones they used to anchor to the page and cover the top bar). */
 body[data-view='game'] .court-panel {
