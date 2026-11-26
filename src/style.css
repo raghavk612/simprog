@@ -6266,12 +6266,12 @@ dialog:has(.unlock-pop) {
 .gear-display {
   display: grid;
   place-items: center;
-  height: 155px;
+  height: 96px;
   background: none;
 }
 .gear-art {
-  width: 140px;
-  height: 140px;
+  width: 88px;
+  height: 88px;
   fill: var(--accent-ink);
   stroke: var(--ink-2);
   stroke-width: 2.5;

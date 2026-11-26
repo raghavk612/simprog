@@ -385,14 +385,19 @@ export function buyUpgrade(s, key) {
   (s.upgrades ??= []).push(key);
   log(s, `Bought ${u.name} for ${u.cost} tokens.`, 'upgrade', { item: key, cost: u.cost });
 }
-export function buyGear(s, key) {
+/* Buying for a player (the Gear page passes whoever it shows) also puts the item on them when that slot is empty, so
+   buying is one step; a filled slot is never changed. */
+export function buyGear(s, key, wearer) {
   const item = gearItem(key);
   if (!item) throw Error('Gear unavailable.');
   if (s.gear?.owned?.includes(key)) throw Error('You already own this gear.');
+  const p = wearer == null ? null : s.players.find(p => p.id === +wearer);
+  if (wearer != null && !p) throw Error('Choose a player');
   spend(s, item.cost, false);
   s.gear ??= { owned: [], equipped: {} };
   s.gear.owned.push(key);
   log(s, `Bought ${key} for ${item.cost} tokens.`, 'gearBuy', { item: key, cost: item.cost });
+  if (p && !s.gear.equipped[p.id]?.[item.slot]) equipGear(s, p.id, key);
 }
 /* Learning a move: costs tokens but no preparation slot, and is blocked like any purchase (see canUnlock). */
 export function unlockSkill(s, key) {

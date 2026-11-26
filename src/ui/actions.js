@@ -192,7 +192,7 @@ const SEASON_ACTIONS = {
     E.buyUpgrade(state, el.dataset.key);
   },
   'gear-buy': el => {
-    E.buyGear(state, el.dataset.key);
+    E.buyGear(state, el.dataset.key, el.dataset.id); // and puts it on the shown player when that slot is empty
   },
   'gear-equip': el => {
     E.equipGear(state, +el.dataset.id, el.dataset.key);

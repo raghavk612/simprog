@@ -57,7 +57,7 @@ export default {
     },
     unequip: 'Rimuovi',
     empty: 'Spazio vuoto',
-    pickBelow: 'Scegli un oggetto posseduto qui sotto.',
+    pickBelow: 'Compra o scegli un oggetto posseduto nel negozio.',
     shop: 'Negozio attrezzatura',
     all: 'Tutto',
     owned: 'Inventario',
@@ -68,6 +68,7 @@ export default {
     noOwned: 'Inventario vuoto. Acquista il primo oggetto in Tutto.',
     bought: '{{item}} aggiunto all’inventario. Scegli un giocatore per equipaggiarlo.',
     equipDone: '{{item}} equipaggiato a {{name}}.',
+    buyEquip: 'Compra ed equipaggia · {{cost}} gettoni',
   },
   meta: {
     title: 'KANGS • La strada verso il campionato',
@@ -358,6 +359,14 @@ export default {
     signAria: 'Ingaggia {{name}} per {{cost}} gettoni',
     none: 'Tutti i candidati dei provini sono stati ingaggiati.',
     full: 'Rosa al completo. Svincola un giocatore in Squadra per ingaggiarne un altro.',
+    rank: 'N. {{rank}} su {{total}} per OVR',
+    overPos: 'Sarebbe titolare: {{d}} su {{name}}, il tuo titolare più debole come {{pos}}',
+    underPos: 'Panchina: {{d}} rispetto a {{name}}, il tuo titolare più debole come {{pos}}',
+    overAny: 'Sarebbe titolare: {{d}} su {{name}}, il tuo titolare più debole',
+    underAny: 'Panchina: {{d}} rispetto a {{name}}, il tuo titolare più debole',
+    needs:
+      'Bisogni: il tuo titolare più debole è {{name}} ({{pos}}, OVR {{ovr}}) · il tuo quintetto è più debole in {{rating}} ({{value}})',
+    fullShort: 'Rosa al completo',
   },
   office: {
     inboxFirst: 'Rispondi prima alla posta del coach.',
@@ -891,6 +900,8 @@ export default {
     replaceYes: 'Sostituisci stagione',
     importYes: 'Importa stagione',
     releaseYes: 'Libera giocatore',
+    dismiss: 'Licenziare il tuo {{name}}? Perdi i {{cost}} gettoni pagati: nessun rimborso.',
+    dismissYes: 'Licenzia l’assistente',
   },
   // Play-by-play commentary templates: one sentence per template, filled from the play.
   cm: {
@@ -1628,6 +1639,7 @@ export default {
       gpa: 'GPA per essere idoneo',
       injuries: 'infortuni attivi',
       tip: 'Poco tempo? «{{button}}» nella pagina Squadra compila una formazione valida per te.',
+      ovr: 'OVR è la valutazione complessiva di un giocatore, calcolata da abilità e ruolo. La pagina Squadra e le schede dei provini usano la stessa scala.',
     },
     p: {
       lead: 'Usa gli slot di preparazione e i gettoni prima di ogni partita.',
@@ -2207,5 +2219,8 @@ export default {
     invalid: 'Questo non è un codice stagione valido. I codici sono come KNG-J-1A2B3C.',
     unavailable: 'Questa stagione è iniziata prima dei codici stagione.',
     toggle: 'Hai un codice stagione?',
+  },
+  shop: {
+    needTokens: 'Servono altri {{n}} gettoni · ne hai {{have}}',
   },
 };

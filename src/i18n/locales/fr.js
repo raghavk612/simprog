@@ -58,7 +58,7 @@ export default {
     },
     unequip: 'Retirer',
     empty: 'Emplacement vide',
-    pickBelow: 'Choisissez un objet possédé ci-dessous.',
+    pickBelow: 'Achetez ou choisissez un objet possédé dans la boutique.',
     shop: 'Boutique',
     all: 'Tout',
     owned: 'Inventaire',
@@ -69,6 +69,7 @@ export default {
     noOwned: 'Inventaire vide. Achetez votre premier objet dans Tout.',
     bought: '{{item}} ajouté à l’inventaire. Choisissez un joueur pour l’équiper.',
     equipDone: '{{item}} équipé par {{name}}.',
+    buyEquip: 'Acheter et équiper · {{cost}} jetons',
   },
   meta: {
     title: 'KANGS • La route vers le championnat',
@@ -362,6 +363,14 @@ export default {
     signAria: 'Recruter {{name}} pour {{cost}} jetons',
     none: 'Tous les candidats des détections ont été recrutés.',
     full: 'Effectif complet. Libérez un joueur dans Équipe pour en recruter un autre.',
+    rank: 'N° {{rank}} sur {{total}} en OVR',
+    overPos: 'Titulaire : {{d}} sur {{name}}, votre titulaire le plus faible au poste {{pos}}',
+    underPos: 'Remplaçant : {{d}} face à {{name}}, votre titulaire le plus faible au poste {{pos}}',
+    overAny: 'Titulaire : {{d}} sur {{name}}, votre titulaire le plus faible',
+    underAny: 'Remplaçant : {{d}} face à {{name}}, votre titulaire le plus faible',
+    needs:
+      'Besoins : votre titulaire le plus faible est {{name}} ({{pos}}, OVR {{ovr}}) · votre cinq est le plus faible en {{rating}} ({{value}})',
+    fullShort: 'Effectif complet',
   },
   office: {
     inboxFirst: 'Répondez d’abord à la boîte du coach.',
@@ -898,6 +907,8 @@ export default {
     replaceYes: 'Remplacer la saison',
     importYes: 'Importer la saison',
     releaseYes: 'Libérer le joueur',
+    dismiss: 'Renvoyer votre {{name}} ? Vous perdez les {{cost}} jetons payés : aucun remboursement.',
+    dismissYes: 'Renvoyer l’adjoint',
   },
   // Play-by-play commentary templates: one sentence per template, filled from the play.
   cm: {
@@ -1652,6 +1663,7 @@ export default {
       gpa: 'moyenne pour être éligible',
       injuries: 'blessures actives',
       tip: 'Pressé ? « {{button}} » sur la page Effectif compose une composition valide pour vous.',
+      ovr: 'OVR est la note globale d’un joueur, calculée à partir de la compétence et du poste. La page Équipe et les cartes des essais utilisent la même échelle.',
     },
     p: {
       lead: 'Dépensez créneaux de préparation et jetons avant chaque match.',
@@ -2257,5 +2269,8 @@ export default {
     invalid: 'Ce n’est pas un code de saison valide. Les codes ressemblent à KNG-J-1A2B3C.',
     unavailable: 'Cette saison a commencé avant l’existence des codes de saison.',
     toggle: 'Vous avez un code de saison ?',
+  },
+  shop: {
+    needTokens: 'Il manque {{n}} jetons · vous en avez {{have}}',
   },
 };

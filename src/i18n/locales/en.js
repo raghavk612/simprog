@@ -283,6 +283,14 @@ export default {
     signAria: 'Sign {{name}} for {{cost}} tokens',
     none: 'All tryout candidates have been signed.',
     full: 'Roster full. Release a player on the Team page to sign someone.',
+    rank: '#{{rank}} of {{total}} by OVR',
+    overPos: 'Would start: {{d}} over {{name}}, your weakest starting {{pos}}',
+    underPos: 'Bench: {{d}} vs {{name}}, your weakest starting {{pos}}',
+    overAny: 'Would start: {{d}} over {{name}}, your weakest starter',
+    underAny: 'Bench: {{d}} vs {{name}}, your weakest starter',
+    needs:
+      'Team needs: your weakest starter is {{name}} ({{pos}}, OVR {{ovr}}) · your five are lowest in {{rating}} ({{value}})',
+    fullShort: 'Roster full',
   },
   gear: {
     kicker: 'Equipment room',
@@ -306,7 +314,7 @@ export default {
     },
     unequip: 'Unequip',
     empty: 'Empty slot',
-    pickBelow: 'Choose an owned item below.',
+    pickBelow: 'Buy or pick an owned item in the shop.',
     shop: 'Gear shop',
     all: 'All gear',
     owned: 'Owned inventory',
@@ -317,6 +325,7 @@ export default {
     noOwned: 'Your inventory is empty. Buy your first item from All gear.',
     bought: '{{item}} added to inventory. Choose a player and equip it.',
     equipDone: '{{item}} equipped to {{name}}.',
+    buyEquip: 'Buy and equip · {{cost}} tokens',
   },
   skills: {
     kicker: 'Playbook',
@@ -868,6 +877,8 @@ export default {
     replaceYes: 'Replace season',
     importYes: 'Import season',
     releaseYes: 'Release player',
+    dismiss: 'Dismiss your {{name}}? You lose the {{cost}} tokens you paid: there is no refund.',
+    dismissYes: 'Dismiss assistant',
   },
   // Play-by-play commentary templates: one sentence per template, filled from the play.
   cm: COMMENTARY,
@@ -1431,6 +1442,7 @@ export default {
       gpa: 'GPA to be eligible',
       injuries: 'active injuries',
       tip: 'Short on time? {{button}} on the Roster page fills a legal lineup for you.',
+      ovr: 'OVR is a player’s overall rating, worked out from Skill and position. The Team page and the tryout cards use the same scale.',
     },
     p: {
       lead: 'Spend prep slots and tokens before each game.',
@@ -1979,5 +1991,8 @@ export default {
     invalid: 'That is not a valid season code. Codes look like KNG-J-1A2B3C.',
     unavailable: 'This season was started before season codes existed.',
     toggle: 'Have a season code?',
+  },
+  shop: {
+    needTokens: 'Need {{n}} more tokens · you have {{have}}',
   },
 };
