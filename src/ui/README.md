@@ -39,7 +39,8 @@ write templates over as many lines as you like. Put text from the save or the da
 | `screens/locker.js`  | Shop: Locker room, 3D jerseys, captain                                        |
 | `screens/season.js`  | Season tab: journal, bracket, standings, data, report card                    |
 | `screens/landing.js` | title screen, starting and continuing a season                                |
-| `tutorial.js`        | the guided first game (`BEATS`)                                               |
+| `lessons.js`         | the assistant coach's lessons as data (`LESSONS`), progress, levels; no DOM   |
+| `tutorial.js`        | shows the lessons: cards, ring, Got it / Hide tips / Show me, holding play    |
 | `demo.js`            | the judge demo (`DEMO_VIEWS`)                                                 |
 | `handbook.js`        | Help                                                                          |
 | `dialogs.js`         | the dialog, confirm, Settings, credits                                        |
@@ -50,11 +51,22 @@ write templates over as many lines as you like. Put text from the save or the da
 ## Adding things
 
 - **A page:** write `myPage()` in `screens/`, add it to `PAGES` (`shell.js`) and to a group in `NAV` (`nav.js`), and add
-  `nav.<route>` to every locale. The tutorial and the judge demo open pages by route name, so check
-  `BEATS` and `DEMO_VIEWS` when renaming one. `tests/nav.test.js` checks all of this.
+  `nav.<route>` to every locale. The lessons and the judge demo name pages by route, so check
+  `LESSONS` (`lessons.js`) and `DEMO_VIEWS` when renaming one. `tests/nav.test.js` checks all of this.
 - **A button:** `btn(t('my.label'), 'my-action', 'primary')`, then add `'my-action'` to `ACTIONS` (or to
   `SEASON_ACTIONS` if it changes the season) in `actions.js`. Keep existing `data-action` names; tests and the
-  tutorial use them.
+  lessons use them.
 - **Text:** `t('my.key')`, with the key added to all 7 locale files.
 
 Run `npm test`, and `npm run format` before committing.
+
+## The assistant coach's lessons
+
+Nine short chapters (one to three steps each) and a few one-time tips, each opening the first time its moment comes:
+week 1, tip-off, a timeout worth calling, the first quarter break, game speed, the press room, each Shop tab, the
+midseason and playoff breaks. They are data in `lessons.js` (`start`, and per step `on`, `done`, the ring `spot` and the
+glowing `act`); `tutorial.js` shows them and nothing on the page is ever locked. A step closes when the coach does the
+real thing anywhere, and a step already done is skipped. The level (Lessons, Tips only, Off) is a preference in
+`settings.js` (Settings > Game, and the start form's question); progress is in `localStorage` under `kangs-lessons-v1`,
+and Help's Lessons tab replays any of them. A new feature should ship with its own lesson or tip: add it to `LESSONS`,
+add `tutorial.c.<chapter>.<step>` (or `tutorial.tip.<id>`) and `tutorial.name.<chapter>` to every locale.
