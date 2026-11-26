@@ -54,6 +54,36 @@ test('Shop pages open at any time; during a break their foot walks the tabs and 
   }
   assert.doesNotMatch(shell, /setView\('home'\)/, 'render() no longer sends Shop pages back to Home');
 });
+test('the way forward has one slot, at the end of the row under the top bar, on every page without its own', () => {
+  const s = season();
+  E.endBreak(s);
+  const step = E.nextStep(s);
+  assert.ok(
+    !['roster', ...NAV.season, ...NAV.shop].includes(step.view),
+    'a plain week: the step is elsewhere',
+  );
+  // This week: Home has its next-step bar, Prep and Game day their own primary buttons, so the slot is empty.
+  for (const v of NAV.week) assert.equal(subnavGo(s, v), null, v);
+  // Team, Season and Shop pages all carry the week's next step in the same place.
+  for (const v of [...NAV.team, ...NAV.season, ...NAV.shop]) assert.equal(subnavGo(s, v), 'next', v);
+  // A lineup problem: the roster's own "Pick my best five" is the way forward there, so its slot is empty.
+  const hurt = s.players.find(p => p.starter);
+  hurt.injury = 2;
+  assert.ok(E.lineupIssues(s).length);
+  assert.equal(subnavGo(s, 'roster'), null, 'the roster shows its own fix');
+  assert.equal(subnavGo(s, 'standings'), 'next', 'other pages still point at the next step');
+  // The slot never offers the page it is on.
+  const done = season();
+  E.endBreak(done);
+  done.finished = true;
+  assert.equal(E.nextStep(done).view, 'season');
+  assert.equal(subnavGo(done, 'season'), null, 'the journal is the step: no button to open it again');
+  assert.equal(subnavGo(done, 'bracket'), 'next');
+  // During a break a Shop page ends the break; other pages still show the week's next step (opening the break).
+  const pre = season();
+  for (const v of NAV.shop) assert.equal(subnavGo(pre, v), 'break', v);
+  for (const v of NAV.season) assert.equal(subnavGo(pre, v), 'next', v);
+});
 test('the Shop lessons follow the Shop tabs in order, one line each', () => {
   const shop = LESSONS.filter(l => l.chapter === 'shop');
   assert.deepEqual(

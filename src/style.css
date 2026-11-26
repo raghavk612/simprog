@@ -1259,7 +1259,7 @@ dialog {
   font-size: calc(15px * var(--ts, 1) * var(--ls, 1));
 }
 .playback-controls button.selected {
-  color: white;
+  color: var(--selected-ink);
 }
 .play-call {
   padding: 16px 18px;
@@ -1597,7 +1597,8 @@ body.live-match .workspace > footer {
   background: var(--panel-2);
 }
 .playback-controls button.selected {
-  background: var(--accent);
+  background: var(--selected-bg);
+  box-shadow: inset 0 0 0 2px var(--selected-line);
 }
 .play-feed .new {
   background: var(--accent-soft);
@@ -2603,10 +2604,10 @@ button kbd.key {
   color: var(--ink);
 }
 .rule-tabs button.active {
-  background: var(--accent);
-  border-color: transparent;
-  color: var(--on-accent);
-  box-shadow: none;
+  background: var(--selected-bg);
+  border-color: var(--selected-line);
+  color: var(--selected-ink);
+  box-shadow: inset 0 0 0 1px var(--selected-line);
 }
 .rule-panel {
   text-align: center;
@@ -2728,9 +2729,10 @@ button kbd.key {
   background: var(--accent);
 }
 .camera-controls button.active {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: transparent;
+  background: var(--selected-bg);
+  color: var(--selected-ink);
+  border-color: var(--selected-line);
+  box-shadow: inset 0 0 0 1px var(--selected-line);
 }
 @media (max-width: 620px) {
   .ctl-grid {
@@ -4128,8 +4130,9 @@ dialog:has(.drill-shell) {
   color: var(--ink-2);
 }
 .live-match .game-arena .camera-controls button.active {
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--selected-bg);
+  color: var(--selected-ink);
+  box-shadow: inset 0 0 0 2px var(--selected-line);
 }
 @media (max-width: 760px) {
   .live-match .game-arena .arena-bottom {
@@ -5059,9 +5062,10 @@ img.opp-badge:not(.ph) {
   box-shadow: inset 0 0 0 1px var(--score);
 }
 .lk-chip.picked {
-  border-color: #b28aff;
-  background: #8550e45c;
-  box-shadow: inset 0 0 0 1px var(--accent-ink);
+  border-color: var(--selected-line);
+  background: var(--selected-bg);
+  color: var(--selected-ink);
+  box-shadow: inset 0 0 0 1px var(--selected-line);
 }
 .lk-chip i {
   font: 900 calc(11px * var(--ts, 1) * var(--ls, 1))/1 var(--display);
@@ -6495,7 +6499,7 @@ dialog:has(.unlock-pop) {
   padding: 28px 0 36px;
 }
 .landing-visual {
-  position: absolute;
+  position: fixed; /* the viewport, not the menu column: an open start form taller than the screen leaves no band */
   inset: 0;
   z-index: 0;
   height: auto;
@@ -6635,8 +6639,25 @@ dialog:has(.unlock-pop) {
   min-height: 48px;
   margin: 0;
 }
-.landing-copy > .secondary + #start-form {
+.landing-copy > .secondary + #start-form,
+.title-alt + #start-form {
   margin-top: 16px;
+}
+/* Continue turns secondary once the start form is open: it keeps the launch button's place and spacing. */
+.landing-copy > .secondary[data-action='continue'] {
+  margin-bottom: 10px;
+}
+/* With a save: New season and the judge demo side by side under Continue, both secondary. */
+.title-alt {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.title-alt > .secondary {
+  width: 100%;
+  max-width: none;
+  min-height: 48px;
+  margin: 0;
 }
 .landing form {
   max-width: none;
@@ -6720,7 +6741,8 @@ dialog:has(.unlock-pop) {
 #start-form {
   --tl-delay: 350ms;
 }
-.landing-copy > .secondary {
+.landing-copy > .secondary,
+.title-alt {
   --tl-delay: 420ms;
 }
 .landing-links,

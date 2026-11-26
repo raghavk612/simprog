@@ -22,9 +22,14 @@ export function breakFoot(s, v) {
   if (!pause || navGroup(v) !== 'shop') return null;
   return { pause, next: NAV.shop[NAV.shop.indexOf(v) + 1] || null };
 }
-// The way forward at the end of the row under the top bar, on pages that have none of their own: on a Shop page,
-// ending the break while one is open, otherwise the week's next step. Other pages carry their own primary button.
+// The way forward, in one slot at the end of the row under the top bar (on a phone, the bar above the tab bar), on every
+// page that has none of its own: on a Shop page during a break, ending the break; elsewhere the week's next step.
+// This week's pages carry their own (Home's next-step bar, Prep's Run the week, Game day's Tip off), the roster carries
+// "Pick my best five" while the lineup has a problem, and the slot never offers the page it is on.
 export function subnavGo(s, v) {
-  if (navGroup(v) !== 'shop') return null;
-  return E.breakDue(s) ? 'break' : 'next';
+  const g = navGroup(v);
+  if (g === 'week') return null;
+  if (g === 'shop' && E.breakDue(s)) return 'break';
+  if (g === 'team' && E.lineupIssues(s).length) return null;
+  return E.nextStep(s).view === v ? null : 'next';
 }

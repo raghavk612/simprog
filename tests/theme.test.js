@@ -47,6 +47,21 @@ test('no fading gradients: only flat colour blocks on jerseys, the whiteboard tr
     );
   }
 });
+test('purple fill means the way forward only: a selected tab, filter, camera or speed uses the selected tokens', () => {
+  const selected = /\[aria-(pressed|current|selected)=|\.(active|selected|picked)\b/;
+  for (const k of ['--selected-bg', '--selected-ink', '--selected-line'])
+    assert.ok(tokens(/:root,\s*#arena[^{]*\{([^}]*)\}/.exec(theme)[1]).has(k), k);
+  for (const file of ['../src/style.css', '../src/a11y.css', '../src/theme.css']) {
+    const found = [...read(file).matchAll(/([^{}]*)\{([^{}]*)\}/g)].filter(
+      m => selected.test(m[1]) && /background(-color)?:\s*var\(--accent(-hover)?\)/.test(m[2]),
+    );
+    assert.deepEqual(
+      found.map(m => m[1].trim().slice(-70)),
+      [],
+      file,
+    );
+  }
+});
 test('light mode is a palette, not a filter over the page', () => {
   assert.ok(!/invert\(/.test(read('../src/settings.js')));
   assert.ok(!/invert\(/.test(read('../src/a11y.css')));

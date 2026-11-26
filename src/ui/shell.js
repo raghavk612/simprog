@@ -86,20 +86,21 @@ export function stage(cls = '', { controls = true } = {}) {
       </div>
     </div>`;
 }
-// Game, record, tokens and slots on every page, so a coach never has to look for them.
+// Game, record, tokens and slots on every page, so a coach never has to look for them (a phone leaves the slots to Prep).
 function statusStrip() {
   const n = state.schedule.length,
-    item = (k, v) => `<span>${k} <b>${v}</b></span>`;
+    item = (k, v, cls = '') => `<span${cls ? ` class="${cls}"` : ''}>${k} <b>${v}</b></span>`;
   return html`
     <div class="status-strip">
       ${state.finished ? '' : `<span class="strip-game">${t('landing.nextGame', { n: Math.min(n, state.week + 1), total: n })}</span>`}
       ${item(t('metrics.record'), `${state.wins}–${state.losses}`)}
-      ${item(t('metrics.tokens'), formatNumber(state.tokens))}
-      ${item(cap1(t('toast.slots')), state.actions)}
+      ${item(t('metrics.tokens'), formatNumber(state.tokens), 'strip-tokens')}
+      ${item(cap1(t('toast.slots')), state.actions, 'strip-slots')}
     </div>`;
 }
-// The row under the top bar: the open group's tabs (during a break, under the break's name), the status strip, and on a
-// Shop page the way forward (ending the break, or the week's next step), since those pages have no primary button.
+// The row under the top bar: the open group's tabs (during a break, under the break's name), the status strip, and at its
+// end the way forward on every page without its own (nav.js subnavGo): ending the break on a Shop page during a break,
+// otherwise the week's next step. It sits in the page's one .page-action, which a phone docks above the tab bar.
 function subnav() {
   const go = subnavGo(state, view),
     pause = go === 'break' ? E.breakDue(state) : null,
@@ -118,12 +119,12 @@ function subnav() {
       }
       <div class="subnav-end">
         ${statusStrip()}
-        ${go === 'break' ? btn(t(`flow.done.${pause}`), 'break-done', 'primary small') : go === 'next' ? nextStepButton('primary small').html : ''}
+        ${go ? `<div class="page-action">${go === 'break' ? btn(t(`flow.done.${pause}`), 'break-done', 'primary small') : nextStepButton('primary small').html}</div>` : ''}
       </div>
     </div>`;
 }
 // The foot of a Shop page during a break: the break is optional, so it says so, and offers the next tab, or leaving the
-// break on the last one.
+// break on the last one (secondary there: the purple way forward is the same button in the slot under the top bar).
 function breakNext(foot) {
   return html`
     <div class="break-next">
@@ -131,7 +132,7 @@ function breakNext(foot) {
       ${
         foot.next
           ? `<button class="secondary" data-view="${foot.next}">${t('flow.breakNext', { tab: t(`nav.${foot.next}`) })} <span aria-hidden="true">→</span></button>`
-          : btn(t(`flow.done.${foot.pause}`), 'break-done', 'primary')
+          : btn(t(`flow.done.${foot.pause}`), 'break-done', 'secondary')
       }
     </div>`;
 }
@@ -157,6 +158,21 @@ const FOCUS_KEYS = [
   'id',
 ];
 let renderedView = null;
+// On a phone the page's .page-action is a bar docked above the tab bar: its height goes into --action-bar-h, so the
+// page keeps that much room at its foot and notifications sit above it (theme.css).
+const actionBar =
+  typeof ResizeObserver === 'function'
+    ? new ResizeObserver(([e]) =>
+        document.body.style.setProperty('--action-bar-h', `${Math.ceil(e.target.offsetHeight)}px`),
+      )
+    : null;
+function watchActionBar() {
+  if (!actionBar) return;
+  actionBar.disconnect();
+  const bar = app.querySelector('.page-action');
+  if (bar) actionBar.observe(bar);
+  else document.body.style.removeProperty('--action-bar-h');
+}
 function focusMemo() {
   const a = document.activeElement;
   if (!a || a === document.body || !app.contains(a)) return null;
@@ -242,6 +258,7 @@ export function render() {
     syncTitlePause();
     if (keep) $('.landing')?.classList.add('entered');
   }
+  watchActionBar();
   if (view === 'locker') mountJerseys();
   if (view === 'recruit') mountProspectJerseys();
   syncCrowd();
@@ -319,5 +336,18 @@ export function keepNavTabInView() {
     if (bar.scrollWidth <= bar.clientWidth) continue;
     const r = n.getBoundingClientRect();
     bar.scrollLeft += r.left - bar.getBoundingClientRect().left - (bar.clientWidth - r.width) / 2;
+  }
+  // Sub-tabs that do not fit show a ‹ › plate on the side with more (theme.css), kept up to date as the row scrolls.
+  for (const bar of document.querySelectorAll('.subnav nav')) {
+    const mark = () => {
+      const start = bar.scrollLeft > 1,
+        end = bar.scrollLeft + bar.clientWidth < bar.scrollWidth - 1,
+        more = start && end ? 'both' : start ? 'start' : end ? 'end' : '';
+      if ((bar.dataset.more || '') === more) return;
+      if (more) bar.dataset.more = more;
+      else delete bar.dataset.more;
+    };
+    mark();
+    bar.onscroll = mark;
   }
 }

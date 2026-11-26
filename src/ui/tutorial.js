@@ -121,7 +121,10 @@ function place(r) {
     rect = el?.getBoundingClientRect(),
     w = card.offsetWidth,
     h = card.offsetHeight,
-    dock = phone();
+    dock = phone(),
+    // a phone's way-forward bar (.page-action, docked above the tab bar): the card sits above it, never over it
+    bar = $('.page-action'),
+    foot = 84 + (dock && bar && getComputedStyle(bar).position === 'fixed' ? bar.offsetHeight : 0);
   if (ring) {
     ring.hidden = !rect;
     if (rect)
@@ -132,9 +135,9 @@ function place(r) {
         height: `${rect.height + 12}px`,
       });
   }
-  if (dock) document.documentElement.style.setProperty('--coach-h', `${h + 84}px`);
+  if (dock) document.documentElement.style.setProperty('--coach-h', `${h + foot}px`);
   const aim = target(r)?.getBoundingClientRect() ?? null;
-  let top = innerHeight - h - (dock ? 84 : 24);
+  let top = innerHeight - h - (dock ? foot : 24);
   // Docked on a phone over something on screen (the live game's control bar cannot scroll): sit just above it instead.
   const lift = dock && aim && aim.top < innerHeight && aim.bottom > top && aim.top - h - 12 >= 12;
   const show = card.querySelector('[data-action="lesson-show"]');
