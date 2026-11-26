@@ -180,6 +180,7 @@ export default {
     status: 'Status',
     startAria: 'Start {{name}}',
     minutesAria: 'Minutes for {{name}}',
+    balance: 'Starters: {{list}}',
   },
   status: {
     injured: 'Injured',
@@ -609,6 +610,20 @@ export default {
     trail: 'Decision trail',
     gameN: 'Game {{n}}',
     trailEmpty: 'Your decisions will appear here.',
+    you: '{{team}} (you)',
+    col: {
+      rank: '#',
+      rankFull: 'Place',
+      team: 'Team',
+      w: 'W',
+      wFull: 'Wins',
+      l: 'L',
+      lFull: 'Losses',
+      pct: 'Pct',
+      pctFull: 'Winning percentage',
+      gb: 'GB',
+      gbFull: 'Games behind the leader',
+    },
   },
   ending: {
     kicker: 'The final whistle',

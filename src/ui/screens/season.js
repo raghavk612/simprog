@@ -1,10 +1,23 @@
 // The Season tab: the journal (results and the decision trail), the final-run bracket, standings with leaders and
 // achievements, and the real team data. A finished season adds the report card.
 import * as E from '../../engine.js';
-import { tu, t, formatDate, formatNumber, formatDateTime } from '../../i18n/index.js';
+import { tu, t, formatDate, formatNumber, formatDateTime, localeTag } from '../../i18n/index.js';
 import { logText, tv } from '../../narrative.js';
 import { achievements } from '../../achievements.js';
-import { state, teamLabel, estSrc, stages, plan, data, lvl, hasScore, teamName, setData } from '../store.js';
+import {
+  state,
+  teamLabel,
+  estSrc,
+  stages,
+  plan,
+  data,
+  lvl,
+  hasScore,
+  teamName,
+  setData,
+  sorts,
+} from '../store.js';
+import { sortRows, sortHead, yearRank, heightInches, standingsRows } from '../lists.js';
 import { html, esc, btn, oppBadge, header, LOGO_WHITE, pill } from '../markup.js';
 import { notify } from '../toast.js';
 import { $ } from '../page.js';
@@ -150,20 +163,44 @@ export function standingsView() {
     teams[r.opponent] ??= { name: r.opponent, w: 0, l: 0 };
     r.won ? teams[r.opponent].l++ : teams[r.opponent].w++;
   }
-  const ranks = Object.values(
+  const rows = standingsRows(
     state.standings || {
       'Lake Washington': { name: 'Lake Washington', w: state.wins, l: state.losses },
       ...teams,
     },
-  ).sort((a, b) => b.w / Math.max(1, b.w + b.l) - a.w / Math.max(1, a.w + a.l));
+  );
+  // basketball's ".750" (and "1.000"), in the reader's number format; a team yet to play has none
+  const pct = v =>
+    v == null
+      ? '—'
+      : v
+          .toLocaleString(localeTag(), { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+          .replace(/^0(?=\D)/, '');
+  // a short column name on screen, its full name for a screen reader and on hover
+  const col = k =>
+    `<th scope="col" class="num" title="${esc(t(`journal.col.${k}Full`))}"><span aria-hidden="true">${t(`journal.col.${k}`)}</span><span class="sr-only">${t(`journal.col.${k}Full`)}</span></th>`;
   return html`
     ${header(tu('journal.standings'), t('nav.standings'))}
     <div class="standings-grid">
       <section class="card fit-col">
         <h2>${t('journal.table')}</h2>
         <p>${t('journal.tableNote')}</p>
-        <div class="fit-scroll" tabindex="0">
-          ${ranks.map((r, i) => `<div class="staff-row"><span>${i + 1}. ${esc(r.name)}</span><b>${r.w}–${r.l}</b></div>`).join('')}
+        <div class="table-wrap standings-table fit-scroll" tabindex="0">
+          <table aria-label="${esc(t('journal.table'))}">
+            <thead>
+              <tr>${col('rank')}<th scope="col">${t('journal.col.team')}</th>${['w', 'l', 'pct', 'gb'].map(col).join('')}</tr>
+            </thead>
+            <tbody>
+              ${rows
+                .map(
+                  r => html`
+                    <tr class="${r.you ? 'you' : ''}">
+                      <td class="num">${r.rank}</td><th scope="row">${r.you ? t('journal.you', { team: esc(t('game.kangs')) }) : esc(r.name)}</th><td class="num">${r.w}</td><td class="num">${r.l}</td><td class="num">${pct(r.pct)}</td><td class="num">${r.gb ? formatNumber(r.gb) : '—'}</td>
+                    </tr>`,
+                )
+                .join('')}
+            </tbody>
+          </table>
         </div>
       </section>
       ${leadersCard()}
@@ -390,17 +427,19 @@ export function dataView() {
                   <table aria-label="${esc(teamName(key))}">
                     <thead>
                       <tr>
-                        <th scope="col">#</th><th scope="col">${t('data.player')}</th><th scope="col">${t('data.position')}</th><th scope="col">${t('data.height')}</th><th scope="col">${t('data.grade')}</th>
+                        ${dataHead('num', '#', 'asc')}${dataHead('name', t('data.player'), 'asc')}${dataHead('pos', t('data.position'), 'asc')}${dataHead('height', t('data.height'), 'desc')}${dataHead('year', t('data.grade'), 'desc')}
                       </tr>
                     </thead>
                     <tbody>
-                      ${lv.players
-                        .map(
-                          p => html`
+                      ${sortRows(lv.players, sorts.data, dataValue)
+                        .map(p => {
+                          // on the coached level, a name still on the roster opens that player's profile
+                          const own = key === lvl() && state.players.find(x => x.originalName === p.name);
+                          return html`
                             <tr>
-                              <td>${p.number}${p.numberAssigned ? `<span class="muted" title="${esc(t('data.assignedTitle'))}">*</span>` : ''}</td><td>${esc(p.name)}</td><td>${esc(tv(p.position))}</td><td>${esc(p.height)}</td><td>${esc(tv(p.year))}</td>
-                            </tr>`,
-                        )
+                              <td>${p.number}${p.numberAssigned ? `<span class="muted" title="${esc(t('data.assignedTitle'))}">*</span>` : ''}</td><td>${own ? `<button class="player-link" data-action="player" data-id="${own.id}">${esc(p.name)}</button>` : esc(p.name)}</td><td>${esc(tv(p.position))}</td><td>${esc(p.height)}</td><td>${esc(tv(p.year))}</td>
+                            </tr>`;
+                        })
                         .join('')}
                     </tbody>
                   </table>
@@ -456,6 +495,15 @@ export function dataView() {
             </div>`,
       )
       .join('')}`;
+}
+// The real roster table's sortable columns (the sort is kept in the store, shared by the three levels).
+const dataHead = (key, label, first) => sortHead('data', sorts.data, key, label, { first });
+function dataValue(p, k) {
+  if (k === 'num') return p.number;
+  if (k === 'name') return p.name;
+  if (k === 'pos') return tv(p.position);
+  if (k === 'height') return heightInches(p.height);
+  return yearRank(p.year);
 }
 export function pickDataLevel(key) {
   dataLevel = key;

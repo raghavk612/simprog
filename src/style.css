@@ -1796,7 +1796,9 @@ body.live-match .workspace > footer {
 .leaders b {
   font-weight: 800;
 }
-.leader-link {
+/* a player's name that opens their profile (leaders, Season data, the live box score) */
+.leader-link,
+.player-link {
   background: none;
   border: 0;
   padding: 0;

@@ -3,7 +3,16 @@ import * as E from '../../engine.js';
 import { tv } from '../../narrative.js';
 import { arc, roomLevel, sparkPoints } from '../../arcs.js';
 import { play } from '../../audio.js';
-import { state, estSrc, teamLabel, save } from '../store.js';
+import { state, estSrc, teamLabel, save, sorts } from '../store.js';
+import {
+  sortRows,
+  sortHead,
+  columnLeaders,
+  energyLevel,
+  yearRank,
+  captainPick,
+  positionBalance,
+} from '../lists.js';
 import { esc, html, capBadge, cap1, btn, pill, issueText, header, short2, f1 } from '../markup.js';
 import { avatar } from '../avatar.js';
 import { show } from '../dialogs.js';
@@ -15,8 +24,7 @@ import { nextStepButton } from './home.js';
 let rosterFull = false;
 let rosterSel = null; // the player shown on the card in Full stats
 
-const energyWord = e =>
-  t(`rv.energy.${e >= 80 ? 'fresh' : e >= 55 ? 'rested' : e >= 30 ? 'tired' : 'exhausted'}`);
+const energyWord = e => t(`rv.energy.${energyLevel(e)}`);
 const moraleWord = m =>
   t(`rv.morale.${m >= 80 ? 'fired' : m >= 60 ? 'content' : m >= 40 ? 'restless' : 'unhappy'}`);
 const playerStatus = p =>
@@ -88,6 +96,32 @@ function rosterCard(p) {
       </div> <button class="rv-arrow next" data-action="rv-cycle" data-step="1" aria-label="${esc(t('rv.next'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
     </section>`;
 }
+// Full stats: one row per player with the values the table shows and sorts by, in the order of the store's sort
+// (the roster's own order until a header is clicked). The arrows on the player card step through this order.
+const RATING_KEYS = ['ins', 'mid', 'tpt', 'perd', 'insd'],
+  STAT_KEYS = ['gp', 'ppg', 'rpg', 'apg', 'spg', 'bpg'],
+  LEAD_KEYS = ['ovr', ...RATING_KEYS, 'energy', 'ppg', 'rpg', 'apg', 'spg', 'bpg'];
+function statsRows() {
+  const est = E.estimateLines(state);
+  const rows = state.players.map(p => ({
+    p,
+    r: E.ratings(p),
+    b: E.bio(p),
+    g: p.games ? E.perGame(p) : est[p.id],
+  }));
+  return sortRows(rows, sorts.stats, statValue);
+}
+function statValue({ p, r, b, g }, k) {
+  if (k === 'name') return p.name;
+  if (k === 'pos') return t(`rv.short.${b.position}`);
+  if (k === 'yr') return yearRank(p.year);
+  if (k === 'energy') return Math.round(p.energy);
+  if (k in r) return r[k];
+  return g[k];
+}
+// The energy bar takes the colour of its word (fresh, rested, tired, exhausted); the number or word is always beside it.
+const energyBar = e =>
+  `<span class="bar energy-${energyLevel(e)}" aria-hidden="true"><i style="width:${e}%"></i></span>`;
 // One player in the lineup view: who they are, whether they can play, and whether they start.
 function squadCard(p) {
   const r = E.ratings(p),
@@ -101,7 +135,7 @@ function squadCard(p) {
       </div>
       <b class="sq-ovr" title="${esc(t('rv.overall'))}">${r.ovr}</b>
       <div class="sq-energy">
-        <span class="bar" aria-hidden="true"><i style="width:${p.energy}%"></i></span>${t('roster.energy')} ${Math.round(p.energy)}
+        ${energyBar(p.energy)}${t('roster.energy')} ${Math.round(p.energy)} · ${esc(energyWord(p.energy))}
       </div>
       <div class="sq-set">
         <label class="sq-start">
@@ -112,9 +146,18 @@ function squadCard(p) {
 }
 export function roster() {
   const cap = state.players.find(p => p.id === state.captain);
+  // the captain opens Full stats on that player's card (or, with none yet, on the best candidate), where Name captain is
+  const capFor =
+    cap ||
+    captainPick(state.players, p => E.ratings(p).ovr, E.eligible) ||
+    state.players.find(p => p.starter) ||
+    state.players[0];
+  const balance = positionBalance(state.players.filter(p => p.starter).map(p => E.bio(p).position))
+    .map(([k, n]) => `${n} ${t(`rv.short.${k}`)}`)
+    .join(' · ');
   const tools = html`
     <div class="toolbar">
-      <span>${pill(t('roster.spots', { n: state.players.length }))} ${pill(cap ? t('flow.captain', { name: esc(cap.name) }) : t('flow.noCaptain'))}</span><span class="toolbar-go">${btn(t(rosterFull ? 'roster.lineup' : 'roster.fullStats'), 'roster-full', 'secondary')}${(() => {
+      <span>${pill(t('roster.spots', { n: state.players.length }))} ${balance ? pill(t('roster.balance', { list: balance })) : ''} ${capFor ? btn(cap ? t('flow.captain', { name: esc(cap.name) }) : `${t('flow.noCaptain')} · ${t('captain.name')}`, 'roster-captain', 'secondary small', `data-id="${capFor.id}"`) : ''}</span><span class="toolbar-go">${btn(t(rosterFull ? 'roster.lineup' : 'roster.fullStats'), 'roster-full', 'secondary')}${(() => {
         // the way forward: fixing the lineup when it has a problem (or this is the step), else the week's next step
         const next = nextStepButton('primary'),
           fixHere = next.n.view === 'roster' || E.lineupIssues(state).length;
@@ -145,9 +188,14 @@ export function roster() {
   if (!state.players.some(p => p.id === rosterSel))
     rosterSel = (state.players.find(p => p.starter) || state.players[0])?.id;
   const sel = state.players.find(p => p.id === rosterSel);
-  const est = E.estimateLines(state);
   const assigned = state.players.some(p => E.bio(p).assigned);
-  const cell = v => `<td class="grade g-${E.grade(v)[0]}">${E.grade(v)}</td>`;
+  const rows = statsRows(),
+    lead = columnLeaders(rows, LEAD_KEYS, statValue);
+  // a column's best value is bold (the team leader), so the table reads like a box score
+  const top = (row, k, v) => (lead[k] != null && statValue(row, k) === lead[k] ? `<b>${v}</b>` : v);
+  const cell = (row, k) =>
+    `<td class="grade g-${E.grade(row.r[k])[0]}">${top(row, k, E.grade(row.r[k]))}</td>`;
+  const head = (k, label, o) => sortHead('stats', sorts.stats, k, label, o);
   return html`
     ${header(tu('roster.kicker'), t('nav.roster'), t('rv.intro'))} ${tools} ${sel ? rosterCard(sel) : ''} <div class="table-wrap rv-table">
       <div class="rv-team">
@@ -155,21 +203,15 @@ export function roster() {
       </div>
       <table aria-label="${esc(t('nav.roster'))}"> <thead>
           <tr>
-            <th scope="col">${t('roster.start')}</th><th scope="col">${t('rv.name')}</th><th scope="col">${t('rv.pos')}</th><th scope="col">${t('rv.yr')}</th><th scope="col" class="ovr-col">${t('rv.ovr')}</th>${['ins', 'mid', 'tpt', 'perd', 'insd'].map(k => `<th scope="col" title="${esc(t(`rv.${k}T`))}">${t(`rv.${k}`)}</th>`).join('')}<th scope="col">${t('roster.energy')}</th>${['gp', 'ppg', 'rpg', 'apg', 'spg', 'bpg'].map(k => `<th scope="col" title="${esc(t(`stat.${k}Title`))}">${t(`stat.${k}`)}</th>`).join('')}
+            <th scope="col">${t('roster.start')}</th>${head('name', t('rv.name'), { first: 'asc' })}${head('pos', t('rv.pos'), { first: 'asc' })}${head('yr', t('rv.yr'))}${head('ovr', t('rv.ovr'), { cls: 'ovr-col' })}${RATING_KEYS.map(k => head(k, t(`rv.${k}`), { title: esc(t(`rv.${k}T`)) })).join('')}${head('energy', t('roster.energy'))}${STAT_KEYS.map(k => head(k, t(`stat.${k}`), { title: esc(t(`stat.${k}Title`)) })).join('')}
           </tr>
         </thead>
-        <tbody> ${state.players
-          .map(p => {
-            const r = E.ratings(p),
-              b = E.bio(p),
-              g = p.games ? E.perGame(p) : est[p.id];
+        <tbody> ${rows
+          .map(row => {
+            const { p, r, b, g } = row;
             return html`
               <tr class="${p.id === rosterSel ? 'selected' : ''} ${E.eligible(p) ? '' : 'out'}" data-select="${p.id}">
-                <td><input type="checkbox" data-starter="${p.id}" ${p.starter ? 'checked' : ''} aria-label="${esc(t('roster.startAria', { name: p.name }))}" ${state.match ? 'disabled' : ''}></td><td><button class="player-cell" data-action="rv-select" data-id="${p.id}" ${p.id === rosterSel ? 'aria-current="true"' : ''}>${avatar(p, 34)}<div><strong>${esc(p.name)}${capBadge(p.id)}</strong><small>#${esc(p.number)}${E.eligible(p) ? '' : ` · <span class="warn-text">${esc(ineligibleWhy(p))}</span>`}</small></div></button></td><td>${esc(t(`rv.short.${b.position}`))}${b.assigned ? '*' : ''}</td><td>${esc(short2(tv(p.year)))}</td><td class="ovr-col"><b>${r.ovr}</b></td>${cell(r.ins)}
-                ${cell(r.mid)}
-                ${cell(r.tpt)}
-                ${cell(r.perd)}
-                ${cell(r.insd)}<td><span class="bar" aria-hidden="true"><i style="width:${p.energy}%"></i></span>${Math.round(p.energy)}</td><td>${g.gp}</td><td class="${g.est ? 'est' : ''}"><b>${g.ppg.toFixed(1)}</b></td><td class="${g.est ? 'est' : ''}">${g.rpg.toFixed(1)}</td><td class="${g.est ? 'est' : ''}">${g.apg.toFixed(1)}</td><td class="${g.est ? 'est' : ''}">${g.spg.toFixed(1)}</td><td class="${g.est ? 'est' : ''}">${g.bpg.toFixed(1)}</td>
+                <td><input type="checkbox" data-starter="${p.id}" ${p.starter ? 'checked' : ''} aria-label="${esc(t('roster.startAria', { name: p.name }))}" ${state.match ? 'disabled' : ''}></td><td><button class="player-cell" data-action="rv-select" data-id="${p.id}" ${p.id === rosterSel ? 'aria-current="true"' : ''}>${avatar(p, 34)}<div><strong>${esc(p.name)}${capBadge(p.id)}</strong><small>#${esc(p.number)}${E.eligible(p) ? '' : ` · <span class="warn-text">${esc(ineligibleWhy(p))}</span>`}</small></div></button></td><td>${esc(t(`rv.short.${b.position}`))}${b.assigned ? '*' : ''}</td><td>${esc(short2(tv(p.year)))}</td><td class="ovr-col">${top(row, 'ovr', r.ovr)}</td>${RATING_KEYS.map(k => cell(row, k)).join('')}<td>${energyBar(p.energy)}${top(row, 'energy', Math.round(p.energy))}</td><td>${g.gp}</td>${['ppg', 'rpg', 'apg', 'spg', 'bpg'].map(k => `<td class="${g.est ? 'est' : ''}">${top(row, k, g[k].toFixed(1))}</td>`).join('')}
               </tr>`;
           })
           .join('')}
@@ -264,12 +306,20 @@ export function toggleFullRoster() {
   rosterFull = !rosterFull;
   render();
 }
+// The captain button in the toolbar: Full stats on that player's card, with the focus on Name captain.
+export function showCaptain(id) {
+  rosterFull = true;
+  rosterSel = id;
+  render();
+  const b = document.querySelector('.rv-side [data-action="captain-set"]');
+  if (b && !b.disabled) b.focus({ preventScroll: true });
+}
 export function selectPlayer(id) {
   rosterSel = id;
   render();
 }
 export function cycleRoster(step) {
-  const list = state?.players || [];
+  const list = state ? statsRows().map(x => x.p) : [];
   if (!list.length) return;
   const i = Math.max(
     0,

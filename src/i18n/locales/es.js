@@ -248,6 +248,7 @@ export default {
     status: 'Estado',
     startAria: 'Titular: {{name}}',
     minutesAria: 'Minutos de {{name}}',
+    balance: 'Titulares: {{list}}',
   },
   status: {
     injured: 'Lesionado',
@@ -627,6 +628,20 @@ export default {
     trail: 'Registro de decisiones',
     gameN: 'Partido {{n}}',
     trailEmpty: 'Tus decisiones aparecerán aquí.',
+    you: '{{team}} (tú)',
+    col: {
+      rank: '#',
+      rankFull: 'Puesto',
+      team: 'Equipo',
+      w: 'G',
+      wFull: 'Victorias',
+      l: 'P',
+      lFull: 'Derrotas',
+      pct: '%',
+      pctFull: 'Porcentaje de victorias',
+      gb: 'JD',
+      gbFull: 'Partidos detrás del líder',
+    },
   },
   ending: {
     kicker: 'El pitido final',

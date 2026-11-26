@@ -236,6 +236,7 @@ export default {
     status: '状态',
     startAria: '首发：{{name}}',
     minutesAria: '{{name}} 的上场分钟数',
+    balance: '首发：{{list}}',
   },
   status: {
     injured: '受伤',
@@ -565,6 +566,20 @@ export default {
     trail: '决策记录',
     gameN: '第 {{n}} 场',
     trailEmpty: '你的决策会显示在这里。',
+    you: '{{team}}（你）',
+    col: {
+      rank: '#',
+      rankFull: '排名',
+      team: '球队',
+      w: '胜',
+      wFull: '胜场',
+      l: '负',
+      lFull: '负场',
+      pct: '胜率',
+      pctFull: '胜率',
+      gb: '胜差',
+      gbFull: '落后榜首的场数',
+    },
   },
   ending: {
     kicker: '终场哨响',

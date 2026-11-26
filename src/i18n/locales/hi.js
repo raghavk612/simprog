@@ -247,6 +247,7 @@ export default {
     status: 'स्थिति',
     startAria: 'शुरुआती: {{name}}',
     minutesAria: '{{name}} के मिनट',
+    balance: 'शुरुआती खिलाड़ी: {{list}}',
   },
   status: {
     injured: 'घायल',
@@ -599,6 +600,20 @@ export default {
     trail: 'फ़ैसलों का रिकॉर्ड',
     gameN: 'मैच {{n}}',
     trailEmpty: 'आपके फ़ैसले यहाँ दिखाई देंगे।',
+    you: '{{team}} (आप)',
+    col: {
+      rank: '#',
+      rankFull: 'स्थान',
+      team: 'टीम',
+      w: 'जी',
+      wFull: 'जीत',
+      l: 'हा',
+      lFull: 'हार',
+      pct: '%',
+      pctFull: 'जीत प्रतिशत',
+      gb: 'पीछे',
+      gbFull: 'लीडर से पीछे मैच',
+    },
   },
   ending: {
     kicker: 'अंतिम सीटी',
