@@ -2235,6 +2235,7 @@ export default {
     suggest: 'Plan suggéré',
     repeat: 'Reprendre la semaine dernière',
     fillNote: 'Remplit seulement les créneaux libres. Vos choix restent.',
+    afterStep: 'L’étape suivante de la semaine passe d’abord.',
   },
   nudge: {
     btn: {

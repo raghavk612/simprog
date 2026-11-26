@@ -2170,6 +2170,7 @@ export default {
     suggest: 'Plan sugerido',
     repeat: 'Repetir la semana pasada',
     fillNote: 'Solo llena los espacios libres. Tus elecciones se mantienen.',
+    afterStep: 'Primero, el siguiente paso de la semana.',
   },
   nudge: {
     btn: {

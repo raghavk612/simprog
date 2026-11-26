@@ -1336,6 +1336,10 @@ body:has(#modal[open]) .coach-glow:not(#modal *) {
   .prep-side > .prep-go {
     display: none;
   }
+  /* Another step comes first (prepPrimary): it is the docked bar, and Run the week waits at the foot of the list. */
+  .prep-grid > .prep-side.waits {
+    position: static;
+  }
   .prep-side .page-status {
     display: block;
     color: var(--ink-2);

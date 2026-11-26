@@ -2099,6 +2099,7 @@ export default {
     suggest: 'おすすめの計画',
     repeat: '先週と同じにする',
     fillNote: '空いている枠だけを埋めます。選んだものはそのままです。',
+    afterStep: '先に今週の次のステップを。',
   },
   nudge: {
     btn: {

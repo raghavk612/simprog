@@ -2188,6 +2188,7 @@ export default {
     suggest: 'Piano suggerito',
     repeat: 'Ripeti la settimana scorsa',
     fillNote: 'Riempie solo gli slot liberi. Le tue scelte restano.',
+    afterStep: 'Prima il prossimo passo della settimana.',
   },
   nudge: {
     btn: {

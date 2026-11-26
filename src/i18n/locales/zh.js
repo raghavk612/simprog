@@ -1952,6 +1952,7 @@ export default {
     suggest: '推荐计划',
     repeat: '沿用上周计划',
     fillNote: '只填补空余时段，已选项目保持不变。',
+    afterStep: '先完成本周的下一步。',
   },
   nudge: {
     btn: {

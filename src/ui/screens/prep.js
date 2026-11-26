@@ -13,7 +13,9 @@ import {
   fillPlan,
   lastWeekPlan,
   suggestedPlan,
+  prepPrimary,
 } from '../../prepPlan.js';
+import { nextStepButton } from './home.js';
 import { render } from '../shell.js';
 import { modal } from '../page.js';
 import { notify } from '../toast.js';
@@ -94,9 +96,12 @@ export function practice() {
             <small>${t('prep.fillNote')}</small>
           </div>`
         : '';
-  // The way forward: Run the week while a slot is open, with why it can't run yet or else the plan's count (shown on
-  // phones only, where the slots are hidden); with no slot open, Game day.
-  const why = !cap
+  // The way forward, the same as Home's (prepPrimary): Run the week while planning is the next step, with why it can't
+  // run yet or else the plan's count (shown on phones only, where the slots are hidden); with no slot open, Game day.
+  // When another step comes first (the press room, a break, the lineup), that step is purple and Run the week waits
+  // as a secondary button with one line saying so (on a phone it is at the foot of the list, not in the bar).
+  const way = prepPrimary(state),
+    why = !cap
       ? ''
       : state.match
         ? t('notify.finishFirst')
@@ -105,20 +110,27 @@ export function practice() {
           : practicePlan.length
             ? ''
             : t('prep.pickFirst'),
-    action = cap
-      ? html`
+    action =
+      way === 'step'
+        ? html`
+        <div class="page-action">${nextStepButton('primary wide').html}</div>
+        ${cap ? btn(t('flow.run'), 'practice-start', 'secondary wide prep-run', `aria-describedby="run-why" ${why ? 'disabled' : ''}`) : ''}
+        ${cap ? `<small class="page-why" id="run-why">${why || t('prep.afterStep')}</small>` : ''}
+        <button class="secondary wide prep-go" data-view="game">${t('flow.toGame')}</button>`
+        : cap
+          ? html`
         <div class="page-action">
           ${btn(t('flow.run'), 'practice-start', 'primary wide', why ? 'disabled aria-describedby="run-why"' : '')}
           ${why ? `<small class="page-why" id="run-why">${why}</small>` : ''}
           ${why ? '' : `<small class="page-status">${t('practice.planned', { n: practicePlan.length, cap })}</small>`}
         </div>
         <button class="secondary wide prep-go" data-view="game">${t('flow.toGame')}</button>`
-      : `<div class="page-action"><button class="primary wide prep-go" data-view="game">${t('flow.toGame')}</button></div>`;
+          : `<div class="page-action"><button class="primary wide prep-go" data-view="game">${t('flow.toGame')}</button></div>`;
   return html`
     ${header(tu('practice.kicker'), state.finished ? t('nav.practice') : t('prep.title', { opp }))}
     <div class="prep-grid">
       <section class="card prep-list">${tools}<ul>${PREP.map(row).join('')}</ul></section>
-      <section class="prep-side">
+      <section class="prep-side${way === 'step' ? ' waits' : ''}">
         <div class="plan-slots">${slots}</div>
         ${action}
       </section>

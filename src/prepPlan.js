@@ -7,6 +7,15 @@ export const PREP = [...Object.keys(E.plans), 'fundraise', 'film'];
 
 export const planCap = s => Math.max(0, Math.min(3, s?.actions ?? 0));
 
+// Prep's one purple button, the same way forward Home shows: 'run' (Run the week) while planning the week is the next
+// step, 'game' (Go to the game) when tip-off is, and otherwise 'step': that next step (the press room, a break, the
+// lineup...) is purple and Run the week waits as a secondary button.
+export function prepPrimary(s) {
+  const n = E.nextStep(s);
+  if (n.view === 'practice' && planCap(s) > 0) return 'run';
+  return n.id === 'tipoff' ? 'game' : 'step';
+}
+
 const r2 = n => Math.round(n * 100) / 100;
 // What a pick changes for the whole team, as chips ({ k, v }) for chipHtml, with the hired assistant's and the
 // Training facility's bonuses included (the same rules as E.train). Zero changes are left out.

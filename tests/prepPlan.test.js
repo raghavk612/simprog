@@ -2,7 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as E from '../src/engine.js';
-import { PREP, planEffects, prepBlock, fillPlan, lastWeekPlan, suggestedPlan } from '../src/prepPlan.js';
+import { startPress, skipPress } from '../src/press.js';
+import {
+  PREP,
+  planEffects,
+  prepBlock,
+  fillPlan,
+  lastWeekPlan,
+  suggestedPlan,
+  prepPrimary,
+} from '../src/prepPlan.js';
 const data = JSON.parse(fs.readFileSync(new URL('../public/data/kangs.json', import.meta.url)));
 const game = () => {
   const s = E.createGame(data, 'Prep', 'standard', 11);
@@ -102,4 +111,26 @@ test('the suggested plan answers the team’s needs first', () => {
   s.chemistry = 40;
   assert.ok(suggestedPlan(s).indexOf('bond') < suggestedPlan(s).indexOf('shooting'));
   assert.equal(new Set(suggestedPlan(s)).size, suggestedPlan(s).length, 'no key twice');
+});
+
+test('Prep’s purple button is Home’s next step: Run the week only when planning the week is that step', () => {
+  const s = game();
+  assert.equal(E.nextStep(s).id, 'break');
+  assert.equal(prepPrimary(s), 'step', 'the preseason break comes first');
+  s.deferPre = true;
+  assert.equal(E.nextStep(s).id, 'practice');
+  assert.equal(prepPrimary(s), 'run');
+  playWeek(s, []);
+  assert.equal(E.nextStep(s).id, 'press');
+  assert.equal(prepPrimary(s), 'step', 'the press room is pending: Run the week is secondary');
+  startPress(s);
+  skipPress(s);
+  assert.equal(E.nextStep(s).id, 'break');
+  assert.equal(prepPrimary(s), 'step', 'the deferred preseason break comes next');
+  E.endBreak(s);
+  assert.equal(prepPrimary(s), 'run');
+  while (s.actions > 0) E.train(s, 'recovery');
+  E.autoLineup(s);
+  assert.equal(E.nextStep(s).id, 'tipoff');
+  assert.equal(prepPrimary(s), 'game', 'no slot left: Go to the game');
 });

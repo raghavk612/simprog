@@ -1960,6 +1960,7 @@ export default {
     suggest: 'Suggested plan',
     repeat: 'Repeat last week',
     fillNote: 'Fills open slots only. Your picks stay.',
+    afterStep: 'The week’s next step comes first.',
   },
   nudge: {
     btn: {
