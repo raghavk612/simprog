@@ -1052,6 +1052,10 @@ body.live-match .topbar {
     flex-direction: column;
     align-items: stretch;
   }
+  /* the docked bar right under it is the same button, purple: say it once */
+  .break-next .break-leave {
+    display: none;
+  }
 }
 /* ---- The assistant coach's lessons (tutorial.js): a ring on the thing being talked about, a glow on the thing to press,
    and one line from the assistant. Nothing is dimmed or locked: the page stays usable around them. ---- */

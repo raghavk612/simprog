@@ -125,7 +125,8 @@ function subnav() {
     </div>`;
 }
 // The foot of a Shop page during a break: the break is optional, so it says so, and offers the next tab, or leaving the
-// break on the last one (secondary there: the purple way forward is the same button in the slot under the top bar).
+// break on the last one (secondary there: the purple way forward is the same button in the slot under the top bar; a
+// phone docks that slot just above, so there the foot leaves it out).
 function breakNext(foot) {
   return html`
     <div class="break-next">
@@ -133,7 +134,7 @@ function breakNext(foot) {
       ${
         foot.next
           ? `<button class="secondary" data-view="${foot.next}">${t('flow.breakNext', { tab: t(`nav.${foot.next}`) })} <span aria-hidden="true">→</span></button>`
-          : btn(t(`flow.done.${foot.pause}`), 'break-done', 'secondary')
+          : btn(t(`flow.done.${foot.pause}`), 'break-done', 'secondary break-leave')
       }
     </div>`;
 }
