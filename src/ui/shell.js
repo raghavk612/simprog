@@ -27,6 +27,7 @@ import { journal, bracketView, standingsView, dataView } from './screens/season.
 import { demo, renderDemoGuide, leaveDemo } from './demo.js';
 import { syncPresentation } from './playback.js';
 import { notify } from './toast.js';
+import { nthKeys, sideScroll, restoreSideScroll } from './renderKeep.js';
 
 // The page each route draws (the routes and their tabs are in nav.js).
 const PAGES = {
@@ -185,16 +186,10 @@ function focusMemo() {
     }
   return n ? { sel, nth: [...app.querySelectorAll(sel)].indexOf(a) } : null;
 }
-// Open drawers (<details>) survive a re-render too, or the box score would close after every play.
-// Each is found again by its class list and its place among drawers with the same classes.
-function detailsKeys() {
-  const seen = {};
-  return [...app.querySelectorAll('details')].map(d => {
-    const k = d.className;
-    seen[k] = (seen[k] ?? -1) + 1;
-    return { d, key: `${k}#${seen[k]}` };
-  });
-}
+// Open drawers (<details>) survive a re-render too, or the box score would close after every play, and so does each
+// table's sideways scroll (renderKeep.js finds them again by class list and place).
+const detailsKeys = () => nthKeys(app.querySelectorAll('details')).map(({ el, key }) => ({ d: el, key }));
+const tableWraps = () => app.querySelectorAll('.table-wrap');
 // Draws the current page.
 export function render() {
   disposeProspectJerseys();
@@ -203,6 +198,7 @@ export function render() {
       ? {
           focus: focusMemo(),
           y: window.scrollY,
+          x: sideScroll(tableWraps()),
           open: new Set(
             detailsKeys()
               .filter(x => x.d.open)
@@ -266,6 +262,7 @@ export function render() {
   if (arena.event) syncPresentation(arena.presentation());
   if (keep) {
     for (const { d, key } of detailsKeys()) if (keep.open.has(key)) d.open = true;
+    restoreSideScroll(tableWraps(), keep.x);
     const f = keep.focus,
       el = f && [...app.querySelectorAll(f.sel)][Math.max(0, f.nth)];
     if (el && !el.disabled) el.focus({ preventScroll: true });

@@ -26,6 +26,7 @@ write templates over as many lines as you like. Put text from the save or the da
 | `markup.js`          | `html`, `esc`, `btn`, `header`, icons, small text helpers                     |
 | `nav.js`             | routes (`NAV`) and their tabs, what a Shop page shows during a break          |
 | `shell.js`           | `PAGES`, top bar, `render()`, `go()`, camera buttons                          |
+| `renderKeep.js`      | what `render()` keeps from the DOM: open drawers, tables' side scroll         |
 | `actions.js`         | what every `data-action` button and form field does                           |
 | `keyboard.js`        | shortcut keys                                                                 |
 | `screens/home.js`    | Home: the next step and the week's timeline                                   |
