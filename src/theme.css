@@ -2035,6 +2035,13 @@ body[data-view='game'] .page-action {
   .gear-shop {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  /* two cards a row: tighter padding so "Buy · 180 tokens" fits on one line (the equip note is the line under it) */
+  .gear-card {
+    padding: 14px;
+  }
+  .gear-card > .wide {
+    padding-inline: 6px;
+  }
 }
 
 /* ---- The result dialog's "What changed": a short ranked list, a mark and words on every line (not colour alone) ---- */
