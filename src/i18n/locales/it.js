@@ -385,7 +385,7 @@ export default {
     academics: 'Verifica scolastica',
     academicsFx: '+0,18 di GPA simulato',
     assistantKicker: 'Un posto da assistente',
-    buildStaff: 'Staff tecnico',
+    buildStaff: 'Vice allenatore',
     assistantBody:
       'I ruoli di assistente sono scelte di gioco fittizie. I loro bonus si applicano alle tue sessioni di preparazione.',
     hired: 'Assunto',
@@ -618,7 +618,7 @@ export default {
     replay: 'Rivedi',
     noGames: 'Gioca la tua prima partita per iniziare la tua storia.',
     standings: 'Classifica del programma',
-    table: 'La tabella della campagna',
+    table: 'Classifica della lega',
     tableNote:
       'Classifica fittizia della campagna: gli altri avversari giocano partite simulate sullo sfondo a ogni turno. Non sono le classifiche ufficiali del KingCo.',
     trail: 'Registro delle decisioni',
@@ -639,7 +639,7 @@ export default {
   },
   data: {
     kicker: 'Programma reale. Fonti trasparenti.',
-    title: 'I veri Kangs',
+    title: 'Dati reali dei Kangs',
     intro:
       'Calendari {{season}} pubblicati di Varsity, Junior Varsity e Squadra C con gli ultimi roster pubblicati, separati dalla tua simulazione.',
     badge: 'Istantanea pubblica datata',
@@ -805,8 +805,8 @@ export default {
     },
   },
   timeout: {
-    kicker: 'Timeout',
-    title: 'Tutti qui.',
+    kicker: 'Riunione',
+    title: 'Timeout',
     body: 'Tre timeout a partita. Entrambi gli approcci migliorano i prossimi otto possessi.',
     calm: 'Calmare la squadra · +4 di energia',
     belief: 'Mostrare fiducia · +3 di morale',
@@ -1786,6 +1786,7 @@ export default {
       missed: 'Non raggiunto',
     },
     item: 'Turno {{r}}: {{opp}}, {{status}}',
+    title: 'Tabellone dei playoff',
   },
   ev: {
     walkon: {

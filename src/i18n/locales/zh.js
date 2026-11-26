@@ -351,7 +351,7 @@ export default {
     academics: '学业谈话',
     academicsFx: '+0.18 模拟绩点',
     assistantKicker: '一个助理教练名额',
-    buildStaff: '教练组',
+    buildStaff: '助理教练',
     assistantBody: '助理教练的角色是虚构的游戏选项。他们的加成适用于你的备战训练。',
     hired: '已聘用',
     cost: '{{cost}} 代币',
@@ -560,7 +560,7 @@ export default {
     replay: '回放',
     noGames: '打完你的首场比赛，开启你的故事。',
     standings: '项目积分榜',
-    table: '赛季积分表',
+    table: '联赛积分榜',
     tableNote: '虚构的赛季积分榜：其他对手每轮都会进行模拟的背景比赛。这不是 KingCo 的官方积分榜。',
     trail: '决策记录',
     gameN: '第 {{n}} 场',
@@ -579,7 +579,7 @@ export default {
   },
   data: {
     kicker: '真实的球队，透明的来源。',
-    title: '真实的 Kangs',
+    title: 'Kangs 真实数据',
     intro:
       '已发布的 {{season}} 赛季 Varsity、Junior Varsity 和 C 队赛程，以及最新公布的名单，与你的模拟分开显示。',
     badge: '带日期的公开快照',
@@ -741,8 +741,8 @@ export default {
     },
   },
   timeout: {
-    kicker: '暂停',
-    title: '都过来。',
+    kicker: '战术布置',
+    title: '暂停',
     body: '每场比赛有三次暂停。两种方式都会提升接下来的八个回合。',
     calm: '让球队冷静 · +4 体能',
     belief: '展现信任 · +3 士气',
@@ -1601,6 +1601,7 @@ export default {
       missed: '未进入',
     },
     item: '第 {{r}} 轮：{{opp}}，{{status}}',
+    title: '季后赛对阵图',
   },
   ev: {
     walkon: {

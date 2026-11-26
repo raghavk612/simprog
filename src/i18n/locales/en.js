@@ -378,7 +378,7 @@ export default {
     academics: 'Academic check-in',
     academicsFx: '+0.18 simulated GPA',
     assistantKicker: 'One assistant slot',
-    buildStaff: 'Coaching staff',
+    buildStaff: 'Assistant coach',
     assistantBody:
       'Assistant roles are fictional game choices. Their bonuses apply to your preparation sessions.',
     hired: 'Hired',
@@ -603,7 +603,7 @@ export default {
     replay: 'Replay',
     noGames: 'Play your opening game to start your story.',
     standings: 'Program standings',
-    table: 'The campaign table',
+    table: 'League table',
     tableNote:
       'Fictional campaign standings: other opponents play simulated background fixtures each round. These are not official KingCo standings.',
     trail: 'Decision trail',
@@ -623,7 +623,7 @@ export default {
   },
   data: {
     kicker: 'Real program. Transparent sources.',
-    title: 'The real Kangs',
+    title: 'Real Kangs data',
     intro:
       'Published {{season}} Varsity, Junior Varsity and C-Team schedules with the latest published rosters, kept separate from your simulation.',
     badge: 'Dated public snapshot',
@@ -785,8 +785,8 @@ export default {
     },
   },
   timeout: {
-    kicker: 'Timeout huddle',
-    title: 'Bring it in.',
+    kicker: 'Huddle',
+    title: 'Timeout',
     body: 'Three timeouts per game. Both approaches boost the next eight possessions.',
     calm: 'Calm the team · +4 energy',
     belief: 'Show belief · +3 morale',
@@ -1589,6 +1589,7 @@ export default {
       missed: 'Not reached',
     },
     item: 'Round {{r}}: {{opp}}, {{status}}',
+    title: 'Playoff bracket',
   },
   ev: {
     walkon: {

@@ -372,7 +372,7 @@ export default {
     academics: '学業面談',
     academicsFx: '模擬GPA +0.18',
     assistantKicker: 'アシスタントは1枠',
-    buildStaff: 'コーチングスタッフ',
+    buildStaff: 'アシスタントコーチ',
     assistantBody: 'アシスタントの役割は架空のゲーム上の選択です。ボーナスは準備セッションに適用されます。',
     hired: '採用済み',
     cost: '{{cost}} トークン',
@@ -595,7 +595,7 @@ export default {
     replay: 'リプレイ',
     noGames: '最初の試合をプレーして、あなたの物語を始めましょう。',
     standings: 'プログラムの順位表',
-    table: 'シーズンの順位表',
+    table: 'リーグ順位表',
     tableNote:
       '架空のシーズン順位表：ほかの対戦相手は各ラウンドでシミュレーションされた試合を行います。KingCo の公式順位ではありません。',
     trail: '決断の記録',
@@ -615,7 +615,7 @@ export default {
   },
   data: {
     kicker: '実在のチーム。透明な出典。',
-    title: '実在の Kangs',
+    title: 'Kangs の実データ',
     intro:
       '公開されている{{season}}シーズンのバーシティ、ジュニアバーシティ、Cチームの日程と最新のロスターです。シミュレーションとは別に管理されます。',
     badge: '日付付きの公開スナップショット',
@@ -778,8 +778,8 @@ export default {
     },
   },
   timeout: {
-    kicker: 'タイムアウト',
-    title: '集まれ。',
+    kicker: '作戦会議',
+    title: 'タイムアウト',
     body: '1試合につきタイムアウトは3回。どちらの方法も次の8ポゼッションを後押しします。',
     calm: 'チームを落ち着かせる · 体力 +4',
     belief: '信頼を示す · 士気 +3',
@@ -1730,6 +1730,7 @@ export default {
       missed: '進出ならず',
     },
     item: '第{{r}}ラウンド：{{opp}}、{{status}}',
+    title: 'プレーオフのトーナメント表',
   },
   ev: {
     walkon: {
