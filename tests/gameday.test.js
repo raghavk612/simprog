@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as E from '../src/engine.js';
 import * as P from '../src/press.js';
-import { energyLevel, moraleLevel, matchupLevel, EVEN_WITHIN } from '../src/teamLabels.js';
+import { energyLevel, moraleLevel, matchupLevel, EVEN_WITHIN, energyBar } from '../src/teamLabels.js';
 
 const data = JSON.parse(fs.readFileSync(new URL('../public/data/kangs.json', import.meta.url)));
 const game = () => {
@@ -131,4 +131,11 @@ test('the matchup word compares team skill on one scale: favoured, even or under
   const s = game(),
     M = E.modelSnapshot(s);
   assert.ok(['favoured', 'even', 'underdog'].includes(matchupLevel(M.skill, M.rating)));
+});
+
+test('one energy bar for Game day and Team, coloured by the energy word', () => {
+  assert.match(energyBar(90), /class="bar energy-fresh"/);
+  assert.match(energyBar(60), /class="bar energy-rested"/);
+  assert.match(energyBar(20), /class="bar energy-exhausted"/);
+  assert.match(energyBar(60.4), /width:60%/, 'the bar is as long as the number shown');
 });

@@ -1,4 +1,4 @@
-// Pure helpers for the Team and Season lists: sorting, the standings table, energy levels, the captain suggestion and
+// Pure helpers for the Team and Season lists: sorting, the standings table, the captain suggestion and
 // the starters' position balance. No DOM and no store here, so tests import it. The sort itself is kept in store.js
 // (`sorts`), because render() throws the page away after every change.
 
@@ -29,9 +29,6 @@ export function sortRows(rows, sort, value) {
 
 export const ariaSort = (sort, key) =>
   sort?.key === key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none';
-
-// The energy words' thresholds (rv.energy.*), also used to colour the energy bars.
-export const energyLevel = e => (e >= 80 ? 'fresh' : e >= 55 ? 'rested' : e >= 30 ? 'tired' : 'exhausted');
 
 // The standings table: by winning percentage (then more wins), level records share a place, games behind the leader.
 export function standingsRows(standings, you = 'Lake Washington') {

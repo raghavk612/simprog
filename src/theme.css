@@ -1636,12 +1636,11 @@ th.sorted {
 .standings-table tr.you td:first-child {
   box-shadow: inset 4px 0 0 var(--accent-ink);
 }
-/* the energy bar takes the colour of its word; the word or number is always printed beside it */
-.bar.energy-fresh i {
-  background: var(--good);
-}
+/* the energy bar takes the colour of its word; the word or number is always printed beside it. Rested is still
+   good (--score is purple in the light theme, where it would read as the accent). */
+.bar.energy-fresh i,
 .bar.energy-rested i {
-  background: var(--score);
+  background: var(--good);
 }
 .bar.energy-tired i,
 .bar.energy-exhausted i {
@@ -1824,9 +1823,6 @@ body[data-view='game'] .court-panel {
 .five-table .five-energy.low,
 .five-table .five-energy.low small {
   color: var(--bad);
-}
-.five-table .five-energy.low .bar i {
-  background: var(--bad-solid);
 }
 .five-table .five-energy small {
   display: block;

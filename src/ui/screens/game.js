@@ -2,7 +2,7 @@
 // play-by-play, box score, "Why that shot?"). Replays of a past possession use the same page. The playing itself is in playback.js.
 import { t, tu, up, formatDate, has } from '../../i18n/index.js';
 import * as E from '../../engine.js';
-import { strengthLevel, energyLevel, moraleLevel, matchupLevel } from '../../teamLabels.js';
+import { strengthLevel, energyLevel, moraleLevel, matchupLevel, energyBar } from '../../teamLabels.js';
 import { tv, feedLines } from '../../narrative.js';
 import { state, plan, stages, teamLabel, hasScore, ui } from '../store.js';
 import {
@@ -275,7 +275,8 @@ function readyFacts(o) {
       ${row(t('game.style'), state.scouted ? `<b>${t(`style.${o.style}`)}</b>` : `${t('game.unscouted')}${state.actions > 0 ? ` · <button class="text-button" data-view="practice">${t('prep.film')}</button>` : ''}`)}
     </dl>`;
 }
-// The starting five with each player's overall and energy (number and bar; a tired player's word in red).
+// The starting five with each player's overall and energy (number and a bar coloured as on Team; a tired player's
+// word in red).
 function fiveTable(lineupBad) {
   return html`
     <table class="five-table">
@@ -299,7 +300,7 @@ function fiveTable(lineupBad) {
                 <th scope="row">${esc(p.name)}${why ? ` <span class="pill warn">${t(`lineup.${why}`)}</span>` : ''}</th>
                 <td class="five-ovr">${E.ratings(p).ovr}</td>
                 <td class="five-energy ${low ? 'low' : ''}">
-                  <span class="bar" aria-hidden="true"><i style="width:${e}%"></i></span>${e}${low ? ` <small>${t(`rv.energy.${lv}`)}</small>` : ''}
+                  ${energyBar(e)}${e}${low ? ` <small>${t(`rv.energy.${lv}`)}</small>` : ''}
                 </td>
               </tr>`;
           })

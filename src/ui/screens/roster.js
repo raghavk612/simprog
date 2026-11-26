@@ -4,16 +4,9 @@ import { tv } from '../../narrative.js';
 import { arc, roomLevel, sparkPoints } from '../../arcs.js';
 import { play } from '../../audio.js';
 import { state, estSrc, teamLabel, save, sorts } from '../store.js';
-import {
-  sortRows,
-  sortHead,
-  columnLeaders,
-  energyLevel,
-  yearRank,
-  captainPick,
-  positionBalance,
-} from '../lists.js';
+import { sortRows, sortHead, columnLeaders, yearRank, captainPick, positionBalance } from '../lists.js';
 import { esc, html, capBadge, cap1, btn, pill, issueText, header, short2, f1 } from '../markup.js';
+import { energyLevel, moraleLevel, energyBar } from '../../teamLabels.js';
 import { avatar } from '../avatar.js';
 import { show } from '../dialogs.js';
 import { modal } from '../page.js';
@@ -24,8 +17,7 @@ let rosterFull = false;
 let rosterSel = null; // the player shown on the card in Full stats
 
 const energyWord = e => t(`rv.energy.${energyLevel(e)}`);
-const moraleWord = m =>
-  t(`rv.morale.${m >= 80 ? 'fired' : m >= 60 ? 'content' : m >= 40 ? 'restless' : 'unhappy'}`);
+const moraleWord = m => t(`rv.morale.${moraleLevel(m)}`);
 const playerStatus = p =>
   p.injury
     ? t('status.injured')
@@ -118,9 +110,6 @@ function statValue({ p, r, b, g }, k) {
   if (k in r) return r[k];
   return g[k];
 }
-// The energy bar takes the colour of its word (fresh, rested, tired, exhausted); the number or word is always beside it.
-const energyBar = e =>
-  `<span class="bar energy-${energyLevel(e)}" aria-hidden="true"><i style="width:${e}%"></i></span>`;
 // One player in the lineup view: who they are, whether they can play, and whether they start.
 function squadCard(p) {
   const r = E.ratings(p),

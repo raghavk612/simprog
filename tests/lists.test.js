@@ -3,11 +3,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import { energyLevel } from '../src/teamLabels.js'; // one copy, shared with Game day
 import {
   nextSort,
   sortRows,
   ariaSort,
-  energyLevel,
   standingsRows,
   captainPick,
   positionBalance,
