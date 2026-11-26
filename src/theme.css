@@ -1837,13 +1837,18 @@ body[data-view='game'] .court-panel {
   padding: 2px 6px;
   font-size: calc(11px * var(--ts, 1) * var(--ls, 1));
 }
-/* Tip off and the week's next step; the line under them says what tipping off now skips, or why it can't happen yet. */
-body[data-view='game'] .page-action {
+/* Tip off and the week's next step; the line under them says what tipping off now skips, or why it can't happen yet.
+   Only the purple button is in .page-action, so on a phone a secondary Tip off and its line stay in the rail. */
+.tipoff-action {
   display: grid;
   gap: 8px;
   margin-top: 12px;
 }
-body[data-view='game'] .page-action .wide {
+body[data-view='game'] .page-action {
+  display: grid;
+  gap: 8px;
+}
+.tipoff-action .wide {
   margin-top: 0;
 }
 .tipoff-why {

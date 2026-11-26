@@ -340,12 +340,15 @@ function tipoffAction(lineupBad) {
         : step.id === 'tipoff'
           ? ''
           : skipLine(skips);
+  const tip = html`
+    ${btn(t('game.tipOff'), 'start-match', `${primary ? 'secondary' : 'primary'} wide`, `${line ? `aria-describedby="${why}"` : ''} ${blocked ? 'disabled' : ''}`)}
+    ${line ? `<p class="tipoff-why" id="${why}">${line}</p>` : ''}`;
+  // .page-action holds only the purple button (a phone docks it above the tab bar); a secondary Tip off and its line
+  // stay in the rail's flow, under it on a desktop.
   return html`
     ${fixHere}
-    <div class="page-action">
-      ${primary}
-      ${btn(t('game.tipOff'), 'start-match', `${primary ? 'secondary' : 'primary'} wide`, `${line ? `aria-describedby="${why}"` : ''} ${blocked ? 'disabled' : ''}`)}
-      ${line ? `<p class="tipoff-why" id="${why}">${line}</p>` : ''}
+    <div class="tipoff-action">
+      ${primary ? `<div class="page-action">${primary}</div>${tip}` : `<div class="page-action">${tip}</div>`}
     </div>`;
 }
 // A replay, the end of the season, or the next game (before tip-off or live).
