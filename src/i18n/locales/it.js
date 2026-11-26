@@ -68,7 +68,7 @@ export default {
     noOwned: 'Inventario vuoto. Acquista il primo oggetto in Tutto.',
     bought: '{{item}} aggiunto all’inventario. Scegli un giocatore per equipaggiarlo.',
     equipDone: '{{item}} equipaggiato a {{name}}.',
-    buyEquip: 'Compra ed equipaggia · {{cost}} gettoni',
+    equipsOn: 'Va a {{name}}',
   },
   meta: {
     title: 'KANGS • La strada verso il campionato',

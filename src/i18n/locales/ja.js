@@ -68,7 +68,7 @@ export default {
     noOwned: '所持品はありません。全用具で購入してください。',
     bought: '{{item}} を入手。選手を選んで装備してください。',
     equipDone: '{{name}} に {{item}} を装備しました。',
-    buyEquip: '購入して装備 · {{cost}} トークン',
+    equipsOn: '{{name}}に装備',
   },
   meta: {
     title: 'KANGS • チャンピオンシップへの道',

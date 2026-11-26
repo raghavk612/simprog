@@ -68,7 +68,7 @@ export default {
     noOwned: '库存为空。请在全部装备中购买第一件。',
     bought: '{{item}} 已加入库存。选择球员后装备。',
     equipDone: '{{name}} 已装备 {{item}}。',
-    buyEquip: '购买并装备 · {{cost}} 代币',
+    equipsOn: '装备给{{name}}',
   },
   meta: {
     title: 'KANGS • 通往冠军之路',

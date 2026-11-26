@@ -141,12 +141,20 @@ test('the gear page says a purchase will be equipped when the shown player has t
     p = s.players[0],
     label = (html, key) =>
       html.match(new RegExp(`data-action="gear-buy" data-key="${key}"[^>]*>([^<]*)</button>`))[1];
-  assert.equal(label(gearBody(s, p.id), 'courtshoes'), t('gear.buyEquip', { cost: 180 }));
-  E.buyGear(s, 'courtshoes', p.id);
+  // the button stays short ("Buy · 180 tokens", one line on a phone); the equip note is a line of its own under it
+  const note = (html, key) =>
+    html.match(
+      new RegExp(
+        `data-action="gear-buy" data-key="${key}"[^>]*>[^<]*</button>(<small class="gear-equips">[^<]*</small>)?`,
+      ),
+    )[1];
+  assert.equal(label(gearBody(s, p.id), 'courtshoes'), t('office.upgBuy', { cost: 180 }));
   assert.equal(
-    label(gearBody(s, p.id), 'speedshoes'),
-    t('office.upgBuy', { cost: 260 }),
-    'feet already taken',
+    note(gearBody(s, p.id), 'courtshoes'),
+    `<small class="gear-equips">${t('gear.equipsOn', { name: p.name })}</small>`,
   );
+  E.buyGear(s, 'courtshoes', p.id);
+  assert.equal(label(gearBody(s, p.id), 'speedshoes'), t('office.upgBuy', { cost: 260 }));
+  assert.equal(note(gearBody(s, p.id), 'speedshoes'), undefined, 'feet already taken: no equip note');
   assert.ok(!gearBody(s, s.players[1].id).includes('gear.'), 'no raw keys');
 });

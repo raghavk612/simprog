@@ -5,7 +5,9 @@
     "game.odds.favoured": "Favoured",
     "game.odds.even": "Even",
     "game.odds.underdog": "Underdog",
-    "prep.afterStep": "The week’s next step comes first."
+    "prep.afterStep": "The week’s next step comes first.",
+    "gear.buyEquip": null,
+    "gear.equipsOn": "Equips on {{name}}"
   },
   "es": {
     "game.strengthShort": null,
@@ -13,7 +15,9 @@
     "game.odds.favoured": "Favoritos",
     "game.odds.even": "Parejo",
     "game.odds.underdog": "En desventaja",
-    "prep.afterStep": "Primero, el siguiente paso de la semana."
+    "prep.afterStep": "Primero, el siguiente paso de la semana.",
+    "gear.buyEquip": null,
+    "gear.equipsOn": "Se equipa a {{name}}"
   },
   "fr": {
     "game.strengthShort": null,
@@ -21,7 +25,9 @@
     "game.odds.favoured": "Favoris",
     "game.odds.even": "Équilibré",
     "game.odds.underdog": "Outsiders",
-    "prep.afterStep": "L’étape suivante de la semaine passe d’abord."
+    "prep.afterStep": "L’étape suivante de la semaine passe d’abord.",
+    "gear.buyEquip": null,
+    "gear.equipsOn": "Équipé sur {{name}}"
   },
   "it": {
     "game.strengthShort": null,
@@ -29,7 +35,9 @@
     "game.odds.favoured": "Favoriti",
     "game.odds.even": "Equilibrato",
     "game.odds.underdog": "Sfavoriti",
-    "prep.afterStep": "Prima il prossimo passo della settimana."
+    "prep.afterStep": "Prima il prossimo passo della settimana.",
+    "gear.buyEquip": null,
+    "gear.equipsOn": "Va a {{name}}"
   },
   "hi": {
     "game.strengthShort": null,
@@ -37,7 +45,9 @@
     "game.odds.favoured": "बढ़त में",
     "game.odds.even": "बराबरी",
     "game.odds.underdog": "कमज़ोर पक्ष",
-    "prep.afterStep": "पहले हफ़्ते का अगला कदम।"
+    "prep.afterStep": "पहले हफ़्ते का अगला कदम।",
+    "gear.buyEquip": null,
+    "gear.equipsOn": "{{name}} को पहनाया जाएगा"
   },
   "ja": {
     "game.strengthShort": null,
@@ -45,7 +55,9 @@
     "game.odds.favoured": "優勢",
     "game.odds.even": "互角",
     "game.odds.underdog": "劣勢",
-    "prep.afterStep": "先に今週の次のステップを。"
+    "prep.afterStep": "先に今週の次のステップを。",
+    "gear.buyEquip": null,
+    "gear.equipsOn": "{{name}}に装備"
   },
   "zh": {
     "game.strengthShort": null,
@@ -53,6 +65,8 @@
     "game.odds.favoured": "占优",
     "game.odds.even": "势均力敌",
     "game.odds.underdog": "处于下风",
-    "prep.afterStep": "先完成本周的下一步。"
+    "prep.afterStep": "先完成本周的下一步。",
+    "gear.buyEquip": null,
+    "gear.equipsOn": "装备给{{name}}"
   }
 }

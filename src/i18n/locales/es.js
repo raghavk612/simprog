@@ -69,7 +69,7 @@ export default {
     noOwned: 'Inventario vacío. Compra tu primer objeto en Todo.',
     bought: '{{item}} añadido al inventario. Elige un jugador y equípalo.',
     equipDone: '{{item}} equipado a {{name}}.',
-    buyEquip: 'Comprar y equipar · {{cost}} fichas',
+    equipsOn: 'Se equipa a {{name}}',
   },
   meta: {
     title: 'KANGS • El camino al campeonato',

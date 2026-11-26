@@ -69,7 +69,7 @@ export default {
     noOwned: 'Inventaire vide. Achetez votre premier objet dans Tout.',
     bought: '{{item}} ajouté à l’inventaire. Choisissez un joueur pour l’équiper.',
     equipDone: '{{item}} équipé par {{name}}.',
-    buyEquip: 'Acheter et équiper · {{cost}} jetons',
+    equipsOn: 'Équipé sur {{name}}',
   },
   meta: {
     title: 'KANGS • La route vers le championnat',

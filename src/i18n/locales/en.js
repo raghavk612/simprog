@@ -322,7 +322,7 @@ export default {
     noOwned: 'Your inventory is empty. Buy your first item from All gear.',
     bought: '{{item}} added to inventory. Choose a player and equip it.',
     equipDone: '{{item}} equipped to {{name}}.',
-    buyEquip: 'Buy and equip · {{cost}} tokens',
+    equipsOn: 'Equips on {{name}}',
   },
   skills: {
     kicker: 'Playbook',
