@@ -252,6 +252,20 @@ const CUES = {
 };
 // Season actions that also show a notification with what changed.
 const TOASTS = ['recruit', 'hire', 'upgrade', 'gear-buy', 'release', 'dismiss'];
+// Actions whose button is gone after the redraw: focus moves to the first of these that is there (the next Hire
+// button, else the page's heading), not to the page body.
+const FOCUS_AFTER = {
+  dismiss: ['.office-section [data-action="hire"]:not(:disabled)', '.page-heading h1'],
+  release: ['.page-heading h1'],
+};
+function refocus(a) {
+  const now = document.activeElement;
+  if (!FOCUS_AFTER[a] || (now && now !== document.body && now.isConnected)) return;
+  for (const sel of FOCUS_AFTER[a]) {
+    const el = document.querySelector(`#app ${sel}`);
+    if (el) return el.focus();
+  }
+}
 
 export async function onAction(e) {
   const el = e.target.closest('button[data-action],a[data-action],button[data-view]');
@@ -273,6 +287,7 @@ export async function onAction(e) {
     play(CUES[a] ?? 'uiClick');
     save();
     render();
+    refocus(a);
     if (TOASTS.includes(a)) actionToast(a, was);
   } catch (err) {
     ui.auto = false;
