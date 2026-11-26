@@ -1263,11 +1263,11 @@ dialog:has(.settings) .modal-content {
   --ph-art: 0px; /* no render: the chips move to the right end */
 }
 .a11y-high-contrast .page-head::before {
-  background: #000;
-  border-bottom: 2px solid #fff;
+  background: var(--page);
+  border-bottom: 2px solid var(--ink);
 }
 .a11y-high-contrast .ph-chip::before {
-  background: #fff;
+  background: var(--ink);
 }
 .a11y-high-contrast .ph-chip::after {
   --si: calc(var(--s) - 4px * var(--slant));
@@ -1275,7 +1275,7 @@ dialog:has(.settings) .modal-content {
   position: absolute;
   inset: 2px;
   z-index: -1;
-  background: #000;
+  background: var(--page);
   clip-path: polygon(var(--si) 0, 100% 0, calc(100% - var(--si)) 100%, 0 100%);
 }
 

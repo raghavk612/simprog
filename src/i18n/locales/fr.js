@@ -2312,7 +2312,6 @@ export default {
     over: 'Saison terminée',
   },
   head: {
-    energy: 'Énergie de l’équipe',
     opp: 'Force adverse',
   },
 };

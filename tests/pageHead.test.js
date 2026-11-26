@@ -41,21 +41,31 @@ test("the ghost word is the page's own name, and the render is its group's", () 
       assert.ok(fs.existsSync(new URL(`../public/images/ui/hero-${f}`, import.meta.url)), f);
 });
 
-test("Prep's chips are the team's average energy and the opponent's rating, never a scorebug number", () => {
+test("Prep's chips are the rotation's energy and the opponent's strength the game model uses, never a scorebug number", () => {
   const s = season();
-  const chips = headChips('practice', s);
+  const chips = headChips('practice', s),
+    M = E.modelSnapshot(s);
   assert.deepEqual(
-    chips.map(c => c.id),
-    ['energy', 'opp'],
+    chips.map(c => [c.id, c.label]),
+    [
+      ['energy', 'tipoff.energy'],
+      ['opp', 'head.opp'],
+    ],
   );
-  assert.equal(chips[0].value, Math.round(E.mean(s.players, 'energy')));
-  assert.equal(chips[1].value, Math.round(E.opponent(s).rating));
+  assert.equal(chips[0].value, Math.round(M.energy), "the figure Game day's rotation energy comes from");
+  assert.equal(chips[1].value, Math.round(M.rating));
   assert.ok(chips.length <= 3);
   for (const v of routes)
     for (const c of headChips(v, s))
       assert.ok(!['record', 'wins', 'losses', 'tokens', 'slots', 'game'].includes(c.id), `${v}: ${c.id}`);
-  s.players[0].energy -= 30;
-  assert.equal(headChips('practice', s)[0].value, Math.round(E.mean(s.players, 'energy')), 'read live');
+  // the bench does not count: tiring a player outside the rotation leaves the chip alone
+  const bench = s.players.find(p => !(p.minutes > 0));
+  bench.energy = 0;
+  assert.equal(headChips('practice', s)[0].value, chips[0].value, 'bench energy is not in it');
+  const five = s.players.find(p => p.minutes > 0);
+  five.energy -= 40;
+  assert.equal(headChips('practice', s)[0].value, Math.round(E.modelSnapshot(s).energy), 'read live');
+  assert.ok(headChips('practice', s)[0].value < chips[0].value);
   assert.deepEqual(headChips('roster', s), [], 'other pages have none for now');
   s.finished = true;
   assert.deepEqual(

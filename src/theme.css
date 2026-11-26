@@ -109,10 +109,10 @@ html.a11y-high-contrast {
   --slant: 0.2126;
   --stripe: color-mix(in srgb, var(--ink) 8%, transparent);
   /* The room a page header takes above the content (its band plus the gap under it): pages that fit the screen
-     subtract it. The band is 152px, 176px from 1200px where the render sits in it. */
+     subtract it. The band is 152px; 176px from 1200px wide, where the render sits in it, unless the screen is short. */
   --ph-room: 172px;
 }
-@media (min-width: 1200px) {
+@media (min-width: 1200px) and (min-height: 821px) {
   :root {
     --ph-room: 196px;
   }
@@ -1629,17 +1629,6 @@ body.live-match .subnav {
     mask-composite: intersect;
   }
 }
-/* Game day before tip-off: the gym, the five and Tip off share the screen, so its band is 128px (a 152px band pushed
-   Tip off below the rail's fold at 1440 × 900). */
-body[data-view='game'] {
-  --ph-room: 156px; /* 128px, or about 140px when the sub-line takes two lines, plus 16px */
-}
-body[data-view='game'] .page-head {
-  --ph-pad: 18px;
-  --ph-art-h: 128px;
-  min-height: 128px;
-  margin-bottom: 16px;
-}
 /* The entrance: the title slides 12px and fades in over 200ms, the ghost word 32px over 260ms. */
 @keyframes ph-title-in {
   from {
@@ -2631,12 +2620,41 @@ body[data-view='game'] .page-action {
     min-height: 0;
     overflow: auto;
   }
+  /* A tighter card, so more of the five shows above the pinned foot. */
+  body:not(.live-match)[data-view='game'] .right-rail > .card {
+    padding: 16px 20px 0;
+  }
+  body:not(.live-match)[data-view='game'] .right-rail h2 {
+    margin: 4px 0 8px;
+  }
+  body:not(.live-match)[data-view='game'] .ready-facts {
+    gap: 2px;
+    margin-bottom: 8px;
+  }
+  body:not(.live-match)[data-view='game'] .five-table :is(td, tbody th) {
+    padding-block: 2px;
+  }
+  /* The rail's foot is pinned: the week's next step, Tip off and the line under them stay in view while the readiness
+     facts and the five scroll above them, so a short screen never hides the way to play or its reason. */
+  body:not(.live-match)[data-view='game'] .tipoff-action {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    margin-top: 10px;
+    padding: 10px 0 16px;
+    background: var(--panel);
+    border-top: 1px solid var(--line-2);
+  }
 }
 
 /* Short laptop screens: drop the second line of each heading and tighten the cards. */
 @media (max-height: 820px) and (min-width: 1151px) {
   .ph-sub {
     display: none;
+  }
+  /* the band keeps its 152px minimum: the render shrinks to it (270 × 152) */
+  .page-head {
+    --ph-art-h: 152px;
   }
   .squad-head {
     margin: 4px 0;

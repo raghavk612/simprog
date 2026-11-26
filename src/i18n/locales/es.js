@@ -2244,7 +2244,6 @@ export default {
     over: 'Temporada terminada',
   },
   head: {
-    energy: 'Energía del equipo',
     opp: 'Fuerza del rival',
   },
 };

@@ -2033,7 +2033,6 @@ export default {
     over: 'Season over',
   },
   head: {
-    energy: 'Team energy',
     opp: 'Opponent strength',
   },
 };

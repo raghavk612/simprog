@@ -2171,7 +2171,6 @@ export default {
     over: 'シーズン終了',
   },
   head: {
-    energy: 'チームの体力',
     opp: '相手の強さ',
   },
 };

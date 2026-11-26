@@ -9,12 +9,14 @@ export const HERO_GROUPS = ['week', 'team', 'season', 'shop'];
 // body.live-match hides (theme.css), so the page keeps its h1.
 const NO_HEAD = ['home', 'landing'];
 
-// Up to three numbers of the page's own, never one the scorebug shows (record, tokens, slots, the game count).
-// Prep: the team's average energy (the figure the game result's "why" quotes) and the next opponent's rating.
+// Up to three numbers of the page's own, never one the scorebug shows (record, tokens, slots, the game count). Each has
+// a translation key for its label. Prep: the numbers the game model uses (E.modelSnapshot), so they match Game day:
+// the rotation's energy (buffs and next-game modifiers in, the bench out) and the next opponent's strength.
 export function headChips(v, s) {
   if (v !== 'practice') return [];
-  const chips = [{ id: 'energy', value: Math.round(E.mean(s.players, 'energy')) }];
-  if (!s.finished) chips.push({ id: 'opp', value: Math.round(E.opponent(s).rating) });
+  const M = E.modelSnapshot(s),
+    chips = [{ id: 'energy', label: 'tipoff.energy', value: Math.round(M.energy) }];
+  if (!s.finished) chips.push({ id: 'opp', label: 'head.opp', value: Math.round(M.rating) });
   return chips;
 }
 

@@ -48,7 +48,7 @@ export function header(title, description = '', page = view) {
       </div>
       ${
         m.chips.length
-          ? `<dl class="ph-chips">${m.chips.map(c => `<div class="ph-chip ph-${c.id}"><dt>${t(`head.${c.id}`)}</dt><dd>${c.value}</dd></div>`).join('')}</dl>`
+          ? `<dl class="ph-chips">${m.chips.map(c => `<div class="ph-chip ph-${c.id}"><dt>${t(c.label)}</dt><dd>${c.value}</dd></div>`).join('')}</dl>`
           : ''
       }
       ${

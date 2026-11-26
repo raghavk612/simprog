@@ -2262,7 +2262,6 @@ export default {
     over: 'Stagione finita',
   },
   head: {
-    energy: 'Energia squadra',
     opp: 'Forza avversario',
   },
 };

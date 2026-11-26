@@ -2023,7 +2023,6 @@ export default {
     over: '赛季结束',
   },
   head: {
-    energy: '球队体能',
     opp: '对手强度',
   },
 };
