@@ -166,20 +166,42 @@ export async function takeOver(page) {
       info = a.renderer.info;
     info.autoReset = false;
     const sync = () => gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    /* makes arena.look.render a no-op until the returned function is called */
+    const skipDraw = () => {
+      const had = Object.prototype.hasOwnProperty.call(a.look, 'render'),
+        old = a.look.render;
+      a.look.render = () => {};
+      return () => {
+        if (had) a.look.render = old;
+        else delete a.look.render;
+      };
+    };
     window.__gym = {
       setDt: d => (dt = d),
-      /* steps until pred(arena) is true (or max frames); returns the frames stepped */
-      until(pred, max = 2000) {
+      /* steps until pred(arena) is true (or max frames); returns the frames stepped. fast: the frames are simulated and
+         posed (updateLods, the Math.random draws, everything but the draw call) without drawing them: on a software
+         renderer a frame costs about a second, and only the captured frames need to be drawn */
+      until(pred, max = 2000, fast = false) {
         let n = 0;
-        while (n < max && !pred(a)) {
-          a.frame();
-          n++;
+        const draw = fast ? skipDraw() : null;
+        try {
+          while (n < max && !pred(a)) {
+            a.frame();
+            n++;
+          }
+        } finally {
+          draw?.();
         }
         sync();
         return n;
       },
-      step(n = 1) {
-        for (let i = 0; i < n; i++) a.frame();
+      step(n = 1, fast = false) {
+        const draw = fast ? skipDraw() : null;
+        try {
+          for (let i = 0; i < n; i++) a.frame();
+        } finally {
+          draw?.();
+        }
         sync();
       },
       measure(n = 120) {
