@@ -246,6 +246,7 @@ export default {
     status: '状態',
     startAria: '先発：{{name}}',
     minutesAria: '{{name}} の出場時間',
+    balance: '先発: {{list}}',
   },
   status: {
     injured: '負傷中',
@@ -606,6 +607,20 @@ export default {
     trail: '決断の記録',
     gameN: '第 {{n}} 戦',
     trailEmpty: 'あなたの決断がここに表示されます。',
+    you: '{{team}}(あなた)',
+    col: {
+      rank: '#',
+      rankFull: '順位',
+      team: 'チーム',
+      w: '勝',
+      wFull: '勝利数',
+      l: '敗',
+      lFull: '敗戦数',
+      pct: '勝率',
+      pctFull: '勝率',
+      gb: '差',
+      gbFull: '首位とのゲーム差',
+    },
   },
   ending: {
     kicker: '試合終了のホイッスル',

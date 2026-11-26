@@ -25,8 +25,9 @@ import { arena } from '../page.js';
 import { stage } from '../shell.js';
 import { endscreen } from './season.js';
 
-/* ESPN-style box score: starters, bench, team totals. */
-export function boxTable(line, title, compact = false) {
+/* ESPN-style box score: starters, bench, team totals. With `links` (the live game's compact box score) each name opens
+   that player's profile; the result dialog's box score has none, because a profile would replace that dialog. */
+export function boxTable(line, title, compact = false, links = compact) {
   if (!line) return '';
   const rows = Object.entries(line)
     .map(([id, l]) => ({ p: state.players.find(p => p.id === +id), l }))
@@ -54,7 +55,7 @@ export function boxTable(line, title, compact = false) {
           .map(
             ({ p, l }) => html`
               <tr>
-                <td class="box-player"><span class="box-name">${esc(p?.name ?? t('result.former'))}</span>${p ? capBadge(p.id) : ''} <span class="box-pos">${p && p.position[0] !== 'N' ? esc(p.position[0]) + ' ' : ''}#${p?.number ?? ''}</span></td>${cells(l)}
+                <td class="box-player">${links && p ? `<button class="box-name player-link" data-action="player" data-id="${p.id}">${esc(p.name)}</button>` : `<span class="box-name">${esc(p?.name ?? t('result.former'))}</span>`}${p ? capBadge(p.id) : ''} <span class="box-pos">${p && p.position[0] !== 'N' ? esc(p.position[0]) + ' ' : ''}#${p?.number ?? ''}</span></td>${cells(l)}
               </tr>`,
           )
           .join('')}`

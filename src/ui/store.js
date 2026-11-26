@@ -8,6 +8,7 @@ import { loadKeys } from '../keys.js';
 import { t } from '../i18n/index.js';
 import * as E from '../engine.js';
 import { announceAch, notify } from './toast.js';
+import { nextSort } from './lists.js';
 
 export let data;
 export let state = null;
@@ -74,6 +75,13 @@ export const ui = {
   lastInteract: 0,
   viaPointer: false,
 };
+
+// How each sortable table is sorted ({ key, dir }, or null for the list's own order). Kept here, not in the page,
+// so a redraw, a player's profile or a trip to another page never resets it. Not saved with the season.
+export const sorts = { stats: null, data: null };
+export function setSort(table, key, first) {
+  sorts[table] = nextSort(sorts[table], key, first);
+}
 
 export function setState(value) {
   state = value;

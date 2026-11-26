@@ -248,6 +248,7 @@ export default {
     status: 'Stato',
     startAria: 'Titolare: {{name}}',
     minutesAria: 'Minuti di {{name}}',
+    balance: 'Titolari: {{list}}',
   },
   status: {
     injured: 'Infortunato',
@@ -629,6 +630,20 @@ export default {
     trail: 'Registro delle decisioni',
     gameN: 'Partita {{n}}',
     trailEmpty: 'Le tue decisioni compariranno qui.',
+    you: '{{team}} (tu)',
+    col: {
+      rank: '#',
+      rankFull: 'Posizione',
+      team: 'Squadra',
+      w: 'V',
+      wFull: 'Vittorie',
+      l: 'P',
+      lFull: 'Sconfitte',
+      pct: '%',
+      pctFull: 'Percentuale di vittorie',
+      gb: 'Dist.',
+      gbFull: 'Partite di distacco dalla capolista',
+    },
   },
   ending: {
     kicker: 'Il fischio finale',

@@ -11,7 +11,7 @@ import * as E from '../engine.js';
 import { t, translateError } from '../i18n/index.js';
 import { logText } from '../narrative.js';
 import { play } from '../audio.js';
-import { state, view, save, ui } from './store.js';
+import { state, view, save, ui, setSort } from './store.js';
 import { arena, modal } from './page.js';
 import { signed } from './markup.js';
 import { dismissText } from '../shopFit.js';
@@ -44,7 +44,7 @@ import {
   setSpeed,
 } from './playback.js';
 import { toggleTitlePause, toggleStartForm, enterSeason, titlePreview } from './screens/landing.js';
-import { profile, cycleRoster, toggleFullRoster, selectPlayer } from './screens/roster.js';
+import { profile, cycleRoster, toggleFullRoster, selectPlayer, showCaptain } from './screens/roster.js';
 import { togglePlan, startPractice, nextDrill, fillFrom } from './screens/prep.js';
 import { unlockSkill, pickSkill, setGearPlayer, setGearFilter } from './screens/breaks.js';
 import {
@@ -125,7 +125,15 @@ const ACTIONS = {
   player: click(el => profile(el.dataset.id)),
   'roster-full': click(() => toggleFullRoster()),
   'rv-select': select(el => selectPlayer(+el.dataset.id)),
+  'roster-captain': click(el => showCaptain(+el.dataset.id)),
   'rv-cycle': el => cycleRoster(+el.dataset.step),
+  // a sortable column header (Full stats, Season data): the sort is kept in the store, so it survives every redraw
+  sort: select(el => {
+    setSort(el.dataset.table, el.dataset.key, el.dataset.first);
+    render();
+    // the redraw resets a table's sideways scroll (a phone shows a few columns at a time): bring the header back
+    document.activeElement?.closest('th.sortable')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }),
 
   // Prep
   'plan-toggle': select(el => togglePlan(el.dataset.plan)),

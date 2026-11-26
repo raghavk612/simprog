@@ -156,6 +156,9 @@ test('every key built at run time resolves to a string for each value it can tak
   for (const v of [...THREE_SPOTS.map(x => x.id), FT_SPOT.id]) need.push(`drill.d3.spots.${v}`);
   for (const v of ['left', 'right', 'onLine']) need.push(`drill.d3.${v}`);
   for (const v of ['guard', 'forward']) need.push(`pos.${v}`);
+  for (const v of ['rank', 'w', 'l', 'pct', 'gb']) need.push(`journal.col.${v}`, `journal.col.${v}Full`); // standings
+  for (const v of ['fresh', 'rested', 'tired', 'exhausted']) need.push(`rv.energy.${v}`); // energyLevel()
+  for (const v of ['Guard', 'Forward', 'Center']) need.push(`rv.short.${v}`); // positionBalance()
   for (const v of ['senior', 'junior', 'sophomore', 'prospect', 'tryout']) need.push(`year.${v}`);
   for (const v of ['injured', 'ineligible', 'exhausted']) need.push(`status.${v}`);
   for (const v of [

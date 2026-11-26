@@ -249,6 +249,7 @@ export default {
     status: 'État',
     startAria: 'Titulaire : {{name}}',
     minutesAria: 'Minutes de {{name}}',
+    balance: 'Titulaires : {{list}}',
   },
   status: {
     injured: 'Blessé',
@@ -632,6 +633,20 @@ export default {
     trail: 'Journal de décisions',
     gameN: 'Match {{n}}',
     trailEmpty: 'Vos décisions apparaîtront ici.',
+    you: '{{team}} (vous)',
+    col: {
+      rank: '#',
+      rankFull: 'Rang',
+      team: 'Équipe',
+      w: 'V',
+      wFull: 'Victoires',
+      l: 'D',
+      lFull: 'Défaites',
+      pct: '%',
+      pctFull: 'Pourcentage de victoires',
+      gb: 'Écart',
+      gbFull: 'Matchs de retard sur le leader',
+    },
   },
   ending: {
     kicker: 'Le coup de sifflet final',

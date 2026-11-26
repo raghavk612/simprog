@@ -1573,6 +1573,80 @@ body[data-view='recruit'] .card h2 {
 .standings-grid .fit-scroll {
   max-height: calc(100dvh - 350px);
 }
+/* Sortable column headers (Full stats, Season data): the whole header cell is the button; the sorted one is in
+   full ink with an arrow, and aria-sort says the same to a screen reader. */
+th.sortable {
+  padding: 0;
+}
+.sort-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 15px;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  white-space: nowrap;
+}
+.rv-table .sort-btn {
+  padding: 10px 9px;
+}
+.rv-table th.ovr-col .sort-btn {
+  justify-content: center;
+}
+.sort-btn:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+th.sorted {
+  color: var(--ink);
+}
+.sort-mark {
+  font-size: calc(9px * var(--ts, 1) * var(--ls, 1));
+  color: var(--accent-ink);
+}
+/* Standings: a real table; the coached team's row is marked in words ("Kangs (you)") and with the soft accent */
+.standings-table table {
+  font-variant-numeric: tabular-nums;
+}
+.standings-table th,
+.standings-table td {
+  padding: 10px 12px;
+}
+.standings-table .num {
+  text-align: right;
+  width: 1%;
+}
+.standings-table tbody th {
+  background: none;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
+  white-space: normal;
+  border-top: 1px solid var(--line);
+}
+.standings-table tr.you td,
+.standings-table tr.you th {
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-weight: 800;
+}
+.standings-table tr.you td:first-child {
+  box-shadow: inset 4px 0 0 var(--accent-ink);
+}
+/* the energy bar takes the colour of its word; the word or number is always printed beside it */
+.bar.energy-fresh i {
+  background: var(--good);
+}
+.bar.energy-rested i {
+  background: var(--score);
+}
+.bar.energy-tired i,
+.bar.energy-exhausted i {
+  background: var(--bad);
+}
 .fit-col h2 {
   margin-top: 0;
 }
