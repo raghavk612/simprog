@@ -161,7 +161,8 @@ export const LESSONS = [
         id: 'five',
         spot: '.right-rail',
         act: '[data-action="start-match"]',
-        on: c => c.view === 'game' && free(c) && !c.state.match,
+        // only while Tip off is the purple button: before that, Game day's way forward is the week's next step
+        on: c => c.view === 'game' && free(c) && !c.state.match && E.nextStep(c.state).id === 'tipoff',
         done: c => !!c.state.match,
       },
       // Pressing Next play a few times instead is a choice too.

@@ -434,3 +434,18 @@ test('a real season: the week chapter starts on Home in week 1 and its steps fol
   assert.equal(W.start(ctx('home'), false), false, 'not a new season');
   assert.equal(W.start(ctx('home'), true), true, 'armed: the next fresh practice week');
 });
+
+test('the tip-off card opens only when tip-off is the week’s next step, not over a secondary Tip off', () => {
+  const s = season();
+  s.deferPre = true; // the preseason break later, as the week chapter's test does
+  const T = lessonById('tipoff');
+  const five = T.steps.find(x => x.id === 'five');
+  const ctx = { view: 'game', state: s, dialog: null };
+  assert.equal(T.start(ctx, false), true, 'the chapter begins on Game day');
+  assert.notEqual(E.nextStep(s).id, 'tipoff');
+  assert.equal(five.on(ctx), false, 'practice comes first: no card glowing the secondary Tip off');
+  s.actions = 0;
+  s.scouted = true;
+  assert.equal(E.nextStep(s).id, 'tipoff');
+  assert.equal(five.on(ctx), true, 'Tip off is the way forward now');
+});
