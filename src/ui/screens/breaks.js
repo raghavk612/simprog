@@ -27,6 +27,7 @@ export function recruit() {
     <div class="toolbar">
       ${pill(t('roster.spots', { n: state.players.length }))}${full ? `<span class="toolbar-note">${t('recruit.full')}</span>` : ''}
     </div>
+    <div class="tryouts">
     ${state.pool.length && need ? `<p class="team-needs" role="note">${esc(needsLine(state))}</p>` : ''}
     <div class="cards three">
       ${
@@ -55,6 +56,7 @@ export function recruit() {
           })
           .join('') || `<section class="card">${t('recruit.none')}</section>`
       }
+    </div>
     </div>`;
 }
 // What stops any Shop purchase right now, before tokens: the season's end, a game in progress, or the coach's inbox.

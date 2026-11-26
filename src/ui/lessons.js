@@ -51,9 +51,10 @@ export function shopMark(s, tab) {
   }[tab];
   return pick ? JSON.stringify(pick()) : '';
 }
-// A Shop tab's lesson: one line, on the tab's main card.
+// A Shop tab's lesson: one line, on the tab's main card. Tryouts rings the team-needs line with the cards, so the
+// coach card is placed clear of that line, not over it.
 const SHOP_SPOT = {
-  recruit: '.cards.three',
+  recruit: '.tryouts',
   staff: '.office-section',
   skills: '.st-tree',
   gear: '.gear-layout',
