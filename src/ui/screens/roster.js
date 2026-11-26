@@ -191,8 +191,12 @@ export function roster() {
   const assigned = state.players.some(p => E.bio(p).assigned);
   const rows = statsRows(),
     lead = columnLeaders(rows, LEAD_KEYS, statValue);
-  // a column's best value is bold (the team leader), so the table reads like a box score
-  const top = (row, k, v) => (lead[k] != null && statValue(row, k) === lead[k] ? `<b>${v}</b>` : v);
+  // a column's best value is bold (the team leader), so the table reads like a box score; compared as shown, so two
+  // players with the same grade or the same 18.0 are both bold
+  const shown = (k, v) =>
+    RATING_KEYS.includes(k) ? E.grade(v) : k in lead && k !== 'ovr' && k !== 'energy' ? v.toFixed(1) : v;
+  const top = (row, k, v) =>
+    lead[k] != null && shown(k, statValue(row, k)) === shown(k, lead[k]) ? `<b>${v}</b>` : v;
   const cell = (row, k) =>
     `<td class="grade g-${E.grade(row.r[k])[0]}">${top(row, k, E.grade(row.r[k]))}</td>`;
   const head = (k, label, o) => sortHead('stats', sorts.stats, k, label, o);

@@ -130,6 +130,8 @@ const ACTIONS = {
   sort: select(el => {
     setSort(el.dataset.table, el.dataset.key, el.dataset.first);
     render();
+    // the redraw resets a table's sideways scroll (a phone shows a few columns at a time): bring the header back
+    document.activeElement?.closest('th.sortable')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }),
 
   // Prep
