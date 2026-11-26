@@ -14,6 +14,7 @@ import { play } from '../audio.js';
 import { state, view, save, ui } from './store.js';
 import { arena, modal } from './page.js';
 import { signed } from './markup.js';
+import { dismissText } from '../shopFit.js';
 import { go, render, setCamera } from './shell.js';
 import { notify, actionToast } from './toast.js';
 import { confirmDialog, openSettings, credits } from './dialogs.js';
@@ -200,8 +201,11 @@ const SEASON_ACTIONS = {
   'gear-remove': el => {
     E.unequipGear(state, +el.dataset.id, el.dataset.slot);
   },
-  dismiss: () => {
+  // Dismissing throws away what the hire cost, so the dialog names the assistant and the tokens lost (P1-11).
+  dismiss: async () => {
     if (state.match) throw Error('Finish the current game first.');
+    if (!(await confirmDialog(dismissText(state), { yes: t('confirm.dismissYes'), danger: true })))
+      return false;
     state.assistant = null;
     E.log(state, 'Assistant dismissed. No refund.', 'dismiss');
   },
