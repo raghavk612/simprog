@@ -70,9 +70,24 @@ function lowContrast(min) {
     const f = v => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
     return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
   };
+  // A plate drawn by an absolutely placed ::before or ::after at least half the element's height and width (the navigation's
+  // slanted slabs) is the element's background; ::after paints over ::before. Thin edge bars are not plates.
+  const plateOf = e => {
+    for (const pseudo of ['::after', '::before']) {
+      const ps = getComputedStyle(e, pseudo);
+      if (ps.content === 'none' || ps.display === 'none' || ps.position !== 'absolute') continue;
+      const r = e.getBoundingClientRect();
+      if (parseFloat(ps.height) < r.height / 2 || parseFloat(ps.width) < r.width / 2) continue;
+      const c = parse(ps.backgroundColor);
+      if (c && c.a > 0.85) return c;
+    }
+    return null;
+  };
   const bgOf = el => {
     for (let e = el; e; e = e.parentElement) {
       const cs = getComputedStyle(e);
+      const plate = plateOf(e);
+      if (plate) return plate;
       if (cs.backgroundImage !== 'none') return null; // over an image or gradient: cannot judge
       const c = parse(cs.backgroundColor);
       if (c && c.a > 0.85) return c;
@@ -114,14 +129,22 @@ function purpleButtons() {
   const accent = getComputedStyle(probe).backgroundColor;
   probe.remove();
   const root = document.querySelector('dialog[open]') || document.querySelector('#app');
-  return [...root.querySelectorAll('button, a, [role="tab"]')]
-    .filter(el => {
-      const r = el.getBoundingClientRect();
-      // a switch's filled track is its on state, not a button (Settings)
-      return r.width && r.height && !el.disabled && !el.closest('#arena, [hidden], [role="switch"]');
-    })
-    .filter(el => getComputedStyle(el).backgroundColor === accent)
-    .map(el => el.textContent.trim().slice(0, 30));
+  return (
+    [...root.querySelectorAll('button, a, [role="tab"]')]
+      .filter(el => {
+        const r = el.getBoundingClientRect();
+        // a switch's filled track is its on state, not a button (Settings)
+        return r.width && r.height && !el.disabled && !el.closest('#arena, [hidden], [role="switch"]');
+      })
+      // the fill can be the button's own or a slanted ::before plate (the way forward in the band)
+      .filter(
+        el =>
+          getComputedStyle(el).backgroundColor === accent ||
+          (getComputedStyle(el, '::before').content !== 'none' &&
+            getComputedStyle(el, '::before').backgroundColor === accent),
+      )
+      .map(el => el.textContent.trim().slice(0, 30))
+  );
 }
 async function onePurple(page, run, what) {
   const found = await page.evaluate(purpleButtons);
