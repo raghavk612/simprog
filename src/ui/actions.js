@@ -44,7 +44,7 @@ import {
 } from './playback.js';
 import { toggleTitlePause, toggleStartForm, enterSeason, titlePreview } from './screens/landing.js';
 import { profile, cycleRoster, toggleFullRoster, selectPlayer } from './screens/roster.js';
-import { togglePlan, startPractice, nextDrill } from './screens/prep.js';
+import { togglePlan, startPractice, nextDrill, fillFrom } from './screens/prep.js';
 import { unlockSkill, pickSkill, setGearPlayer, setGearFilter } from './screens/breaks.js';
 import {
   wearKit,
@@ -128,6 +128,8 @@ const ACTIONS = {
 
   // Prep
   'plan-toggle': select(el => togglePlan(el.dataset.plan)),
+  'plan-suggest': select(() => fillFrom('suggest')),
+  'plan-repeat': select(() => fillFrom('repeat')),
   'practice-start': () => {
     play('whistle');
     startPractice();

@@ -205,10 +205,6 @@ export default {
     group: 'Training group',
     wholeTeam: 'Whole team',
     effects: 'Training effects',
-    fxSkill: 'Skill {{n}}',
-    fxEnergy: 'Energy {{n}}',
-    fxMorale: 'Morale {{n}}',
-    fxGpa: 'GPA {{n}}',
     planKicker: 'Plan with intention',
     planTitle: 'What happens next?',
     planP1:
@@ -1903,7 +1899,6 @@ export default {
   },
   prep: {
     title: 'Prep for {{opp}}',
-    slots: '{{n}} of 3 slots left',
     sessions: 'Practice sessions',
     film: 'Opponent film',
     filmFx: 'Learn how {{opp}} plays.',
@@ -1911,6 +1906,13 @@ export default {
     filmDone: 'Film studied',
     practiceDone: 'Practice done',
     allPlanned: 'All slots are planned',
+    pickFirst: 'Add at least one session to the plan.',
+    seasonOver: 'The season is over.',
+    clinicDesc: 'Your players coach local kids for a morning. It funds the program and grows the crowd.',
+    filmFree: 'Free with the Film room',
+    suggest: 'Suggested plan',
+    repeat: 'Repeat last week',
+    fillNote: 'Fills open slots only. Your picks stay.',
   },
   nudge: {
     btn: {

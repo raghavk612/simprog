@@ -260,10 +260,6 @@ export default {
     group: '训练对象',
     wholeTeam: '全队',
     effects: '训练效果',
-    fxSkill: '技能 {{n}}',
-    fxEnergy: '体能 {{n}}',
-    fxMorale: '士气 {{n}}',
-    fxGpa: '绩点 {{n}}',
     planKicker: '有目的地规划',
     planTitle: '接下来会发生什么？',
     planP1: '疲劳的球员投篮命中更少。团结的球队能创造更好的出手机会。自习室能让你的阵容保持参赛资格。',
@@ -1895,7 +1891,6 @@ export default {
   },
   prep: {
     title: '备战 {{opp}}',
-    slots: '剩余 {{n}}/3 个时段',
     sessions: '训练课',
     film: '对手录像',
     filmFx: '了解 {{opp}} 的打法。',
@@ -1903,6 +1898,13 @@ export default {
     filmDone: '已研究录像',
     practiceDone: '训练完成',
     allPlanned: '时段已排满',
+    pickFirst: '请至少在计划中加入一项训练。',
+    seasonOver: '赛季已经结束。',
+    clinicDesc: '你的球员花一个上午指导本地孩子。为项目筹集资金，也吸引更多观众。',
+    filmFree: '有录像室即免费',
+    suggest: '推荐计划',
+    repeat: '沿用上周计划',
+    fillNote: '只填补空余时段，已选项目保持不变。',
   },
   nudge: {
     btn: {

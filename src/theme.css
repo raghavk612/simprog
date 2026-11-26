@@ -1156,8 +1156,10 @@ body:has(#modal[open]) .coach-glow:not(#modal *) {
 .prep-row:first-child {
   border-top: 0;
 }
+/* A pick in the plan is a selected row (soft accent and a bar at its edge), not a purple button. */
 .prep-row.on {
-  background: var(--accent-soft);
+  background: var(--selected-bg, var(--accent-soft));
+  box-shadow: inset 3px 0 0 var(--selected-line, var(--accent));
 }
 .prep-main {
   flex: 1;
@@ -1172,16 +1174,57 @@ body:has(#modal[open]) .coach-glow:not(#modal *) {
   font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
   line-height: 1.35;
 }
-.prep-row .effect-list {
+.prep-fx {
   flex: none;
-  width: 240px;
+  width: 260px;
   gap: 4px;
-  margin: 0;
 }
-.prep-row .effect-list > span {
-  padding: 3px 6px;
-  background: var(--panel-2);
+.prep-fx .chip {
+  padding: 2px 7px;
+  font-size: calc(12px * var(--ts, 1) * var(--ls, 1));
+}
+/* "Suggested plan" and "Repeat last week", above the list. */
+.prep-fill {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.prep-fill small {
   color: var(--ink-2);
+  font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+}
+.prep-fill + ul .prep-row:first-child {
+  border-top: 0;
+}
+/* Why Run the week is disabled, and (phones only, where the slots are hidden) how many picks are in the plan. */
+.prep-side .page-action {
+  display: grid;
+  gap: 6px;
+}
+.prep-side .page-action > button {
+  min-height: 52px;
+}
+.page-why {
+  color: var(--ink-2);
+  font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+}
+.prep-side .page-status {
+  display: none;
+}
+/* On a phone the plan's count sits in the page's action bar (.page-action) and the picked rows are highlighted, so the
+   three slot boxes, which would push Run the week below the fold, are left out. */
+@media (max-width: 620px) {
+  .prep-side .plan-slots {
+    display: none;
+  }
+  .prep-side .page-status {
+    display: block;
+    color: var(--ink-2);
+    font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+  }
 }
 .prep-row button {
   flex: none;
@@ -1557,7 +1600,7 @@ body[data-view='data'] .table-wrap {
   .prep-row {
     flex-wrap: wrap;
   }
-  .prep-row .effect-list {
+  .prep-fx {
     width: 100%;
     order: 3;
   }

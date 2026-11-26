@@ -272,10 +272,6 @@ export default {
     group: 'Gruppo di allenamento',
     wholeTeam: 'Tutta la squadra',
     effects: 'Effetti dell’allenamento',
-    fxSkill: 'Abilità {{n}}',
-    fxEnergy: 'Energia {{n}}',
-    fxMorale: 'Morale {{n}}',
-    fxGpa: 'GPA {{n}}',
     planKicker: 'Pianifica con intenzione',
     planTitle: 'Che cosa succede dopo?',
     planP1:
@@ -2130,7 +2126,6 @@ export default {
   },
   prep: {
     title: 'Preparazione contro {{opp}}',
-    slots: '{{n}} slot su 3 rimasti',
     sessions: 'Sessioni di allenamento',
     film: 'Video dell’avversario',
     filmFx: 'Scopri come gioca {{opp}}.',
@@ -2138,6 +2133,14 @@ export default {
     filmDone: 'Video studiato',
     practiceDone: 'Allenamento fatto',
     allPlanned: 'Tutti gli slot sono pianificati',
+    pickFirst: 'Aggiungi almeno una sessione al piano.',
+    seasonOver: 'La stagione è finita.',
+    clinicDesc:
+      'I tuoi giocatori allenano i ragazzi del quartiere per una mattina. Finanzia il programma e porta pubblico.',
+    filmFree: 'Gratis con la sala video',
+    suggest: 'Piano suggerito',
+    repeat: 'Ripeti la settimana scorsa',
+    fillNote: 'Riempie solo gli slot liberi. Le tue scelte restano.',
   },
   nudge: {
     btn: {
