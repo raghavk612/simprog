@@ -788,7 +788,7 @@ export default {
       },
       mid: {
         record:
-          'Mi-saison : {{w}}–{{l}} et {{n}} jetons. Ce que vous avez acheté se voit dans {{why}}, le jour de match.',
+          'Mi-saison : {{w}}–{{l}} et {{n}} jetons. Ce que vous avez acheté se voit dans « {{why}} », le jour de match.',
         after:
           'Après cette pause, gagnez {{need}} des {{cut}} premiers matchs pour atteindre la phase finale.',
       },

@@ -764,7 +764,7 @@ export default {
         gear: 'Gear gives one player a boost to skill, energy or morale. Buy a piece, then pick who wears it.',
       },
       mid: {
-        record: 'Halfway: {{w}}–{{l}} with {{n}} tokens. What you bought shows up in {{why}} on Game day.',
+        record: 'Halfway: {{w}}–{{l}} with {{n}} tokens. What you bought shows up in “{{why}}” on Game day.',
         after: 'After this break, win {{need}} of the first {{cut}} games to make the final run.',
       },
       playoff: {

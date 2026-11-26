@@ -783,7 +783,7 @@ export default {
       },
       mid: {
         record:
-          'Metà stagione: {{w}}–{{l}} con {{n}} gettoni. Quello che hai comprato si vede in {{why}}, il giorno della partita.',
+          'Metà stagione: {{w}}–{{l}} con {{n}} gettoni. Quello che hai comprato si vede in «{{why}}», il giorno della partita.',
         after: 'Dopo questa pausa, vinci {{need}} delle prime {{cut}} partite per arrivare alla fase finale.',
       },
       playoff: {

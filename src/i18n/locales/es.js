@@ -785,7 +785,7 @@ export default {
       },
       mid: {
         record:
-          'Mitad de temporada: {{w}}–{{l}} y {{n}} fichas. Lo que compraste se ve en {{why}}, el día de partido.',
+          'Mitad de temporada: {{w}}–{{l}} y {{n}} fichas. Lo que compraste se ve en «{{why}}», el día de partido.',
         after: 'Tras este parón, gana {{need}} de los primeros {{cut}} partidos para llegar a la fase final.',
       },
       playoff: {

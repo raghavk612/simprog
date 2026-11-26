@@ -1105,7 +1105,9 @@ body:has(#modal[open]) .coach-glow:not(#modal *) {
 .lesson-row div {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   min-width: 0;
+  text-align: left;
 }
 .lesson-row small {
   color: var(--ink-3);
