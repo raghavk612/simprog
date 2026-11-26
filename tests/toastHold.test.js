@@ -35,3 +35,9 @@ test('only the latest few wait, so a long game cannot pile them up', () => {
     ['2', '3', '4'],
   );
 });
+
+test('a notification with a button (Hide tips’ Undo) shows at once, so its action is not lost in the wait', () => {
+  const h = new ToastHold();
+  assert.equal(h.offer({ msg: 'tips hidden', opt: { action: { label: 'Undo', run() {} } } }, true), true);
+  assert.equal(h.size, 0);
+});
