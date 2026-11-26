@@ -162,8 +162,6 @@ export default {
     playerTitle: 'गेंद वाले खिलाड़ी का पहला-व्यक्ति दृश्य',
   },
   metrics: {
-    record: 'रिकॉर्ड',
-    tokens: 'प्रोग्राम टोकन',
     chemistry: 'तालमेल',
   },
   level: { rookie: 'सी टीम', standard: 'JV', elite: 'वार्सिटी' },
@@ -2188,5 +2186,13 @@ export default {
   },
   shop: {
     needTokens: '{{n}} और टोकन चाहिए · आपके पास {{have}} हैं',
+  },
+  scorebug: {
+    next: 'अगला',
+    record: 'जीत–हार',
+    tokens: 'टोकन',
+    slots: 'स्लॉट',
+    game: 'मैच',
+    over: 'सीज़न खत्म',
   },
 };

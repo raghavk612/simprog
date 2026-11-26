@@ -265,7 +265,7 @@ export const LESSONS = [
   breakLesson('mid', 'mid', [
     {
       id: 'record',
-      spot: '.status-strip',
+      spot: '.scorebug',
       on: c => shopPage(c.view) && free(c),
       done: (c, m) => c.view !== m.view,
       say: record,

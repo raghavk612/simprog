@@ -163,8 +163,6 @@ export default {
     playerTitle: 'Vista en primera persona del jugador con el balón',
   },
   metrics: {
-    record: 'Récord',
-    tokens: 'Fichas del programa',
     chemistry: 'Química',
   },
   level: { rookie: 'Equipo C', standard: 'JV', elite: 'Varsity' },
@@ -2250,5 +2248,13 @@ export default {
   },
   shop: {
     needTokens: 'Faltan {{n}} fichas · tienes {{have}}',
+  },
+  scorebug: {
+    next: 'Próximo',
+    record: 'G–P',
+    tokens: 'Fichas',
+    slots: 'Turnos',
+    game: 'Part.',
+    over: 'Temporada terminada',
   },
 };

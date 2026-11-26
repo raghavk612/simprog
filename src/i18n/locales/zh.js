@@ -153,8 +153,6 @@ export default {
     playerTitle: '持球队员的第一人称视角',
   },
   metrics: {
-    record: '战绩',
-    tokens: '项目代币',
     chemistry: '默契',
   },
   level: { rookie: 'C 队', standard: 'JV', elite: 'Varsity' },
@@ -2029,5 +2027,13 @@ export default {
   },
   shop: {
     needTokens: '还需 {{n}} 代币 · 你有 {{have}}',
+  },
+  scorebug: {
+    next: '下一场',
+    record: '胜负',
+    tokens: '代币',
+    slots: '时段',
+    game: '场次',
+    over: '赛季结束',
   },
 };

@@ -10,7 +10,7 @@ test('light mode defines every colour the dark theme defines, apart from the ali
   const dark = tokens(/:root,\s*#arena[^{]*\{([^}]*)\}/.exec(theme)[1]),
     light = tokens(/html\.theme-light:not\(\.a11y-high-contrast\)\s*\{([^}]*)\}/.exec(theme)[1]);
   const missing = [...dark].filter(
-    k => !light.has(k) && !['--purple', '--deep', '--muted', '--border'].includes(k),
+    k => !light.has(k) && !['--purple', '--deep', '--muted', '--border', '--band'].includes(k),
   );
   assert.deepEqual(missing, []);
 });
@@ -34,8 +34,9 @@ test('every theme colour used in the stylesheets is defined', () => {
     for (const m of read(file).matchAll(/var\((--[a-z0-9-]+)/g))
       if (names.some(n => m[1].startsWith(n))) assert.ok(defined.has(m[1]), `${file}: ${m[1]}`);
 });
-test('no fading gradients: only flat colour blocks on jerseys, the whiteboard tray, the timing ruler and the high-contrast stripes', () => {
-  const allowed = /\.shirt|\.mb-|\.timing-bar|a11y-high-contrast/;
+test('no fading gradients: only flat colour blocks on jerseys, the whiteboard tray, the timing ruler, the high-contrast stripes and the navigation’s empty stretches', () => {
+  // .bar-fill / .band-fill: the nav design's stripes, faded at their ends, in stretches with no text (decoration only)
+  const allowed = /\.shirt|\.mb-|\.timing-bar|a11y-high-contrast|\.bar-fill|\.band-fill/;
   for (const file of ['../src/style.css', '../src/a11y.css', '../src/theme.css']) {
     const found = [...read(file).matchAll(/([^{}]*)\{([^{}]*gradient\([^{}]*)\}/g)].filter(
       m => !allowed.test(m[1]),

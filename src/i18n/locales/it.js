@@ -162,8 +162,6 @@ export default {
     playerTitle: 'Vista in prima persona del portatore di palla',
   },
   metrics: {
-    record: 'Bilancio',
-    tokens: 'Gettoni del programma',
     chemistry: 'Intesa',
   },
   level: { rookie: 'Squadra C', standard: 'JV', elite: 'Varsity' },
@@ -2268,5 +2266,13 @@ export default {
   },
   shop: {
     needTokens: 'Servono altri {{n}} gettoni · ne hai {{have}}',
+  },
+  scorebug: {
+    next: 'Prossima',
+    record: 'V–S',
+    tokens: 'Gettoni',
+    slots: 'Turni',
+    game: 'Gara',
+    over: 'Stagione finita',
   },
 };

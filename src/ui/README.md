@@ -25,7 +25,8 @@ write templates over as many lines as you like. Put text from the save or the da
 | `page.js`            | `#app`, `#modal`, the 3D `arena`                                              |
 | `markup.js`          | `html`, `esc`, `btn`, `header`, icons, small text helpers                     |
 | `nav.js`             | routes (`NAV`) and their tabs, what a Shop page shows during a break          |
-| `shell.js`           | `PAGES`, top bar, `render()`, `go()`, camera buttons                          |
+| `shell.js`           | `PAGES`, top bar, the band under it, `render()`, `go()`, camera buttons       |
+| `scorebug.js`        | what the band's scorebug shows (next game, record, tokens, slots, track)      |
 | `renderKeep.js`      | what `render()` keeps from the DOM: open drawers, tables' side scroll         |
 | `actions.js`         | what every `data-action` button and form field does                           |
 | `keyboard.js`        | shortcut keys                                                                 |
@@ -63,6 +64,10 @@ write templates over as many lines as you like. Put text from the save or the da
   in `<div class="page-action">` (the button, its disabled reason, at most one short status line; one per page): in the
   flow on a desktop, a bar docked above the tab bar on a phone. A selected tab, filter or toggle uses the
   `--selected-*` tokens in `theme.css`, never the purple fill.
+- **The navigation's look** (`theme.css`, "Game navigation"): slanted slabs at one angle (`--slant`), each slant on a
+  decorative `::before` so the button itself stays a rectangle with its focus ring; the open page is an inverted plate
+  with a `--tab-edge` bar. Sub-tabs carry a numeral only where their order is real (`tabNumber` in `nav.js`). High
+  contrast and forced colours for it are at the end of `a11y.css`.
 
 Run `npm test`, and `npm run format` before committing.
 

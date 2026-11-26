@@ -162,8 +162,6 @@ export default {
     playerTitle: 'ボールを持つ選手の一人称視点',
   },
   metrics: {
-    record: '成績',
-    tokens: 'プログラムトークン',
     chemistry: 'チームワーク',
   },
   level: { rookie: 'Cチーム', standard: 'JV', elite: 'バーシティ' },
@@ -2177,5 +2175,13 @@ export default {
   },
   shop: {
     needTokens: 'あと {{n}} トークン必要 · 所持 {{have}}',
+  },
+  scorebug: {
+    next: '次戦',
+    record: '勝敗',
+    tokens: 'トークン',
+    slots: '準備枠',
+    game: '試合',
+    over: 'シーズン終了',
   },
 };

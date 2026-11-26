@@ -94,8 +94,6 @@ export default {
     playerTitle: 'First-person view from the ball handler',
   },
   metrics: {
-    record: 'Record',
-    tokens: 'Program tokens',
     chemistry: 'Chemistry',
   },
   level: { rookie: 'C Team', standard: 'JV', elite: 'Varsity' },
@@ -2039,5 +2037,13 @@ export default {
   },
   shop: {
     needTokens: 'Need {{n}} more tokens · you have {{have}}',
+  },
+  scorebug: {
+    next: 'Next',
+    record: 'W–L',
+    tokens: 'Tokens',
+    slots: 'Slots',
+    game: 'GM',
+    over: 'Season over',
   },
 };

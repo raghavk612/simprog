@@ -129,6 +129,13 @@ export const TAB_ICONS = {
   season: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M8 14h3M8 17h6"/>',
   shop: '<path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 10V6.5a3 3 0 016 0V10"/>',
 };
+// The navigation's own glyphs: the coach chip's whistle and the scorebug's token coin (the HC-safe fallback for a later
+// coin render).
+export const NAV_GLYPHS = {
+  whistle:
+    '<circle cx="9" cy="14.5" r="5.5"/><path d="M11.5 9.6L20.5 7v4.6l-5.6 1.4"/><circle cx="9" cy="14.5" r="1.6"/><path d="M5.5 9.5L3.5 5"/>',
+  coin: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/><path d="M12 9.2v5.6"/>',
+};
 // Prep's practice plans, in the order of E.plans.
 export const PLAN_ICONS = [
   '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',

@@ -163,8 +163,6 @@ export default {
     playerTitle: 'Vue à la première personne du porteur du ballon',
   },
   metrics: {
-    record: 'Bilan',
-    tokens: 'Jetons du programme',
     chemistry: 'Cohésion',
   },
   level: { rookie: 'Équipe C', standard: 'JV', elite: 'Varsity' },
@@ -2318,5 +2316,13 @@ export default {
   },
   shop: {
     needTokens: 'Il manque {{n}} jetons · vous en avez {{have}}',
+  },
+  scorebug: {
+    next: 'Prochain',
+    record: 'V–D',
+    tokens: 'Jetons',
+    slots: 'Créneaux',
+    game: 'Match',
+    over: 'Saison terminée',
   },
 };

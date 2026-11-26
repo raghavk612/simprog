@@ -14,14 +14,27 @@ import {
   disposeProspectJerseys,
 } from './screens/locker.js';
 import { arena, app, host, $, modal } from './page.js';
-import { html, esc, pill, micon, btn, hint, cap1, logoPair, svg, TAB_ICONS } from './markup.js';
+import {
+  html,
+  esc,
+  pill,
+  micon,
+  btn,
+  hint,
+  logoPair,
+  svg,
+  crestText,
+  TAB_ICONS,
+  NAV_GLYPHS,
+} from './markup.js';
 import { state, view, setView, ui } from './store.js';
 import { landing, titlePreview, syncTitlePause } from './screens/landing.js';
 import { home, nextStepButton } from './screens/home.js';
 import { roster } from './screens/roster.js';
 import { practice } from './screens/prep.js';
 import { recruit, staffView, skillsView, gear } from './screens/breaks.js';
-import { NAV, navGroup, subTabs, breakFoot, subnavGo } from './nav.js';
+import { NAV, navGroup, subTabs, breakFoot, subnavGo, tabNumber } from './nav.js';
+import { scorebugData } from './scorebug.js';
 import { game } from './screens/game.js';
 import { journal, bracketView, standingsView, dataView } from './screens/season.js';
 import { demo, renderDemoGuide, leaveDemo } from './demo.js';
@@ -87,39 +100,55 @@ export function stage(cls = '', { controls = true } = {}) {
       </div>
     </div>`;
 }
-// Game, record, tokens and slots on every page, so a coach never has to look for them (a phone leaves the slots to Prep).
-function statusStrip() {
-  const n = state.schedule.length,
-    item = (k, v, cls = '') => `<span${cls ? ` class="${cls}"` : ''}>${k} <b>${v}</b></span>`;
+// The scorebug: one plate with the next game, the record, the tokens and the prep slots (a phone keeps the record and
+// the tokens), and a 17-segment season track along its foot. Display only: the tokens never link to the Shop.
+// "Game 2 of 17" is the plate's name for screen readers; the visible "GM 2/17" is hidden from them so it is read once.
+function scorebug() {
+  const d = scorebugData(state),
+    pair = (cls, k, v, hide = false) =>
+      `<div class="sb-${cls}"${hide ? ' aria-hidden="true"' : ''}><dt>${k}</dt><dd>${v}</dd></div>`,
+    name = d.game ? t('landing.nextGame', { n: d.game.n, total: d.game.total }) : t('scorebug.over');
   return html`
-    <div class="status-strip">
-      ${state.finished ? '' : `<span class="strip-game">${t('landing.nextGame', { n: Math.min(n, state.week + 1), total: n })}</span>`}
-      ${item(t('metrics.record'), `${state.wins}–${state.losses}`)}
-      ${item(t('metrics.tokens'), formatNumber(state.tokens), 'strip-tokens')}
-      ${item(cap1(t('toast.slots')), state.actions, 'strip-slots')}
+    <div class="scorebug" role="group" aria-label="${esc(name)}">
+      <span class="sb-team" aria-hidden="true">${logoPair('sb-logo')}</span>
+      <dl>
+        ${
+          d.next
+            ? pair(
+                'next',
+                t('scorebug.next'),
+                `${d.next.crest ? `<img class="sb-crest" src="${d.next.crest}" alt="" decoding="async">` : `<span class="sb-crest ph" aria-hidden="true">${esc(crestText(d.next.name))}</span>`}<span>${t(d.next.home ? 'data.vs' : 'data.at')} <b>${esc(d.next.name)}</b></span>`,
+              )
+            : ''
+        }
+        ${pair('rec', t('scorebug.record'), `${d.wins}–${d.losses}`)}
+        ${pair('tokens', t('scorebug.tokens'), `${svg(NAV_GLYPHS.coin, 'sb-coin')}${formatNumber(d.tokens)}`)}
+        ${pair('slots', t('scorebug.slots'), `${d.slots}<span class="sb-pips" aria-hidden="true">${Array.from({ length: d.slotsMax }, (_, i) => `<i class="${i < d.slots ? 'on' : ''}"></i>`).join('')}</span>`)}
+        ${d.game ? pair('game', t('scorebug.game'), `${d.game.n}/${d.game.total}`, true) : ''}
+      </dl>
+      <span class="sb-track" aria-hidden="true">${d.track.map(x => `<i class="${x}"></i>`).join('')}</span>
     </div>`;
 }
-// The row under the top bar: the open group's tabs (during a break, under the break's name), the status strip, and at its
-// end the way forward on every page without its own (nav.js subnavGo): ending the break on a Shop page during a break,
-// otherwise the week's next step. It sits in the page's one .page-action, which a phone docks above the tab bar.
+// The band under the top bar: during a break its name as a stamp, the open group's tabs (numbered where their order is
+// real, nav.js tabNumber), the scorebug, and at its end the way forward on every page without its own (nav.js
+// subnavGo): ending the break on a Shop page during a break, otherwise the week's next step. It sits in the page's one
+// .page-action, which a phone docks above the tab bar.
 function subnav() {
   const go = subnavGo(state, view),
     pause = go === 'break' ? E.breakDue(state) : null,
     tabs = subTabs(view),
-    label = pause ? t(`flow.step.${pause}`) : t(`nav.groups.${navGroup(view)}`);
+    label = pause ? t(`flow.step.${pause}`) : t(`nav.groups.${navGroup(view)}`),
+    tab = v => {
+      const n = tabNumber(v);
+      return `<button data-view="${v}" class="sub-item ${view === v ? 'active' : ''}" ${view === v ? 'aria-current="page"' : ''}>${n ? `<span class="sub-num" aria-hidden="true">${n}</span>` : ''}<span class="sub-label">${t(`nav.${v}`)}</span></button>`;
+    };
   return html`
     <div class="subnav">
-      ${
-        tabs.length
-          ? html`
-            <nav aria-label="${esc(label)}">
-              ${pause ? `<b class="break-name">${t(`flow.step.${pause}`)}</b>` : ''}
-              ${tabs.map(v => `<button data-view="${v}" class="sub-item ${view === v ? 'active' : ''}" ${view === v ? 'aria-current="page"' : ''}>${t(`nav.${v}`)}</button>`).join('')}
-            </nav>`
-          : '<span></span>'
-      }
+      ${pause ? `<b class="break-name">${t(`flow.step.${pause}`)}</b>` : ''}
+      ${tabs.length ? `<nav aria-label="${esc(label)}">${tabs.map(tab).join('')}</nav>` : ''}
+      <span class="band-fill" aria-hidden="true"></span>
       <div class="subnav-end">
-        ${statusStrip()}
+        ${scorebug()}
         ${go ? `<div class="page-action">${go === 'break' ? btn(t(`flow.done.${pause}`), 'break-done', 'primary small') : nextStepButton('primary small').html}</div>` : ''}
       </div>
     </div>`;
@@ -232,8 +261,9 @@ export function render() {
                 )
                 .join('')}
             </nav>
+            <span class="bar-fill" aria-hidden="true"></span>
             <div class="top-tools">
-              <span class="top-coach">${t('side.coach', { name: esc(state.coach) })}</span>${btn(t('top.settings'), 'settings', '', hint('settings'))}
+              <span class="top-coach">${svg(NAV_GLYPHS.whistle, 'coach-glyph')}<span>${t('side.coach', { name: esc(state.coach) })}</span></span>${btn(t('top.settings'), 'settings', '', hint('settings'))}
               ${btn(t('top.help'), 'rules', '', hint('rules'))}
             </div>
           </header>

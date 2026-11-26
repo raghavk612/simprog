@@ -1,0 +1,72 @@
+{
+  "en": {
+    "scorebug.next": "Next",
+    "scorebug.record": "W–L",
+    "scorebug.tokens": "Tokens",
+    "scorebug.slots": "Slots",
+    "scorebug.game": "GM",
+    "scorebug.over": "Season over",
+    "metrics.record": null,
+    "metrics.tokens": null
+  },
+  "es": {
+    "scorebug.next": "Próximo",
+    "scorebug.record": "G–P",
+    "scorebug.tokens": "Fichas",
+    "scorebug.slots": "Turnos",
+    "scorebug.game": "Part.",
+    "scorebug.over": "Temporada terminada",
+    "metrics.record": null,
+    "metrics.tokens": null
+  },
+  "fr": {
+    "scorebug.next": "Prochain",
+    "scorebug.record": "V–D",
+    "scorebug.tokens": "Jetons",
+    "scorebug.slots": "Créneaux",
+    "scorebug.game": "Match",
+    "scorebug.over": "Saison terminée",
+    "metrics.record": null,
+    "metrics.tokens": null
+  },
+  "it": {
+    "scorebug.next": "Prossima",
+    "scorebug.record": "V–S",
+    "scorebug.tokens": "Gettoni",
+    "scorebug.slots": "Turni",
+    "scorebug.game": "Gara",
+    "scorebug.over": "Stagione finita",
+    "metrics.record": null,
+    "metrics.tokens": null
+  },
+  "ja": {
+    "scorebug.next": "次戦",
+    "scorebug.record": "勝敗",
+    "scorebug.tokens": "トークン",
+    "scorebug.slots": "準備枠",
+    "scorebug.game": "試合",
+    "scorebug.over": "シーズン終了",
+    "metrics.record": null,
+    "metrics.tokens": null
+  },
+  "zh": {
+    "scorebug.next": "下一场",
+    "scorebug.record": "胜负",
+    "scorebug.tokens": "代币",
+    "scorebug.slots": "时段",
+    "scorebug.game": "场次",
+    "scorebug.over": "赛季结束",
+    "metrics.record": null,
+    "metrics.tokens": null
+  },
+  "hi": {
+    "scorebug.next": "अगला",
+    "scorebug.record": "जीत–हार",
+    "scorebug.tokens": "टोकन",
+    "scorebug.slots": "स्लॉट",
+    "scorebug.game": "मैच",
+    "scorebug.over": "सीज़न खत्म",
+    "metrics.record": null,
+    "metrics.tokens": null
+  }
+}
