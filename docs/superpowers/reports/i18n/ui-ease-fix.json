@@ -7,7 +7,12 @@
     "game.odds.underdog": "Underdog",
     "prep.afterStep": "The week’s next step comes first.",
     "gear.buyEquip": null,
-    "gear.equipsOn": "Equips on {{name}}"
+    "gear.equipsOn": "Equips on {{name}}",
+    "office.fundraiseFx": null,
+    "office.listen": null,
+    "office.listenFx": null,
+    "office.academics": null,
+    "office.academicsFx": null
   },
   "es": {
     "game.strengthShort": null,
@@ -17,7 +22,12 @@
     "game.odds.underdog": "En desventaja",
     "prep.afterStep": "Primero, el siguiente paso de la semana.",
     "gear.buyEquip": null,
-    "gear.equipsOn": "Se equipa a {{name}}"
+    "gear.equipsOn": "Se equipa a {{name}}",
+    "office.fundraiseFx": null,
+    "office.listen": null,
+    "office.listenFx": null,
+    "office.academics": null,
+    "office.academicsFx": null
   },
   "fr": {
     "game.strengthShort": null,
@@ -27,7 +37,12 @@
     "game.odds.underdog": "Outsiders",
     "prep.afterStep": "L’étape suivante de la semaine passe d’abord.",
     "gear.buyEquip": null,
-    "gear.equipsOn": "Équipé sur {{name}}"
+    "gear.equipsOn": "Équipé sur {{name}}",
+    "office.fundraiseFx": null,
+    "office.listen": null,
+    "office.listenFx": null,
+    "office.academics": null,
+    "office.academicsFx": null
   },
   "it": {
     "game.strengthShort": null,
@@ -37,7 +52,12 @@
     "game.odds.underdog": "Sfavoriti",
     "prep.afterStep": "Prima il prossimo passo della settimana.",
     "gear.buyEquip": null,
-    "gear.equipsOn": "Va a {{name}}"
+    "gear.equipsOn": "Va a {{name}}",
+    "office.fundraiseFx": null,
+    "office.listen": null,
+    "office.listenFx": null,
+    "office.academics": null,
+    "office.academicsFx": null
   },
   "hi": {
     "game.strengthShort": null,
@@ -47,7 +67,12 @@
     "game.odds.underdog": "कमज़ोर पक्ष",
     "prep.afterStep": "पहले हफ़्ते का अगला कदम।",
     "gear.buyEquip": null,
-    "gear.equipsOn": "{{name}} को पहनाया जाएगा"
+    "gear.equipsOn": "{{name}} को पहनाया जाएगा",
+    "office.fundraiseFx": null,
+    "office.listen": null,
+    "office.listenFx": null,
+    "office.academics": null,
+    "office.academicsFx": null
   },
   "ja": {
     "game.strengthShort": null,
@@ -57,7 +82,12 @@
     "game.odds.underdog": "劣勢",
     "prep.afterStep": "先に今週の次のステップを。",
     "gear.buyEquip": null,
-    "gear.equipsOn": "{{name}}に装備"
+    "gear.equipsOn": "{{name}}に装備",
+    "office.fundraiseFx": null,
+    "office.listen": null,
+    "office.listenFx": null,
+    "office.academics": null,
+    "office.academicsFx": null
   },
   "zh": {
     "game.strengthShort": null,
@@ -67,6 +97,11 @@
     "game.odds.underdog": "处于下风",
     "prep.afterStep": "先完成本周的下一步。",
     "gear.buyEquip": null,
-    "gear.equipsOn": "装备给{{name}}"
+    "gear.equipsOn": "装备给{{name}}",
+    "office.fundraiseFx": null,
+    "office.listen": null,
+    "office.listenFx": null,
+    "office.academics": null,
+    "office.academicsFx": null
   }
 }

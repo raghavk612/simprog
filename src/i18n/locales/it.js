@@ -384,12 +384,7 @@ export default {
     weekly: 'Incontro settimanale con la squadra',
     title: 'Dedica tempo alle tue persone.',
     body: 'La panchina vuole essere ascoltata. La squadra ha bisogno di risorse. I compiti si accumulano. Scegli come usare un turno di preparazione.',
-    listen: 'Ascoltare la panchina',
-    listenFx: '+7 di morale · +5 di intesa',
     fundraise: 'Organizzare una clinic per la comunità',
-    fundraiseFx: '+180 gettoni · +40 tifosi · −5 di energia',
-    academics: 'Verifica scolastica',
-    academicsFx: '+0,18 di GPA simulato',
     assistantKicker: 'Un posto da assistente',
     buildStaff: 'Vice allenatore',
     assistantBody:

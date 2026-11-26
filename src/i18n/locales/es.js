@@ -388,12 +388,7 @@ export default {
     weekly: 'Reunión semanal con el equipo',
     title: 'Dedica tiempo a tu gente.',
     body: 'El banquillo quiere ser escuchado. El equipo necesita recursos. Las tareas se acumulan. Elige en qué usar un turno de preparación.',
-    listen: 'Escuchar al banquillo',
-    listenFx: '+7 de moral · +5 de química',
     fundraise: 'Organizar una clínica comunitaria',
-    fundraiseFx: '+180 fichas · +40 aficionados · −5 de energía',
-    academics: 'Revisión académica',
-    academicsFx: '+0,18 de GPA simulado',
     assistantKicker: 'Un puesto de asistente',
     buildStaff: 'Entrenador asistente',
     assistantBody:

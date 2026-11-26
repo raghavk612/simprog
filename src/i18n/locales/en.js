@@ -377,12 +377,7 @@ export default {
     weekly: 'Weekly team check-in',
     title: 'Make time for your people.',
     body: 'The bench wants a voice. The team needs resources. Schoolwork is piling up. Choose where you spend one preparation slot.',
-    listen: 'Listen to the bench',
-    listenFx: '+7 morale · +5 chemistry',
     fundraise: 'Host a community clinic',
-    fundraiseFx: '+180 tokens · +40 fans · −5 energy',
-    academics: 'Academic check-in',
-    academicsFx: '+0.18 simulated GPA',
     assistantKicker: 'One assistant slot',
     buildStaff: 'Assistant coach',
     assistantBody:

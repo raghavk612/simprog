@@ -106,15 +106,12 @@ test('every key built at run time resolves to a string for each value it can tak
   for (const a of ACTIONS) need.push(`settings.controls.actions.${a}`);
   for (const l of LANGUAGES) need.push(`lang.${l.code}`);
   for (const l of GRAPHICS_LEVELS) need.push(`settings.accessibility.graphicsOptions.${l}`);
-  for (const v of ['listen', 'fundraise', 'academics']) need.push(`office.${v}`, `office.${v}Fx`);
   for (const v of ['perimeter', 'paint', 'transition']) need.push(`style.${v}`, `game.advice.${v}`);
   // Game day before tip-off: what tipping off skips (E.tipoffSkips), why it is blocked, the energy and morale words.
   for (const v of ['pre', 'mid', 'playoff']) need.push(`game.skip.${v}`);
   for (const v of ['inbox', 'lineup']) need.push(`game.blocked.${v}`);
   for (const v of ['low', 'medium', 'high']) need.push(`game.strengthLevel.${v}`);
   for (const v of ['favoured', 'even', 'underdog']) need.push(`game.odds.${v}`); // matchupLevel()
-  for (const v of ['fresh', 'rested', 'tired', 'exhausted']) need.push(`rv.energy.${v}`);
-  for (const v of ['fired', 'content', 'restless', 'unhappy']) need.push(`rv.morale.${v}`);
   for (const v of ['balanced', 'zone', 'pressure', 'perimeter']) need.push(`tactic.${v}`);
   for (const v of ['steady', 'fast']) need.push(`pace.${v}`);
   for (const v of ['home', 'away', 'alternate']) need.push(`locker.${v}`);
@@ -165,6 +162,9 @@ test('every key built at run time resolves to a string for each value it can tak
   for (const v of ['guard', 'forward']) need.push(`pos.${v}`);
   for (const v of ['rank', 'w', 'l', 'pct', 'gb']) need.push(`journal.col.${v}`, `journal.col.${v}Full`); // standings
   for (const v of ['fresh', 'rested', 'tired', 'exhausted']) need.push(`rv.energy.${v}`); // energyLevel()
+  for (const v of ['fired', 'content', 'restless', 'unhappy']) need.push(`rv.morale.${v}`); // moraleLevel()
+  for (const v of ['injured', 'gpa', 'tired']) need.push(`lineup.${v}`); // E.lineupIssues reasons
+  for (const a of ['over', 'under']) for (const b of ['Pos', 'Any']) need.push(`recruit.${a}${b}`); // fitLine()
   for (const v of ['Guard', 'Forward', 'Center']) need.push(`rv.short.${v}`); // positionBalance()
   for (const v of ['senior', 'junior', 'sophomore', 'prospect', 'tryout']) need.push(`year.${v}`);
   for (const v of ['injured', 'ineligible', 'exhausted']) need.push(`status.${v}`);
@@ -228,9 +228,6 @@ test('every key built at run time resolves to a string for each value it can tak
   need.push('toast.titles.upgrade', 'toast.titles.gear');
   for (const v of ['shooting', 'bond', 'defense', 'recovery', 'study'])
     need.push(`drill.${v}.name`, `drill.${v}.how`);
-  for (const v of ['fresh', 'rested', 'tired', 'exhausted']) need.push(`rv.energy.${v}`);
-  for (const v of ['fired', 'content', 'restless', 'unhappy']) need.push(`rv.morale.${v}`);
-  for (const v of ['Guard', 'Forward', 'Center']) need.push(`rv.short.${v}`);
   for (const v of ['starter', 'rotation', 'bench']) need.push(`status.${v}`);
   for (const v of ['auto', 'player']) need.push(`stage.${v}`);
   for (const v of ['ins', 'mid', 'tpt', 'perd', 'insd']) need.push(`rv.${v}`, `rv.${v}T`);

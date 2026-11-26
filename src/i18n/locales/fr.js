@@ -388,12 +388,7 @@ export default {
     weekly: 'Point hebdomadaire avec l’équipe',
     title: 'Prenez du temps pour vos joueurs.',
     body: 'Le banc veut être écouté. L’équipe a besoin de moyens. Les devoirs s’accumulent. Choisissez à quoi consacrer un créneau de préparation.',
-    listen: 'Écouter le banc',
-    listenFx: '+7 de moral · +5 de cohésion',
     fundraise: 'Organiser un stage communautaire',
-    fundraiseFx: '+180 jetons · +40 supporters · −5 d’énergie',
-    academics: 'Point sur les études',
-    academicsFx: '+0,18 de GPA simulé',
     assistantKicker: 'Un poste d’adjoint',
     buildStaff: 'Entraîneur adjoint',
     assistantBody:
