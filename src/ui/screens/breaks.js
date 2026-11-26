@@ -38,7 +38,7 @@ export function recruit() {
                 </div>
                 ${scoutRow(p)}
                 ${btn(t('recruit.sign', { cost: p.cost }), 'recruit', 'secondary wide', `data-id="${p.id}" aria-label="${esc(t('recruit.signAria', { name: p.name, cost: p.cost }))}" ${full || state.tokens < p.cost || state.finished || state.match ? 'disabled' : ''}`)}
-                ${!full && state.tokens < p.cost ? `<small>${t('office.needTokens', { n: p.cost - state.tokens })}</small>` : ''}
+                ${!full && state.tokens < p.cost ? `<small class="need-tokens">${t('office.needTokens', { n: p.cost - state.tokens })}</small>` : ''}
               </section>`,
           )
           .join('') || `<section class="card">${t('recruit.none')}</section>`
@@ -97,6 +97,8 @@ export function unlockSkill(key) {
   n?.classList.add('st-burst');
   n?.focus({ preventScroll: true });
 }
+// The reason under a greyed-out purchase is the missing tokens (the assistant coach's tip says where to earn them).
+const short = (cost, reason) => reason === t('office.needTokens', { n: cost - state.tokens });
 export function staffView() {
   const blocked = state.finished
     ? t('office.seasonDone')
@@ -131,7 +133,7 @@ export function staffView() {
                 <h3>${t(`staff.${a.key}.name`)}</h3>
                 <p>${t(`staff.${a.key}.detail`)}</p>
                 ${btn(hired ? '✓ ' + t('office.hired') : t('office.hireCost', { cost: a.cost }), 'hire', 'secondary wide', `data-key="${a.key}" ${reason ? 'disabled' : ''}`)}
-                ${reason ? `<small>${reason}</small>` : ''}
+                ${reason ? `<small${short(a.cost, reason) ? ' class="need-tokens"' : ''}>${reason}</small>` : ''}
               </article>`;
           })
           .join('')}
@@ -169,7 +171,7 @@ function upgradesCard() {
               <h3>${name}</h3>
               <p>${fx}</p>
               ${own ? `<span class="pill">✓ ${t('office.upgOwned')}</span>` : btn(t('office.upgBuy', { cost: u.cost }), 'upgrade', 'secondary wide', `data-key="${u.key}" aria-label="${esc(t('office.upgAria', { name, cost: u.cost, effect: fx }))}" ${reason ? 'disabled' : ''}`)}
-              ${!own && reason ? `<small>${reason}</small>` : ''}
+              ${!own && reason ? `<small${short(u.cost, reason) ? ' class="need-tokens"' : ''}>${reason}</small>` : ''}
             </article>`;
         }).join('')}
       </div>

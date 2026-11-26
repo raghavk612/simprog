@@ -59,9 +59,9 @@ test('nine chapters and the one-time tips, each step with on, done and a line in
     'quarter',
     'speed',
     'press',
-    'shop',
     'mid',
     'playoff',
+    'shop',
   ]);
   assert.deepEqual(
     LESSONS.filter(l => l.kind === 'tip').map(l => l.id),

@@ -4,6 +4,9 @@ import { GRAPHICS_LEVELS, PLAYER_MODELS } from './graphics.js';
 import {
   getSound,
   setSound,
+  getPrefs,
+  setPrefs,
+  TIP_LEVELS,
   resetSound,
   getA11y,
   setA11y,
@@ -242,6 +245,13 @@ export function createSettingsDialog({ modal, show, notify, onKeysChange }) {
           t('settings.accessibility.lightThemeDesc'),
           a.lightTheme,
         ) +
+          selectRow(
+            'prefs.tips',
+            t('settings.game.tips'),
+            t('settings.game.tipsDesc'),
+            getPrefs().tips,
+            TIP_LEVELS.map(v => [v, t(`settings.game.tipsOptions.${v}`)]),
+          ) +
           `<div class="game-actions">${row('export', t('top.export'))}${row('credits', t('side.credits'))}${row('title', t('settings.game.exit'))}</div>`,
       ) + `<p class="statement">${esc(t('side.footerNote'))}</p>`
     );
@@ -325,6 +335,7 @@ export function createSettingsDialog({ modal, show, notify, onKeysChange }) {
   const setByPath = (path, value) => {
     const [group, name] = path.split('.');
     if (group === 'a11y') setA11y({ [name]: value });
+    if (group === 'prefs') setPrefs({ [name]: value });
   };
   function onClick(e) {
     const el = e.target.closest('[data-s-tab],[data-s-toggle],[data-s-choice],[data-s-bind],[data-s-act]');
@@ -421,9 +432,10 @@ export function createSettingsDialog({ modal, show, notify, onKeysChange }) {
     setByPath(key, v);
     render(el.dataset.fk);
   }
-  // Arrow keys move between tabs, as screen-reader users expect from a tab list.
+  // Arrow keys move between tabs, as screen-reader users expect from a tab list. Only this dialog's own tabs: Help's
+  // tabs live in the same <dialog> and follow the arrow keys through keyboard.js.
   function onKeydown(e) {
-    const tabEl = e.target.closest?.('[role="tab"]');
+    const tabEl = e.target.closest?.('[data-s-tab]');
     if (!tabEl || !modal.contains(tabEl)) return;
     const list = tabs(),
       i = list.indexOf(tabEl.dataset.sTab),

@@ -1,7 +1,7 @@
 import * as E from '../engine.js';
 import { t, list } from '../i18n/index.js';
 import { state, data, save, KEY, view, plan, setSaveKey, setState, ui } from './store.js';
-import { stopTour } from './tutorial.js';
+import { stopLessons } from './tutorial.js';
 import { clearPlan } from './screens/prep.js';
 import { go, render } from './shell.js';
 import { notify } from './toast.js';
@@ -24,7 +24,7 @@ export function enterDemo() {
     E.autoLineup(state);
   } catch {}
   demo = { step: 0, hidden: false };
-  stopTour();
+  stopLessons();
   clearPlan();
   save();
   go('home');

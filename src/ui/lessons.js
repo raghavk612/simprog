@@ -9,7 +9,8 @@
 // A step:    { id, on(c, m) the card opens when true, done(c, m) the real action is done (checked before it opens
 //              too, so a step already done is skipped), spot (ringed), act (glows), inline (a line inside the open
 //              dialog), hold (pauses the live game), game (needs a live game), notNow (Got it reads Not now),
-//              say(c, m) values for the line, variants / variant(c, m) for a line with several versions }
+//              say(c, m) values for the line (read when the card opens, before variant), variants / variant(c, m)
+//              for a line with several versions }
 // The line is tutorial.c.<chapter>.<step> (a chapter) or tutorial.tip.<id> (a tip), plus .<variant>.
 //
 // c, the moment (built by tutorial.js every 100 ms): { view, state, dialog: null | 'huddle' | 'quarter' | 'press' |
@@ -17,7 +18,7 @@
 //   running), practice: { plan, cap, running, last: { week, missed } | null }, has(selector) }
 // Screens are named by route (nav.js), so renaming a route means updating them here too.
 import * as E from '../engine.js';
-import { t } from '../i18n/index.js';
+import { t, formatNumber } from '../i18n/index.js';
 import { NAV } from './nav.js';
 
 export const PROGRESS_KEY = 'kangs-lessons-v1';
@@ -33,6 +34,7 @@ const free = c => !c.dialog;
 const live = c => c.view === 'game' && !!c.state?.match && !c.dialog;
 const between = c => live(c) && !c.playing && !c.breakPending;
 const shopPage = v => NAV.shop.includes(v);
+const symptom = c => timeoutSymptom(c.state.match, c.state.players);
 const ran = c => c.practice?.last?.week === c.state?.week;
 const missed = c =>
   ran(c) && !c.practice.running && c.practice.last.missed.some(k => c.practice.plan.includes(k));
@@ -85,7 +87,14 @@ const breakLesson = (id, pause, steps) => ({
   end: c => E.breakDue(c.state) !== pause,
   steps,
 });
-const record = c => ({ w: c.state.wins, l: c.state.losses, n: c.state.tokens });
+const record = c => ({
+  w: c.state.wins,
+  l: c.state.losses,
+  n: formatNumber(c.state.tokens),
+  why: t('game.why'),
+});
+// A button's name without what it adds ("Calm the team · +4 energy" → "Calm the team").
+const label = k => t(k).split(' · ')[0];
 
 export const LESSONS = [
   {
@@ -181,8 +190,7 @@ export const LESSONS = [
     kind: 'chapter',
     chapter: 'timeout',
     replay: 'arm',
-    start: c => between(c) && !!timeoutSymptom(c.state.match, c.state.players),
-    begin: c => ({ why: timeoutSymptom(c.state.match, c.state.players) }),
+    start: c => between(c) && !!symptom(c),
     steps: [
       {
         id: 'call',
@@ -192,18 +200,19 @@ export const LESSONS = [
         hold: true,
         notNow: true,
         variants: ['run', 'tired', 'fallback'],
-        variant: (c, m) => m.why.kind,
-        on: between,
+        variant: (c, m) => m.why?.kind ?? 'fallback',
+        on: c => between(c) && !!symptom(c),
         done: c => c.dialog === 'huddle' || c.state.match.timeouts < E.TIMEOUTS,
-        say: (c, m) => m.why,
+        say: (c, m) => (m.why = symptom(c)),
       },
       {
         id: 'huddle',
         inline: true,
         variants: ['run', 'tired', 'fallback'],
-        variant: (c, m) => m.why.kind,
+        variant: (c, m) => m.why?.kind ?? 'fallback',
         on: c => c.dialog === 'huddle',
         done: c => c.dialog !== 'huddle',
+        say: () => ({ calm: label('timeout.calm'), belief: label('timeout.belief') }),
       },
     ],
   },
@@ -247,11 +256,10 @@ export const LESSONS = [
         act: '.hb-go',
         on: c => c.view === 'home' && free(c),
         done: c => c.view !== 'home' || !!c.state.match,
-        say: c => ({ n: c.state.tokens }),
+        say: c => ({ n: formatNumber(c.state.tokens), shop: t('nav.groups.shop') }),
       },
     ],
   },
-  ...NAV.shop.map(shopLesson),
   breakLesson('mid', 'mid', [
     {
       id: 'record',
@@ -281,6 +289,8 @@ export const LESSONS = [
       done: () => false,
     },
   ]),
+  // The Shop tabs come after the breaks, so a break's own lesson opens first on a Shop page.
+  ...NAV.shop.map(shopLesson),
   // One-time tips: one line, the first time each comes up.
   {
     id: 'lineup',
@@ -318,6 +328,7 @@ export const LESSONS = [
         act: '[data-plan="film"]',
         on: c => c.view === 'practice' && free(c),
         done: c => c.view !== 'practice' || !!c.state.scouted || c.practice.plan.includes('film'),
+        say: () => ({ name: t('prep.film') }),
       },
     ],
   },
@@ -352,6 +363,7 @@ export const LESSONS = [
         spot: '.need-tokens',
         on: c => shopPage(c.view) && free(c),
         done: (c, m) => c.view !== m.view || !c.has('.need-tokens'),
+        say: () => ({ clinic: t('office.fundraise') }),
       },
     ],
   },
@@ -443,3 +455,10 @@ export function watchAfterCard(how, autoBefore, autoNow) {
 // The start question's default: "No, show me as I go" until the first week and the first tip-off have been seen.
 export const questionDefault = progress =>
   ['week', 'tipoff'].every(id => ['done', 'dismissed'].includes(progress[id])) ? 'tips' : 'lessons';
+// Escape answers a card like Got it, unless a dialog is open (its Escape is its own, and a line inside it goes with it).
+export const escapeAnswers = ({ open, inline, dialog }) => !!open && !inline && !dialog;
+// Shortcut keys wait only while a card holds the paused live game (and no dialog is over it).
+export const holdsKeys = ({ open, held, dialog }) => !!open && !!held && !dialog;
+// The thing a card points at is wholly out of view: above, below, or under the card docked at the bottom of a phone.
+export const outOfView = (r, height, dockTop = null) =>
+  !!r && (r.bottom <= 0 || r.top >= height || (dockTop !== null && r.top >= dockTop));

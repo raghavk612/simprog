@@ -946,17 +946,20 @@ body.live-match .topbar {
     align-items: stretch;
   }
 }
-/* ---- First-game tutorial: a ring on the thing being talked about, everything else dimmed, and one line from the assistant ---- */
+/* ---- The assistant coach's lessons (tutorial.js): a ring on the thing being talked about, a glow on the thing to press,
+   and one line from the assistant. Nothing is dimmed or locked: the page stays usable around them. ---- */
 .coach-ring {
   position: fixed;
   z-index: 60;
   border: 2px solid var(--score);
   border-radius: 6px;
-  box-shadow: 0 0 0 100vmax #00000094;
   pointer-events: none;
+  animation: coach-ring 2.4s ease-in-out infinite;
 }
-.coach-ring.soft {
-  box-shadow: none;
+@keyframes coach-ring {
+  50% {
+    border-color: color-mix(in srgb, var(--score) 55%, transparent);
+  }
 }
 /* Phones: the coach card covers the bottom of the screen, so the page gets that much more room to scroll. */
 @media (max-width: 760px) {
@@ -989,12 +992,30 @@ body.live-match .topbar {
   margin: 2px 0 10px;
   font-size: calc(17px * var(--ts, 1) * var(--ls, 1));
   line-height: 1.4;
+  color: var(--ink);
 }
+/* Hide tips on the left, smaller; Show me and Got it on the right. */
 .coach-acts {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+.coach-acts-end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.coach-acts .text-button {
+  padding: 6px 4px;
+  color: var(--ink-2);
+  font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+  font-weight: 600;
+}
+.coach-acts .text-button:hover {
+  color: var(--ink);
 }
 .coach-line {
   margin: 0 0 14px;
@@ -1004,26 +1025,9 @@ body.live-match .topbar {
   border-radius: 0 4px 4px 0;
 }
 .coach-line p {
-  margin: 2px 0 0;
+  margin: 2px 0 8px;
   font-size: calc(16px * var(--ts, 1) * var(--ls, 1));
   line-height: 1.4;
-  color: var(--ink);
-}
-.coach-skip {
-  position: fixed;
-  z-index: 62;
-  top: 11px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 6px 12px;
-  background: var(--panel-2);
-  color: var(--ink-2);
-  border: 1px solid var(--line-2);
-  border-radius: 4px;
-  font-weight: 600;
-  font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
-}
-.coach-skip:hover {
   color: var(--ink);
 }
 /* The one thing to press: a flat outline that breathes. With reduced motion it simply stays. */
@@ -1050,35 +1054,74 @@ body:has(#modal[open]) .coach-glow:not(#modal *) {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .coach-glow {
+  .coach-glow,
+  .coach-ring {
     animation: none;
   }
 }
-/* Phones: just above the coach card (its height is --coach-h), clear of the tab row and its Start button. */
-@media (max-width: 620px) {
-  .coach-skip {
-    top: auto;
-    bottom: calc(var(--coach-h, 84px) + 8px);
-    left: auto;
-    right: 12px;
-    transform: none;
-  }
+/* The start form's question: two answers, the first one for a new coach. */
+.landing .coach-ask {
+  margin: 14px 0 6px;
+  padding: 0;
+  border: 0;
 }
-.landing .walk-check {
+.landing .coach-ask legend {
+  margin-bottom: 6px;
+  padding: 0;
+  font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
+  font-weight: 600;
+  color: var(--ink);
+}
+.landing .coach-ask label {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 12px 0 4px;
+  margin: 4px 0;
   font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
   font-weight: 500;
   color: var(--ink-2);
   text-transform: none;
 }
-.landing .walk-check input {
+.landing .coach-ask input {
   width: 18px;
   height: 18px;
   margin: 0;
   accent-color: var(--accent);
+}
+/* Help's Lessons tab: one row per lesson, its status under its name, Replay on the right. */
+.lesson-list {
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+.lesson-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+.lesson-row div {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.lesson-row small {
+  color: var(--ink-3);
+}
+.lesson-row.armed small {
+  color: var(--accent-ink);
+}
+.lesson-row button {
+  flex: none;
+}
+/* A notification's own action (Undo). */
+.toast-act {
+  margin-top: 6px;
+  padding: 4px 0;
+  color: var(--accent-ink);
+  font-weight: 700;
 }
 
 /* ---- Prep: one list of picks on the left, the week's three slots and the way forward on the right ---- */

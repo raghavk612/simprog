@@ -16,12 +16,17 @@ import { show } from '../dialogs.js';
 const PREP = [...Object.keys(E.plans), 'fundraise', 'film'];
 export let practicePlan = []; // keys picked for this week, in order
 export let practiceRun = null; // while running: { queue, done: [{ key, passed }], cleanup }
+export let lastRun = null; // the last run that ended: { week, missed: [keys] } (the lessons look for a missed drill)
+const ended = run => {
+  lastRun = { week: state.week, missed: run.done.filter(d => !d.passed).map(d => d.key) };
+};
 
 export function planCap() {
   return Math.max(0, Math.min(3, state?.actions ?? 0));
 }
 export function clearPlan() {
   practicePlan = [];
+  lastRun = null;
 }
 export function practice() {
   practicePlan = practicePlan.filter(k => PREP.includes(k)).slice(0, planCap());
@@ -130,6 +135,7 @@ export function nextDrill() {
   const key = run.queue.shift();
   if (!key) {
     practiceRun = null;
+    ended(run);
     practicePlan = practicePlan.filter(k => !run.done.some(d => d.key === k && d.passed));
     if (modal.open) modal.close();
     render();
@@ -218,6 +224,7 @@ export function endPracticeRun() {
   practiceRun.cleanup?.();
   const run = practiceRun;
   practiceRun = null;
+  ended(run);
   practicePlan = practicePlan.filter(k => !run.done.some(d => d.key === k && d.passed));
   render();
 }

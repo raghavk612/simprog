@@ -3553,8 +3553,7 @@ dialog.confirm-dlg {
     color: var(--ink);
   }
   body:not(.live-match) #toast,
-  body:not(.live-match) .tutorial,
-  body:not(.live-match) .tutorial.aimed {
+  body:not(.live-match) .tutorial {
     bottom: calc(var(--tabh) + 12px) !important;
   }
   body:not(.live-match) .demo-guide {

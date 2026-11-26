@@ -4,13 +4,14 @@ import fs from 'node:fs';
 import en from '../src/i18n/locales/en.js';
 import * as E from '../src/engine.js';
 import { NAV, navGroup, subTabs, breakFoot, subnavGo } from '../src/ui/nav.js';
+import { LESSONS } from '../src/ui/lessons.js';
 
 const read = f => fs.readFileSync(new URL(f, import.meta.url), 'utf8');
 const shell = read('../src/ui/shell.js'),
   markup = read('../src/ui/markup.js'),
   actions = read('../src/ui/actions.js'),
   demoSrc = read('../src/ui/demo.js'),
-  tutorial = read('../src/ui/tutorial.js');
+  lessons = read('../src/ui/lessons.js');
 const routes = Object.values(NAV).flat();
 const data = JSON.parse(read('../public/data/kangs.json'));
 const season = () => {
@@ -53,11 +54,16 @@ test('Shop pages open at any time; during a break their foot walks the tabs and 
   }
   assert.doesNotMatch(shell, /setView\('home'\)/, 'render() no longer sends Shop pages back to Home');
 });
-test('the break walk in the tutorial follows the Shop tabs in order', () => {
-  const walk = [...tutorial.matchAll(/breakBeat\('\w+', '(\w+)'/g)].map(m => m[1]);
-  assert.deepEqual(walk, NAV.shop);
-  for (const id of [...tutorial.matchAll(/breakBeat\('(\w+)'/g)].map(m => m[1]))
-    assert.equal(typeof en.tutorial.b[id], 'string', `tutorial text: ${id}`);
+test('the Shop lessons follow the Shop tabs in order, one line each', () => {
+  const shop = LESSONS.filter(l => l.chapter === 'shop');
+  assert.deepEqual(
+    shop.map(l => l.route),
+    NAV.shop,
+  );
+  for (const l of shop) {
+    assert.equal(l.steps.length, 1, l.id);
+    assert.equal(typeof en.tutorial.c.shop[l.route], 'string', `lesson text: ${l.id}`);
+  }
 });
 test('the gear shop is wired: every button on it has a handler, and the player picker changes the page', () => {
   const used = [...read('../src/gearView.js').matchAll(/data-action="([\w-]+)"/g)].map(m => m[1]),
@@ -65,18 +71,17 @@ test('the gear shop is wired: every button on it has a handler, and the player p
   for (const a of [...used, ...ternary.slice(1)]) assert.match(actions, new RegExp(`'${a}':`), a);
   assert.match(actions, /el\.id === 'gear-player'/);
 });
-test('the judge demo and the first-game tutorial only use screens that exist', () => {
+test('the judge demo and the lessons only use screens that exist', () => {
   const demo = /DEMO_VIEWS = \[([^\]]*)\]/
     .exec(demoSrc)[1]
     .match(/'(\w+)'/g)
     .map(x => x.slice(1, -1));
   const tour = [
-    ...tutorial
-      .slice(tutorial.indexOf('export const BEATS = ['), tutorial.indexOf('export function startTour'))
-      .matchAll(/view (?:===|!==) '(\w+)'/g),
-  ].map(m => m[1]);
+    ...[...lessons.matchAll(/view (?:===|!==) '(\w+)'/g)].map(m => m[1]),
+    ...LESSONS.map(l => l.route).filter(Boolean),
+  ];
   assert.ok(demo.length >= 5, 'the demo names its screens');
-  assert.ok(tour.length >= 5, 'the tutorial names its screens');
+  assert.ok(tour.length >= 5, 'the lessons name their screens');
   for (const v of [...demo, ...tour]) assert.ok(routes.includes(v), v);
 });
 test('every screen has a page to draw and a name on its tab', () => {

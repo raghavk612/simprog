@@ -1,6 +1,6 @@
 // Title screen. With a save: next game, Continue (primary) and New season, which reveals the start form;
 // without one the form is shown. The season code folds behind a <details>.
-import { getA11y } from '../../settings.js';
+import { getA11y, setPrefs } from '../../settings.js';
 import { t, tu, translateError } from '../../i18n/index.js';
 import { titleMatchup } from '../../title.js';
 import { play } from '../../audio.js';
@@ -8,7 +8,8 @@ import * as E from '../../engine.js';
 import { state, data, save, setState, setView, takeLateKits } from '../store.js';
 import { html, LOGO_WHITE, pill, btn, esc, hint } from '../markup.js';
 import { stage, render, go } from '../shell.js';
-import { walkDefault, startTour } from '../tutorial.js';
+import { startQuestionDefault, stopLessons } from '../tutorial.js';
+import { clearPlan } from './prep.js';
 import { confirmDialog } from '../dialogs.js';
 import { notify, announceKits } from '../toast.js';
 import { showEvent } from '../postgame.js';
@@ -31,7 +32,8 @@ const pauseAttr = () => (getA11y().reducedMotion ? 'hidden' : '');
 // The gym (with the phone layout's pause overlay) comes first in the markup, as on phones it is the picture at the top;
 // on desktop it is the full-screen backdrop and the links row holds the pause button instead.
 export function landing() {
-  const m = titleMatchup(state, data);
+  const m = titleMatchup(state, data),
+    ask = startQuestionDefault();
   return html`
     <main class="landing" id="main">
       <div class="landing-brand">
@@ -86,9 +88,11 @@ export function landing() {
               <label for="code">${t('code.field')}</label>
               <input id="code" name="code" maxlength="16" placeholder="${esc(t('code.placeholder'))}" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="code-hint"><small id="code-hint" class="code-hint">${t('code.hint')}</small>
             </details>
-            <label class="walk-check">
-              <input type="checkbox" name="walk" ${walkDefault() ? 'checked' : ''}> ${t('flow.walk')}
-            </label>
+            <fieldset class="coach-ask">
+              <legend>${t('landing.ask')}</legend>
+              <label><input type="radio" name="tips" value="lessons" ${ask === 'lessons' ? 'checked' : ''}> ${t('landing.askNo')}</label>
+              <label><input type="radio" name="tips" value="tips" ${ask === 'tips' ? 'checked' : ''}> ${t('landing.askYes')}</label>
+            </fieldset>
             <button class="primary launch" type="submit">${t('landing.start')}</button>
           </form>
           <div class="landing-links">
@@ -141,7 +145,8 @@ function restoreTitle() {
     l.inert = false;
   }
 }
-// The start form: a new season, from a season code if one is given, with the walk-through if it is ticked.
+// The start form: a new season, from a season code if one is given. The answer to "Have you coached a KANGS season
+// before?" sets the assistant coach's tips (lessons or tips only); a new coach plays game 1 before the preseason break.
 export async function startSeason(form) {
   if (launching) return;
   const f = new FormData(form);
@@ -169,7 +174,11 @@ export async function startSeason(form) {
       ),
     );
     E.autoLineup(state);
-    if (f.get('walk') === 'on') startTour();
+    const tips = f.get('tips') === 'tips' ? 'tips' : 'lessons';
+    if (tips === 'lessons') state.deferPre = true;
+    setPrefs({ tips });
+    stopLessons();
+    clearPlan();
     save();
     play('whistle');
     setView('home');

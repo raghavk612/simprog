@@ -1,4 +1,5 @@
-// Help: the handbook dialog, one tab per topic. The arrow keys change tabs (keyboard.js).
+// Help: the handbook dialog, one tab per topic. The arrow keys change tabs (keyboard.js). The last tab lists the
+// assistant coach's lessons (lessons.js) with their status and a Replay button each.
 import { keyLabel } from '../keys.js';
 import { t, list, tu } from '../i18n/index.js';
 import * as E from '../engine.js';
@@ -6,9 +7,49 @@ import { state, plan, keys, data, stages, teamName } from './store.js';
 import { html, kbd, esc, micon, link, btn } from './markup.js';
 import { show } from './dialogs.js';
 import { modal } from './page.js';
+import { LESSONS } from './lessons.js';
+import { lessonStatus } from './tutorial.js';
 
-const RULE_TABS = ['goal', 'prep', 'rotation', 'gameday', 'difficulty', 'controls', 'court', 'data'];
-const RULE_BODY = ['controls', 'goal', 'difficulty', 'rotation', 'prep', 'gameday', 'court', 'data'];
+const RULE_TABS = [
+  'goal',
+  'prep',
+  'rotation',
+  'gameday',
+  'difficulty',
+  'controls',
+  'court',
+  'data',
+  'lessons',
+];
+const RULE_BODY = [
+  'controls',
+  'goal',
+  'difficulty',
+  'rotation',
+  'prep',
+  'gameday',
+  'court',
+  'data',
+  'lessons',
+];
+const lessonName = l =>
+  l.chapter === 'shop'
+    ? t('tutorial.name.shop', { tab: t(`nav.${l.route}`) })
+    : t(`tutorial.name.${l.chapter}`);
+// One row per lesson: its name, its status, and Replay.
+function lessonRows(kind) {
+  return LESSONS.filter(l => l.kind === kind)
+    .map(l => {
+      const name = lessonName(l),
+        st = lessonStatus(l.id);
+      return html`
+        <li class="lesson-row ${st}">
+          <div><strong>${name}</strong><small>${t(`tutorial.status.${st}`)}</small></div>
+          ${btn(t('tutorial.replay'), 'lesson-replay', 'secondary small', `data-id="${l.id}" aria-label="${esc(`${t('tutorial.replay')}: ${name}`)}"`)}
+        </li>`;
+    })
+    .join('');
+}
 export function rules(tab = 0) {
   tab = (tab + RULE_TABS.length) % RULE_TABS.length;
   const P = state ? plan() : null;
@@ -114,6 +155,13 @@ export function rules(tab = 0) {
           [t('hb.ds.auto'), t('hb.ds.save')],
         ])}
         <p>${t('hb.ds.note', { export: t('top.export'), import: t('landing.import') })}</p>`,
+    () =>
+      html`
+        <p class="rule-lead">${t('hb.l.lead')}</p>
+        <h3>${t('hb.l.chapters')}</h3>
+        <ul class="lesson-list">${lessonRows('chapter')}</ul>
+        <h3>${t('hb.l.tips')}</h3>
+        <ul class="lesson-list">${lessonRows('tip')}</ul>`,
   ][RULE_BODY.indexOf(RULE_TABS[tab])];
   const name = i => t(`hb.tabs.${RULE_TABS[i]}`);
   show(

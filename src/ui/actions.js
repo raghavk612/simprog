@@ -19,7 +19,7 @@ import { notify, actionToast } from './toast.js';
 import { confirmDialog, openSettings, credits } from './dialogs.js';
 import { rules } from './handbook.js';
 import { exportSeason, importSeason } from './files.js';
-import { askSkipTour, nextBeat } from './tutorial.js';
+import { lessonOk, hideLessons, showMe, replayLesson } from './tutorial.js';
 import { enterDemo, exitDemo, demoStep, demoJump, showDemoGuide } from './demo.js';
 import {
   showEvent,
@@ -104,9 +104,11 @@ const ACTIONS = {
     go('home');
   },
 
-  // Tutorial and judge demo
-  'tour-skip': click(() => askSkipTour()),
-  'tour-next': click(() => nextBeat()),
+  // The assistant coach's lessons and the judge demo
+  'lesson-ok': click(() => lessonOk()),
+  'lesson-hide': click(() => hideLessons()),
+  'lesson-show': click(() => showMe()),
+  'lesson-replay': click(el => replayLesson(el.dataset.id)),
   'demo-start': () => {
     play('whistle');
     enterDemo();
