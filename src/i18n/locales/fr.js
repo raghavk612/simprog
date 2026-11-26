@@ -199,6 +199,9 @@ export default {
     nextGame: 'Match {{n}} sur {{total}}',
     vs: 'contre {{team}}',
     record: 'Bilan {{w}}–{{l}}',
+    ask: 'Avez-vous déjà entraîné une saison de KANGS ?',
+    askNo: 'Non, montrez-moi au fur et à mesure',
+    askYes: 'Oui, juste des conseils',
   },
   home: {
     leaders: 'Meilleurs joueurs de la saison',
@@ -707,42 +710,105 @@ export default {
     captain: 'Capitaine : {{name}}',
     noCaptain: 'Pas encore de capitaine',
     makeCaptain: 'Nommer capitaine',
-    walk: 'Guidez-moi pendant le premier match',
     more: 'Analyse complète',
     breakNext: 'Suivant : {{tab}}',
     breakHint: 'Tout ici est facultatif. Continuez quand vous êtes prêt.',
   },
   tutorial: {
     who: 'Entraîneur adjoint',
-    next: 'Suivant',
-    finish: 'C’est parti',
-    skip: 'Passer le tutoriel',
-    skipAsk: 'Passer la suite du tutoriel ? Il ne reviendra pas cette saison.',
-    skipYes: 'Passer',
-    keep: 'Continuer',
-    b: {
-      home: 'On commence par {{opp}}. Chaque semaine se passe pareil : préparer, jouer, après-match. Commencez ici.',
-      pick: 'Vous avez trois choix par semaine. Commencez par {{name}}.',
-      fill: 'Ça les fatigue, alors équilibrez. Encore deux choix.',
-      run: 'Bien. Maintenant, il faut le mériter sur le terrain.',
-      retry: 'Raté. Recommencez, ou gardez le créneau libre pour le match.',
-      toGame: 'La semaine est faite. Allons jouer.',
-      five: 'Voici vos cinq. Un joueur blessé, épuisé ou en échec scolaire reste assis. Lancez le match.',
-      watch: 'Cliquez sur {{btn}}. Je vous arrête si besoin.',
-      shot: '{{player}} a tiré à {{n}} %. Le repos, le moral et la cohésion font bouger ce chiffre.',
-      timeout: 'Bon moment pour un temps mort. Vous en avez trois.',
-      quarter: 'Fin du quart-temps. Prenez une de ces options ou continuez.',
-      speed: 'La suite du match est à vous. Accélérez ici si vous voulez.',
-      press: 'Les journalistes. Ce que vous dites ici compte pour le prochain match.',
-      done: 'Voilà une semaine. Il vous reste {{n}} {{tokens}}. Allez construire l’équipe.',
-      tryouts:
-        'Présaison. Rien n’est obligatoire ici. D’abord les essais : recrutez un joueur avec des jetons, ou observez-le pour en savoir plus.',
-      staff:
-        'Un assistant à la fois, et il aide chaque semaine. Les améliorations en dessous s’achètent une seule fois.',
-      skills:
-        'Chaque nouveau geste ajoute des actions que votre équipe joue en match. Choisissez-en un pour voir ce qu’il fait.',
-      kit: 'Dernière étape : choisissez vos maillots. Lancez la saison quand vous êtes prêt.',
-      gear: 'L’équipement donne à un joueur un bonus de compétence, d’énergie ou de moral. Achetez une pièce, puis choisissez qui la porte.',
+    ok: 'Compris',
+    hide: 'Masquer les conseils',
+    showMe: 'Montrez-moi',
+    notNow: 'Pas maintenant',
+    hidden: 'Conseils désactivés. Réactivez-les dans Réglages, sous Partie.',
+    undo: 'Annuler',
+    replay: 'Revoir',
+    armed: 'Je vous montrerai la prochaine fois.',
+    status: {
+      done: 'Fait',
+      dismissed: 'Passé',
+      armed: 'Je vous montrerai la prochaine fois',
+      new: 'Pas encore vu',
+    },
+    name: {
+      week: 'Semaine de match',
+      tipoff: 'Entre-deux',
+      timeout: 'Temps morts',
+      quarter: 'Pauses entre quarts-temps',
+      speed: 'Vitesse du match',
+      press: 'Salle de presse',
+      shop: 'Boutique : {{tab}}',
+      mid: 'Pause de mi-saison',
+      playoff: 'Pause avant les playoffs',
+      lineup: 'Problèmes de cinq',
+      inbox: 'Courrier du coach',
+      scout: 'Vidéo de l’adversaire',
+      drill: 'Exercices ratés',
+      tokens: 'Pas assez de jetons',
+    },
+    c: {
+      week: {
+        plan: 'Vous avez trois choix par semaine. {{name}} est un bon début, mais ça les fatigue, alors équilibrez.',
+        home: 'On commence par {{opp}}. Chaque semaine se passe pareil : préparer, jouer, après-match. Commencez ici.',
+        run: 'Bien. Maintenant, il faut le mériter sur le terrain.',
+        retry: 'Raté. Recommencez, ou gardez le créneau libre pour le match.',
+      },
+      timeout: {
+        call: {
+          run: 'Ils ont marqué {{n}} points d’affilée. Un temps mort casse la série. Vous en avez trois.',
+          tired: '{{player}} manque d’énergie. Un temps mort lui laisse souffler. Vous en avez trois.',
+          fallback: 'Bon moment pour un temps mort. Vous en avez trois.',
+        },
+        huddle: {
+          run: 'Après une série, choisissez « {{belief}} » : ça remonte le moral.',
+          tired: 'Ils sont fatigués, alors choisissez « {{calm}} » : ça rend de l’énergie.',
+          fallback: '« {{calm}} » s’ils ont l’air fatigués, « {{belief}} » s’ils ont l’air ébranlés.',
+        },
+      },
+      quarter: {
+        read: 'Quand quelque chose cloche, je propose un changement ici et je dis pourquoi. Prenez-en un ou continuez.',
+      },
+      speed: {
+        controls:
+          'La suite du match est à vous. Accélérez ici. Je m’arrête toujours à chaque pause de quart-temps.',
+      },
+      press: {
+        tokens: 'Voilà une semaine : {{n}} jetons à dépenser. Ils servent surtout dans l’onglet {{shop}}.',
+        room: 'Les journalistes. Ce que vous dites ici compte pour le prochain match.',
+      },
+      shop: {
+        recruit:
+          'Détections : recrutez un joueur avec des jetons, ou observez-le d’abord pour en savoir plus.',
+        locker: 'Choisissez les maillots de l’équipe. Les spéciaux se débloquent au fil de la saison.',
+        staff:
+          'Un assistant à la fois, et il aide chaque semaine. Les améliorations en dessous s’achètent une seule fois.',
+        skills:
+          'Chaque nouveau geste ajoute des actions que votre équipe joue en match. Choisissez-en un pour voir ce qu’il fait.',
+        gear: 'L’équipement donne à un joueur un bonus de compétence, d’énergie ou de moral. Achetez une pièce, puis choisissez qui la porte.',
+      },
+      mid: {
+        record:
+          'Mi-saison : {{w}}–{{l}} et {{n}} jetons. Ce que vous avez acheté se voit dans {{why}}, le jour de match.',
+        after:
+          'Après cette pause, gagnez {{need}} des {{cut}} premiers matchs pour atteindre la phase finale.',
+      },
+      playoff: {
+        stakes:
+          'La phase finale arrive : gagner ou rentrer. C’est la dernière pause, alors dépensez maintenant ce qu’il faut.',
+      },
+      tipoff: {
+        five: 'Voici vos cinq. Un joueur blessé, épuisé ou en échec scolaire reste assis. Lancez le match.',
+        watch: 'Cliquez sur {{btn}}. Je vous arrête si besoin.',
+        shot: '{{player}} a tiré à {{n}} %. Le repos, le moral et la cohésion font bouger ce chiffre.',
+      },
+    },
+    tip: {
+      lineup: 'Un joueur de votre cinq ne peut pas jouer. Corrigez-le avant l’entre-deux.',
+      inbox: 'Chaque réponse change le moral, la cohésion ou les jetons. Les pastilles disent de combien.',
+      scout: '{{name}} montre comment ils jouent, et mes conseils entre les quarts-temps s’affinent.',
+      drill: 'Un exercice raté n’use pas son créneau. Recommencez, ou gardez le créneau pour autre chose.',
+      tokens:
+        'Chaque match rapporte des jetons, une victoire davantage. « {{clinic}} » en Préparation aussi.',
     },
   },
   timeout: {
@@ -1088,7 +1154,17 @@ export default {
       language: 'Langue',
       game: 'Partie',
     },
-    game: { exit: 'Retour à l’écran titre' },
+    game: {
+      exit: 'Retour à l’écran titre',
+      tips: 'Conseils de l’entraîneur adjoint',
+      tipsDesc:
+        'Leçons : de courtes leçons la première fois que chaque partie de la saison arrive, plus des conseils ponctuels. Conseils seulement : uniquement les conseils ponctuels. Désactivé : rien de plus.',
+      tipsOptions: {
+        lessons: 'Leçons',
+        tips: 'Conseils seulement',
+        off: 'Désactivé',
+      },
+    },
     controls: {
       intro:
         'Choisissez un bouton, puis appuyez sur la touche à utiliser. Les raccourcis fonctionnent sur les écrans du jeu quand aucune boîte de dialogue n’est ouverte. Échap annule.',
@@ -1532,6 +1608,7 @@ export default {
       gameday: 'Jour de match',
       court: 'Règles du terrain',
       data: 'Données et sauvegardes',
+      lessons: 'Leçons',
     },
     prev: '← Préc.',
     next: 'Suiv.',
@@ -1613,6 +1690,11 @@ export default {
       auto: 'Auto',
       save: 'sauvegarde après chaque action',
       note: 'Les compétences, la moyenne, la santé et les statistiques de match sont simulées. Utilisez « {{export}} » pour une sauvegarde en fichier et « {{import}} » sur l’écran-titre pour la charger.',
+    },
+    l: {
+      lead: 'Revoyez n’importe quelle leçon. Celles de la boutique s’ouvrent tout de suite ; les autres attendent leur moment.',
+      chapters: 'Chapitres',
+      tips: 'Conseils ponctuels',
     },
   },
   lineup: {
