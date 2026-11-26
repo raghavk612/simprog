@@ -1,0 +1,64 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:transparent}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"../../node_modules/three/build/three.module.js","three/addons/":"../../node_modules/three/examples/jsm/"}}</script></head>
+<body><script type="module">
+import * as THREE from 'three';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+const MATS = {
+  metal: { color: 0xf2b233, metalness: 0.85, roughness: 0.28 },
+  accent: { color: 0x5b34a0, metalness: 0.1, roughness: 0.45 },
+  accent2: { color: 0x8a5cd6, metalness: 0.1, roughness: 0.4 },
+  white: { color: 0xf3f1ee, metalness: 0, roughness: 0.6 },
+  dark: { color: 0x232129, metalness: 0.2, roughness: 0.5 },
+  wood: { color: 0xc98d4b, metalness: 0, roughness: 0.55 },
+  ball: { color: 0xe0712a, metalness: 0, roughness: 0.7 },
+  seam: { color: 0x1d1a1a, metalness: 0, roughness: 0.6 },
+  chrome: { color: 0xd8dbe2, metalness: 1, roughness: 0.18 },
+  paper: { color: 0xfbf8f0, metalness: 0, roughness: 0.9 },
+  leather: { color: 0x3a2a55, metalness: 0, roughness: 0.65 },
+  green: { color: 0x2f8f5b, metalness: 0, roughness: 0.6 },
+};
+window.renderAsset = async (o) => {
+  const W = o.w, H = o.h;
+  const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+  r.setPixelRatio(1); r.setSize(W, H); r.setClearColor(0x000000, 0);
+  r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = o.exposure ?? 1.05;
+  r.outputColorSpace = THREE.SRGBColorSpace; r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+  document.body.innerHTML = ''; document.body.append(r.domElement);
+  const scene = new THREE.Scene();
+  scene.environment = new THREE.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+  const group = new THREE.Group(); scene.add(group);
+  for (const f of o.files) {
+    const txt = await (await fetch(f.url)).text();
+    const obj = new OBJLoader().parse(txt);
+    obj.traverse(m => { if (m.isMesh) {
+      const key = (m.name || '').trim() || f.default || 'white';
+      const spec = (o.mats && o.mats[key]) || MATS[key] || MATS[f.default || 'white'] || MATS.white;
+      m.material = new THREE.MeshStandardMaterial({ ...spec, color: new THREE.Color(spec.color), flatShading: !!o.flat });
+      m.castShadow = true; m.receiveShadow = true;
+    }});
+    if (f.pos) obj.position.set(...f.pos); if (f.rot) obj.rotation.set(...f.rot.map(d => d * Math.PI / 180)); if (f.scale) obj.scale.setScalar(f.scale);
+    group.add(obj);
+  }
+  const box = new THREE.Box3().setFromObject(group), size = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+  const cam = new THREE.PerspectiveCamera(o.fov ?? 28, W / H, 0.01, 100);
+  const az = (o.az ?? 25) * Math.PI / 180, el = (o.el ?? 14) * Math.PI / 180;
+  const radius = size.length() * 0.5;
+  const dist = (radius / Math.sin((cam.fov * Math.PI / 180) / 2)) * (o.zoom ?? 1.0) / Math.min(1, W / H * 1.0);
+  cam.position.set(c.x + dist * Math.cos(el) * Math.sin(az), c.y + dist * Math.sin(el), c.z + dist * Math.cos(el) * Math.cos(az));
+  cam.lookAt(c.x + (o.offx ?? 0) * size.x, c.y + (o.offy ?? 0) * size.y, c.z);
+  const key = new THREE.DirectionalLight(0xffffff, o.key ?? 2.4); key.position.set(c.x + radius * 2, c.y + radius * 3, c.z + radius * 2.5);
+  key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.radius = 6;
+  const sc = key.shadow.camera; sc.left = sc.bottom = -radius * 2; sc.right = sc.top = radius * 2; sc.near = 0.01; sc.far = radius * 12; key.target.position.copy(c);
+  scene.add(key, key.target);
+  const rim = new THREE.DirectionalLight(o.rimColor ?? 0x9b6cff, o.rim ?? 3.0); rim.position.set(c.x - radius * 2.5, c.y + radius * 1.2, c.z - radius * 2.5); scene.add(rim);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x2a2238, 0.5));
+  if (o.ground !== false) {
+    const g = new THREE.Mesh(new THREE.PlaneGeometry(radius * 12, radius * 12), new THREE.ShadowMaterial({ opacity: o.shadow ?? 0.32 }));
+    g.rotation.x = -Math.PI / 2; g.position.y = box.min.y - 0.001; g.receiveShadow = true; scene.add(g);
+  }
+  r.render(scene, cam);
+  return r.domElement.toDataURL('image/png');
+};
+window.ready = true;
+</script></body></html>

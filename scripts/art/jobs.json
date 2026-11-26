@@ -1,0 +1,130 @@
+[
+  {
+    "files": [
+      {
+        "url": "models/clipboard.obj",
+        "default": "white"
+      }
+    ],
+    "w": 960,
+    "h": 540,
+    "az": 12,
+    "el": 52,
+    "zoom": 0.7,
+    "out": "renders/week.png"
+  },
+  {
+    "files": [
+      {
+        "url": "models/jersey.obj",
+        "default": "accent"
+      }
+    ],
+    "w": 960,
+    "h": 540,
+    "az": 18,
+    "el": 6,
+    "zoom": 0.8,
+    "out": "renders/team.png"
+  },
+  {
+    "files": [
+      {
+        "url": "models/trophy.obj",
+        "default": "metal"
+      }
+    ],
+    "w": 960,
+    "h": 540,
+    "az": 28,
+    "el": 12,
+    "zoom": 0.8,
+    "out": "renders/season.png"
+  },
+  {
+    "files": [
+      {
+        "url": "models/rack.obj",
+        "default": "chrome"
+      }
+    ],
+    "w": 960,
+    "h": 540,
+    "az": 24,
+    "el": 16,
+    "zoom": 0.72,
+    "out": "renders/shop.png"
+  },
+  {
+    "files": [
+      {
+        "url": "models/scorebook.obj",
+        "default": "wood"
+      }
+    ],
+    "w": 800,
+    "h": 600,
+    "az": 18,
+    "el": 26,
+    "zoom": 0.85,
+    "out": "renders/empty-journal.png"
+  },
+  {
+    "files": [
+      {
+        "url": "models/plinth.obj",
+        "default": "accent"
+      }
+    ],
+    "w": 800,
+    "h": 600,
+    "az": 10,
+    "el": 22,
+    "zoom": 0.95,
+    "out": "renders/empty-bracket.png"
+  },
+  {
+    "files": [
+      {
+        "url": "models/locker.obj",
+        "default": "accent"
+      }
+    ],
+    "w": 800,
+    "h": 600,
+    "az": 24,
+    "el": 10,
+    "zoom": 0.85,
+    "out": "renders/empty-skills.png"
+  },
+  {
+    "files": [
+      {
+        "url": "models/coin.obj",
+        "default": "metal"
+      }
+    ],
+    "w": 288,
+    "h": 288,
+    "az": 14,
+    "el": 4,
+    "zoom": 0.66,
+    "ground": false,
+    "out": "renders/coin.png"
+  },
+  {
+    "files": [
+      {
+        "url": "models/whistle.obj",
+        "default": "chrome"
+      }
+    ],
+    "w": 288,
+    "h": 288,
+    "az": 20,
+    "el": 24,
+    "zoom": 1.05,
+    "ground": false,
+    "out": "renders/whistle.png"
+  }
+]
