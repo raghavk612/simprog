@@ -1,0 +1,86 @@
+{
+  "en": {
+    "game.strengthShort": "Strength",
+    "game.skips": "Tipping off now skips {{list}}.",
+    "game.skip.slot": "1 unused prep slot",
+    "game.skip.slots": "{{n}} unused prep slots",
+    "game.skip.press": "the press room (fans −{{n}})",
+    "game.skip.pre": "the preseason",
+    "game.skip.mid": "the midseason break",
+    "game.skip.playoff": "the playoff break",
+    "game.blocked.inbox": "Answer the coach’s inbox first.",
+    "game.blocked.lineup": "Pick five starters and assign 160 minutes first."
+  },
+  "es": {
+    "game.strengthShort": "Fuerza",
+    "game.skips": "Si empiezas ahora, te saltas {{list}}.",
+    "game.skip.slot": "1 turno de preparación sin usar",
+    "game.skip.slots": "{{n}} turnos de preparación sin usar",
+    "game.skip.press": "la sala de prensa (aficionados −{{n}})",
+    "game.skip.pre": "la pretemporada",
+    "game.skip.mid": "el parón de mitad de temporada",
+    "game.skip.playoff": "el parón de playoffs",
+    "game.blocked.inbox": "Responde primero a la bandeja del entrenador.",
+    "game.blocked.lineup": "Elige primero cinco titulares y asigna 160 minutos."
+  },
+  "fr": {
+    "game.strengthShort": "Force",
+    "game.skips": "Lancer le match maintenant fait sauter {{list}}.",
+    "game.skip.slot": "1 créneau de préparation inutilisé",
+    "game.skip.slots": "{{n}} créneaux de préparation inutilisés",
+    "game.skip.press": "la salle de presse (supporters −{{n}})",
+    "game.skip.pre": "la présaison",
+    "game.skip.mid": "la pause de mi-saison",
+    "game.skip.playoff": "la pause des playoffs",
+    "game.blocked.inbox": "Répondez d’abord à la boîte de réception du coach.",
+    "game.blocked.lineup": "Choisissez d’abord cinq titulaires et attribuez 160 minutes."
+  },
+  "it": {
+    "game.strengthShort": "Forza",
+    "game.skips": "Iniziare ora salta {{list}}.",
+    "game.skip.slot": "1 turno di preparazione inutilizzato",
+    "game.skip.slots": "{{n}} turni di preparazione inutilizzati",
+    "game.skip.press": "la sala stampa (tifosi −{{n}})",
+    "game.skip.pre": "la prestagione",
+    "game.skip.mid": "la pausa di metà stagione",
+    "game.skip.playoff": "la pausa playoff",
+    "game.blocked.inbox": "Rispondi prima alla casella dell’allenatore.",
+    "game.blocked.lineup": "Scegli prima cinque titolari e assegna 160 minuti."
+  },
+  "zh": {
+    "game.strengthShort": "实力",
+    "game.skips": "现在跳球将跳过：{{list}}。",
+    "game.skip.slot": "1 个未用的备战时段",
+    "game.skip.slots": "{{n}} 个未用的备战时段",
+    "game.skip.press": "新闻发布室（球迷 −{{n}}）",
+    "game.skip.pre": "季前",
+    "game.skip.mid": "赛季中段休整",
+    "game.skip.playoff": "季后赛前休整",
+    "game.blocked.inbox": "请先处理教练收件箱。",
+    "game.blocked.lineup": "请先选出五名首发并分配 160 分钟。"
+  },
+  "ja": {
+    "game.strengthShort": "強さ",
+    "game.skips": "今ティップオフすると次を飛ばします：{{list}}。",
+    "game.skip.slot": "未使用の準備枠 1",
+    "game.skip.slots": "未使用の準備枠 {{n}}",
+    "game.skip.press": "記者会見室（ファン −{{n}}）",
+    "game.skip.pre": "プレシーズン",
+    "game.skip.mid": "シーズン中盤の休み",
+    "game.skip.playoff": "プレーオフ前の休み",
+    "game.blocked.inbox": "先にコーチの受信箱に答えましょう。",
+    "game.blocked.lineup": "先に先発5人を選び、160分を割り当てましょう。"
+  },
+  "hi": {
+    "game.strengthShort": "ताक़त",
+    "game.skips": "अभी टिप-ऑफ़ करने पर छूट जाएगा: {{list}}।",
+    "game.skip.slot": "1 बिना इस्तेमाल का तैयारी स्लॉट",
+    "game.skip.slots": "{{n}} बिना इस्तेमाल के तैयारी स्लॉट",
+    "game.skip.press": "प्रेस रूम (प्रशंसक −{{n}})",
+    "game.skip.pre": "प्रीसीज़न",
+    "game.skip.mid": "मिडसीज़न ब्रेक",
+    "game.skip.playoff": "प्लेऑफ़ ब्रेक",
+    "game.blocked.inbox": "पहले कोच के इनबॉक्स का जवाब दें।",
+    "game.blocked.lineup": "पहले पाँच स्टार्टर चुनें और 160 मिनट बाँटें।"
+  }
+}

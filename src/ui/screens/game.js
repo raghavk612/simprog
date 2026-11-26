@@ -2,7 +2,7 @@
 // play-by-play, box score, "Why that shot?"). Replays of a past possession use the same page. The playing itself is in playback.js.
 import { t, tu, up, formatDate, has } from '../../i18n/index.js';
 import * as E from '../../engine.js';
-import { strengthLevel } from '../../teamLabels.js';
+import { strengthLevel, energyLevel, moraleLevel } from '../../teamLabels.js';
 import { tv, feedLines } from '../../narrative.js';
 import { state, plan, stages, teamLabel, hasScore, ui } from '../store.js';
 import {
@@ -24,6 +24,7 @@ import { show } from '../dialogs.js';
 import { arena } from '../page.js';
 import { stage } from '../shell.js';
 import { endscreen } from './season.js';
+import { nextStepButton } from './home.js';
 
 /* ESPN-style box score: starters, bench, team totals. */
 export function boxTable(line, title, compact = false) {
@@ -243,6 +244,96 @@ function scoreBug(m, o) {
       <span class="bug-slogan">${tu('bug.slogan')}</span>
     </div>`;
 }
+// Before tip-off, what a coach needs to judge readiness without opening a drawer: who is stronger on the model's own
+// scale (the rotation's average skill against the opponent's strength), the rotation's energy and morale, and the
+// opponent's style, or a way to scout it while a prep slot is left.
+function readyFacts(o) {
+  const v = E.tipoffPreview(state),
+    M = E.modelSnapshot(state),
+    them = Math.round(M.rating),
+    level = strengthLevel(M.rating);
+  const row = (label, value) => `<div><dt>${label}</dt><dd>${value}</dd></div>`;
+  return html`
+    <dl class="ready-facts">
+      ${row(t('game.strengthShort'), `${esc(t('game.kangs'))} <b>${Math.round(M.skill)}</b> · ${esc(o.opponent)} <b>${them}</b> <span class="strength-word ${level}">(${t(`game.strengthLevel.${level}`)})</span>`)}
+      ${row(t('tipoff.energy'), `<b>${v.energy}</b> · ${t(`rv.energy.${energyLevel(v.energy)}`)}`)}
+      ${row(t('tipoff.morale'), `<b>${v.morale}</b> · ${t(`rv.morale.${moraleLevel(v.morale)}`)}`)}
+      ${row(t('game.style'), state.scouted ? `<b>${t(`style.${o.style}`)}</b>` : `${t('game.unscouted')}${state.actions > 0 ? ` · <button class="text-button" data-view="practice">${t('prep.film')}</button>` : ''}`)}
+    </dl>`;
+}
+// The starting five with each player's overall and energy (number and bar; a tired player's word in red).
+function fiveTable(lineupBad) {
+  return html`
+    <table class="five-table">
+      <caption class="sr-only">${esc(t('game.startingFive'))}</caption>
+      <thead>
+        <tr>
+          <th scope="col" colspan="2"><span class="sr-only">${t('rv.name')}</span></th><th scope="col">${t('rv.ovr')}</th><th scope="col">${t('roster.energy')}</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${state.players
+          .filter(p => p.starter)
+          .map(p => {
+            const why = lineupBad.find(x => x.id === p.id)?.reason,
+              e = Math.round(p.energy),
+              lv = energyLevel(e),
+              low = lv === 'tired' || lv === 'exhausted';
+            return html`
+              <tr>
+                <td><span class="jersey">${p.number}</span></td>
+                <th scope="row">${esc(p.name)}${why ? ` <span class="pill warn">${t(`lineup.${why}`)}</span>` : ''}</th>
+                <td class="five-ovr">${E.ratings(p).ovr}</td>
+                <td class="five-energy ${low ? 'low' : ''}">
+                  <span class="bar" aria-hidden="true"><i style="width:${e}%"></i></span>${e}${low ? ` <small>${t(`rv.energy.${lv}`)}</small>` : ''}
+                </td>
+              </tr>`;
+          })
+          .join('')}
+      </tbody>
+    </table>`;
+}
+// The way forward before tip-off. When the week's next step is something else, that step is the one purple button
+// (the same as Home's; an ineligible starter is fixed right here), and Tip off is secondary with one line saying what
+// tipping off now skips. When tip-off cannot happen yet, Tip off is disabled and the line says why.
+function skipLine(skips) {
+  const item = x =>
+    x.id === 'slots'
+      ? t(x.n === 1 ? 'game.skip.slot' : 'game.skip.slots', { n: x.n })
+      : x.id === 'press'
+        ? t('game.skip.press', { n: x.n })
+        : t(`game.skip.${x.break}`);
+  return skips.length ? t('game.skips', { list: skips.map(item).join(' · ') }) : '';
+}
+function tipoffAction(lineupBad) {
+  const { blocked, skips } = E.tipoffSkips(state),
+    step = E.nextStep(state),
+    why = 'tipoff-why';
+  const primary =
+    step.id === 'tipoff'
+      ? ''
+      : step.id === 'issues'
+        ? btn(t('lineup.fix'), 'auto-lineup', 'primary wide')
+        : nextStepButton('primary wide').html;
+  // an ineligible starter while another step comes first (the press room, say): still fixable here, as a secondary
+  const fixHere =
+    lineupBad.length && step.id !== 'issues' ? btn(t('lineup.fix'), 'auto-lineup', 'secondary wide') : '';
+  const line =
+    blocked === 'issues'
+      ? issueText(lineupBad, true)
+      : blocked
+        ? t(`game.blocked.${blocked}`)
+        : step.id === 'tipoff'
+          ? ''
+          : skipLine(skips);
+  return html`
+    ${fixHere}
+    <div class="page-action">
+      ${primary}
+      ${btn(t('game.tipOff'), 'start-match', `${primary ? 'secondary' : 'primary'} wide`, `${line ? `aria-describedby="${why}"` : ''} ${blocked ? 'disabled' : ''}`)}
+      ${line ? `<p class="tipoff-why" id="${why}">${line}</p>` : ''}
+    </div>`;
+}
 // A replay, the end of the season, or the next game (before tip-off or live).
 export function game() {
   if (ui.replayEvent) return replayView();
@@ -341,25 +432,10 @@ export function game() {
                 ${btn(t('game.timeout', { n: m.timeouts }), 'timeout', 'secondary wide', `${hint('timeout')} ${m.timeouts && !ui.closingMatch ? '' : 'disabled'}`)}`
               : html`
                 <h2>${t('game.ready')}</h2>
-                ${state.players
-                  .filter(p => p.starter)
-                  .map(p => {
-                    const why = lineupBad.find(x => x.id === p.id)?.reason;
-                    return html`
-                      <div class="lineup-row">
-                        <span class="jersey">${p.number}</span><strong>${esc(p.name)}</strong>${why ? `<span class="pill warn">${t(`lineup.${why}`)}</span>` : ''}
-                      </div>`;
-                  })
-                  .join('')}
-                ${
-                  lineupBad.length
-                    ? html`
-                      <p class="notice" role="alert">${issueText(lineupBad, true)}</p>
-                      ${btn(t('lineup.fix'), 'auto-lineup', 'primary wide')}`
-                    : ''
-                }
+                ${readyFacts(o)}
+                ${fiveTable(lineupBad)}
                 ${btn(t('game.adjust'), 'rotation', 'secondary wide')}
-                ${btn(t('game.tipOff'), 'start-match', 'primary wide')}`
+                ${tipoffAction(lineupBad)}`
           }
         </section>
       </aside>

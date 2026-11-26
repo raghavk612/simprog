@@ -440,6 +440,20 @@ export default {
     why: 'なぜそのシュート？',
     whyNone: '決着したプレーがここに表示されます。',
     whyShot: '{{player}} · {{shot}} · 成功率 {{n}}%',
+    strengthShort: '強さ',
+    skips: '今ティップオフすると次を飛ばします：{{list}}。',
+    skip: {
+      slot: '未使用の準備枠 1',
+      slots: '未使用の準備枠 {{n}}',
+      press: '記者会見室（ファン −{{n}}）',
+      pre: 'プレシーズン',
+      mid: 'シーズン中盤の休み',
+      playoff: 'プレーオフ前の休み',
+    },
+    blocked: {
+      inbox: '先にコーチの受信箱に答えましょう。',
+      lineup: '先に先発5人を選び、160分を割り当てましょう。',
+    },
   },
   tactic: {
     balanced: 'バランス',

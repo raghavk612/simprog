@@ -108,6 +108,12 @@ test('every key built at run time resolves to a string for each value it can tak
   for (const l of GRAPHICS_LEVELS) need.push(`settings.accessibility.graphicsOptions.${l}`);
   for (const v of ['listen', 'fundraise', 'academics']) need.push(`office.${v}`, `office.${v}Fx`);
   for (const v of ['perimeter', 'paint', 'transition']) need.push(`style.${v}`, `game.advice.${v}`);
+  // Game day before tip-off: what tipping off skips (E.tipoffSkips), why it is blocked, the energy and morale words.
+  for (const v of ['pre', 'mid', 'playoff']) need.push(`game.skip.${v}`);
+  for (const v of ['inbox', 'lineup']) need.push(`game.blocked.${v}`);
+  for (const v of ['low', 'medium', 'high']) need.push(`game.strengthLevel.${v}`);
+  for (const v of ['fresh', 'rested', 'tired', 'exhausted']) need.push(`rv.energy.${v}`);
+  for (const v of ['fired', 'content', 'restless', 'unhappy']) need.push(`rv.morale.${v}`);
   for (const v of ['balanced', 'zone', 'pressure', 'perimeter']) need.push(`tactic.${v}`);
   for (const v of ['steady', 'fast']) need.push(`pace.${v}`);
   for (const v of ['home', 'away', 'alternate']) need.push(`locker.${v}`);

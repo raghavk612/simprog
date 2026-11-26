@@ -455,6 +455,20 @@ export default {
     why: 'Perché quel tiro?',
     whyNone: 'Qui compare ogni azione conclusa.',
     whyShot: '{{player}} · {{shot}} · {{n}}% di probabilità',
+    strengthShort: 'Forza',
+    skips: 'Iniziare ora salta {{list}}.',
+    skip: {
+      slot: '1 turno di preparazione inutilizzato',
+      slots: '{{n}} turni di preparazione inutilizzati',
+      press: 'la sala stampa (tifosi −{{n}})',
+      pre: 'la prestagione',
+      mid: 'la pausa di metà stagione',
+      playoff: 'la pausa playoff',
+    },
+    blocked: {
+      inbox: 'Rispondi prima alla casella dell’allenatore.',
+      lineup: 'Scegli prima cinque titolari e assegna 160 minuti.',
+    },
   },
   tactic: {
     balanced: 'Equilibrato',
