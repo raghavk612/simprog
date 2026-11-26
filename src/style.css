@@ -6435,22 +6435,27 @@ dialog:has(.unlock-pop) {
 }
 .ach-list li.locked {
   position: relative;
-  min-height: 88px;
+  padding-right: 88px;
 }
+/* a locked achievement keeps its goal and progress readable: a small LOCKED stamp in the corner (as on the jersey
+   kits) shows the state, the word stays for screen readers, and the text keeps full contrast in its quieter ink */
 .ach-list li.locked .ach-state {
-  visibility: hidden;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
-.ach-list li.locked > * {
-  opacity: 0.32;
-  filter: saturate(0.4);
-} /* dim the locked text so the stamp reads first */
-/* the LOCKED stamp sits across the whole locked achievement, centred, without hiding its text */
 .ach-list li.locked::after {
   content: '';
   position: absolute;
-  inset: 0;
-  background: url('/images/locked-stamp.png') center/auto 76px no-repeat;
-  opacity: 0.95;
+  right: 8px;
+  top: 8px;
+  width: 72px;
+  height: 38px;
+  background: url('/images/locked-stamp.png') center/contain no-repeat;
+  opacity: 0.85;
   pointer-events: none;
 }
 .unlock-pop .up-lock {
