@@ -859,6 +859,9 @@ body.live-match .workspace {
   white-space: nowrap;
 }
 .topbar .main-nav .nav-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
   width: 20px;
   height: 20px;
   color: inherit;
@@ -866,6 +869,11 @@ body.live-match .workspace {
 .topbar .main-nav .nav-icon svg {
   width: 20px;
   height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 /* Focus: the usual ring around the whole (unclipped) button, 3px out so it clears the plates. */
 .topbar .main-nav .nav-item:focus-visible,
@@ -903,9 +911,6 @@ body.live-match .workspace {
   -webkit-mask-image: linear-gradient(90deg, transparent, var(--ink) 30%, var(--ink) 70%, transparent);
   mask-image: linear-gradient(90deg, transparent, var(--ink) 30%, var(--ink) 70%, transparent);
 }
-.topbar > .bar-fill {
-  display: block; /* style.css hides the old top bar's loose spans on narrow screens */
-}
 .top-tools {
   display: flex;
   align-items: center;
@@ -913,11 +918,12 @@ body.live-match .workspace {
 }
 /* The coach: a slanted plate with a whistle. No currency here: the tokens are in the scorebug only. */
 .top-coach {
-  --s: calc(36px * var(--slant));
+  --h: 2.5714em; /* 36px at its 14px text: the slant is set on a height in em so it stays 12° at any text size */
+  --s: calc(var(--h) * var(--slant));
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 36px;
+  min-height: var(--h);
   margin-right: 10px;
   padding: 0 calc(var(--s) + 10px);
   background: var(--panel-2);
@@ -1095,7 +1101,7 @@ body.live-match .subnav {
 /* The scorebug: one solid plate of label and value pairs, a team block in a purple tint (never the button's fill) and
    the season track along its foot. Labels are --ink-2: --ink-3 is too faint on this plate. */
 .scorebug {
-  --h: 48px;
+  --h: 3em; /* 48px at 16px; in em so the slant holds under text scaling */
   --s: calc(var(--h) * var(--slant));
   position: relative;
   isolation: isolate;
@@ -1104,6 +1110,7 @@ body.live-match .subnav {
   flex: none;
   min-height: var(--h);
   padding: 0 var(--s) 3px 0;
+  font-size: calc(16px * var(--ts, 1) * var(--ls, 1));
   white-space: nowrap;
 }
 .scorebug::before {
@@ -1444,7 +1451,7 @@ body.live-match .subnav {
   }
   /* The scorebug as two chips: the record and the tokens (the slots are on Prep, the next game on Home). */
   .scorebug {
-    --h: 32px;
+    --h: 2em;
     gap: 6px;
     padding: 0;
   }

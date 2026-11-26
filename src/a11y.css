@@ -201,8 +201,6 @@ kbd {
 .a11y-high-contrast .eyebrow {
   color: #ffe28a !important;
 }
-.a11y-high-contrast .topbar > span,
-.a11y-high-contrast .topbar b,
 .a11y-high-contrast .brand,
 .a11y-high-contrast summary,
 .a11y-high-contrast small {
@@ -1295,5 +1293,9 @@ dialog:has(.settings) .modal-content {
   .sb-pips i.on {
     forced-color-adjust: none;
     background: CanvasText;
+    border-color: CanvasText;
+  }
+  .coach-glyph {
+    stroke: CanvasText;
   }
 }

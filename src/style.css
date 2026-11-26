@@ -253,13 +253,6 @@ footer {
   display: flex;
   min-height: 100vh;
 }
-.sidebar {
-  position: fixed;
-  inset: 0 auto 0 0;
-  display: flex;
-  flex-direction: column;
-  z-index: 5;
-}
 .brand {
   display: flex;
   align-items: center;
@@ -270,30 +263,9 @@ footer {
 .brand span {
   display: block;
 }
-.nav-item {
-  width: 100%;
-  text-align: left;
-  font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
-  font-weight: 600;
-}
-.nav-item > span {
-  font-size: calc(12px * var(--ts, 1) * var(--ls, 1));
-  color: var(--ink-2);
-}
-.nav-item.active > span {
-  color: var(--purple);
-}
 .topbar {
   display: flex;
   align-items: center;
-}
-.topbar > span {
-  font-size: calc(11px * var(--ts, 1) * var(--ls, 1));
-  font-weight: 600;
-}
-.topbar b {
-  margin-left: 10px;
-  font-weight: 500;
 }
 .topbar button {
   font-size: calc(12px * var(--ts, 1) * var(--ls, 1));
@@ -973,10 +945,6 @@ dialog {
   }
 }
 @media (max-width: 1150px) {
-  .sidebar {
-    width: 185px;
-    padding: 22px 14px;
-  }
   .workspace {
     margin-left: 185px;
     width: calc(100% - 185px);
@@ -1009,9 +977,6 @@ dialog {
   .tutorial {
     left: 200px;
   }
-  .topbar b {
-    display: none;
-  }
 }
 @media (max-width: 850px) {
   .game-layout {
@@ -1029,9 +994,6 @@ dialog {
   }
   .metrics strong {
     font-size: calc(29px * var(--ts, 1) * var(--ls, 1));
-  }
-  .topbar > span {
-    display: none;
   }
   .topbar {
     justify-content: flex-end;
@@ -1098,24 +1060,11 @@ dialog {
   .landing footer > span {
     display: none;
   }
-  .sidebar {
-    position: relative;
-    padding: 15px;
-    display: block;
-    border-bottom: 1px solid var(--border);
-  }
   .shell {
     display: block;
   }
   .brand {
     font-size: calc(24px * var(--ts, 1) * var(--ls, 1));
-  }
-  .sidebar nav {
-    margin-top: 14px;
-    scrollbar-width: thin;
-  }
-  .nav-item > span {
-    display: none;
   }
   .workspace {
     margin: 0;
@@ -1313,15 +1262,10 @@ dialog {
 .small {
   border-color: var(--line);
 }
-.sidebar {
-  border-color: var(--line);
-}
 .topbar {
   border-color: var(--line);
 }
-.topbar button,
-.topbar > span,
-.topbar b {
+.topbar button {
   color: var(--ink-2);
 }
 .card,
@@ -1460,18 +1404,11 @@ body[data-view='home'] .right-rail .card:last-child p {
   font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
   line-height: 1.6;
 }
-body.live-match .sidebar {
-  width: 160px;
-  padding: 20px 12px;
-}
 body.live-match .brand {
   font-size: calc(24px * var(--ts, 1) * var(--ls, 1));
 }
 body.live-match .brand span {
   font-size: calc(5px * var(--ts, 1) * var(--ls, 1));
-}
-body.live-match .sidebar nav {
-  margin-top: 24px;
 }
 body.live-match .content {
   padding: 0;
@@ -1653,20 +1590,6 @@ body.live-match .workspace > footer {
   }
 }
 @media (max-width: 760px) {
-  body.live-match .sidebar {
-    position: relative;
-    width: 100%;
-    padding: 8px 12px;
-  }
-  .live-match .sidebar .brand {
-    display: none;
-  }
-  body.live-match .sidebar nav {
-    margin: 0;
-  }
-  body.live-match .nav-item {
-    margin: 0;
-  }
   body.live-match .workspace {
     margin: 0;
     width: 100%;
@@ -1968,17 +1891,7 @@ body {
   color: var(--ink-2);
 }
 
-/* sidebar */
-.sidebar {
-  width: 250px;
-  padding: 24px 18px 18px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: #ffffff22 transparent;
-  border-right: 1px solid var(--line);
-  background: var(--panel);
-}
+/* brand */
 .brand span {
   margin-top: 2px;
 }
@@ -1986,73 +1899,11 @@ body {
   height: auto;
   flex: none;
 }
-.sidebar nav {
-  margin-top: 6px;
-}
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 2px 0;
-  border-left: 0;
-  font: 600 calc(15px * var(--ts, 1) * var(--ls, 1)) var(--body);
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-.nav-item > .nav-icon {
-  flex: none;
-  display: grid;
-  place-items: center;
-  border-radius: 4px;
-  font-size: inherit;
-}
-.nav-icon svg {
-  width: 19px;
-  height: 19px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.nav-label {
-  font-weight: 600;
-}
-.nav-item.active {
-  border-left: 0;
-}
-@media (max-height: 780px) and (min-width: 621px) {
-  .nav-item {
-    padding: 5px 10px;
-  }
-  .nav-item > .nav-icon {
-    width: 30px;
-    height: 30px;
-  }
-}
 @media (max-width: 1150px) and (min-width: 621px) {
-  .sidebar {
-    width: 214px;
-    padding: 20px 14px;
-  }
   .workspace {
     margin-left: 214px;
     width: calc(100% - 214px);
   }
-  .nav-item {
-    font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
-    gap: 10px;
-  }
-}
-body.live-match .nav-item {
-  font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
-  gap: 8px;
-  padding: 5px 6px;
-}
-body.live-match .nav-item > .nav-icon {
-  width: 28px;
-  height: 28px;
 }
 
 /* game tracker (replaces the tiny GAME x / y pill) */
@@ -2269,81 +2120,16 @@ body.reduced .toast-card.out {
   }
 }
 
-/* phones: every tab visible, no hidden horizontal scroller */
+/* phones */
 @media (max-width: 620px) {
-  .sidebar {
-    width: 100%;
-    overflow: visible;
-    background: var(--panel);
-  }
   .workspace {
     margin-left: 0;
     width: 100%;
-  }
-  .sidebar nav {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-    overflow: visible;
-  }
-  .nav-item {
-    min-width: 0;
-    flex-direction: column;
-    justify-content: center;
-    gap: 4px;
-    padding: 8px 4px;
-    margin: 0;
-    font-size: calc(12px * var(--ts, 1) * var(--ls, 1));
-    text-align: center;
-    background: var(--panel-2);
-  }
-  .nav-item > .nav-icon {
-    display: grid;
-    width: 28px;
-    height: 28px;
-    background: none;
-  }
-  .nav-label {
-    white-space: normal;
-    line-height: 1.15;
   }
   #toast {
     inset: auto 12px 12px 12px;
     width: auto;
   }
-}
-@media (max-width: 760px) {
-  body.live-match .sidebar nav {
-    display: grid;
-    grid-template-columns: repeat(9, minmax(0, 1fr));
-    gap: 4px;
-    overflow: visible;
-  }
-  body.live-match .nav-item {
-    min-width: 0;
-    justify-content: center;
-    padding: 4px;
-    background: none;
-  }
-  body.live-match .nav-item > .nav-icon {
-    display: grid;
-  }
-  body.live-match .nav-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-}
-.topbar > span {
-  font: 700 calc(13px * var(--ts, 1) * var(--ls, 1)) var(--display);
-  color: var(--ink-2);
-}
-.topbar b {
-  font: 600 calc(14px * var(--ts, 1) * var(--ls, 1)) var(--body);
-  color: var(--ink);
 }
 .topbar button {
   font: 600 calc(14px * var(--ts, 1) * var(--ls, 1)) var(--body);
@@ -2373,10 +2159,6 @@ body.reduced .toast-card.out {
   }
 }
 @media (min-width: 761px) {
-  body.live-match .sidebar {
-    width: 178px;
-    padding: 16px 10px;
-  }
   body.live-match .workspace {
     margin-left: 178px;
     width: calc(100% - 178px);
@@ -3507,53 +3289,6 @@ dialog.confirm-dlg {
   }
   body:not(.live-match) .shell {
     padding-bottom: calc(var(--tabh) + env(safe-area-inset-bottom, 0px));
-  }
-  body:not(.live-match) .sidebar {
-    padding: 8px 15px;
-  }
-  body:not(.live-match) .sidebar .brand {
-    font-size: calc(21px * var(--ts, 1) * var(--ls, 1));
-  }
-  body:not(.live-match) .sidebar nav {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 30;
-    display: flex;
-    gap: 2px;
-    margin: 0;
-    padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
-    overflow-x: auto;
-    overflow-y: hidden;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x proximity;
-    scrollbar-width: none;
-    background: var(--page);
-    border-top: 1px solid var(--line-2);
-    box-shadow: none;
-  }
-  body:not(.live-match) .sidebar nav::-webkit-scrollbar {
-    display: none;
-  }
-  body:not(.live-match) .nav-item {
-    flex: 1 0 calc(74px * var(--ts, 1));
-    min-width: calc(74px * var(--ts, 1));
-    width: auto;
-    padding: 6px 4px;
-    gap: 3px;
-    font-size: calc(11px * var(--ts, 1) * var(--ls, 1));
-    line-height: 1.15;
-    background: none;
-    scroll-snap-align: center;
-  }
-  body:not(.live-match) .nav-item > .nav-icon {
-    width: 26px;
-    height: 26px;
-  }
-  body:not(.live-match) .nav-item.active {
-    background: var(--accent-soft);
-    color: var(--ink);
   }
   body:not(.live-match) #toast,
   body:not(.live-match) .tutorial {
