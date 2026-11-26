@@ -1,5 +1,6 @@
 // Opens every page in a real browser and reports what tests cannot see: script errors, text with too little
-// contrast, and pages wider than a phone. With --shots it also saves a screenshot of each page for review.
+// contrast, and pages wider than a phone. With --shots it also saves a screenshot of each page for review. It also
+// checks the title screen's start form, Help's Lessons tab and Settings > Game, and the assistant coach's card.
 //
 //   npm run check:ui                 # report only; exits 1 if anything is found
 //   npm run check:ui -- --shots      # also save screenshots to ui-shots/ (git-ignored)
@@ -85,7 +86,7 @@ function lowContrast(min) {
     return px >= 24 || (bold && px >= 18.66) ? 3 : min;
   };
   const found = new Map();
-  for (const el of document.querySelectorAll('main *, .subnav *, .topbar *, dialog[open] *')) {
+  for (const el of document.querySelectorAll('main *, .subnav *, .topbar *, dialog[open] *, .coach-card *')) {
     if (![...el.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())) continue;
     const r = el.getBoundingClientRect(),
       cs = getComputedStyle(el);
@@ -103,6 +104,14 @@ function lowContrast(min) {
   return [...found].map(([k, v]) => `low contrast ${v} on ${k}`);
 }
 
+// Contrast, width and (with --shots) a screenshot of what is on screen now, named after `what`.
+async function check(page, run, what) {
+  await page.waitForTimeout(250);
+  for (const p of await page.evaluate(lowContrast, MIN_CONTRAST)) problems.push(`${run}/${what}: ${p}`);
+  const wide = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+  if (wide > 1) problems.push(`${run}/${what}: page is ${wide}px wider than the screen`);
+  if (shots) await page.screenshot({ path: `${out}/${run}-${what}.png` });
+}
 const server = await createServer({ root, logLevel: 'error', server: { port: 0, host: '127.0.0.1' } });
 await server.listen();
 const url = server.resolvedUrls.local[0];
@@ -138,6 +147,9 @@ for (const [device, [w, h]] of Object.entries(VIEWPORTS))
       );
       await page.goto(url);
       await page.waitForSelector('[data-action="continue"]');
+      // The title screen with the start form open (its question about coaching before).
+      await page.click('[data-action="new-season-form"]');
+      await check(page, run, 'start-form');
       await page.click('[data-action="continue"]');
       for (const v of VIEWS) {
         // Open the page the way a data-view button would.
@@ -155,6 +167,17 @@ for (const [device, [w, h]] of Object.entries(VIEWPORTS))
         if (wide > 1) problems.push(`${run}/${v}: page is ${wide}px wider than the screen`);
         if (shots) await page.screenshot({ path: `${out}/${run}-${v}.png`, fullPage: true });
       }
+      // Dialogs: Help's Lessons tab and Settings > Game (the assistant coach's tips).
+      await page.evaluate(() => document.querySelector('.top-tools [data-action="rules"]').click());
+      await page.waitForSelector('#modal[open]');
+      await page.evaluate(() => document.querySelector('.rule-tabs [role="tab"]:last-child').click());
+      await check(page, run, 'help-lessons');
+      await page.keyboard.press('Escape');
+      await page.evaluate(() => document.querySelector('.top-tools [data-action="settings"]').click());
+      await page.waitForSelector('#modal[open] [data-s-tab="game"]');
+      await page.click('#modal [data-s-tab="game"]');
+      await check(page, run, 'settings-game');
+      await page.keyboard.press('Escape');
       await page.close();
     }
 await browser.close();

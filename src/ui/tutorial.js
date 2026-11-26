@@ -1,394 +1,397 @@
-// The first game is the tutorial, and it counts; then it walks through the preseason break that follows (Tryouts,
-// Staff, Skill tree, Gear, Jerseys). It goes one beat at a time: the game holds, the assistant says
-// one line (tutorial.b.<id> in the locales), and only what they point at can be used. coachTick() runs every 100 ms.
-//
-// A beat in BEATS:
-//   on()    the beat opens when this is true          done()  ...and closes when this is true
-//   spot    what the ring highlights                  act     what glows (the thing to press)
-//   lock    what can still be clicked (default: spot) next    wait for the card's Next button instead of done()
-//   inline  the line sits inside the open dialog      game    only during a live game (skipped otherwise)
-//   skip()  pass the beat by without opening it       last    the final beat
-//   soft    the page around the ring stays lit (everything on it can be used)
-//   enter / leave   run when the beat opens / closes  say()   values for the line
-// The tutorial and the judge demo open screens by route name, so renaming a route means updating them too.
-import * as E from '../engine.js';
-import { t, formatNumber } from '../i18n/index.js';
+// The assistant coach's lessons on screen. The lessons themselves (chapters, tips, when each opens and closes) are data
+// in lessons.js; this file shows them: one card at a time, a ring on what it talks about and a glow on what to press.
+// Nothing on the page is locked: a step closes when the coach does the real thing, wherever they do it, and a step
+// already done never shows. Every card has Got it (Escape too) and Hide tips; a card on the live game holds play while
+// it is up. coachTick() runs every 100 ms (main.js, inside a try/catch).
+import * as L from './lessons.js';
+import { t } from '../i18n/index.js';
 import { announce } from '../a11y.js';
-import { play } from '../audio.js';
+import { getPrefs, setPrefs, getA11y } from '../settings.js';
 import { arena, modal, $ } from './page.js';
-import { render } from './shell.js';
-import { state, view, save, ui } from './store.js';
-import { esc, html, btn } from './markup.js';
-import { confirmDialog } from './dialogs.js';
-import { planCap, practicePlan, practiceRun } from './screens/prep.js';
+import { render, go } from './shell.js';
+import { state, view, ui } from './store.js';
+import { html, btn } from './markup.js';
+import { notify } from './toast.js';
+import { planCap, practicePlan, practiceRun, lastRun } from './screens/prep.js';
+import { breakPending } from './playback.js';
+import { demo } from './demo.js';
 
-const TUTORIAL = 'kangs-three-tutorial-v3';
-export let tour = null; // { i: beat index, open, say } while the tutorial runs
-export const walkDefault = () => {
-  try {
-    return !localStorage.getItem(TUTORIAL);
-  } catch {
-    return true;
-  }
-};
-const hold = () => {
-  ui.auto = false;
-  arena.paused = true;
-  render();
-};
-const letGo = () => {
-  arena.paused = false;
-  ui.auto = true;
-  ui.gap = 0;
-  render();
-};
-const inGame = () => !!state?.match && view === 'game' && !modal.open;
-export const BEATS = [
-  {
-    id: 'home',
-    spot: '.home-bar',
-    lock: '.hb-go',
-    act: '.hb-go',
-    on: () => view === 'home',
-    done: () => view === 'practice',
-    say: () => ({ opp: esc(E.opponent(state).opponent) }),
-  },
-  {
-    id: 'pick',
-    spot: '.prep-row:first-child',
-    act: '[data-plan="shooting"]',
-    on: () => view === 'practice',
-    done: () => practicePlan.includes('shooting'),
-    say: () => ({ name: t('plan.shooting.name') }),
-  },
-  {
-    id: 'fill',
-    spot: '.prep-list',
-    lock: '.prep-row,.plan-x',
-    on: () => view === 'practice',
-    done: () => practicePlan.length >= planCap(),
-  },
-  {
-    id: 'run',
-    spot: '[data-action="practice-start"]',
-    act: '[data-action="practice-start"]',
-    lock: '[data-action="practice-start"],.plan-x',
-    on: () => view === 'practice',
-    done: () => !!practiceRun,
-  },
-  {
-    id: 'retry',
-    spot: '.prep-side',
-    lock: '[data-action="practice-start"],.prep-go,.plan-x,.prep-row',
-    act: '[data-action="practice-start"]',
-    skip: () =>
-      view === 'game' ||
-      (view === 'practice' && !practiceRun && !modal.open && !(planCap() && practicePlan.length)),
-    on: () => view === 'practice' && !practiceRun,
-    done: () => !!practiceRun || view === 'game',
-  },
-  {
-    id: 'toGame',
-    spot: '.prep-go',
-    act: '.prep-go',
-    // The retry beat also lets the coach go straight to the game.
-    skip: () => view === 'game',
-    on: () => view === 'practice' && !practiceRun,
-    done: () => view === 'game',
-  },
-  {
-    id: 'five',
-    spot: '.right-rail',
-    lock: '[data-action="start-match"]',
-    act: '[data-action="start-match"]',
-    on: () => view === 'game' && !state.match,
-    done: () => !!state.match,
-  },
-  {
-    id: 'watch',
-    spot: '[data-action="auto"]',
-    act: '[data-action="auto"]',
-    game: true,
-    on: inGame,
-    done: () => ui.auto,
-    say: () => ({ btn: t('game.watch').replace(/^[^\p{L}]+/u, '') }),
-  },
-  {
-    id: 'shot',
-    game: true,
-    next: true,
-    lock: '.coach-card',
-    on: () => {
-      const p = arena.presentation();
-      return (
-        inGame() &&
-        state.match.possession >= 3 &&
-        !!p?.resolved &&
-        p.clip.team === 'home' &&
-        !!p.clip.shotChance
-      );
-    },
-    enter: hold,
-    leave: letGo,
-    say: () => {
-      const c = arena.presentation()?.clip;
-      return { player: esc(c?.player ?? ''), n: c?.shotChance ?? 0 };
-    },
-  },
-  {
-    id: 'timeout',
-    spot: '[data-action="timeout"]',
-    act: '[data-action="timeout"]',
-    game: true,
-    on: () => inGame() && state.match.possession >= 9,
-    enter: hold,
-    leave: letGo,
-    done: () => state.match?.timeouts < E.TIMEOUTS,
-  },
-  {
-    id: 'quarter',
-    inline: true,
-    game: true,
-    on: () => modal.open && !!modal.querySelector('[data-action="break-go"]'),
-    done: () => !modal.open,
-  },
-  {
-    id: 'speed',
-    spot: '.playback-controls',
-    game: true,
-    next: true,
-    on: inGame,
-    enter: hold,
-    leave: letGo,
-  },
-  {
-    id: 'press',
-    inline: true,
-    on: () => modal.open && !!modal.querySelector('.inbox-card.press'),
-    done: () => !modal.open || !modal.querySelector('.inbox-card.press') || !!state.press?.done,
-  },
-  {
-    id: 'done',
-    spot: '.home-bar',
-    lock: '.hb-go',
-    act: '.hb-go',
-    on: () => view === 'home' && !modal.open,
-    done: () => view !== 'home',
-    say: () => ({ n: formatNumber(state.tokens), tokens: t('toast.tokens') }),
-  },
-  // The preseason break: one beat per tab. Everything on the page can be used; "Next: <tab>" moves on.
-  breakBeat('tryouts', 'recruit', '.cards.three', 'staff'),
-  breakBeat('staff', 'staff', '.office-section', 'skills'),
-  breakBeat('skills', 'skills', '.st-tree', 'gear'),
-  breakBeat('gear', 'gear', '.gear-layout', 'locker'),
-  { ...breakBeat('kit', 'locker', '.lk-stage-row'), act: '[data-action="break-done"]', last: true },
-];
-// A beat for one break tab: it rings the page's main card, glows the button to the next tab, and closes on arriving
-// there (or, on the last tab, when the break is over). Skipped when no break is open, e.g. a save without one.
-function breakBeat(id, route, spot, next) {
+let progress = L.loadProgress();
+// Lessons under way, in the order they began. A run: { lesson, i (its step), memo, open: '' | 'card' | 'line', held,
+// autoBefore, sawDialog, focusBefore, text }. Several can wait at once; only one is open.
+let runs = [];
+let logged = false;
+const FOCUSABLE = 'button,a[href],input,select,textarea,summary,[tabindex]';
+const phone = () => innerWidth <= 760;
+const openRun = () => runs.find(r => r.open);
+const step = r => r.lesson.steps[r.i];
+
+// The status of each lesson, for Help's Lessons tab: done, dismissed, armed or new.
+export const lessonStatus = id => progress[id] || 'new';
+export const startQuestionDefault = () => L.questionDefault(progress);
+
+function setStatus(id, status) {
+  progress = { ...progress, [id]: status };
+  L.saveProgress(progress);
+}
+// Which dialog is open, as the lessons see it.
+function dialogKind() {
+  if (document.querySelector('dialog.confirm-dlg[open]')) return 'other';
+  if (!modal.open) return null;
+  const q = s => modal.querySelector(s);
+  if (q('[data-action="huddle"]')) return 'huddle';
+  if (q('[data-action="break-go"]')) return 'quarter';
+  if (q('.inbox-card.press [data-pick]')) return 'press';
+  if (q('[data-action="pick-event"]')) return 'inbox';
+  if (q('#drill-root')) return 'drill';
+  return 'other';
+}
+// The moment the lessons look at (see lessons.js).
+function moment() {
+  const p = state?.match && arena.event ? arena.presentation() : null,
+    c = p?.clip;
   return {
-    id,
-    spot,
-    lock: 'main,.subnav-end',
-    soft: true,
-    act: next ? `.break-next [data-view="${next}"]` : null,
-    skip: () => !E.breakDue(state),
-    on: () => view === route && !modal.open,
-    done: () => (next ? view === next : view !== route || !E.breakDue(state)),
+    view,
+    state,
+    dialog: dialogKind(),
+    auto: ui.auto,
+    playing: arena.isPlaying(),
+    breakPending: breakPending(),
+    shot: p?.resolved && c?.team === 'home' && c.shotChance ? { player: c.player, n: c.shotChance } : null,
+    active: runs.find(r => r.lesson.kind === 'chapter')?.lesson.id ?? null,
+    practice: { plan: practicePlan, cap: planCap(), running: !!practiceRun, last: lastRun },
+    has: sel => !!document.querySelector(sel),
   };
 }
-export function startTour() {
-  state.deferPre = true;
-  tour = { i: 0, open: false };
-  try {
-    localStorage.setItem(TUTORIAL, 'seen');
-  } catch {}
-}
-function clearCoach() {
+const visible = sel =>
+  sel ? [...document.querySelectorAll(sel)].find(x => x.getBoundingClientRect().width) : null;
+// What a card points at: the thing to press, or else the thing it talks about.
+const target = r => (r ? visible(step(r).act) || visible(step(r).spot) : null);
+
+function clearDom() {
   document.querySelectorAll('.coach-card,.coach-ring,.coach-line').forEach(x => x.remove());
   document.documentElement.style.removeProperty('--coach-h');
   document.querySelectorAll('.coach-glow').forEach(x => x.classList.remove('coach-glow'));
 }
-// The page redraws under the tutorial, so the glow is put back on every tick.
-function glowCoach() {
-  const b = BEATS[tour.i],
-    sel = b.act ?? (b.next ? '.coach-card [data-action="tour-next"]' : null);
+const acts = s =>
+  html`
+    <div class="coach-acts">
+      ${btn(t('tutorial.hide'), 'lesson-hide', 'text-button small coach-hide')}
+      <span class="coach-acts-end">
+        ${s.inline ? '' : btn(t('tutorial.showMe'), 'lesson-show', 'text-button small', 'hidden')}
+        ${btn(t(s.notNow ? 'tutorial.notNow' : 'tutorial.ok'), 'lesson-ok', 'secondary small')}
+      </span>
+    </div>`;
+function drawCard(r) {
+  const s = step(r),
+    card = document.createElement('div');
+  card.className = 'coach-card';
+  card.dataset.lesson = r.lesson.id;
+  card.setAttribute('role', 'status');
+  card.innerHTML = `<span class="coach-who">${t('tutorial.who')}</span><p></p>${acts(s)}`;
+  card.querySelector('p').textContent = r.text;
+  document.body.append(card);
+  if (s.spot) {
+    const ring = document.createElement('div');
+    ring.className = 'coach-ring';
+    ring.setAttribute('aria-hidden', 'true');
+    document.body.append(ring);
+  }
+  place(r);
+}
+// A line inside the open dialog, at its top. The dialog may redraw itself, so it is put back on every tick.
+function drawLine(r) {
+  const box = modal.querySelector('.modal-content');
+  if (!box) return;
+  const el = document.createElement('div');
+  el.className = 'coach-line';
+  el.dataset.lesson = r.lesson.id;
+  el.innerHTML = `<span class="coach-who">${t('tutorial.who')}</span><p></p>${acts(step(r))}`;
+  el.querySelector('p').textContent = r.text;
+  box.prepend(el);
+}
+// The ring sits on the thing being talked about and the card next to it; both follow the page as it redraws and
+// scrolls. On a phone the card is docked at the bottom (--coach-h lets the page scroll its last button clear of it).
+function place(r) {
+  const card = $('.coach-card');
+  if (!card) return;
+  const s = step(r),
+    ring = $('.coach-ring'),
+    el = visible(s.spot),
+    rect = el?.getBoundingClientRect(),
+    w = card.offsetWidth,
+    h = card.offsetHeight,
+    dock = phone();
+  if (ring) {
+    ring.hidden = !rect;
+    if (rect)
+      Object.assign(ring.style, {
+        left: `${rect.left - 6}px`,
+        top: `${rect.top - 6}px`,
+        width: `${rect.width + 12}px`,
+        height: `${rect.height + 12}px`,
+      });
+  }
+  if (dock) document.documentElement.style.setProperty('--coach-h', `${h + 84}px`);
+  const aim = target(r)?.getBoundingClientRect() ?? null;
+  let top = innerHeight - h - (dock ? 84 : 24);
+  // Docked on a phone over something on screen (the live game's control bar cannot scroll): sit just above it instead.
+  const lift = dock && aim && aim.top < innerHeight && aim.bottom > top && aim.top - h - 12 >= 12;
+  const show = card.querySelector('[data-action="lesson-show"]');
+  if (show) show.hidden = !L.outOfView(aim, innerHeight, dock && !lift ? top : null);
+  if (lift) top = aim.top - h - 12;
+  if (!rect || dock || L.outOfView(rect, innerHeight)) {
+    card.style.left = `${Math.max(12, (innerWidth - w) / 2)}px`;
+    card.style.top = `${top}px`;
+    return;
+  }
+  // Below first, then to the left, and above only as a last resort: the top right is where notifications appear.
+  const below = rect.bottom + 14 + h < innerHeight - 12,
+    side = rect.left - 14 - w > 12,
+    above = rect.top - 14 - h > 12;
+  card.style.left = `${below || (!side && above) ? Math.max(12, Math.min(innerWidth - w - 12, rect.left)) : side ? rect.left - 14 - w : Math.max(12, innerWidth - w - 12)}px`;
+  card.style.top = `${below ? rect.bottom + 14 : side ? Math.max(12, Math.min(innerHeight - h - 12, rect.top)) : above ? rect.top - 14 - h : Math.max(12, innerHeight - h - 12)}px`;
+}
+// The page redraws under the card, so the glow is put back on every tick.
+function glow(r) {
+  const sel = r?.open === 'card' ? step(r).act : null;
   document.querySelectorAll('.coach-glow').forEach(x => {
     if (!sel || !x.matches(sel)) x.classList.remove('coach-glow');
   });
   if (sel) document.querySelectorAll(sel).forEach(x => x.classList.add('coach-glow'));
 }
-// Skipping sits apart from the card, so it never reads as the next step.
-function skipButton(show) {
-  let el = $('.coach-skip');
-  if (!show) {
-    el?.remove();
+function open(r, c) {
+  const s = step(r);
+  const say = s.say?.(c, r.memo) || {};
+  r.text = t(L.stepKey(r.lesson, s, c, r.memo), say);
+  r.memo.shown = true;
+  r.focusBefore = document.activeElement;
+  if (s.inline) {
+    r.open = 'line';
+    drawLine(r);
+  } else {
+    r.open = 'card';
+    if (s.hold && c.state?.match) {
+      r.held = true;
+      r.sawDialog = false;
+      r.autoBefore = ui.auto;
+      ui.auto = false;
+      arena.paused = true;
+      render();
+    }
+    drawCard(r);
+    glow(r);
+  }
+  announce(r.text);
+}
+// Closing a card. how: see watchAfterCard in lessons.js (and 'ended' when a lesson stops by itself).
+function close(r, how) {
+  if (!r.open) return;
+  const a = document.activeElement,
+    hadFocus = !!a?.closest?.('.coach-card,.coach-line');
+  clearDom();
+  r.open = '';
+  if (r.held) {
+    r.held = false;
+    const w = L.watchAfterCard(how, r.autoBefore, ui.auto);
+    ui.auto = w.auto;
+    if (w.unpause && !modal.open) arena.paused = false;
+    ui.gap = 0;
+    render();
+  }
+  // Focus goes back where it was before the card, or to what the card pointed at: never to the page body.
+  if (hadFocus) {
+    const back = r.focusBefore?.isConnected && r.focusBefore !== document.body ? r.focusBefore : target(r);
+    const f = back?.matches?.(FOCUSABLE)
+      ? back
+      : back?.querySelector?.(FOCUSABLE) || $('main h1') || $('#main');
+    f?.focus({ preventScroll: true });
+  }
+}
+function finish(r, status) {
+  close(r, 'ended');
+  runs = runs.filter(x => x !== r);
+  setStatus(r.lesson.id, status);
+}
+// Stop a lesson without a status (it starts again at its next moment).
+function drop(r) {
+  close(r, 'ended');
+  runs = runs.filter(x => x !== r);
+}
+// The coach answered the card: Got it, Escape, Not now, or playing on from a card that holds the game.
+function answer(r, how) {
+  const status = step(r).notNow ? 'done' : L.gotItStatus(r.lesson, r.i);
+  close(r, how);
+  runs = runs.filter(x => x !== r);
+  setStatus(r.lesson.id, status);
+}
+function advance(r, c) {
+  const l = r.lesson;
+  if (l.abort?.(c, r.memo)) return drop(r);
+  if (l.end?.(c, r.memo)) return finish(r, 'done');
+  // A card holding the game: a dialog over it keeps it held; Watch live, Resume or Next play on the page answers it.
+  if (r.open === 'card' && r.held) {
+    if (c.dialog) r.sawDialog = true;
+    else if (r.sawDialog) {
+      r.sawDialog = false;
+      ui.auto = false;
+      arena.paused = true;
+    } else if (ui.auto || !arena.paused) return answer(r, 'played');
+  }
+  for (;;) {
+    const s = step(r);
+    if (!s) return finish(r, 'done');
+    if (r.open) {
+      if (s.game && !c.state.match) return finish(r, 'done');
+      if (!s.done(c, r.memo)) return;
+      close(r, 'done');
+      r.i++;
+      continue;
+    }
+    if (s.game && !c.state.match) return finish(r, 'done');
+    if (s.done(c, r.memo)) {
+      r.i++;
+      continue;
+    }
+    if (!openRun() && s.on(c, r.memo)) open(r, c);
     return;
   }
-  if (!el) {
-    el = document.createElement('button');
-    el.type = 'button';
-    el.className = 'coach-skip';
-    el.dataset.action = 'tour-skip';
-    el.textContent = t('tutorial.skip');
-    document.body.append(el);
-  }
 }
-export function stopTour() {
-  if (!tour) return;
-  const b = BEATS[tour.i];
-  if (tour.open && b.enter) {
-    arena.paused = false;
-  }
-  tour = null;
-  clearCoach();
-  skipButton(false);
-  if (state?.week === 0 && state.deferPre) {
-    state.deferPre = false;
-    save();
-  }
+function begin(lesson, c) {
+  const r = { lesson, i: 0, memo: lesson.begin?.(c) ?? {}, open: '' };
+  runs.push(r);
+  return r;
 }
-function endTour() {
-  tour = null;
-  clearCoach();
-  skipButton(false);
-}
-function coachLine(b) {
-  const text = t(`tutorial.b.${b.id}`, tour.say);
-  return `<span class="coach-who">${t('tutorial.who')}</span><p>${text}</p>`;
-}
-function drawCoach() {
-  const b = BEATS[tour.i];
-  clearCoach();
-  if (b.inline) {
-    const el = document.createElement('div');
-    el.className = 'coach-line';
-    el.dataset.beat = b.id;
-    el.innerHTML = coachLine(b);
-    modal.querySelector('.modal-content')?.prepend(el);
+// The open card follows the page: hidden under a dialog, re-placed, its line put back inside a redrawn dialog.
+function keepUp(r, c) {
+  if (r.open === 'line') {
+    if (modal.open && !modal.querySelector('.coach-line')) drawLine(r);
     return;
   }
-  const card = document.createElement('div');
-  card.className = 'coach-card';
-  card.dataset.beat = b.id;
-  card.setAttribute('role', 'status');
-  card.innerHTML = `${coachLine(b)}${
-    b.next
-      ? html`
-        <div class="coach-acts">
-          ${btn(t(b.last ? 'tutorial.finish' : 'tutorial.next'), 'tour-next', 'primary small')}
-        </div>`
-      : ''
-  }`;
-  document.body.append(card);
-  if (b.spot) {
-    const ring = document.createElement('div');
-    ring.className = b.soft ? 'coach-ring soft' : 'coach-ring';
-    document.body.append(ring);
-  }
-  placeCoach();
-}
-// The ring sits on the thing being talked about, and the card next to it. Both are re-placed on every tick, because the page redraws under them.
-function placeCoach() {
-  const b = BEATS[tour.i],
-    card = $('.coach-card');
-  if (!card) return;
-  const ring = $('.coach-ring'),
-    el = b.spot ? [...document.querySelectorAll(b.spot)].find(x => x.getBoundingClientRect().width) : null,
-    r = el?.getBoundingClientRect(),
-    w = card.offsetWidth,
-    h = card.offsetHeight;
-  if (ring) {
-    ring.hidden = !r;
-    if (r)
-      Object.assign(ring.style, {
-        left: `${r.left - 6}px`,
-        top: `${r.top - 6}px`,
-        width: `${r.width + 12}px`,
-        height: `${r.height + 12}px`,
-      });
-  }
-  // On a phone the card sits at the bottom; --coach-h lets the page scroll its last button clear of it (theme.css).
-  if (innerWidth <= 760) document.documentElement.style.setProperty('--coach-h', `${h + 84}px`);
-  if (!r || innerWidth <= 760) {
-    card.style.left = `${Math.max(12, (innerWidth - w) / 2)}px`;
-    card.style.top = `${innerHeight - h - (innerWidth <= 760 ? 84 : 24)}px`;
-    return;
-  }
-  // Below first, then to the left, and above only as a last resort: the top right is where notifications appear.
-  const below = r.bottom + 14 + h < innerHeight - 12,
-    side = r.left - 14 - w > 12,
-    above = r.top - 14 - h > 12;
-  card.style.left = `${below || (!side && above) ? Math.max(12, Math.min(innerWidth - w - 12, r.left)) : side ? r.left - 14 - w : Math.max(12, innerWidth - w - 12)}px`;
-  card.style.top = `${below ? r.bottom + 14 : side ? Math.max(12, Math.min(innerHeight - h - 12, r.top)) : above ? r.top - 14 - h : Math.max(12, innerHeight - h - 12)}px`;
+  const card = $('.coach-card');
+  if (!card) return drawCard(r);
+  card.hidden = !!c.dialog;
+  if (!c.dialog) place(r);
+  glow(r);
 }
 export function coachTick() {
-  if (!tour) return;
-  const b = BEATS[tour.i];
-  skipButton(view !== 'landing');
-  if (view === 'landing') {
-    if (tour.open) {
-      tour.open = false;
-      clearCoach();
-    }
+  if (!state || view === 'landing' || demo) {
+    if (runs.length) stopLessons();
     return;
   }
-  if (!tour.open && ((b.game && !state?.match) || b.skip?.())) {
-    tour.i++;
+  const level = getPrefs().tips,
+    c = moment();
+  for (const r of [...runs]) if (!L.allowed(r.lesson, level, progress)) drop(r);
+  for (const r of [...runs]) advance(r, c);
+  // Any lesson whose moment has come begins (they wait side by side; the first in LESSONS opens first). A tip begins
+  // only when nothing is on screen and no other tip is waiting, so it shows at once.
+  for (const l of L.LESSONS) {
+    if (runs.some(r => r.lesson === l)) continue;
+    if (l.kind === 'tip' && (openRun() || runs.some(r => r.lesson.kind === 'tip'))) continue;
+    if (L.allowed(l, level, progress) && l.start(c, progress[l.id] === 'armed')) advance(begin(l, c), c);
+  }
+  const o = openRun();
+  if (o) keepUp(o, c);
+  else glow(null);
+}
+// The loop caught an error from a lesson (guardTick in lessons.js stops the lessons after it): close the card and give
+// the game back as it was before the card, so play goes on, and say so once in the console.
+export function lessonFailed(err) {
+  try {
+    stopLessons();
+  } catch {
+    runs = [];
+    clearDom();
+  }
+  if (!logged) {
+    logged = true;
+    console.error('Lessons stopped after an error:', err);
+  }
+}
+// "No, show me as I go" on the start form: every chapter can show again, even ones seen or dismissed before.
+export function forgetLessonChapters() {
+  progress = L.forgetChapters(progress);
+  L.saveProgress(progress);
+}
+// The title screen, a new season and the judge demo stop every lesson under way (none gets a status).
+export function stopLessons() {
+  for (const r of [...runs]) drop(r);
+  runs = [];
+  clearDom();
+}
+// The card's buttons.
+export function lessonOk() {
+  const r = openRun();
+  if (r) answer(r, step(r).notNow ? 'notnow' : 'gotit');
+}
+export function hideLessons() {
+  const r = openRun(),
+    h = L.hideTips(getPrefs().tips, progress),
+    waiting = runs.map(x => ({ ...x, open: '', held: false }));
+  if (r) close(r, 'hide');
+  runs = [];
+  progress = h.progress;
+  L.saveProgress(progress);
+  setPrefs({ tips: 'off' });
+  notify(t('tutorial.hidden'), {
+    title: t('tutorial.who'),
+    action: {
+      label: t('tutorial.undo'),
+      run: () => {
+        progress = h.undo.progress;
+        L.saveProgress(progress);
+        setPrefs({ tips: h.undo.level });
+        runs = waiting;
+        coachTick();
+      },
+    },
+  });
+}
+export function showMe() {
+  const el = target(openRun());
+  if (!el) return;
+  el.scrollIntoView({ block: 'center', behavior: getA11y().reducedMotion ? 'auto' : 'smooth' });
+  const f = el.matches(FOCUSABLE) ? el : el.querySelector(FOCUSABLE);
+  if (f) f.focus({ preventScroll: true });
+  else {
+    el.tabIndex = -1;
+    el.focus({ preventScroll: true });
+  }
+}
+// Replay from Help: a Shop lesson opens at once on its tab; any other waits for its next moment.
+export function replayLesson(id) {
+  const res = L.replayLesson(progress, id);
+  if (!res) return;
+  for (const r of runs.filter(x => x.lesson.id === id)) drop(r);
+  progress = res.progress;
+  L.saveProgress(progress);
+  if (modal.open) modal.close();
+  if (res.now) {
+    go(res.route);
+    const o = openRun();
+    if (o) drop(o);
+    const r = begin(L.lessonById(id), moment());
+    runs = [r, ...runs.filter(x => x !== r)];
     coachTick();
-    return;
-  }
-  if (!tour.open) {
-    if (b.inline ? !b.on() : modal.open || !b.on()) return;
-    tour.open = true;
-    tour.say = b.say?.() || {};
-    b.enter?.();
-    drawCoach();
-    glowCoach();
-    announce(document.querySelector('.coach-card p,.coach-line p')?.textContent || '');
-    return;
-  }
-  if (b.inline && modal.open && !modal.querySelector('.coach-line')) drawCoach();
-  glowCoach();
-  if (!b.inline && modal.open) {
-    $('.coach-card')?.setAttribute('hidden', '');
-  } else {
-    $('.coach-card')?.removeAttribute('hidden');
-    placeCoach();
-  }
-  if (b.done?.() || (b.game && !state?.match && !modal.open)) nextBeat();
+  } else notify(t('tutorial.armed'), { title: t('tutorial.who') });
 }
-export function nextBeat() {
-  const b = BEATS[tour.i];
-  clearCoach();
-  if (state?.match) b.leave?.();
-  if (b.last) {
-    endTour();
+// Escape answers the card like Got it, even from a field on the live game's bar (a dialog keeps its own Escape).
+export function onCoachKey(e) {
+  if (e.key !== 'Escape' || e.defaultPrevented) return;
+  const r = openRun();
+  if (
+    !L.escapeAnswers({
+      open: !!r,
+      inline: r?.open === 'line',
+      dialog: !!document.querySelector('dialog[open]'),
+    })
+  )
     return;
-  }
-  tour.i++;
-  tour.open = false;
-  coachTick();
+  e.preventDefault();
+  answer(r, 'escape');
 }
-// Skip asks first; "Keep going" is the safe default.
-export async function askSkipTour() {
-  if (!(await confirmDialog(t('tutorial.skipAsk'), { yes: t('tutorial.skipYes'), no: t('tutorial.keep') })))
-    return;
-  stopTour();
-  render();
-}
-// While a beat is open only the card and the thing it points at respond (a capture listener, so it runs first).
-// The tutorial's own lines inside a dialog never get in the way.
-export function blockOutsideSpotlight(e) {
-  if (!tour?.open) return;
-  const b = BEATS[tour.i];
-  if (b.inline || modal.open || e.target.closest('.coach-card,.coach-skip,.confirm-dlg,.toast-card')) return;
-  const ok = b.lock ?? b.spot;
-  if (ok && !e.target.closest(ok)) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    play('error');
-  }
-}
-// Shortcut keys wait while a beat card is up (but not for lines inside a dialog).
-export const tourHoldsKeys = () => !!tour?.open && !BEATS[tour.i].inline && !modal.open;
+// Shortcut keys wait while a card holds the paused game.
+export const lessonHoldsKeys = () => {
+  const r = openRun();
+  return L.holdsKeys({ open: !!r, held: !!r?.held, dialog: modal.open });
+};

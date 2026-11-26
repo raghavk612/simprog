@@ -808,13 +808,32 @@ dialog:has(.settings) .modal-content {
     outline: 3px solid Highlight;
   }
 }
-/* First-time tour: the card sits beside the sidebar item it explains, and that item is outlined. */
-@media (max-width: 760px) {
-  .tutorial.aimed {
-    left: 15px !important;
-    right: 15px;
-    top: auto !important;
-    bottom: 15px !important;
+/* The assistant coach's ring and glow: still with reduced motion, and a plain thick outline in high contrast. */
+.a11y-reduced-motion .coach-ring,
+.a11y-reduced-motion .coach-glow {
+  animation: none !important;
+  transition: none !important;
+}
+.a11y-high-contrast .coach-ring {
+  border: 3px solid var(--focus);
+  box-shadow: none;
+}
+.a11y-high-contrast .coach-glow {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  box-shadow: none;
+  animation: none;
+}
+.a11y-high-contrast .coach-card,
+.a11y-high-contrast .coach-line {
+  background: var(--panel);
+  border: 2px solid var(--ink);
+  border-left: 6px solid var(--focus);
+}
+@media (forced-colors: active) {
+  .coach-ring,
+  .coach-glow {
+    outline: 3px solid Highlight;
   }
 }
 /* Handbook controls on a phone: the key caps wrap and sit above their description instead of overlapping it. */

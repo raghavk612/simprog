@@ -199,6 +199,9 @@ export default {
     nextGame: 'Partido {{n}} de {{total}}',
     vs: 'contra {{team}}',
     record: 'Récord {{w}}–{{l}}',
+    ask: '¿Ya has entrenado una temporada de KANGS?',
+    askNo: 'No, enséñame sobre la marcha',
+    askYes: 'Sí, solo consejos',
   },
   home: {
     leaders: 'Líderes de la temporada',
@@ -707,41 +710,100 @@ export default {
     captain: 'Capitán: {{name}}',
     noCaptain: 'Aún sin capitán',
     makeCaptain: 'Nombrar capitán',
-    walk: 'Guíame en el primer partido',
     more: 'Análisis completo',
     breakNext: 'Siguiente: {{tab}}',
     breakHint: 'Todo aquí es opcional. Sigue cuando quieras.',
   },
   tutorial: {
     who: 'Entrenador asistente',
-    next: 'Siguiente',
-    finish: 'A entrenar',
-    skip: 'Saltar tutorial',
-    skipAsk: '¿Saltar el resto del tutorial? No volverá a aparecer esta temporada.',
-    skipYes: 'Saltarlo',
-    keep: 'Seguir',
-    b: {
-      home: '{{opp}} es el primero. Cada semana va igual: preparar, jugar, pospartido. Empieza aquí.',
-      pick: 'Tienes tres decisiones por semana. Empieza con {{name}}.',
-      fill: 'Eso los cansa, así que equilibra. Elige dos más.',
-      run: 'Bien. Ahora hay que ganárselo en la cancha.',
-      retry: 'No salió. Repítelo o lleva el turno libre al partido.',
-      toGame: 'Semana hecha. Vamos a jugar.',
-      five: 'Estos son tus cinco. Quien esté lesionado, agotado o suspendiendo se sienta. Salta a la cancha.',
-      watch: 'Pulsa {{btn}}. Te paro si te necesito.',
-      shot: '{{player}} tiró con un {{n}} %. El descanso, la moral y la química mueven ese número.',
-      timeout: 'Buen momento para un tiempo muerto. Tienes tres.',
-      quarter: 'Fin del cuarto. Elige una de estas o sigue adelante.',
-      speed: 'El resto del partido es tuyo. Acelera aquí si quieres.',
-      press: 'La prensa. Lo que digas aquí cuenta para el próximo partido.',
-      done: 'Eso es una semana. Tienes {{n}} {{tokens}} sin gastar. Ve a construir el equipo.',
-      tryouts:
-        'Pretemporada. Nada aquí es obligatorio. Primero, las pruebas: ficha a un jugador con fichas o obsérvalo para saber más.',
-      staff: 'Un asistente a la vez, y te ayuda cada semana. Las mejoras de abajo se compran una sola vez.',
-      skills:
-        'Los movimientos nuevos añaden jugadas que tu equipo usa en los partidos. Elige uno para ver qué hace.',
-      kit: 'Última parada: elige tus camisetas. Empieza la temporada cuando quieras.',
-      gear: 'El equipamiento da a un jugador un extra de habilidad, energía o moral. Compra una pieza y elige quién la lleva.',
+    ok: 'Entendido',
+    hide: 'Ocultar consejos',
+    showMe: 'Muéstramelo',
+    notNow: 'Ahora no',
+    hidden: 'Consejos desactivados. Vuelve a activarlos en Ajustes, en Partida.',
+    undo: 'Deshacer',
+    replay: 'Repetir',
+    armed: 'Te lo enseño la próxima vez.',
+    status: {
+      done: 'Hecho',
+      dismissed: 'Omitido',
+      armed: 'Te lo enseño la próxima vez',
+      new: 'Aún no visto',
+    },
+    name: {
+      week: 'Semana de partido',
+      tipoff: 'Salto inicial',
+      timeout: 'Tiempos muertos',
+      quarter: 'Descansos entre cuartos',
+      speed: 'Velocidad del partido',
+      press: 'Sala de prensa',
+      shop: 'Tienda: {{tab}}',
+      mid: 'Parón de mitad de temporada',
+      playoff: 'Parón antes de los playoffs',
+      lineup: 'Problemas de alineación',
+      inbox: 'Buzón del entrenador',
+      scout: 'Video del rival',
+      drill: 'Ejercicios fallados',
+      tokens: 'Faltan fichas',
+    },
+    c: {
+      week: {
+        plan: 'Tienes tres decisiones por semana. {{name}} es buen comienzo, pero los cansa, así que equilibra.',
+        home: '{{opp}} es el primero. Cada semana va igual: preparar, jugar, pospartido. Empieza aquí.',
+        run: 'Bien. Ahora hay que ganárselo en la cancha.',
+        retry: 'No salió. Repítelo o lleva el turno libre al partido.',
+      },
+      timeout: {
+        call: {
+          run: 'Llevan {{n}} puntos seguidos. Un tiempo muerto corta la racha. Tienes tres.',
+          tired: '{{player}} va justo de energía. Un tiempo muerto le da un respiro. Tienes tres.',
+          fallback: 'Buen momento para un tiempo muerto. Tienes tres.',
+        },
+        huddle: {
+          run: 'Tras una racha, elige «{{belief}}»: sube la moral.',
+          tired: 'Están cansados, así que elige «{{calm}}»: recuperan energía.',
+          fallback: 'Elige «{{calm}}» si se ven cansados, «{{belief}}» si se ven nerviosos.',
+        },
+      },
+      quarter: {
+        read: 'Cuando algo falla, te propongo un cambio aquí y te digo por qué. Elige uno o sigue.',
+      },
+      speed: {
+        controls: 'El resto del partido es tuyo. Acelera aquí. Igual paro en cada descanso entre cuartos.',
+      },
+      press: {
+        tokens: 'Eso es una semana: {{n}} fichas para gastar. Rinden más en la pestaña {{shop}}.',
+        room: 'La prensa. Lo que digas aquí cuenta para el próximo partido.',
+      },
+      shop: {
+        recruit: 'Pruebas: ficha a un jugador con fichas, u obsérvalo antes para saber más.',
+        locker: 'Elige las camisetas de tu equipo. Las especiales se desbloquean durante la temporada.',
+        staff: 'Un asistente a la vez, y te ayuda cada semana. Las mejoras de abajo se compran una sola vez.',
+        skills:
+          'Los movimientos nuevos añaden jugadas que tu equipo usa en los partidos. Elige uno para ver qué hace.',
+        gear: 'El equipamiento da a un jugador un extra de habilidad, energía o moral. Compra una pieza y elige quién la lleva.',
+      },
+      mid: {
+        record:
+          'Mitad de temporada: {{w}}–{{l}} y {{n}} fichas. Lo que compraste se ve en «{{why}}», el día de partido.',
+        after: 'Tras este parón, gana {{need}} de los primeros {{cut}} partidos para llegar a la fase final.',
+      },
+      playoff: {
+        stakes:
+          'Llega la fase final: ganar o irse a casa. Es el último parón, así que gasta lo que necesites ahora.',
+      },
+      tipoff: {
+        five: 'Estos son tus cinco. Quien esté lesionado, agotado o suspendiendo se sienta. Salta a la cancha.',
+        watch: 'Pulsa {{btn}}. Te paro si te necesito.',
+        shot: '{{player}} tiró con un {{n}} %. El descanso, la moral y la química mueven ese número.',
+      },
+    },
+    tip: {
+      lineup: 'Alguien de tu alineación no puede jugar. Arréglalo antes del salto inicial.',
+      inbox: 'Cada respuesta cambia la moral, la química o las fichas. Las etiquetas dicen cuánto.',
+      scout: '{{name}} muestra cómo juegan, y mis consejos entre cuartos mejoran.',
+      drill: 'Un ejercicio fallado no gasta su turno. Repítelo o guarda el turno para otra cosa.',
+      tokens: 'Cada partido da fichas, y una victoria da más. «{{clinic}}» en Preparación también da.',
     },
   },
   timeout: {
@@ -1079,7 +1141,17 @@ export default {
       language: 'Idioma',
       game: 'Partida',
     },
-    game: { exit: 'Volver a la pantalla de título' },
+    game: {
+      exit: 'Volver a la pantalla de título',
+      tips: 'Consejos del entrenador asistente',
+      tipsDesc:
+        'Lecciones: lecciones cortas la primera vez que aparece cada parte de la temporada, más consejos puntuales. Solo consejos: solo los consejos puntuales. Desactivado: nada más.',
+      tipsOptions: {
+        lessons: 'Lecciones',
+        tips: 'Solo consejos',
+        off: 'Desactivado',
+      },
+    },
     controls: {
       intro:
         'Elige un botón y pulsa la tecla que quieras usar. Los atajos funcionan en las pantallas del juego cuando no hay ningún cuadro de diálogo abierto. Escape cancela.',
@@ -1502,6 +1574,7 @@ export default {
       gameday: 'Día de partido',
       court: 'Reglas de la cancha',
       data: 'Datos y partidas guardadas',
+      lessons: 'Lecciones',
     },
     prev: '← Anterior',
     next: 'Siguiente',
@@ -1583,6 +1656,11 @@ export default {
       auto: 'Auto',
       save: 'guardado tras cada acción',
       note: 'Las habilidades, el GPA, la salud y las estadísticas del partido son simuladas. Usa «{{export}}» para una copia en archivo y «{{import}}» en la pantalla de inicio para cargarla.',
+    },
+    l: {
+      lead: 'Repite cualquier lección. Las de la tienda se abren al momento; las demás esperan su momento.',
+      chapters: 'Capítulos',
+      tips: 'Consejos puntuales',
     },
   },
   lineup: {

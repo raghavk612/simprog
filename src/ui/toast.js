@@ -11,11 +11,12 @@ import { html, TOAST_ICONS, esc, signed, cap1 } from './markup.js';
 import { state } from './store.js';
 
 // Notification cards: a few at a time, each dismissable, paused while hovered. The text and the title are already in the player's language.
+// opt.action = { label, run } adds a button (e.g. Undo) that runs once and closes the card; such a card stays longer.
 export function notify(msg, opt = {}) {
   const box = $('#toast');
   if (!box) return;
   const type = opt.type || 'info',
-    ms = opt.ms ?? (getA11y().timingAssist ? 12000 : type === 'error' ? 6500 : 5200);
+    ms = opt.ms ?? (getA11y().timingAssist ? 12000 : opt.action ? 9000 : type === 'error' ? 6500 : 5200);
   const card = document.createElement('div');
   card.className = `toast-card ${type}`;
   card.setAttribute('role', type === 'error' ? 'alert' : 'status');
@@ -33,6 +34,7 @@ export function notify(msg, opt = {}) {
             </div>`
           : ''
       }
+      ${opt.action ? `<button type="button" class="text-button small toast-act">${esc(opt.action.label)}</button>` : ''}
     </div>
     <button type="button" class="toast-close" aria-label="${esc(t('toast.dismiss'))}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button><i class="toast-timer" aria-hidden="true"></i>`;
   const kill = () => {
@@ -61,6 +63,12 @@ export function notify(msg, opt = {}) {
     e.stopPropagation();
     clearTimeout(timer);
     kill();
+  });
+  card.querySelector('.toast-act')?.addEventListener('click', e => {
+    e.stopPropagation();
+    clearTimeout(timer);
+    kill();
+    opt.action.run();
   });
   box.prepend(card);
   [...box.children].slice(3).forEach(c => c.remove());

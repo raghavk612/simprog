@@ -9,7 +9,7 @@ import { setCamera } from './shell.js';
 import { openSettings, toggleSound } from './dialogs.js';
 import { rules } from './handbook.js';
 import { demo, demoJump } from './demo.js';
-import { tourHoldsKeys } from './tutorial.js';
+import { lessonHoldsKeys } from './tutorial.js';
 
 const press = sel => {
   const b = document.querySelector(sel);
@@ -30,7 +30,7 @@ export function onShortcut(e) {
   if (e.defaultPrevented || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.isComposing) return;
   const tg = e.target;
   if (['INPUT', 'SELECT', 'TEXTAREA'].includes(tg?.tagName) || tg?.isContentEditable) return;
-  if (tourHoldsKeys()) return;
+  if (lessonHoldsKeys()) return;
   // Help's tabs follow the arrow keys.
   const rulesTab = modal.open ? modal.querySelector('[data-rules-tab]') : null;
   if (rulesTab && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {

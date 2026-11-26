@@ -13,7 +13,8 @@ import { render, applyArena, syncCrowd, keepNavTabInView, syncCameraButtons } fr
 import { onAction, onChange } from './ui/actions.js';
 import { onShortcut, pickWithNumberKeys } from './ui/keyboard.js';
 import { fpHud, reportPlay, syncPresentation, watchTick } from './ui/playback.js';
-import { blockOutsideSpotlight, coachTick } from './ui/tutorial.js';
+import { coachTick, lessonFailed, onCoachKey } from './ui/tutorial.js';
+import { guardTick } from './ui/lessons.js';
 import { pressClosed, postGame } from './ui/postgame.js';
 import { endPracticeRun } from './ui/screens/prep.js';
 import { startSeason, syncTitlePause, clearPreviews } from './ui/screens/landing.js';
@@ -31,8 +32,6 @@ arena.onPresentation = p => {
   syncPresentation(p);
 };
 
-// Listeners are added in this order on purpose: the tutorial's click lock (capture) runs before any button.
-document.addEventListener('click', blockOutsideSpotlight, true);
 app.addEventListener('submit', e => {
   e.preventDefault();
   if (e.target.id === 'start-form') startSeason(e.target);
@@ -70,9 +69,14 @@ for (const ev of ['pointerdown', 'keydown'])
   );
 document.addEventListener('change', onChange);
 document.addEventListener('click', onAction);
+// Escape answers an assistant coach card before the shortcut keys see it (even from a field on the live game's bar).
+document.addEventListener('keydown', onCoachKey);
 document.addEventListener('keydown', onShortcut);
+// Every 100 ms: the assistant coach's lessons, then Watch live. A lesson that throws closes its card, gives the game
+// back and stops the lessons until the page is reloaded; play goes on.
+const lessonTick = guardTick(coachTick, lessonFailed);
 setInterval(() => {
-  coachTick();
+  lessonTick();
   watchTick();
 }, 100);
 onSettingsChange(type => {

@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import en from '../src/i18n/locales/en.js';
 import { GRAPHICS_LEVELS } from '../src/graphics.js';
 import { NAV } from '../src/ui/nav.js';
+import { LESSONS, stepKeys } from '../src/ui/lessons.js';
+import { TIP_LEVELS } from '../src/settings.js';
 import { THREE_SPOTS, FT_SPOT } from '../src/shotphysics.js';
 import {
   LANGUAGES,
@@ -115,23 +117,13 @@ test('every key built at run time resolves to a string for each value it can tak
   for (const v of ['happy', 'neutral', 'upset']) need.push(`lk.face.${v}`);
   need.push('log.kitUnlocked');
   for (const v of ['rookie', 'standard', 'elite']) need.push(`level.${v}`, `difficulty.${v}`);
-  for (const v of [
-    'home',
-    'pick',
-    'fill',
-    'run',
-    'retry',
-    'toGame',
-    'five',
-    'watch',
-    'shot',
-    'timeout',
-    'quarter',
-    'speed',
-    'press',
-    'done',
-  ])
-    need.push(`tutorial.b.${v}`);
+  // The assistant coach's lessons: every step's line, each lesson's name in Help, the statuses and the setting.
+  for (const l of LESSONS) {
+    need.push(`tutorial.name.${l.chapter}`);
+    for (const st of l.steps) need.push(...stepKeys(l, st));
+  }
+  for (const v of ['done', 'dismissed', 'armed', 'new']) need.push(`tutorial.status.${v}`);
+  for (const v of TIP_LEVELS) need.push(`settings.game.tipsOptions.${v}`);
   for (const v of [
     'pre',
     'mid',
@@ -207,7 +199,17 @@ test('every key built at run time resolves to a string for each value it can tak
   for (const v of ['train', 'recruit', 'talk', 'scout', 'release', 'dismiss', 'saved'])
     need.push(`toast.titles.${v}`);
   for (const v of ['rookie', 'standard', 'elite']) need.push(`tier.${v}`);
-  for (const v of ['controls', 'goal', 'difficulty', 'rotation', 'prep', 'gameday', 'court', 'data'])
+  for (const v of [
+    'controls',
+    'goal',
+    'difficulty',
+    'rotation',
+    'prep',
+    'gameday',
+    'court',
+    'data',
+    'lessons',
+  ])
     need.push(`hb.tabs.${v}`);
   for (const u of UPGRADES) need.push(`upg.${u.key}.name`, `upg.${u.key}.fx`);
   for (const v of ['finished', 'live', 'inbox', 'press', 'issues', 'practice', 'scout', 'lineup', 'tipoff'])

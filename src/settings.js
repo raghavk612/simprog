@@ -4,7 +4,7 @@ import { configureSpeech } from './speech.js';
 import { FILTER_ID, installColorFilters } from './a11y.js';
 import { GRAPHICS_LEVELS, PLAYER_MODELS } from './graphics.js';
 const EVENT = 'kangs-settings-changed',
-  STORE = { sound: 'kangs_sound', a11y: 'kangs_accessibility' };
+  STORE = { sound: 'kangs_sound', a11y: 'kangs_accessibility', prefs: 'kangs_prefs' };
 const read = k => {
   try {
     return JSON.parse(localStorage.getItem(k));
@@ -48,6 +48,10 @@ export const A11Y_DEFAULTS = {
   players: 'athletes',
   modelsVersion: 2,
 };
+// Game preferences that are not about accessibility. tips: the assistant coach's lessons (src/ui/lessons.js): lessons
+// (chapters and one-time tips), tips (one-time tips only) or off. Lessons until the coach answers the start question.
+export const TIP_LEVELS = ['lessons', 'tips', 'off'];
+export const PREFS_DEFAULTS = { tips: 'lessons' };
 /* Settings saved before the 3D athletes became the default (modelsVersion missing) hold 'classic' only because it was the
    old default, so they take the new one once; a choice saved since then is kept. */
 const MODELS_VERSION = 2;
@@ -82,6 +86,10 @@ export function normalizeA11y(raw, base = A11Y_DEFAULTS) {
     modelsVersion: MODELS_VERSION,
   };
 }
+export function normalizePrefs(raw) {
+  const r = raw && typeof raw === 'object' ? raw : {};
+  return { tips: pick(r.tips, TIP_LEVELS, PREFS_DEFAULTS.tips) };
+}
 // First visit: adopt the operating-system preferences for motion and contrast.
 function systemDefaults() {
   const media = q => typeof matchMedia === 'function' && matchMedia(q).matches;
@@ -97,6 +105,12 @@ const emit = type => {
 };
 export const getSound = () => (cache.sound ??= normalizeSound(read(STORE.sound)));
 export const getA11y = () => (cache.a11y ??= normalizeA11y(read(STORE.a11y), systemDefaults()));
+export const getPrefs = () => (cache.prefs ??= normalizePrefs(read(STORE.prefs)));
+export function setPrefs(patch) {
+  cache.prefs = normalizePrefs({ ...getPrefs(), ...patch });
+  write(STORE.prefs, cache.prefs);
+  emit('prefs');
+}
 function commitSound(next) {
   cache.sound = next;
   write(STORE.sound, next);
@@ -155,6 +169,10 @@ export function initSettings() {
       delete cache.a11y;
       applyA11y(getA11y());
       emit('a11y');
+    }
+    if (e.key === STORE.prefs) {
+      delete cache.prefs;
+      emit('prefs');
     }
   });
 }

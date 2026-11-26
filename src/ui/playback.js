@@ -30,6 +30,11 @@ export function tipOff() {
 // Quarter break after possessions 16, 32 and 48: only a pause in the interface, the simulation is not touched. Watch live stops here and resumes on "Keep going".
 let breakSeen = '';
 let breakAuto = false;
+// The game sits on a quarter-break possession whose dialog has not opened yet (the lessons wait for it).
+export function breakPending() {
+  const m = state?.match;
+  return !!m && E.BREAKS.includes(m.possession) && breakSeen !== `${m.seedStart}|${m.possession}`;
+}
 function maybeBreak() {
   const m = state?.match;
   if (

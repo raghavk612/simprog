@@ -47,6 +47,7 @@ const info = (s, n) => {
     state = c.ok ? 'open' : c.reason === 'owned' ? 'owned' : c.reason === 'locked' ? 'locked' : 'blocked';
   return {
     state,
+    short: c.reason === 'tokens',
     why: state === 'blocked' || state === 'locked' ? why(s, n, c.reason) : '',
     text:
       state === 'owned' ? t('skills.owned') : state === 'open' ? t('skills.stateOpen') : why(s, n, c.reason),
@@ -122,14 +123,14 @@ function branch(s, b, sel) {
 function detail(s, sel) {
   const { b, i } = where(sel),
     n = SKILL_TREE[b][i],
-    { state, why: w } = info(s, n),
+    { state, why: w, short } = info(s, n),
     cost = t('skills.cost', { cost: n.cost });
   const body =
     state === 'owned'
       ? `<p class="skill-state"><span aria-hidden="true">✓</span> ${t('skills.owned')}</p>`
       : state === 'locked'
         ? `<p class="skill-state"><b>${t('skills.locked')}</b> · ${esc(w)}</p><small class="st-price">${cost}</small>`
-        : `<button class="secondary wide${state === 'blocked' ? ' locked-action' : ''}" data-action="skill-unlock" data-key="${n.key}" aria-describedby="st-detail-name${state === 'blocked' ? ' st-detail-why' : ''}" ${state === 'blocked' ? 'disabled' : ''}>${t('skills.unlock', { cost: n.cost })}</button>${state === 'blocked' ? `<small id="st-detail-why">${esc(w)}</small>` : ''}`;
+        : `<button class="secondary wide${state === 'blocked' ? ' locked-action' : ''}" data-action="skill-unlock" data-key="${n.key}" aria-describedby="st-detail-name${state === 'blocked' ? ' st-detail-why' : ''}" ${state === 'blocked' ? 'disabled' : ''}>${t('skills.unlock', { cost: n.cost })}</button>${state === 'blocked' ? `<small id="st-detail-why"${short ? ' class="need-tokens"' : ''}>${esc(w)}</small>` : ''}`;
   return `<div class="st-detail ${state}" role="region" aria-labelledby="st-detail-name"><div class="st-detail-top"><span class="st-medal" aria-hidden="true">${icon(n.key)}</span><div><span class="eyebrow">${esc(tu(`skills.branch.${b}`))} · ${t('skills.tier', { n: i + 1, total: SKILL_TREE[b].length })}</span><h3 id="st-detail-name">${esc(move(n.key))}</h3></div></div><p class="skill-hint" id="st-detail-hint">${t(`skills.hint.${n.key}`, { tactic: t('tactic.perimeter') })}</p>${body}</div><!--/detail-->`;
 }
 
