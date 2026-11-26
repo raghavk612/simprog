@@ -57,7 +57,7 @@ export default {
     },
     unequip: '卸下',
     empty: '空栏位',
-    pickBelow: '在下方选择已拥有的装备。',
+    pickBelow: '在商店购买，或选择已拥有的装备。',
     shop: '装备商店',
     all: '全部装备',
     owned: '已拥有',
@@ -68,6 +68,7 @@ export default {
     noOwned: '库存为空。请在全部装备中购买第一件。',
     bought: '{{item}} 已加入库存。选择球员后装备。',
     equipDone: '{{name}} 已装备 {{item}}。',
+    buyEquip: '购买并装备 · {{cost}} 代币',
   },
   meta: {
     title: 'KANGS • 通往冠军之路',
@@ -320,6 +321,14 @@ export default {
     signAria: '以 {{cost}} 代币签下 {{name}}',
     none: '所有试训候选人都已签约。',
     full: '名单已满。请先在“球队”页面释放一名球员，再签新球员。',
+    rank: 'OVR 排名 {{total}} 人中第 {{rank}}',
+    overPos: '可以首发：比首发{{pos}} {{name}} {{d}}',
+    underPos: '替补：与首发{{pos}} {{name}} 相比 {{d}}',
+    overAny: '可以首发：比最弱的首发 {{name}} {{d}}',
+    underAny: '替补：与最弱的首发 {{name}} 相比 {{d}}',
+    needs:
+      '球队需求：最弱的首发是 {{name}}（{{pos}}，OVR {{ovr}}）· 首发五人最弱的能力是{{rating}}（{{value}}）',
+    fullShort: '名单已满',
   },
   office: {
     inboxFirst: '请先回复教练收件箱。',
@@ -819,6 +828,8 @@ export default {
     replaceYes: '替换赛季',
     importYes: '导入赛季',
     releaseYes: '放出球员',
+    dismiss: '要解雇你的{{name}}吗？你支付的 {{cost}} 代币将损失，不予退款。',
+    dismissYes: '解雇助理教练',
   },
   // Play-by-play commentary templates: one sentence per template, filled from the play.
   cm: {
@@ -1451,6 +1462,7 @@ export default {
       gpa: '参赛所需绩点',
       injuries: '现有伤病',
       tip: '时间不够？在“阵容”页面点击 {{button}}，即可自动排出合规阵容。',
+      ovr: 'OVR 是球员的综合评分，由技术和位置计算得出。“球队”页面和试训卡片使用同一标准。',
     },
     p: {
       lead: '每场比赛前，合理使用备战名额和代币。',
@@ -1984,5 +1996,8 @@ export default {
     rank: '排名：{{of}} 队中第 {{from}} → 第 {{to}}',
     rankSame: '排名：{{of}} 队中仍居第 {{to}}',
     rankNew: '排名：{{of}} 队中第 {{to}}',
+  },
+  shop: {
+    needTokens: '还需 {{n}} 代币 · 你有 {{have}}',
   },
 };

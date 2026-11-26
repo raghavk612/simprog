@@ -4,6 +4,7 @@
 // it needs) and its cost, so colour is never the only signal. The five basic moves are listed under the tree.
 import { BASIC_MOVES, SKILL_TREE, unlockedMoves, canUnlock } from './skills.js';
 import { t, tu } from './i18n/index.js';
+import { shortText } from './shopFit.js';
 const BRANCHES = Object.keys(SKILL_TREE),
   ALL = Object.values(SKILL_TREE).flat(),
   TOTAL = BASIC_MOVES.length + ALL.length,
@@ -35,7 +36,7 @@ const why = (s, n, reason) =>
   reason === 'locked'
     ? t('skills.needs', { move: move(n.requires) })
     : reason === 'tokens'
-      ? t('office.needTokens', { n: n.cost - s.tokens })
+      ? shortText(s, n.cost)
       : reason === 'game'
         ? t('office.gameActive')
         : reason === 'inbox'

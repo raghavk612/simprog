@@ -58,7 +58,7 @@ export default {
     },
     unequip: 'Desequipar',
     empty: 'Espacio vacío',
-    pickBelow: 'Elige un objeto adquirido abajo.',
+    pickBelow: 'Compra o elige un objeto adquirido en la tienda.',
     shop: 'Tienda de equipo',
     all: 'Todo',
     owned: 'Inventario',
@@ -69,6 +69,7 @@ export default {
     noOwned: 'Inventario vacío. Compra tu primer objeto en Todo.',
     bought: '{{item}} añadido al inventario. Elige un jugador y equípalo.',
     equipDone: '{{item}} equipado a {{name}}.',
+    buyEquip: 'Comprar y equipar · {{cost}} fichas',
   },
   meta: {
     title: 'KANGS • El camino al campeonato',
@@ -358,6 +359,14 @@ export default {
     signAria: 'Fichar a {{name}} por {{cost}} fichas',
     none: 'Ya se fichó a todos los candidatos de las pruebas.',
     full: 'Plantilla completa. Da de baja a un jugador en Equipo para fichar a otro.',
+    rank: 'N.º {{rank}} de {{total}} por OVR',
+    overPos: 'Sería titular: {{d}} sobre {{name}}, titular en {{pos}}',
+    underPos: 'Suplente: {{d}} frente a {{name}}, titular en {{pos}}',
+    overAny: 'Sería titular: {{d}} sobre {{name}}, el titular más flojo',
+    underAny: 'Suplente: {{d}} frente a {{name}}, el titular más flojo',
+    needs:
+      'Necesidades: tu titular más flojo es {{name}} ({{pos}}, OVR {{ovr}}) · tu quinteto flojea más en {{rating}} ({{value}})',
+    fullShort: 'Plantilla completa',
   },
   office: {
     inboxFirst: 'Responde primero al buzón del entrenador.',
@@ -887,6 +896,8 @@ export default {
     replaceYes: 'Reemplazar temporada',
     importYes: 'Importar temporada',
     releaseYes: 'Dar de baja al jugador',
+    dismiss: '¿Despedir a tu {{name}}? Pierdes las {{cost}} fichas que pagaste: no hay reembolso.',
+    dismissYes: 'Despedir al asistente',
   },
   // Play-by-play commentary templates: one sentence per template, filled from the play.
   cm: {
@@ -1614,6 +1625,7 @@ export default {
       gpa: 'GPA para ser elegible',
       injuries: 'lesiones activas',
       tip: '¿Poco tiempo? «{{button}}» en la página de plantilla completa una alineación válida por ti.',
+      ovr: 'OVR es la valoración global de un jugador, calculada a partir de la habilidad y la posición. La página Equipo y las fichas de las pruebas usan la misma escala.',
     },
     p: {
       lead: 'Usa turnos de preparación y fichas antes de cada partido.',
@@ -2205,5 +2217,8 @@ export default {
     rank: 'Clasificación: n.º {{from}} → n.º {{to}} de {{of}}',
     rankSame: 'Clasificación: sigue n.º {{to}} de {{of}}',
     rankNew: 'Clasificación: n.º {{to}} de {{of}}',
+  },
+  shop: {
+    needTokens: 'Faltan {{n}} fichas · tienes {{have}}',
   },
 };

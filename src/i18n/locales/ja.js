@@ -57,7 +57,7 @@ export default {
     },
     unequip: '外す',
     empty: '空きスロット',
-    pickBelow: '下から所持品を選んでください。',
+    pickBelow: 'ショップで購入するか、所持品を選んでください。',
     shop: '用具ショップ',
     all: '全用具',
     owned: '所持品',
@@ -68,6 +68,7 @@ export default {
     noOwned: '所持品はありません。全用具で購入してください。',
     bought: '{{item}} を入手。選手を選んで装備してください。',
     equipDone: '{{name}} に {{item}} を装備しました。',
+    buyEquip: '購入して装備 · {{cost}} トークン',
   },
   meta: {
     title: 'KANGS • チャンピオンシップへの道',
@@ -341,6 +342,14 @@ export default {
     signAria: '{{name}} を {{cost}} トークンで契約',
     none: 'トライアウトの候補はすべて契約済みです。',
     full: 'ロスターが満員です。契約するには「チーム」で選手を放出してください。',
+    rank: 'OVR で {{total}} 人中 {{rank}} 位',
+    overPos: '先発候補: 先発{{pos}}の{{name}}より {{d}}',
+    underPos: '控え: 先発{{pos}}の{{name}}と比べて {{d}}',
+    overAny: '先発候補: 最も弱い先発の{{name}}より {{d}}',
+    underAny: '控え: 最も弱い先発の{{name}}と比べて {{d}}',
+    needs:
+      'チームの課題: 最も弱い先発は {{name}}（{{pos}}、OVR {{ovr}}） · 先発5人が最も低い能力は {{rating}}（{{value}}）',
+    fullShort: 'ロスター満員',
   },
   office: {
     inboxFirst: '先にコーチの受信箱に返信してください。',
@@ -857,6 +866,8 @@ export default {
     replaceYes: 'シーズンを置き換える',
     importYes: 'シーズンを読み込む',
     releaseYes: '選手を放出する',
+    dismiss: '{{name}}を解任しますか？支払った {{cost}} トークンは失われ、返金はありません。',
+    dismissYes: 'アシスタントを解任',
   },
   // Play-by-play commentary templates: one sentence per template, filled from the play.
   cm: {
@@ -1571,6 +1582,7 @@ export default {
       gpa: '出場資格に必要なGPA',
       injuries: '現在のケガ',
       tip: '時間がないときは、ロスターページの {{button}} で有効なラインナップを自動で組めます。',
+      ovr: 'OVR は選手の総合評価で、スキルとポジションから計算されます。「チーム」ページとトライアウトのカードは同じ尺度です。',
     },
     p: {
       lead: '試合前に準備枠とトークンを使いましょう。',
@@ -2132,5 +2144,8 @@ export default {
     rank: '順位：{{of}} チーム中 {{from}} 位 → {{to}} 位',
     rankSame: '順位：{{of}} チーム中 {{to}} 位のまま',
     rankNew: '順位：{{of}} チーム中 {{to}} 位',
+  },
+  shop: {
+    needTokens: 'あと {{n}} トークン必要 · 所持 {{have}}',
   },
 };

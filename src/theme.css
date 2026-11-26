@@ -1832,3 +1832,37 @@ body[data-view='data'] .table-wrap {
 .recap li.bad b {
   color: var(--bad);
 }
+/* Tryouts: what the team needs (one line over the cards), and on each card the OVR on the Team page's scale (the same
+   .sq-ovr number) with how the prospect compares with the starter he would have to beat. */
+.team-needs {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent-ink);
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
+}
+.card.recruit {
+  position: relative;
+}
+.recruit-ovr {
+  z-index: 1;
+  display: grid;
+  justify-items: end;
+}
+.recruit-ovr small {
+  color: var(--ink-2);
+  font: 600 calc(11px * var(--ts, 1) * var(--ls, 1)) var(--body);
+  letter-spacing: 0.06em;
+}
+.recruit-fit {
+  margin: 2px 0 8px;
+  color: var(--ink-2);
+  font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+  line-height: 1.35;
+}
+.recruit-fit.starts {
+  color: var(--good);
+  font-weight: 600;
+}

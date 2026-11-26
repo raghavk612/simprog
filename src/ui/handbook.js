@@ -113,7 +113,8 @@ export function rules(tab = 0) {
           ['2.0+', t('hb.r.gpa')],
           ['0', t('hb.r.injuries')],
         ])}
-        <p>${t('hb.r.tip', { button: `<b>${t('flow.bestFive')}</b>` })}</p>`,
+        <p>${t('hb.r.tip', { button: `<b>${t('flow.bestFive')}</b>` })}</p>
+        <p>${t('hb.r.ovr')}</p>`,
     () =>
       html`
         <p class="rule-lead">${t('hb.p.lead')}</p>

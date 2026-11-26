@@ -107,3 +107,46 @@ test('the gear page: Buy and Equip are card actions (secondary), so the page kee
   for (const m of html.matchAll(/<button class="([^"]*)" data-action="gear-(?:buy|equip)"/g))
     assert.match(m[1], /^secondary\b/, m[1]);
 });
+test('buying for a player with that slot empty puts the item on them (one step, P2-8)', () => {
+  const s = game(),
+    p = s.players[0];
+  E.buyGear(s, 'courtshoes', p.id);
+  assert.equal(s.gear.equipped[p.id]?.feet, 'courtshoes');
+  assert.equal(E.gearOwner(s, 'courtshoes'), String(p.id));
+  assert.equal(s.log[0].k, 'gearEquip', 'the newest log line (the toast) says who wears it');
+});
+test('buying never takes a filled slot off the player, and buying without a player only stocks the inventory', () => {
+  const s = game(),
+    p = s.players[0];
+  E.buyGear(s, 'courtshoes', p.id);
+  E.buyGear(s, 'speedshoes', p.id);
+  assert.equal(s.gear.equipped[p.id].feet, 'courtshoes', 'the shoes they already wear stay on');
+  assert.ok(s.gear.owned.includes('speedshoes'));
+  assert.equal(E.gearOwner(s, 'speedshoes'), undefined);
+  E.buyGear(s, 'headband');
+  assert.equal(E.gearOwner(s, 'headband'), undefined);
+  assert.equal(s.log[0].k, 'gearBuy');
+  const before = JSON.stringify(s);
+  assert.throws(
+    () => E.buyGear(s, 'focusband', 999),
+    /player/i,
+    'an unknown player is refused before paying',
+  );
+  assert.equal(JSON.stringify(s), before);
+});
+test('the gear page says a purchase will be equipped when the shown player has that slot free', async () => {
+  const { gearBody } = await import('../src/gearView.js'),
+    { t } = await import('../src/i18n/index.js'),
+    s = game(),
+    p = s.players[0],
+    label = (html, key) =>
+      html.match(new RegExp(`data-action="gear-buy" data-key="${key}"[^>]*>([^<]*)</button>`))[1];
+  assert.equal(label(gearBody(s, p.id), 'courtshoes'), t('gear.buyEquip', { cost: 180 }));
+  E.buyGear(s, 'courtshoes', p.id);
+  assert.equal(
+    label(gearBody(s, p.id), 'speedshoes'),
+    t('office.upgBuy', { cost: 260 }),
+    'feet already taken',
+  );
+  assert.ok(!gearBody(s, s.players[1].id).includes('gear.'), 'no raw keys');
+});

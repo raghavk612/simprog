@@ -1,5 +1,6 @@
 import { GEAR, GEAR_SLOTS, gearItem, gearOwner, gearBonus, effectiveStat } from './gear.js';
 import { t, tu, formatNumber } from './i18n/index.js';
+import { shortText } from './shopFit.js';
 const esc = s =>
   String(s ?? '').replace(
     /[&<>"']/g,
@@ -39,13 +40,8 @@ export function gearBody(s, selected, filter = 'all') {
          wearing = owner === String(p.id),
          other = s.players.find(q => String(q.id) === owner),
          reason =
-           blocked ||
-           (!own && s.pendingEvent
-             ? t('office.inboxFirst')
-             : !own && s.tokens < item.cost
-               ? t('office.needTokens', { n: item.cost - s.tokens })
-               : '');
-       return `<article class="gear-card ${own ? 'owned' : ''}"><div class="gear-card-top"><span>${t(`gear.slots.${item.slot}`)}</span>${own ? `<span class="pill">${t(wearing ? 'gear.equipped' : 'office.upgOwned')}</span>` : ''}</div><div class="gear-display">${art(item)}</div><h3>${t(`gear.items.${item.key}`)}</h3><p class="gear-buff">${gearBuff(item)}</p>${other && !wearing ? `<small>${t('gear.wornBy', { name: esc(other.name) })}</small>` : ''}<button class="secondary wide ${reason ? 'locked-action' : ''}" data-action="${own ? 'gear-equip' : 'gear-buy'}" data-key="${item.key}" data-id="${p.id}" ${reason || wearing ? 'disabled' : ''}>${wearing ? '✓ ' + t('gear.equipped') : own ? t(other ? 'gear.move' : 'gear.equip', { name: esc(p.name) }) : t('office.upgBuy', { cost: item.cost })}</button>${reason ? `<small${!own && !blocked && !s.pendingEvent && s.tokens < item.cost ? ' class="need-tokens"' : ''}>${reason}</small>` : ''}</article>`;
+           blocked || (!own && s.pendingEvent ? t('office.inboxFirst') : !own ? shortText(s, item.cost) : '');
+       return `<article class="gear-card ${own ? 'owned' : ''}"><div class="gear-card-top"><span>${t(`gear.slots.${item.slot}`)}</span>${own ? `<span class="pill">${t(wearing ? 'gear.equipped' : 'office.upgOwned')}</span>` : ''}</div><div class="gear-display">${art(item)}</div><h3>${t(`gear.items.${item.key}`)}</h3><p class="gear-buff">${gearBuff(item)}</p>${other && !wearing ? `<small>${t('gear.wornBy', { name: esc(other.name) })}</small>` : ''}<button class="secondary wide ${reason ? 'locked-action' : ''}" data-action="${own ? 'gear-equip' : 'gear-buy'}" data-key="${item.key}" data-id="${p.id}" ${reason || wearing ? 'disabled' : ''}>${wearing ? '✓ ' + t('gear.equipped') : own ? t(other ? 'gear.move' : 'gear.equip', { name: esc(p.name) }) : t(slots[item.slot] ? 'office.upgBuy' : 'gear.buyEquip', { cost: item.cost })}</button>${reason ? `<small${!own && !blocked && !s.pendingEvent && s.tokens < item.cost ? ' class="need-tokens"' : ''}>${reason}</small>` : ''}</article>`;
      })
      .join('') || `<section class="card"><p>${t('gear.noOwned')}</p></section>`
  }</div></div></div>`;
