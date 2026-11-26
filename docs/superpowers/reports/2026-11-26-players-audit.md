@@ -109,8 +109,10 @@ and shoes in team colours.
   of the head or torso.
 - The on-ball and help stances squat with the knees flared out like a frog's (`defense.jpg` on-ball 1.46–2.20 s, help
   1.50–2.02 s). Width comes from abduction alone (`m.wide` 0.2), with no toe-out, so the knees do not track over the feet.
-- On the dribble the ball passes through the thigh (`kit-hip-slit-dribble-clip.jpg`, third cell; the title crossover
-  measures a ball-to-leg clearance of 0.028 units with `moves:check`). Nothing in the per-frame pose checks it.
+- On the dribble the ball passes through the thigh (`kit-hip-slit-dribble-clip.jpg`, third cell). `moves:check`
+  measures the closest ball-to-body clearance on the title moves as 0.028 units for the crossover, **−0.022** for the
+  between-the-legs (the ball inside the leg at 0.22 s) and −0.003 for the step-back jumper, and still prints "ok":
+  check.js does not fail on a negative clearance, and nothing in the per-frame pose checks it in games.
 
 ### 5. Stiff body language with the ball and after the play
 
@@ -158,10 +160,24 @@ side panel. That is fine, but next to the Kangs' script jersey it looks unfinish
 
 `node scripts/perf.mjs --label players-before-cloud --levels low,medium --configs laptop --repeat 1` (this container:
 llvmpipe, 2 cores, so frame times are software-rendering times and only comparable with runs made here). Results:
-`docs/perf/players-before-cloud.json`. High could not be measured here (the draw does not run, see above). For High,
-draw calls and triangles come from `docs/perf/after.json`, measured on the M1: laptop/High live 700 calls, 0.94 M
-triangles; Medium live 406 calls, 0.47 M triangles; Low live 169 calls, 0.03 M triangles. The Medium game HUD here showed
-409 draw calls and 469k triangles in the live possession, which agrees.
+`docs/perf/players-before-cloud.json` (23 minutes for the run):
+
+| config / level | scene | frame median ms | p95 ms | draw calls | triangles |
+|---|---|---|---|---|---|
+| laptop/low | title | 166.1 | 227.0 | 118 | 0.02M |
+| laptop/low | live | 176.4 | 231.4 | 169 | 0.03M |
+| laptop/low | replay | 60.7 | 142.9 | 74 | 0.01M |
+| laptop/medium | title | 733.1 | 811.0 | 343 | 0.61M |
+| laptop/medium | live | 698.4 | 858.1 | 406 | 0.47M |
+| laptop/medium | replay | 737.5 | 927.7 | 350 | 0.64M |
+
+Downloads: Low 1.68 MB; Medium 9.84 MB (player maps 5.03, models 3.11). Main chunk 553 kB (206 kB gzip).
+
+The draw calls and triangles match the M1's `docs/perf/after.json` exactly (Medium live 406 calls and 0.47 M; Low live
+169 calls), so those counts can be compared across machines; frame time cannot. High could not be measured here (the
+draw does not run, see above). On the M1, laptop/High live was 700 calls and 0.94 M triangles. Per athlete today: 8 draws
+(body, head, jersey, shorts, shoes as 2 primitives, hair, trim) plus a headband or sleeve when worn, about 12.5–13.5k triangles
+at LOD0.
 
 The rule for the plan: draw calls per level may not go up (new looks go into existing materials and meshes, not new
 meshes), triangles per player stay under the 15k cap in `tests/players.test.js`, and frame time here and the M1 numbers'

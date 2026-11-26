@@ -199,6 +199,8 @@ Files: `src/basketball.js` (`MOTION_VERSION` 4: the same positions as v3, plus a
   rotation. No new bones.
 - Tests first: over the golden body scenes and 200 seeded v4 plays, wrist-to-head distance ≥ 0.15 units and no hand
   inside the torso capsule; knee-over-foot angle ≤ 15°; ball-to-leg clearance ≥ 0.02 units; toe drift ≤ 0.01 units.
+  `src/moves/check.js` flags a clearance under 0.02 units as a problem (today the between-the-legs measures −0.022 and
+  the step-back jumper −0.003, and both print "ok"), and `tests/moves.test.js` then fails until those moves are fixed.
   v1–v3 golden clips and bodies unchanged; new v4 body scenes added.
 - Acceptance: `defense` and `closeups` sheets (defender rows) show the high hand out in front of the face and knees over
   the feet; the dribble rows show the ball beside the leg; the `locomotion` sprint shows heels coming up. `motion:qa`
