@@ -14,6 +14,7 @@ import { onAction, onChange } from './ui/actions.js';
 import { onShortcut, pickWithNumberKeys } from './ui/keyboard.js';
 import { fpHud, reportPlay, syncPresentation, watchTick } from './ui/playback.js';
 import { coachTick, lessonFailed, onCoachKey } from './ui/tutorial.js';
+import { guardTick } from './ui/lessons.js';
 import { pressClosed, postGame } from './ui/postgame.js';
 import { endPracticeRun } from './ui/screens/prep.js';
 import { startSeason, syncTitlePause, clearPreviews } from './ui/screens/landing.js';
@@ -71,13 +72,11 @@ document.addEventListener('click', onAction);
 // Escape answers an assistant coach card before the shortcut keys see it (even from a field on the live game's bar).
 document.addEventListener('keydown', onCoachKey);
 document.addEventListener('keydown', onShortcut);
-// Every 100 ms: the assistant coach's lessons, then Watch live. A lesson that throws closes its card; play goes on.
+// Every 100 ms: the assistant coach's lessons, then Watch live. A lesson that throws closes its card, gives the game
+// back and stops the lessons until the page is reloaded; play goes on.
+const lessonTick = guardTick(coachTick, lessonFailed);
 setInterval(() => {
-  try {
-    coachTick();
-  } catch (err) {
-    lessonFailed(err);
-  }
+  lessonTick();
   watchTick();
 }, 100);
 onSettingsChange(type => {

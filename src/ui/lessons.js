@@ -324,7 +324,7 @@ export const LESSONS = [
     steps: [
       {
         id: 'scout',
-        spot: '.prep-row:has([data-plan="film"])',
+        spot: '.prep-row[data-row="film"]',
         act: '[data-plan="film"]',
         on: c => c.view === 'practice' && free(c),
         done: c => c.view !== 'practice' || !!c.state.scouted || c.practice.plan.includes('film'),
@@ -402,15 +402,18 @@ const clean = raw =>
   raw && typeof raw === 'object' && !Array.isArray(raw)
     ? Object.fromEntries(Object.entries(raw).filter(([k, v]) => lessonById(k) && STATUSES.includes(v)))
     : {};
-export function loadProgress(store = globalThis.localStorage) {
+// The store is reached inside the try: where site data is blocked, even reading localStorage throws.
+export function loadProgress(store) {
   try {
+    store ??= globalThis.localStorage;
     return clean(JSON.parse(store.getItem(PROGRESS_KEY)));
   } catch {
     return {};
   }
 }
-export function saveProgress(progress, store = globalThis.localStorage) {
+export function saveProgress(progress, store) {
   try {
+    store ??= globalThis.localStorage;
     store.setItem(PROGRESS_KEY, JSON.stringify(clean(progress)));
     return true;
   } catch {
@@ -446,11 +449,29 @@ export function gotItStatus(lesson, i) {
 }
 // A card that held the live game closes. how: gotit | escape | notnow | hide (the coach answered the card: Watch live
 // goes back to what it was before the card), played (the coach pressed Watch live, Resume or Next play on the page:
-// that choice stands), done (the coach did the step itself, e.g. called the timeout).
+// that choice stands), done (the coach did the step itself, e.g. called the timeout), ended (the lesson stopped by
+// itself or was dropped: the hold was the card's doing, so the game goes back as it was).
 export function watchAfterCard(how, autoBefore, autoNow) {
-  return ['gotit', 'escape', 'notnow', 'hide'].includes(how)
+  return ['gotit', 'escape', 'notnow', 'hide', 'ended'].includes(how)
     ? { auto: autoBefore, unpause: true }
     : { auto: autoNow, unpause: false };
+}
+// Answering "No, show me as I go" on the start form: every chapter can show again (the one-time tips stay as they were).
+export const forgetChapters = progress =>
+  Object.fromEntries(Object.entries(progress).filter(([id]) => lessonById(id)?.kind !== 'chapter'));
+// The 100 ms loop runs the lessons through this: a lesson that throws is reported once (onFail closes its card and
+// gives the game back) and the lessons stop until the page is reloaded, so a bad lesson can never stall Watch live.
+export function guardTick(tick, onFail) {
+  let failed = false;
+  return () => {
+    if (failed) return;
+    try {
+      tick();
+    } catch (err) {
+      failed = true;
+      onFail(err);
+    }
+  };
 }
 // The start question's default: "No, show me as I go" until the first week and the first tip-off have been seen.
 export const questionDefault = progress =>

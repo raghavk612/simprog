@@ -294,7 +294,8 @@ export function coachTick() {
   if (o) keepUp(o, c);
   else glow(null);
 }
-// The loop caught an error from a lesson: close the card so play goes on, and say so once in the console.
+// The loop caught an error from a lesson (guardTick in lessons.js stops the lessons after it): close the card and give
+// the game back as it was before the card, so play goes on, and say so once in the console.
 export function lessonFailed(err) {
   try {
     stopLessons();
@@ -306,6 +307,11 @@ export function lessonFailed(err) {
     logged = true;
     console.error('Lessons stopped after an error:', err);
   }
+}
+// "No, show me as I go" on the start form: every chapter can show again, even ones seen or dismissed before.
+export function forgetLessonChapters() {
+  progress = L.forgetChapters(progress);
+  L.saveProgress(progress);
 }
 // The title screen, a new season and the judge demo stop every lesson under way (none gets a status).
 export function stopLessons() {

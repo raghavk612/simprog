@@ -52,14 +52,11 @@ test('no click lock: nothing on the page is blocked while a lesson is up', () =>
   for (const f of ['../src/main.js', '../src/ui/tutorial.js', '../src/ui/keyboard.js'])
     assert.doesNotMatch(read(f), /blockOutsideSpotlight|stopImmediatePropagation/, f);
 });
-test('the 100 ms loop runs the lessons inside a try/catch, so a failing lesson never stops Watch live', () => {
+test('the 100 ms loop runs the lessons through guardTick, and Watch live after them whatever happens', () => {
   const main = read('../src/main.js');
+  assert.match(main, /const lessonTick = guardTick\(coachTick, lessonFailed\);/);
   const loop = main.slice(main.indexOf('setInterval(() => {'), main.indexOf('}, 100);'));
-  assert.match(loop, /try \{\s*coachTick\(\);?\s*\} catch/);
-  assert.ok(
-    loop.indexOf('watchTick()') > loop.indexOf('catch'),
-    'Watch live runs after it, whatever happens',
-  );
+  assert.match(loop, /lessonTick\(\);\s*watchTick\(\);/);
 });
 test('the old tour is gone: no beats, no skip dialog, no old flag, no checkbox', () => {
   const src = [

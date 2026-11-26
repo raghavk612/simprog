@@ -8,7 +8,7 @@ import * as E from '../../engine.js';
 import { state, data, save, setState, setView, takeLateKits } from '../store.js';
 import { html, LOGO_WHITE, pill, btn, esc, hint } from '../markup.js';
 import { stage, render, go } from '../shell.js';
-import { startQuestionDefault, stopLessons } from '../tutorial.js';
+import { startQuestionDefault, stopLessons, forgetLessonChapters } from '../tutorial.js';
 import { clearPlan } from './prep.js';
 import { confirmDialog } from '../dialogs.js';
 import { notify, announceKits } from '../toast.js';
@@ -175,7 +175,11 @@ export async function startSeason(form) {
     );
     E.autoLineup(state);
     const tips = f.get('tips') === 'tips' ? 'tips' : 'lessons';
-    if (tips === 'lessons') state.deferPre = true;
+    // "No, show me as I go": the preseason break waits until after game 1, and every chapter shows again.
+    if (tips === 'lessons') {
+      state.deferPre = true;
+      forgetLessonChapters();
+    }
     setPrefs({ tips });
     stopLessons();
     clearPlan();

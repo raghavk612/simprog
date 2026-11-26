@@ -24,6 +24,8 @@ import {
   LOW_ENERGY,
   TIRED_FROM,
   FALLBACK_AT,
+  guardTick,
+  forgetChapters,
 } from '../src/ui/lessons.js';
 
 const data = JSON.parse(fs.readFileSync(new URL('../public/data/kangs.json', import.meta.url), 'utf8'));
@@ -112,6 +114,63 @@ test('progress survives storage that throws, holds corrupt JSON or holds junk', 
   assert.equal(saveProgress({ week: 'dismissed', 'shop:gear': 'done' }, st), true);
   assert.deepEqual(loadProgress(st), { week: 'dismissed', 'shop:gear': 'done' });
   assert.deepEqual(loadProgress(undefined), {}, 'no storage at all');
+});
+test('progress survives a browser where even reaching localStorage throws (site data blocked)', () => {
+  const had = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  Object.defineProperty(globalThis, 'localStorage', {
+    configurable: true,
+    get() {
+      throw Error('SecurityError: site data is blocked');
+    },
+  });
+  try {
+    assert.deepEqual(loadProgress(), {});
+    assert.equal(saveProgress({ week: 'done' }), false);
+  } finally {
+    if (had) Object.defineProperty(globalThis, 'localStorage', had);
+    else delete globalThis.localStorage;
+  }
+});
+test('a lesson that throws is stopped for good: its error is handled once and the loop goes on', () => {
+  let runs = 0;
+  const errors = [];
+  const tick = guardTick(
+    () => {
+      runs++;
+      throw Error('bad lesson');
+    },
+    e => errors.push(e.message),
+  );
+  tick();
+  tick();
+  tick();
+  assert.equal(runs, 1, 'the lessons are not run again after the error');
+  assert.deepEqual(errors, ['bad lesson']);
+  let ok = 0;
+  const fine = guardTick(
+    () => ok++,
+    () => assert.fail('no error'),
+  );
+  fine();
+  fine();
+  assert.equal(ok, 2, 'lessons that do not throw keep running');
+});
+test('no lesson points at the page with :has(), which older browsers reject', () => {
+  for (const l of LESSONS)
+    for (const s of l.steps)
+      for (const sel of [s.spot, s.act]) if (sel) assert.doesNotMatch(sel, /:has\(/, `${l.id}.${s.id}`);
+});
+test('answering “No, show me as I go” brings every chapter back; the one-time tips stay as they were', () => {
+  assert.deepEqual(
+    forgetChapters({
+      week: 'dismissed',
+      tipoff: 'done',
+      speed: 'armed',
+      'shop:gear': 'done',
+      lineup: 'done',
+    }),
+    { lineup: 'done' },
+  );
 });
 test('the old tour flag no longer decides anything', () => {
   const st = memory({ 'kangs-three-tutorial-v3': 'seen' });
@@ -237,6 +296,11 @@ test('Watch live after a held card: Got it, Escape, Not now and Hide tips restor
     watchAfterCard('done', true, false),
     { auto: false, unpause: false },
     'did the step itself',
+  );
+  assert.deepEqual(
+    watchAfterCard('ended', true, false),
+    { auto: true, unpause: true },
+    'a lesson that stops by itself (or is dropped) gives the game back as it was',
   );
 });
 test('the start question defaults to “No, show me” until week and tip-off are both done or dismissed', () => {

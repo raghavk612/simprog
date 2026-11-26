@@ -81,7 +81,7 @@ export function practice() {
       i = Object.keys(E.plans).indexOf(k),
       no = why(k);
     return html`
-      <li class="prep-row ${on ? 'on' : ''}">
+      <li class="prep-row ${on ? 'on' : ''}" data-row="${k}">
         ${i >= 0 ? `<span class="prep-icon" aria-hidden="true">${svg(PLAN_ICONS[i])}</span>` : officeIcon(k)}
         <div class="prep-main"><strong>${prepName(k)}</strong><small>${no || prepDesc(k, opp)}</small></div>
         <div class="effect-list">${fx(k)}</div>
