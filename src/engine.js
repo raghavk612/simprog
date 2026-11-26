@@ -594,6 +594,7 @@ export function playTo(s, week) {
     if (mean(s.players, 'gpa') < 2.7 && s.actions > 0) train(s, 'study');
     while (s.actions > 0) train(s, s.chemistry < 85 ? 'bond' : 'shooting');
     autoLineup(s);
+    if (pressPending(s)) s.press = { week: s.week, questions: [], done: true }; // the demo coach did talk to the press
     startMatch(s);
     let k = 0;
     while (s.match && k++ < 500) possession(s);
@@ -658,6 +659,11 @@ export function startMatch(s) {
   validateLineup(s);
   endBreak(s);
   const nm = s.nextMods;
+  // Tipping off with the press room still pending costs what skipping it costs (skipPress in press.js), so the two paths agree.
+  if (pressPending(s)) {
+    s.fans = Math.max(40, s.fans - PRESS_SKIP_FANS);
+    log(s, 'Skipped the press conference. Fans −10.', 'pressSkip');
+  }
   if (s.press) s.press.done = true;
   if (nm) {
     s.chemistry = cap(s.chemistry + (nm.chem || 0));
@@ -1844,12 +1850,33 @@ export function endBreak(s) {
   if (id) (s.breaksDone ??= []).push(id);
   return id;
 }
+/* The press room is pending once a game has been played and this week's questions are neither answered nor skipped.
+   Skipping it, or tipping off without it, costs PRESS_SKIP_FANS fans. */
+export const PRESS_SKIP_FANS = 10;
+export const pressPending = s =>
+  s.results.length > 0 && (!s.press || s.press.week !== s.week || !s.press.done);
+/* Game day before tip-off: why tip-off cannot happen yet (blocked: 'inbox', 'issues' or 'lineup'), and what tipping off
+   now would leave undone for good: unused prep slots (they reset after the game), the press room, an open break. */
+export function tipoffSkips(s) {
+  let blocked = s.pendingEvent ? 'inbox' : lineupIssues(s).length ? 'issues' : null;
+  if (!blocked)
+    try {
+      validateLineup(s);
+    } catch {
+      blocked = 'lineup';
+    }
+  const skips = [],
+    pause = breakDue(s);
+  if (s.actions > 0) skips.push({ id: 'slots', n: s.actions });
+  if (pressPending(s)) skips.push({ id: 'press', n: PRESS_SKIP_FANS });
+  if (pause) skips.push({ id: 'break', break: pause });
+  return { blocked, skips };
+}
 export function nextStep(s) {
   if (s.finished) return { id: 'finished', view: 'season' };
   if (s.match) return { id: 'live', view: 'game' };
   if (s.pendingEvent) return { id: 'inbox', action: 'inbox-open' };
-  if (s.results.length > 0 && (!s.press || s.press.week !== s.week || !s.press.done))
-    return { id: 'press', action: 'press-open' };
+  if (pressPending(s)) return { id: 'press', action: 'press-open' };
   const pause = breakDue(s);
   if (pause) return { id: 'break', view: 'recruit', break: pause };
   const bad = lineupIssues(s);

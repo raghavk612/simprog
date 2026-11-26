@@ -64,3 +64,6 @@ const logoFile = src =>
     .pop()
     .toLowerCase();
 export const strengthLevel = rating => (rating >= 80 ? 'high' : rating >= 70 ? 'medium' : 'low');
+// The words for a player's (or the rotation's) energy and morale, one set of thresholds everywhere (rv.energy.*, rv.morale.*).
+export const energyLevel = e => (e >= 80 ? 'fresh' : e >= 55 ? 'rested' : e >= 30 ? 'tired' : 'exhausted');
+export const moraleLevel = m => (m >= 80 ? 'fired' : m >= 60 ? 'content' : m >= 40 ? 'restless' : 'unhappy');
