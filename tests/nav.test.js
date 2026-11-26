@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import en from '../src/i18n/locales/en.js';
 import * as E from '../src/engine.js';
-import { NAV, navGroup, subTabs, breakFoot, subnavGo } from '../src/ui/nav.js';
+import { NAV, navGroup, subTabs, breakFoot, subnavGo, tabNumber } from '../src/ui/nav.js';
 import { LESSONS } from '../src/ui/lessons.js';
 
 const read = f => fs.readFileSync(new URL(f, import.meta.url), 'utf8');
@@ -37,6 +37,12 @@ test('every group with more than one page shows them as tabs under the top bar',
   assert.deepEqual(subTabs('roster'), [], 'Team has one page');
   assert.equal(navGroup('gear'), 'shop');
   assert.equal(navGroup('nowhere'), 'week');
+});
+test('sub-tabs are numbered only where their order is real: the week and the Shop', () => {
+  assert.deepEqual(NAV.week.map(tabNumber), ['01', '02', '03']);
+  assert.deepEqual(NAV.shop.map(tabNumber), ['01', '02', '03', '04', '05']);
+  for (const v of [...NAV.season, ...NAV.team]) assert.equal(tabNumber(v), '', v);
+  assert.equal(tabNumber('nowhere'), '');
 });
 test('Shop pages open at any time; during a break their foot walks the tabs and the last one ends the break', () => {
   const s = season();

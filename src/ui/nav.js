@@ -16,6 +16,13 @@ export function subTabs(v) {
   const pages = NAV[navGroup(v)];
   return pages.length > 1 ? pages : [];
 }
+// The sub-tabs carry a numeral ("01 Overview") only where their order is real: the week's three steps, and the Shop,
+// which the breaks walk through in order. The Season pages have no order, so they have none.
+const NUMBERED = ['week', 'shop'];
+export function tabNumber(v) {
+  const g = Object.keys(NAV).find(k => NAV[k].includes(v));
+  return NUMBERED.includes(g) ? String(NAV[g].indexOf(v) + 1).padStart(2, '0') : '';
+}
 // The foot of a Shop page during a break: the next Shop tab, or (on the last one) ending the break. Nothing otherwise.
 export function breakFoot(s, v) {
   const pause = E.breakDue(s);

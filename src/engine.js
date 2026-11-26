@@ -38,6 +38,7 @@ export const staff = [
   { name: 'Culture builder', cost: 250, detail: '+3 morale and chemistry on team dinners', key: 'culture' },
 ];
 export const TIMEOUTS = 3;
+export const PREP_SLOTS = 3; // preparation slots a coach gets each week (Prep)
 export const ROSTER_MAX = 15; // players a team may carry (tryouts, walk-ons and transfers stop here)
 export const eligible = p => p.gpa >= 2 && p.injury === 0 && p.energy >= 15;
 /* Display names for the three difficulty keys. Keys stay the same so existing saves still load. */
@@ -137,7 +138,7 @@ export function createGame(data, name, difficulty = 'standard', seed = Date.now(
     tokens: 1000,
     fans: 120,
     chemistry: 58,
-    actions: 3,
+    actions: PREP_SLOTS,
     wins: 0,
     losses: 0,
     assistant: null,
@@ -1151,7 +1152,7 @@ function finish(s) {
       won ? 'champions' : 'seasonComplete',
     );
   }
-  s.actions = 3;
+  s.actions = PREP_SLOTS;
   s.scouted = false;
   s.conversation = false;
   s.match = null;
@@ -1602,7 +1603,7 @@ export function validSave(s) {
     num(s.tokens, 0, 100000) &&
     num(s.fans, 0, 1000000) &&
     num(s.chemistry, 0, 100) &&
-    num(s.actions, 0, 3) &&
+    num(s.actions, 0, PREP_SLOTS) &&
     num(s.wins, 0, 40) &&
     num(s.losses, 0, 40) &&
     [null, ...staff.map(a => a.key)].includes(s.assistant) &&
