@@ -15,7 +15,7 @@ import { setCamera, render, applyArena, go } from './shell.js';
 import { show } from './dialogs.js';
 import { whyHtml } from './screens/game.js';
 import { result } from './screens/results.js';
-import { announceKits, notify } from './toast.js';
+import { announceKits, notify, releaseToasts } from './toast.js';
 
 let cued = ''; // the last play read out, so each is read once
 export function tipOff() {
@@ -94,6 +94,7 @@ function quarterBreak() {
       ${sg || `<p>${t('break.none')}</p>`}
       ${btn(t('break.keep'), 'break-go', 'primary wide break-go')}`,
   );
+  releaseToasts(); // what waited during the quarter shows over the break
 }
 export function resumeBreak() {
   arena.paused = false;
@@ -314,7 +315,7 @@ export function applyBreakAdjust(id) {
   modal.close();
   resumeBreak();
   play('confirm');
-  notify(logText(e), { type: 'success', title: t('break.applied') });
+  notify(logText(e), { type: 'success', title: t('break.applied'), now: true }); // the answer to the coach's choice: no waiting
   render();
 }
 // A possession replayed from a result: the Game day page shows it on the court with its own controls.

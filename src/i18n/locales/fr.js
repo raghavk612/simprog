@@ -464,6 +464,20 @@ export default {
     why: 'Pourquoi ce tir ?',
     whyNone: 'Chaque action terminée apparaît ici.',
     whyShot: '{{player}} · {{shot}} · {{n}} % de chances',
+    strengthShort: 'Force',
+    skips: 'Lancer le match maintenant fait sauter {{list}}.',
+    skip: {
+      slot: '1 créneau de préparation inutilisé',
+      slots: '{{n}} créneaux de préparation inutilisés',
+      press: 'la salle de presse (supporters −{{n}})',
+      pre: 'la présaison',
+      mid: 'la pause de mi-saison',
+      playoff: 'la pause des playoffs',
+    },
+    blocked: {
+      inbox: 'Répondez d’abord à la boîte de réception du coach.',
+      lineup: 'Choisissez d’abord cinq titulaires et attribuez 160 minutes.',
+    },
   },
   tactic: {
     balanced: 'Équilibré',

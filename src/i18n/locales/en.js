@@ -453,6 +453,20 @@ export default {
     why: 'Why that shot?',
     whyNone: 'Each resolved play shows up here.',
     whyShot: '{{player}} · {{shot}} · {{n}}% chance',
+    strengthShort: 'Strength',
+    skips: 'Tipping off now skips {{list}}.',
+    skip: {
+      slot: '1 unused prep slot',
+      slots: '{{n}} unused prep slots',
+      press: 'the press room (fans −{{n}})',
+      pre: 'the preseason',
+      mid: 'the midseason break',
+      playoff: 'the playoff break',
+    },
+    blocked: {
+      inbox: 'Answer the coach’s inbox first.',
+      lineup: 'Pick five starters and assign 160 minutes first.',
+    },
   },
   tactic: {
     balanced: 'Balanced',

@@ -1708,7 +1708,172 @@ body[data-view='data'] .table-wrap {
   margin-top: 12px;
 }
 
+/* ---- Notifications during the live game: only errors and direct answers show while it plays (toast.js holds the
+   rest for the quarter break), in a corner of the court clear of the score bug, the drawers and the controls. ---- */
+body.live-match #toast {
+  inset: 144px auto auto 24px;
+  width: min(360px, calc(100vw - 48px));
+}
+@media (max-width: 760px) {
+  body.live-match #toast {
+    inset: 96px 12px auto 12px;
+    width: auto;
+  }
+  /* A quarter break's dialog fills the phone: notifications go over the score instead, which waits behind it. */
+  body.live-match:has(#modal[open]) #toast {
+    top: 8px;
+  }
+}
+
 /* ---- Game day before tip-off: the gym, the five and one button ---- */
+/* The drawers anchor to the gym on every screen size (on phones they used to anchor to the page and cover the top bar). */
+body[data-view='game'] .court-panel {
+  position: relative;
+}
+/* What the coach judges readiness by: strength on one scale, the rotation's energy and morale, the opponent's style. */
+.ready-facts {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 10px;
+  font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+}
+.ready-facts > div {
+  display: grid;
+  grid-template-columns: minmax(0, 7.5em) minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+.ready-facts dt {
+  color: var(--ink-2);
+}
+.ready-facts dd {
+  margin: 0;
+  color: var(--ink);
+}
+.ready-facts b {
+  font-weight: 700;
+}
+.ready-facts .strength-word {
+  font-weight: 600;
+}
+.ready-facts .strength-word.low {
+  color: var(--good);
+}
+.ready-facts .strength-word.medium {
+  color: var(--score);
+}
+.ready-facts .strength-word.high {
+  color: var(--bad);
+}
+.ready-facts .text-button {
+  padding: 0;
+  font-size: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+}
+/* The starting five: jersey, name, overall and energy in columns. */
+.five-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+}
+.five-table th {
+  background: none;
+  color: var(--ink);
+  white-space: normal;
+}
+.five-table thead th {
+  padding: 0 0 2px;
+  font-size: calc(11px * var(--ts, 1) * var(--ls, 1));
+  font-weight: 600;
+  color: var(--ink-2);
+  text-align: right;
+}
+.five-table td,
+.five-table tbody th {
+  padding: 4px 0;
+  border-top: 1px solid var(--line);
+  vertical-align: middle;
+}
+.five-table tbody th {
+  padding-left: 8px;
+  font-weight: 700;
+  text-align: left;
+}
+.five-table td:first-child {
+  width: 32px;
+}
+.five-table .jersey {
+  width: 26px;
+  height: 29px;
+  font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+}
+.five-table .five-ovr {
+  padding-left: 6px;
+  text-align: right;
+  font: 700 calc(16px * var(--ts, 1) * var(--ls, 1)) var(--display);
+  color: var(--score);
+}
+.five-table .five-energy {
+  padding-left: 10px;
+  text-align: right;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+.five-table .five-energy .bar {
+  width: 28px;
+  margin-right: 5px;
+}
+.five-table .five-energy.low,
+.five-table .five-energy.low small {
+  color: var(--bad);
+}
+.five-table .five-energy.low .bar i {
+  background: var(--bad-solid);
+}
+.five-table .five-energy small {
+  display: block;
+  margin: 0;
+  font-size: calc(11px * var(--ts, 1) * var(--ls, 1));
+}
+.five-table .pill {
+  padding: 2px 6px;
+  font-size: calc(11px * var(--ts, 1) * var(--ls, 1));
+}
+/* Tip off and the week's next step; the line under them says what tipping off now skips, or why it can't happen yet. */
+body[data-view='game'] .page-action {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+body[data-view='game'] .page-action .wide {
+  margin-top: 0;
+}
+.tipoff-why {
+  margin: 0;
+  font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+@media (max-width: 760px) {
+  /* Phones: the scouting and preview drawers are a row above the gym, not an overlay on it. */
+  body:not(.live-match)[data-view='game'] .court-panel {
+    display: flex;
+    flex-direction: column;
+  }
+  body:not(.live-match)[data-view='game'] .court-drawers {
+    position: relative;
+    inset: auto;
+    order: -1;
+    margin-bottom: 8px;
+  }
+}
+@media (max-width: 620px) {
+  /* The gym is a backdrop before tip-off: short enough that the five and the way forward come into view. */
+  body:not(.live-match)[data-view='game'] .game-arena {
+    height: 220px !important;
+  }
+}
 @media (min-width: 761px) {
   body:not(.live-match)[data-view='game'] .game-layout {
     grid-template-columns: minmax(0, 1fr) 300px;
@@ -1716,7 +1881,6 @@ body[data-view='data'] .table-wrap {
     min-height: 420px;
   }
   body:not(.live-match)[data-view='game'] .court-panel {
-    position: relative;
     min-height: 0;
   }
   body:not(.live-match) .game-arena {

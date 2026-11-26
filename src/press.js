@@ -1,5 +1,5 @@
 // The post-game press conference: three to five questions chosen from how the game went. Each answer shifts something for the next game (see addMods in engine.js).
-import { cap, log, hashStr, seasonPlan, opponent, addMods } from './engine.js';
+import { cap, log, hashStr, seasonPlan, opponent, addMods, PRESS_SKIP_FANS } from './engine.js';
 import en from './i18n/locales/en.js';
 
 /* Answers set next-game modifiers: chem/morale/energy/fans change once at tip-off; offense/defense/oppRating are small shot-quality terms during the game.
@@ -233,7 +233,7 @@ export function skipPress(s) {
   const p = s.press;
   if (!p || p.done) return;
   p.done = true;
-  s.fans = Math.max(40, s.fans - 10);
+  s.fans = Math.max(40, s.fans - PRESS_SKIP_FANS);
   log(s, 'Skipped the press conference. Fans −10.', 'pressSkip');
 }
 export const questionText = id => en.press[id]?.q;
