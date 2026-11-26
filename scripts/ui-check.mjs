@@ -1,6 +1,7 @@
 // Opens every page in a real browser and reports what tests cannot see: script errors, text with too little
 // contrast, and pages wider than a phone. With --shots it also saves a screenshot of each page for review. It also
-// checks the title screen's start form, Help's Lessons tab and Settings > Game, and the assistant coach's card.
+// checks the title screen's start form, Help's Lessons tab and Settings > Game, and the assistant coach's card, and
+// that each screen has at most one purple (accent-filled) button.
 //
 //   npm run check:ui                 # report only; exits 1 if anything is found
 //   npm run check:ui -- --shots      # also save screenshots to ui-shots/ (git-ignored)
@@ -104,9 +105,32 @@ function lowContrast(min) {
   return [...found].map(([k, v]) => `low contrast ${v} on ${k}`);
 }
 
+// Runs in the page: the screen's purple buttons. The project's rule is one purple button per screen (the way forward),
+// so anything else filled with --accent (a selected tab, filter or speed) counts too.
+function purpleButtons() {
+  const probe = document.createElement('i');
+  probe.style.background = 'var(--accent)';
+  document.body.append(probe);
+  const accent = getComputedStyle(probe).backgroundColor;
+  probe.remove();
+  const root = document.querySelector('dialog[open]') || document.querySelector('#app');
+  return [...root.querySelectorAll('button, a, [role="tab"]')]
+    .filter(el => {
+      const r = el.getBoundingClientRect();
+      // a switch's filled track is its on state, not a button (Settings)
+      return r.width && r.height && !el.disabled && !el.closest('#arena, [hidden], [role="switch"]');
+    })
+    .filter(el => getComputedStyle(el).backgroundColor === accent)
+    .map(el => el.textContent.trim().slice(0, 30));
+}
+async function onePurple(page, run, what) {
+  const found = await page.evaluate(purpleButtons);
+  if (found.length > 1) problems.push(`${run}/${what}: ${found.length} purple buttons: ${found.join(' | ')}`);
+}
 // Contrast, width and (with --shots) a screenshot of what is on screen now, named after `what`.
 async function check(page, run, what) {
   await page.waitForTimeout(250);
+  await onePurple(page, run, what);
   for (const p of await page.evaluate(lowContrast, MIN_CONTRAST)) problems.push(`${run}/${what}: ${p}`);
   const wide = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   if (wide > 1) problems.push(`${run}/${what}: page is ${wide}px wider than the screen`);
@@ -162,6 +186,7 @@ for (const [device, [w, h]] of Object.entries(VIEWPORTS))
         await page.waitForTimeout(200);
         const shown = await page.evaluate(() => document.body.dataset.view);
         if (shown !== v) continue;
+        await onePurple(page, run, v);
         for (const p of await page.evaluate(lowContrast, MIN_CONTRAST)) problems.push(`${run}/${v}: ${p}`);
         const wide = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
         if (wide > 1) problems.push(`${run}/${v}: page is ${wide}px wider than the screen`);

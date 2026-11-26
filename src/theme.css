@@ -1407,6 +1407,7 @@ body:has(#modal[open]) .coach-glow:not(#modal *) {
   .camera-controls button,
   .playback-controls button,
   .rule-tabs button {
+    min-width: 44px;
     min-height: 44px;
   }
   .sq-set label {
