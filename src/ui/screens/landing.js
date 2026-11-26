@@ -1,8 +1,9 @@
-// Title screen. With a save: next game, Continue (primary) and New season, which reveals the start form;
-// without one the form is shown. The season code folds behind a <details>.
+// Title screen. With a save: next game, Continue (primary), and New season beside the judge demo; New season reveals the
+// start form, whose start button then becomes the one primary. Without a save the form is shown. The season code folds
+// behind a <details>.
 import { getA11y, setPrefs } from '../../settings.js';
 import { t, tu, translateError } from '../../i18n/index.js';
-import { titleMatchup } from '../../title.js';
+import { titleMatchup, titleMenu } from '../../title.js';
 import { play } from '../../audio.js';
 import * as E from '../../engine.js';
 import { state, data, save, setState, setView, takeLateKits } from '../store.js';
@@ -17,6 +18,7 @@ import { arena, $ } from '../page.js';
 
 let titlePause = null; // { paused, rm } once the coach has pressed pause; rm is the reduced-motion setting at the time
 let launching = false; // true while the camera flies from the title into the gym
+let formOpen = false; // New season has opened the start form (with a save); kept here so a redraw keeps it open
 // The title gym shows a real season for the chosen difficulty when there is no save: built once per difficulty (seed 1), never saved.
 let previews = {};
 
@@ -33,7 +35,8 @@ const pauseAttr = () => (getA11y().reducedMotion ? 'hidden' : '');
 // on desktop it is the full-screen backdrop and the links row holds the pause button instead.
 export function landing() {
   const m = titleMatchup(state, data),
-    ask = startQuestionDefault();
+    ask = startQuestionDefault(),
+    menu = titleMenu(!!state, formOpen);
   return html`
     <main class="landing" id="main">
       <div class="landing-brand">
@@ -65,11 +68,14 @@ export function landing() {
                   </p>
                   <p class="title-next-record">${t('landing.record', { w: m.wins, l: m.losses })}</p>
                 </div>
-                ${btn(t('landing.continueSeason'), 'continue', 'primary launch')}
-                ${btn(t('landing.newSeason'), 'new-season-form', 'secondary wide', 'aria-expanded="false" aria-controls="start-form"')}`
+                ${btn(t('landing.continueSeason'), 'continue', menu.continue === 'primary' ? 'primary launch' : 'secondary wide')}
+                <div class="title-alt">
+                  ${btn(t('landing.newSeason'), 'new-season-form', 'secondary', `aria-expanded="${formOpen}" aria-controls="start-form"`)}
+                  ${btn(t('landing.demo'), 'demo-start', 'secondary')}
+                </div>`
               : ''
           }
-          <form id="start-form"${state ? ' hidden' : ''}>
+          <form id="start-form"${state && !formOpen ? ' hidden' : ''}>
             <label for="coach">${tu('landing.name')}</label>
             <input id="coach" name="coach" maxlength="32" placeholder="${esc(t('landing.namePlaceholder'))}" required autocomplete="given-name">
             <div class="difficulty">
@@ -99,7 +105,7 @@ export function landing() {
             ${btn(t('landing.howTo'), 'rules')}
             ${btn(t('side.credits'), 'credits')}
             ${btn(t('landing.import'), 'import')}
-            ${btn(t('landing.demo'), 'demo-start')}
+            ${menu.demoUp ? '' : btn(t('landing.demo'), 'demo-start')}
             ${btn(t('top.settings'), 'settings', ' ', hint('settings'))}
             ${btn(pauseLabel(), 'title-pause', 'title-pause-link', pauseAttr())}
           </div>
@@ -120,13 +126,11 @@ export function toggleTitlePause() {
   titlePause = { paused: !bgPaused(), rm: !!getA11y().reducedMotion };
   syncTitlePause();
 }
-// "New season" with a save open: shows or hides the start form.
-export function toggleStartForm(button) {
-  const f = $('#start-form'),
-    open = !!f?.hidden;
-  if (f) f.hidden = !open;
-  button.setAttribute('aria-expanded', open);
-  if (open) $('#coach')?.focus();
+// "New season" with a save open: shows or hides the start form (and with it, which button is purple).
+export function toggleStartForm() {
+  formOpen = !formOpen;
+  render();
+  if (formOpen) $('#coach')?.focus();
 }
 // Start / Continue: with motion on, the menu slides out while the camera flies into the gym; with reduced motion there is no wait.
 async function leaveTitle() {
@@ -165,6 +169,7 @@ export async function startSeason(form) {
     if (state && !(await confirmDialog(t('confirm.replace'), { yes: t('confirm.replaceYes'), danger: true })))
       return;
     await leaveTitle();
+    formOpen = false;
     setState(
       E.createGame(
         data,
@@ -206,6 +211,7 @@ export async function enterSeason(fromTitle) {
       launching = true;
       await leaveTitle();
     }
+    formOpen = false;
     go('home');
   } catch (err) {
     restoreTitle();

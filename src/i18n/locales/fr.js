@@ -389,7 +389,7 @@ export default {
     academics: 'Point sur les études',
     academicsFx: '+0,18 de GPA simulé',
     assistantKicker: 'Un poste d’adjoint',
-    buildStaff: 'Staff technique',
+    buildStaff: 'Entraîneur adjoint',
     assistantBody:
       'Les postes d’adjoint sont des choix de jeu fictifs. Leurs bonus s’appliquent à vos séances de préparation.',
     hired: 'Embauché',
@@ -621,7 +621,7 @@ export default {
     replay: 'Revoir',
     noGames: 'Jouez votre premier match pour commencer votre histoire.',
     standings: 'Classement du programme',
-    table: 'Le tableau de la campagne',
+    table: 'Classement de la ligue',
     tableNote:
       'Classement fictif de la campagne : les autres adversaires jouent des matchs simulés en arrière-plan à chaque tour. Ce ne sont pas les classements officiels de KingCo.',
     trail: 'Journal de décisions',
@@ -642,7 +642,7 @@ export default {
   },
   data: {
     kicker: 'Programme réel. Sources transparentes.',
-    title: 'Les vrais Kangs',
+    title: 'Données réelles des Kangs',
     intro:
       'Calendriers {{season}} publiés des équipes Varsity, Junior Varsity et C avec les dernières listes publiées, séparés de votre simulation.',
     badge: 'Instantané public daté',
@@ -812,8 +812,8 @@ export default {
     },
   },
   timeout: {
-    kicker: 'Temps mort',
-    title: 'Rassemblement.',
+    kicker: 'Briefing',
+    title: 'Temps mort',
     body: 'Trois temps morts par match. Les deux approches améliorent les huit prochaines possessions.',
     calm: 'Calmer l’équipe · +4 d’énergie',
     belief: 'Montrer sa confiance · +3 de moral',
@@ -1810,6 +1810,7 @@ export default {
       missed: 'Non atteint',
     },
     item: 'Tour {{r}} : {{opp}}, {{status}}',
+    title: 'Tableau des playoffs',
   },
   ev: {
     walkon: {

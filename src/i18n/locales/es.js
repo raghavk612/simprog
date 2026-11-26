@@ -389,7 +389,7 @@ export default {
     academics: 'Revisión académica',
     academicsFx: '+0,18 de GPA simulado',
     assistantKicker: 'Un puesto de asistente',
-    buildStaff: 'Cuerpo técnico',
+    buildStaff: 'Entrenador asistente',
     assistantBody:
       'Los puestos de asistente son opciones ficticias del juego. Sus bonificaciones se aplican a tus sesiones de preparación.',
     hired: 'Contratado',
@@ -621,7 +621,7 @@ export default {
     replay: 'Repetir',
     noGames: 'Juega tu primer partido para empezar tu historia.',
     standings: 'Clasificación del programa',
-    table: 'La tabla de la campaña',
+    table: 'Tabla de la liga',
     tableNote:
       'Clasificación ficticia de la campaña: los demás rivales juegan partidos simulados de fondo en cada ronda. No es la clasificación oficial de KingCo.',
     trail: 'Registro de decisiones',
@@ -642,7 +642,7 @@ export default {
   },
   data: {
     kicker: 'Programa real. Fuentes transparentes.',
-    title: 'Los Kangs reales',
+    title: 'Datos reales de los Kangs',
     intro:
       'Calendarios publicados de {{season}} de Varsity, Junior Varsity y Equipo C con las últimas plantillas publicadas, separados de tu simulación.',
     badge: 'Instantánea pública con fecha',
@@ -807,8 +807,8 @@ export default {
     },
   },
   timeout: {
-    kicker: 'Tiempo muerto',
-    title: 'Acérquense.',
+    kicker: 'Charla',
+    title: 'Tiempo muerto',
     body: 'Tres tiempos muertos por partido. Ambas opciones mejoran las próximas ocho posesiones.',
     calm: 'Calmar al equipo · +4 de energía',
     belief: 'Transmitir confianza · +3 de moral',
@@ -1776,6 +1776,7 @@ export default {
       missed: 'No alcanzado',
     },
     item: 'Ronda {{r}}: {{opp}}, {{status}}',
+    title: 'Cuadro de eliminatorias',
   },
   ev: {
     walkon: {

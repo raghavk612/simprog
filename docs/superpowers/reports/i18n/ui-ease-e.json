@@ -1,0 +1,58 @@
+{
+  "en": {
+    "bracket.title": "Playoff bracket",
+    "journal.table": "League table",
+    "timeout.kicker": "Huddle",
+    "timeout.title": "Timeout",
+    "office.buildStaff": "Assistant coach",
+    "data.title": "Real Kangs data"
+  },
+  "es": {
+    "bracket.title": "Cuadro de eliminatorias",
+    "journal.table": "Tabla de la liga",
+    "timeout.kicker": "Charla",
+    "timeout.title": "Tiempo muerto",
+    "office.buildStaff": "Entrenador asistente",
+    "data.title": "Datos reales de los Kangs"
+  },
+  "fr": {
+    "bracket.title": "Tableau des playoffs",
+    "journal.table": "Classement de la ligue",
+    "timeout.kicker": "Briefing",
+    "timeout.title": "Temps mort",
+    "office.buildStaff": "Entraîneur adjoint",
+    "data.title": "Données réelles des Kangs"
+  },
+  "hi": {
+    "bracket.title": "प्लेऑफ़ ब्रैकेट",
+    "journal.table": "लीग तालिका",
+    "timeout.kicker": "हडल",
+    "timeout.title": "टाइमआउट",
+    "office.buildStaff": "सहायक कोच",
+    "data.title": "Kangs के असली आँकड़े"
+  },
+  "it": {
+    "bracket.title": "Tabellone dei playoff",
+    "journal.table": "Classifica della lega",
+    "timeout.kicker": "Riunione",
+    "timeout.title": "Timeout",
+    "office.buildStaff": "Vice allenatore",
+    "data.title": "Dati reali dei Kangs"
+  },
+  "ja": {
+    "bracket.title": "プレーオフのトーナメント表",
+    "journal.table": "リーグ順位表",
+    "timeout.kicker": "作戦会議",
+    "timeout.title": "タイムアウト",
+    "office.buildStaff": "アシスタントコーチ",
+    "data.title": "Kangs の実データ"
+  },
+  "zh": {
+    "bracket.title": "季后赛对阵图",
+    "journal.table": "联赛积分榜",
+    "timeout.kicker": "战术布置",
+    "timeout.title": "暂停",
+    "office.buildStaff": "助理教练",
+    "data.title": "Kangs 真实数据"
+  }
+}

@@ -9,7 +9,6 @@ import { avatar } from '../avatar.js';
 import { show } from '../dialogs.js';
 import { modal } from '../page.js';
 import { render } from '../shell.js';
-import { nextStepButton } from './home.js';
 
 // Team: the lineup (starters and bench as cards) or, with Full stats, one player's card over the whole roster table.
 let rosterFull = false;
@@ -115,12 +114,10 @@ export function roster() {
   const tools = html`
     <div class="toolbar">
       <span>${pill(t('roster.spots', { n: state.players.length }))} ${pill(cap ? t('flow.captain', { name: esc(cap.name) }) : t('flow.noCaptain'))}</span><span class="toolbar-go">${btn(t(rosterFull ? 'roster.lineup' : 'roster.fullStats'), 'roster-full', 'secondary')}${(() => {
-        // the way forward: fixing the lineup when it has a problem (or this is the step), else the week's next step
-        const next = nextStepButton('primary'),
-          fixHere = next.n.view === 'roster' || E.lineupIssues(state).length;
-        return fixHere
-          ? btn(t('flow.bestFive'), 'auto-lineup', 'primary')
-          : btn(t('flow.bestFive'), 'auto-lineup', 'secondary') + next.html;
+        // the way forward: fixing the lineup when it has a problem (or this is the step); else the week's next step,
+        // which the shell puts in the same slot as on every other page (nav.js subnavGo)
+        const fixHere = E.nextStep(state).view === 'roster' || E.lineupIssues(state).length;
+        return btn(t('flow.bestFive'), 'auto-lineup', fixHere ? 'primary' : 'secondary');
       })()}</span>
     </div>
     ${(bad => (bad.length ? `<p class="notice" role="status">${issueText(bad, true)}</p>` : ''))(E.lineupIssues(state))}`;

@@ -67,8 +67,7 @@ export async function copyCode(c) {
 }
 // The final run drawn as a bracket: four win-or-go-home rounds that fill in as games are played.
 function bracket() {
-  const B = E.runBracket(state),
-    names = stages();
+  const B = E.runBracket(state);
   const gate =
     B.gate === 'qualified'
       ? t('bracket.qualified', { w: B.wins, need: B.need })
@@ -78,7 +77,7 @@ function bracket() {
   return html`
     <section class="card bracket-card" aria-labelledby="bracket-h">
       <span class="eyebrow">${tu('bracket.kicker')}</span>
-      <h2 id="bracket-h">${t('hb.g.run', { run: names.run })}</h2>
+      <h2 id="bracket-h">${t('bracket.title')}</h2>
       <p class="bracket-gate ${B.gate}">${gate}</p>
       <ol class="bracket" aria-label="${esc(t('bracket.aria'))}">
         ${B.rounds

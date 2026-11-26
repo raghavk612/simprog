@@ -22,6 +22,11 @@ body.live-match .content,
   --on-accent: #fff;
   --accent-ink: #c6b6e8;
   --accent-soft: #302a40;
+  /* Selected (a pressed filter, the open tab, the camera or speed in use): a soft fill, an accent line and normal ink,
+     never the purple fill, which means the screen's one way forward. */
+  --selected-bg: #302a40;
+  --selected-ink: #f1f2f4;
+  --selected-line: #c6b6e8;
   --score: #f2b233;
   --on-score: #17181c;
   --focus: #f2b233;
@@ -54,6 +59,9 @@ html.theme-light:not(.a11y-high-contrast) {
   --on-accent: #fff;
   --accent-ink: #4c2a85;
   --accent-soft: #ebe6f5;
+  --selected-bg: #ebe6f5;
+  --selected-ink: #17181c;
+  --selected-line: #4c2a85;
   --score: #4c2a85;
   --on-score: #fff;
   --focus: #4c2a85;
@@ -80,6 +88,9 @@ html.a11y-high-contrast {
   --accent-hover: #000;
   --accent-ink: #fff;
   --accent-soft: #000;
+  --selected-bg: #000;
+  --selected-ink: #fff;
+  --selected-line: #ffe28a;
   --score: #ffe28a;
   --on-score: #000;
   --focus: #ffe28a;
@@ -264,10 +275,10 @@ dialog::backdrop {
   color: var(--ink);
 }
 .nav-item.active {
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--selected-bg);
+  color: var(--selected-ink);
   border-radius: 3px;
-  box-shadow: none;
+  box-shadow: inset 0 -3px 0 var(--selected-line);
 }
 .nav-item.active > .nav-icon {
   background: none;
@@ -607,11 +618,18 @@ body[data-view='home'] #arena.home-arena {
 }
 /* Selected stays selected under the pointer: this outranks .secondary:hover (a phone keeps hover after a tap). */
 .gear-filters button[aria-pressed='true']:not(:disabled) {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
+  background: var(--selected-bg);
+  border-color: var(--selected-line);
+  color: var(--selected-ink);
+  box-shadow: inset 0 0 0 1px var(--selected-line);
 }
 
+/* New season while its start form is open: selected (soft fill, accent line), since the form's button is now purple. */
+.title-alt [aria-expanded='true'] {
+  background: var(--selected-bg);
+  border-color: var(--selected-line);
+  color: var(--selected-ink);
+}
 /* ---- title screen: a solid menu column beside the gym, no fades ---- */
 .landing {
   --tl-gold: var(--score);
@@ -883,6 +901,78 @@ body.live-match .workspace {
 }
 body.live-match .subnav {
   display: none;
+}
+/* A row of tabs too wide for the screen shows a ›/‹ plate at the edge that has more (shell.js keepNavTabInView sets
+   data-more), so the hidden tabs read as "scroll" and not as missing. */
+.subnav nav[data-more]::before,
+.subnav nav[data-more]::after {
+  position: sticky;
+  z-index: 1;
+  flex: none;
+  display: none;
+  align-items: center;
+  padding: 0 6px;
+  background: var(--page);
+  color: var(--ink-2);
+  font-weight: 700;
+  font-size: calc(18px * var(--ts, 1) * var(--ls, 1));
+}
+.subnav nav:is([data-more='start'], [data-more='both'])::before {
+  content: '‹';
+  display: flex;
+  left: 0;
+  order: -1;
+}
+.subnav nav:is([data-more='end'], [data-more='both'])::after {
+  content: '›';
+  display: flex;
+  right: 0;
+  order: 99;
+}
+/* ---- The page's way forward (.page-action): its one primary button, the reason when it is disabled and at most one
+   short status line. In the flow on a desktop; on a phone a bar docked above the tab bar, so the way forward is on
+   screen without scrolling. One per page: the shell's next-step slot (nav.js subnavGo) or the page's own. ---- */
+.page-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+@media (max-width: 620px) {
+  body:not(.live-match) .page-action {
+    position: fixed;
+    z-index: 25;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--tabh) + env(safe-area-inset-bottom, 0px));
+    margin: 0;
+    padding: 8px 12px;
+    background: var(--panel);
+    border-top: 1px solid var(--line-2);
+    box-shadow: 0 -6px 14px var(--shade);
+  }
+  body:not(.live-match) .page-action > button {
+    flex: 1 1 100%;
+    width: 100%;
+    min-height: 48px;
+    margin: 0;
+    font-size: calc(16px * var(--ts, 1) * var(--ls, 1));
+  }
+  body:not(.live-match) .page-action > :not(button) {
+    margin: 0;
+    font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+  }
+  /* The page keeps the bar's height free at its foot (shell.js measures it into --action-bar-h). */
+  body:not(.live-match):has(.page-action) .content {
+    padding-bottom: max(var(--coach-h, 0px), calc(var(--action-bar-h, 64px) + 24px));
+  }
+  /* Notifications and the judge demo's guide rise above the bar instead of covering the way forward. */
+  body:not(.live-match):has(.page-action) #toast {
+    bottom: calc(var(--tabh) + var(--action-bar-h, 64px) + 12px) !important;
+  }
+  body:not(.live-match):has(.page-action) .demo-guide {
+    bottom: calc(var(--tabh) + var(--action-bar-h, 64px) + 12px);
+  }
 }
 body.live-match .topbar {
   min-height: 46px;
@@ -1311,6 +1401,21 @@ body:has(#modal[open]) .coach-glow:not(#modal *) {
   font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
   color: var(--ink-2);
 }
+/* Touch: every small control is at least 44 px tall (the live camera and speed buttons, Help's chapter pills, the roster's
+   Start box, whose whole label is the hit area). */
+@media (pointer: coarse), (max-width: 620px) {
+  .camera-controls button,
+  .playback-controls button,
+  .rule-tabs button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .sq-set label {
+    min-height: 44px;
+    padding-inline: 8px;
+    cursor: pointer;
+  }
+}
 .bench .sq-card {
   padding: 10px;
 }
@@ -1420,9 +1525,10 @@ body[data-view='recruit'] .card h2 {
 }
 /* Selected stays selected under the pointer: this outranks .secondary:hover (a phone keeps hover after a tap). */
 .level-tabs button[aria-pressed='true']:not(:disabled) {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
+  background: var(--selected-bg);
+  border-color: var(--selected-line);
+  color: var(--selected-ink);
+  box-shadow: inset 0 0 0 1px var(--selected-line);
 }
 body[data-view='data'] .section-title {
   margin: 0 0 8px;
@@ -1530,25 +1636,30 @@ body[data-view='data'] .table-wrap {
   }
 }
 @media (max-width: 760px) {
-  /* On phones the row is too narrow for tabs and the strip: the strip shows where there are no tabs (Team), and on Home
-     as a second row under the tabs, so the record and tokens are on the first page a coach sees. */
-  .status-strip {
-    display: none;
-  }
-  .subnav:not(:has(nav)) .status-strip,
-  body[data-view='home'] .status-strip {
-    display: flex;
-    gap: 14px;
-  }
-  body[data-view='home'] .subnav {
+  /* On phones the row is too narrow for the tabs and the strip, so the strip is a second row under the tabs on every
+     page: the game, the record and the tokens are always in view, the Shop included. The prep slots stay on Prep. */
+  .subnav {
     flex-wrap: wrap;
     row-gap: 0;
   }
-  body[data-view='home'] .subnav-end {
-    width: 100%;
-    padding-bottom: 10px;
+  .subnav > nav {
+    max-width: 100%;
   }
-  .status-strip .strip-game {
+  .subnav-end {
+    flex: 1 1 100%;
+    justify-content: space-between;
+    min-width: 0;
+    padding-bottom: 8px;
+  }
+  .status-strip {
+    flex-wrap: wrap;
+    gap: 2px 14px;
+    white-space: normal;
+  }
+  .status-strip > span {
+    white-space: nowrap;
+  }
+  .status-strip .strip-slots {
     display: none;
   }
   body.live-match .topbar .nav-label {
@@ -1583,8 +1694,9 @@ body[data-view='data'] .table-wrap {
     font-size: calc(12px * var(--ts, 1) * var(--ls, 1));
   }
   body:not(.live-match) .main-nav .nav-item.active {
-    background: var(--accent);
-    color: var(--on-accent);
+    background: var(--selected-bg);
+    color: var(--selected-ink);
+    box-shadow: inset 0 3px 0 var(--selected-line);
   }
   .topbar {
     padding: 4px 12px;
@@ -1592,6 +1704,9 @@ body[data-view='data'] .table-wrap {
   }
   .subnav {
     padding: 0 8px;
+  }
+  .sub-item {
+    padding-inline: 9px;
   }
   .squad.starters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
