@@ -2193,4 +2193,16 @@ export default {
     unavailable: 'Esta temporada empezó antes de que existieran los códigos de temporada.',
     toggle: '¿Tienes un código de temporada?',
   },
+  recap: {
+    title: 'Qué cambió',
+    ovr: '{{name}}: media {{from}} → {{to}}',
+    more: 'Cambió la valoración de {{n}} jugadores más',
+    injuredOne: '{{name}} está lesionado y se pierde el próximo partido',
+    injured: '{{name}} está lesionado durante {{n}} partidos',
+    healed: '{{name}} vuelve a estar en forma',
+    tokens: 'Fichas del programa {{n}}',
+    rank: 'Clasificación: n.º {{from}} → n.º {{to}} de {{of}}',
+    rankSame: 'Clasificación: sigue n.º {{to}} de {{of}}',
+    rankNew: 'Clasificación: n.º {{to}} de {{of}}',
+  },
 };

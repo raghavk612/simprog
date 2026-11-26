@@ -1972,4 +1972,16 @@ export default {
     unavailable: '这个赛季开始于赛季代码功能出现之前。',
     toggle: '有赛季代码吗？',
   },
+  recap: {
+    title: '本周变化',
+    ovr: '{{name}}：总评 {{from}} → {{to}}',
+    more: '另有 {{n}} 名球员的评分有变化',
+    injuredOne: '{{name}} 受伤，将缺席下一场比赛',
+    injured: '{{name}} 受伤，将缺席 {{n}} 场比赛',
+    healed: '{{name}} 已恢复健康',
+    tokens: '项目代币 {{n}}',
+    rank: '排名：{{of}} 队中第 {{from}} → 第 {{to}}',
+    rankSame: '排名：{{of}} 队中仍居第 {{to}}',
+    rankNew: '排名：{{of}} 队中第 {{to}}',
+  },
 };

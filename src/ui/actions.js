@@ -54,7 +54,7 @@ import {
   setJerseyPlayer,
 } from './screens/locker.js';
 import { modelPanel } from './screens/game.js';
-import { result } from './screens/results.js';
+import { result, noteWeek } from './screens/results.js';
 import { copyCode, refresh, saveReportCard, pickDataLevel } from './screens/season.js';
 
 // Play the interface click (or the selection tick) first.
@@ -216,6 +216,7 @@ const SEASON_ACTIONS = {
     E.autoLineup(state);
   },
   'start-match': () => {
+    noteWeek(state);
     tipOff();
   },
   auto: () => toggleWatch(),

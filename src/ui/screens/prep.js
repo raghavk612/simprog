@@ -18,6 +18,7 @@ import { render } from '../shell.js';
 import { modal } from '../page.js';
 import { notify } from '../toast.js';
 import { show } from '../dialogs.js';
+import { noteWeek } from './results.js';
 
 // Prep: one list of everything a week can hold. The coach picks up to 3 (one per open slot), then
 // "Run the week" plays them in order: drills are played in a dialog, the clinic and film happen on their own card.
@@ -42,6 +43,7 @@ const fills = () => {
   return { suggest: add(suggestedPlan(state)), repeat: add(lastWeekPlan(state)) };
 };
 export function practice() {
+  noteWeek(state);
   practicePlan = practicePlan.filter(k => PREP.includes(k)).slice(0, planCap());
   const cap = planCap(),
     full = practicePlan.length >= cap,

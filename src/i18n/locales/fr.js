@@ -2261,4 +2261,16 @@ export default {
     unavailable: 'Cette saison a commencé avant l’existence des codes de saison.',
     toggle: 'Vous avez un code de saison ?',
   },
+  recap: {
+    title: 'Ce qui a changé',
+    ovr: '{{name}} : note {{from}} → {{to}}',
+    more: 'La note de {{n}} autres joueurs a changé',
+    injuredOne: '{{name}} est blessé et manque le prochain match',
+    injured: '{{name}} est blessé pour {{n}} matchs',
+    healed: '{{name}} est de nouveau en forme',
+    tokens: 'Jetons du programme {{n}}',
+    rank: 'Classement : {{from}}e → {{to}}e sur {{of}}',
+    rankSame: 'Classement : toujours {{to}}e sur {{of}}',
+    rankNew: 'Classement : {{to}}e sur {{of}}',
+  },
 };

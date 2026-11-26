@@ -1982,4 +1982,16 @@ export default {
     unavailable: 'This season was started before season codes existed.',
     toggle: 'Have a season code?',
   },
+  recap: {
+    title: 'What changed',
+    ovr: '{{name}}: OVR {{from}} → {{to}}',
+    more: '{{n}} more players’ ratings changed',
+    injuredOne: '{{name}} is hurt and misses the next game',
+    injured: '{{name}} is hurt for {{n}} games',
+    healed: '{{name}} is fit again',
+    tokens: 'Program tokens {{n}}',
+    rank: 'Standings: #{{from}} → #{{to}} of {{of}}',
+    rankSame: 'Standings: still #{{to}} of {{of}}',
+    rankNew: 'Standings: #{{to}} of {{of}}',
+  },
 };

@@ -2120,4 +2120,16 @@ export default {
     unavailable: 'このシーズンはシーズンコードの導入前に始まりました。',
     toggle: 'シーズンコードをお持ちですか？',
   },
+  recap: {
+    title: '変わったこと',
+    ovr: '{{name}}：OVR {{from}} → {{to}}',
+    more: 'ほかに {{n}} 人の評価が変わりました',
+    injuredOne: '{{name}} が負傷し、次の試合を欠場します',
+    injured: '{{name}} が負傷し、{{n}} 試合欠場します',
+    healed: '{{name}} が復帰できる状態に戻りました',
+    tokens: 'プログラムトークン {{n}}',
+    rank: '順位：{{of}} チーム中 {{from}} 位 → {{to}} 位',
+    rankSame: '順位：{{of}} チーム中 {{to}} 位のまま',
+    rankNew: '順位：{{of}} チーム中 {{to}} 位',
+  },
 };

@@ -2211,4 +2211,16 @@ export default {
     unavailable: 'Questa stagione è iniziata prima dei codici stagione.',
     toggle: 'Hai un codice stagione?',
   },
+  recap: {
+    title: 'Cosa è cambiato',
+    ovr: '{{name}}: valutazione {{from}} → {{to}}',
+    more: 'È cambiata la valutazione di altri {{n}} giocatori',
+    injuredOne: '{{name}} è infortunato e salta la prossima partita',
+    injured: '{{name}} è infortunato per {{n}} partite',
+    healed: '{{name}} è di nuovo in forma',
+    tokens: 'Gettoni del programma {{n}}',
+    rank: 'Classifica: {{from}}° → {{to}}° su {{of}}',
+    rankSame: 'Classifica: ancora {{to}}° su {{of}}',
+    rankNew: 'Classifica: {{to}}° su {{of}}',
+  },
 };
