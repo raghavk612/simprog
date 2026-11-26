@@ -969,6 +969,10 @@ body.live-match .topbar {
   body:has(.coach-card:not([hidden])) main {
     padding-bottom: var(--coach-h, 0px);
   }
+  /* Notifications dock at the bottom too: they rise above the card instead of covering it. */
+  body:has(.coach-card:not([hidden])) #toast {
+    bottom: calc(var(--coach-h, 0px) + 8px) !important;
+  }
 }
 .coach-card {
   position: fixed;

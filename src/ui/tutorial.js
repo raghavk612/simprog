@@ -133,11 +133,13 @@ function place(r) {
       });
   }
   if (dock) document.documentElement.style.setProperty('--coach-h', `${h + 84}px`);
-  const top = innerHeight - h - (dock ? 84 : 24),
-    aim = target(r)?.getBoundingClientRect() ?? null,
-    away = L.outOfView(aim, innerHeight, dock ? top : null);
+  const aim = target(r)?.getBoundingClientRect() ?? null;
+  let top = innerHeight - h - (dock ? 84 : 24);
+  // Docked on a phone over something on screen (the live game's control bar cannot scroll): sit just above it instead.
+  const lift = dock && aim && aim.top < innerHeight && aim.bottom > top && aim.top - h - 12 >= 12;
   const show = card.querySelector('[data-action="lesson-show"]');
-  if (show) show.hidden = !away;
+  if (show) show.hidden = !L.outOfView(aim, innerHeight, dock && !lift ? top : null);
+  if (lift) top = aim.top - h - 12;
   if (!rect || dock || L.outOfView(rect, innerHeight)) {
     card.style.left = `${Math.max(12, (innerWidth - w) / 2)}px`;
     card.style.top = `${top}px`;
