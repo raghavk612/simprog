@@ -132,7 +132,7 @@ test('a move blocked by tokens, a live game, the inbox or a finished season keep
       s => {
         s.tokens = 100;
       },
-      t('office.needTokens', { n: 50 }),
+      t('shop.needTokens', { n: 50, have: 100 }),
     ],
     [
       s => {
