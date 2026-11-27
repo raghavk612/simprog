@@ -64,10 +64,31 @@ test('small loops are summed by edge length', () => {
   assert.ok(Math.abs(r.small.length - 0.4) < 1e-9);
 });
 
-test('the shipped guard GLB can be read and its kit meshes counted', () => {
-  const m = readGlbMeshes(new URL('../public/models/players/guard.glb', import.meta.url).pathname);
-  for (const n of ['jersey', 'shorts']) {
-    assert.ok(m[n], n);
-    assert.ok(boundaryLoops(m[n].positions, m[n].indices).loops.length >= 3);
-  }
-});
+// The kit is whole: the jersey has its 4 openings (neck, two armholes, hem) and the shorts their 3 (waist, two legs), every
+// one a real opening, not a scrap, at both distances (LOD1 is the far mesh). Kit triangles (jersey + shorts) as built
+// before the kit was made whole (b21aed8), so the fix stays within 10% of them.
+const KIT_BEFORE = { guard: 1385 + 1126, forward: 1496 + 1271, center: 1563 + 1385 };
+for (const v of ['guard', 'forward', 'center'])
+  test(`${v}: the kit is whole (jersey 4 openings, shorts 3, none a scrap), near and far`, () => {
+    const m = readGlbMeshes(new URL(`../public/models/players/${v}.glb`, import.meta.url).pathname);
+    for (const lod of ['', '_lod1'])
+      for (const [n, want] of [
+        ['jersey', 4],
+        ['shorts', 3],
+      ]) {
+        const g = m[n + lod];
+        assert.ok(g, n + lod);
+        const r = boundaryLoops(g.positions, g.indices, 0.002, 0.2);
+        assert.equal(
+          r.loops.length,
+          want,
+          `${v} ${n + lod}: ${r.loops.map(l => l.length.toFixed(3)).join(', ')}`,
+        );
+        assert.equal(r.small.count, 0, `${v} ${n + lod}: no opening shorter than 0.2 units`);
+      }
+    const kit = (m.jersey.indices.length + m.shorts.indices.length) / 3;
+    assert.ok(
+      Math.abs(kit / KIT_BEFORE[v] - 1) <= 0.1,
+      `${v}: kit ${kit} triangles, within 10% of ${KIT_BEFORE[v]}`,
+    );
+  });

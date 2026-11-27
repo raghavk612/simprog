@@ -10,11 +10,12 @@ Full rebuild (deterministic: the same inputs give the same files):
   python3 scripts/build_players.py --bake forward
   python3 scripts/build_players.py --bake center
   node scripts/player_lods.mjs                      # adds the far meshes (LOD1) to the GLBs just written
+  node scripts/player-maps-small.mjs                # the half-size kit and gear maps Medium draws (stale ones smear)
   npm test                                          # checks the GLBs carry the UV layout the maps were baked for
 Without --bake only the GLBs are written; that is enough after a change that keeps the triangles (weights, extras), and
 the build warns when the UV layout no longer matches the maps (any geometry change: re-bake).
 
-Pipeline per variant: geometry (the OBJ + the cloud parts - buried faces, openings clipped, trim) -> unwrap (three
+Pipeline per variant: geometry (the OBJ + the cloud parts - buried faces, the kit cut whole, trim) -> unwrap (three
 atlases: skin, kit, gear) -> bake (normal + AO from the high-detail SDF, in the tangent frames of the unwrap) -> rig ->
 GLB with TEXCOORD_0 = (u, 1 - v) and TANGENT exactly as baked (never recomputed).
 
@@ -185,13 +186,21 @@ def buried(P, tris, rules):
         out |= {ids[k] for k in np.where(hit)[0]}
     return out
 
-def covered_body(P, N, G, tris, H, neck_y, gone=()):
+def covered_body(P, N, G, tris, H, neck_y, gone=(), margin=.07 / UNITS_PER_M):
     """Skin vertices hidden under the jersey or shorts: fabric lies directly over them (within a few centimetres along the
     skin normal, not off to the side) and faces the same way. Triangles made only of these are dropped, so skin can never
-    poke through the kit; at the neck, armholes and hems the nearest fabric is the rounded rim, so the skin there stays."""
+    poke through the kit. Skin within `margin` (0.07 game units, as clothFit.coverField) of an opening's edge (neck,
+    armholes, waist, legs; not the jersey's hem, tucked into the shorts) stays: a leg or an arm turning in its opening shows
+    it."""
     gone = set(gone)   # garment triangles already dropped (the hidden inner wall): only the visible fabric counts
     garment = np.array(sorted({v for ti, (tri, g) in enumerate(tris) if g in ('jersey', 'shorts') and ti not in gone for v in tri}))
+    kept = [(t, g) for ti, (t, g) in enumerate(tris) if ti not in gone]
+    edge = np.array(sorted({v for g in ('jersey', 'shorts') for loop in boundary_loops(P, kept, g)
+                            if g == 'shorts' or np.mean(P[loop][:, 1]) > .6 * H for v in loop}), int)
     body = np.where((G == 'core') & (P[:, 1] < neck_y))[0]
+    if len(edge):
+        from scipy.spatial import cKDTree
+        body = body[cKDTree(P[edge]).query(P[body])[0] > margin]
     hidden = np.zeros(len(P), bool)
     for k in range(0, len(body), 512):
         idx = body[k:k + 512]
@@ -204,7 +213,8 @@ def covered_body(P, N, G, tris, H, neck_y, gone=()):
 def inside_body(P, N, G, tris, H):
     """Clothing triangles that lie inside the body. Houdini builds each garment as a solid that contains the body, so the
     carved neck scoop, armholes and the flat cut caps run through the skin and show as ragged patches. Dropping them leaves
-    a clean fabric edge at every opening."""
+    a clean fabric edge at every opening. (The build no longer uses it: kit_cut tells the fabric from the inner wall
+    exactly. bake/mesh_uv.classify_hidden still reads it.)"""
     skin = np.where((G == 'core') | (G == 'arm_L') | (G == 'arm_R'))[0]
     out = set(); items = [(ti, tri) for ti, (tri, g) in enumerate(tris) if g in ('jersey', 'shorts')]
     C = np.array([P[tri].mean(0) for _, tri in items])
@@ -322,7 +332,8 @@ def add_trim(P, N, G, tris, H, groups=('jersey', 'shorts'), radius=.0042, sides=
 
 def opening_shapes(H, SH):
     """The jersey and shorts openings as smooth shapes, the same ones the Houdini recipe carves (GARMENT_VEX), a little
-    larger so the fabric is cut cleanly before the ragged voxel rims. Each returns > 0 where fabric is kept."""
+    larger so the fabric is cut cleanly before the ragged voxel rims. Each returns > 0 where fabric is kept (kit_cut
+    joins them into one function per garment)."""
     def ell(c, r, grow):
         c, r = np.array(c, float), np.array(r, float) * grow
         return lambda p: np.sqrt((((p - c) / r) ** 2).sum(-1)) - 1
@@ -334,40 +345,274 @@ def opening_shapes(H, SH):
     shorts = [above(.334 * H), below(.572 * H)]   # the inseam stays as Houdini carved it (each leg stays a closed tube)
     return {'jersey': jersey, 'shorts': shorts}
 
-def clip_openings(P, N, G, tris, shapes):
-    """Cuts each garment along its opening shapes: triangles are clipped exactly where a shape's value crosses zero
-    (new vertices interpolated along the edges), so every neckline, armhole and hem is a smooth edge. (UVs and tangents
-    come later, from the unwrap of the final triangles, so there is nothing else to carry.)"""
+def smin(a, b, k):
+    """Polynomial smooth minimum: min(a, b) with the corner rounded over k."""
+    h = np.maximum(k - np.abs(a - b), 0) / k
+    return np.minimum(a, b) - h * h * k / 4
+
+def weld_shells(P, N, tris, groups=('jersey', 'shorts')):
+    """One connected shell per garment. The OBJ splits a point into several render vertices wherever its corner normals
+    differ (the sharp rims of the cut caps); each garment's render vertices at one position become one vertex with the
+    averaged normal, so the cut below makes every opening a single edge loop shared by the triangles on both sides."""
+    tris = list(tris)
+    for g in groups:
+        ids = sorted({v for t, gg in tris if gg == g for v in t})
+        if not ids: continue
+        rep = {}; first = {}
+        for i in ids: rep[i] = first.setdefault(tuple(P[i]), i)
+        for i in ids:
+            if rep[i] != i: N[rep[i]] = N[rep[i]] + N[i]
+        for i in set(rep.values()): N[i] = N[i] / max(np.linalg.norm(N[i]), 1e-9)
+        tris = [([rep[v] for v in t], gg) if gg == g else (t, gg) for t, gg in tris]
+        tris = [(t, gg) for t, gg in tris if len(set(t)) == 3]
+    return N, tris
+
+def kit_cut(S, H, SH):
+    """The jersey's and shorts' cuts as two passes of group -> f(P, N), > 0 where the fabric stays.
+    1. openings: the neck, armholes and hem of the jersey, the waist and legs of the shorts (opening_shapes), one function
+       per garment (the minimum of its shapes, the neck's three rounded into one curve), so where two cuts meet they make
+       one corner, never a sliver.
+    2. fabric side: Houdini builds each garment as a solid between its outer surface and an inner wall 4 mm under the skin
+       (sdf_hi.garment), joined at the openings. Once those are cut, the fabric is the side whose normal points away from
+       the body; the inner wall's points into it (where the two walls nearly touch, at the inseam, they still face
+       opposite ways)."""
+    def scaled(f, r):   # an ellipsoid shape's value in metres, about
+        return lambda X: f(X) * r
+    sh = opening_shapes(H, SH)
+    arm_L, arm_R, neck_f, neck_b, top = sh['jersey']
+    r_arm, r_nf, r_nb = .06 * H, .055 * H, .04 * H
+
+    def jersey(X, Nv):
+        neck = smin(smin(scaled(neck_f, r_nf)(X), scaled(neck_b, r_nb)(X), .02 * H), top(X), .01 * H)
+        hem = X[:, 1] - .552 * H     # the bottom cap (tucked into the shorts) goes: the hem is a clean edge just above it
+        return np.minimum.reduce([scaled(arm_L, r_arm)(X), scaled(arm_R, r_arm)(X), neck, hem])
+
+    def shorts(X, Nv):
+        return np.minimum.reduce([f(X) for f in sh['shorts']])
+
+    import sdf_hi   # (on the path: geometry made S)
+    def side(X, Nv):
+        return .02 * (Nv * sdf_hi.gradient(S.core, X)).sum(1)
+    return {'jersey': jersey, 'shorts': shorts}, {'jersey': side, 'shorts': side}
+
+def clip_openings(P, N, G, tris, cuts, snap=.0025):
+    """Cuts each group along its function (group -> f(P, N), > 0 where the surface stays): triangles are clipped exactly
+    where the value crosses zero (new vertices interpolated along the edges, shared by the triangles on both sides), so
+    every neckline, armhole and hem is a smooth edge. A vertex the edge would pass within `snap` metres of (and under a
+    third of the edge) is put on the edge itself, so the cut leaves no sliver triangles. (UVs and tangents come later,
+    from the unwrap of the final triangles, so there is nothing else to carry.) Also returns the vertices on the cut."""
+    vals = {}
+    for g, f in cuts.items():
+        ids = np.array(sorted({v for t, gg in tris if gg == g for v in t}))
+        if len(ids): vals.update(zip(ids.tolist(), f(P[ids], N[ids]).tolist()))
+    for t, g in tris:
+        if g not in cuts: continue
+        for a, b in ((t[0], t[1]), (t[1], t[2]), (t[2], t[0])):
+            fa, fb = vals[a], vals[b]
+            if (fa >= 0) == (fb >= 0) or fa == 0 or fb == 0: continue
+            u = fa / (fa - fb); L = np.linalg.norm(P[b] - P[a])
+            if u * L < snap and u < 1 / 3: vals[a] = 0.0
+            elif (1 - u) * L < snap and u > 2 / 3: vals[b] = 0.0
     P, N, G = list(P), list(N), list(G); cache = {}; out = []
-    def cut(a, b, fa, fb, g, k):
-        key = (min(a, b), max(a, b), k)
+    def cut(a, b):
+        key = (min(a, b), max(a, b))
         if key not in cache:
-            t = fa / (fa - fb)
-            P.append(P[a] + (P[b] - P[a]) * t); n = N[a] + (N[b] - N[a]) * t; N.append(n / max(np.linalg.norm(n), 1e-9))
-            G.append(g); cache[key] = len(P) - 1
+            a, b = key; fa, fb = vals[a], vals[b]
+            if fa == 0 or fb == 0: cache[key] = a if fa == 0 else b   # the edge passes through a vertex
+            else:
+                t = fa / (fa - fb)
+                P.append(P[a] + (P[b] - P[a]) * t); n = N[a] + (N[b] - N[a]) * t; N.append(n / max(np.linalg.norm(n), 1e-9))
+                G.append(G[a]); cache[key] = len(P) - 1
         return cache[key]
     for tri, g in tris:
-        polys = [list(tri)]
-        for k, f in enumerate(shapes.get(g, [])):
-            nxt = []
-            for poly in polys:
-                vals = [float(f(P[v])) for v in poly]
-                if min(vals) >= 0: nxt.append(poly); continue
-                if max(vals) < 0: continue
-                res = []
-                for i, a in enumerate(poly):
-                    b = poly[(i + 1) % len(poly)]; fa, fb = vals[i], vals[(i + 1) % len(poly)]
-                    if fa >= 0: res.append(a)
-                    if (fa >= 0) != (fb >= 0): res.append(cut(a, b, fa, fb, g, k))
-                if len(res) >= 3: nxt.append(res)
-            polys = nxt
-        for poly in polys:
-            for i in range(1, len(poly) - 1): out.append(([poly[0], poly[i], poly[i + 1]], g))
-    return np.array(P), np.array(N), np.array(G), out
+        if g not in cuts: out.append((tri, g)); continue
+        f = [vals[v] for v in tri]
+        if min(f) >= 0: out.append((tri, g)); continue
+        if max(f) <= 0: continue
+        poly = []
+        for i, a in enumerate(tri):
+            b = tri[(i + 1) % 3]
+            if f[i] >= 0: poly.append(a)
+            if (f[i] >= 0) != (f[(i + 1) % 3] >= 0): poly.append(cut(a, b))
+        poly = [v for i, v in enumerate(poly) if v != poly[i - 1]]
+        for i in range(1, len(poly) - 1): out.append(([poly[0], poly[i], poly[i + 1]], g))
+    on = set(cache.values()) | {v for v, f in vals.items() if f == 0}
+    return np.array(P), np.array(N), np.array(G), out, on
+
+def boundary_loops(P, tris, g):
+    """The open edge loops of one group: lists of vertex indices in the winding of the triangles that own the edges. Where
+    two loops touch at one vertex, the walk goes on along the straightest unused edge."""
+    count = {}
+    for t, gg in tris:
+        if gg != g: continue
+        for a, b in ((t[0], t[1]), (t[1], t[2]), (t[2], t[0])):
+            k = (min(a, b), max(a, b)); count[k] = count.get(k, 0) + 1
+    out = {}
+    for t, gg in tris:
+        if gg != g: continue
+        for a, b in ((t[0], t[1]), (t[1], t[2]), (t[2], t[0])):
+            if count[(min(a, b), max(a, b))] == 1: out.setdefault(a, []).append(b)
+    used, loops = set(), []
+    for a0 in out:
+        for b0 in out[a0]:
+            if (a0, b0) in used: continue
+            loop, a, b = [a0], a0, b0; used.add((a0, b0))
+            while b != a0:
+                loop.append(b)
+                options = [c for c in out.get(b, []) if (b, c) not in used]
+                if not options: break
+                d = P[b] - P[a]
+                c = max(options, key=lambda c: (P[c] - P[b]) @ d / max(np.linalg.norm(P[c] - P[b]) * np.linalg.norm(d), 1e-12))
+                used.add((b, c)); a, b = b, c
+            loops.append(loop)
+    return loops
+
+def fill_polygon(X):
+    """Triangles (index triples into X, in its order) of the smallest total area spanning a closed polygon of 3D points
+    (Liepa's hole filling, without the dihedral term): dynamic programming over the polygon's diagonals. Works for loops
+    that are not flat, like the strip round an inner thigh, where a fan or a flat triangulation would fold."""
+    n = len(X); W = np.zeros((n, n)); K = np.zeros((n, n), int)
+    for span in range(2, n):
+        for i in range(n - span):
+            j = i + span; ks = np.arange(i + 1, j)
+            area = np.linalg.norm(np.cross(X[ks] - X[i], X[j] - X[i]), axis=1)
+            cost = W[i, ks] + W[ks, j] + area; m = int(np.argmin(cost))
+            W[i, j] = cost[m]; K[i, j] = ks[m]
+    out, stack = [], [(0, n - 1)]
+    while stack:
+        i, j = stack.pop()
+        if j - i < 2: continue
+        k = K[i, j]; out.append([i, k, j]); stack += [(i, k), (k, j)]
+    return out
+
+def refine_patch(P, N, tris, target):
+    """Splits the patch's inner edges (shared by two of its triangles) at their middle, longest first, until none longer
+    than `target` is left that is the longest edge of both its triangles (longest-edge bisection, so it ends and keeps
+    the triangles' shapes). The patch's outer edges are never split, so it stays sealed to the cloth around it.
+    P, N: lists (new points appended, normals averaged); tris: lists of 3 indices. Returns the indices of the new points."""
+    new = []
+    edge_len = lambda a, b: float(np.linalg.norm(P[a] - P[b]))
+    def longest(t): return max(edge_len(t[i], t[(i + 1) % 3]) for i in range(3))
+    while True:
+        use = {}
+        for k, t in enumerate(tris):
+            for i in range(3):
+                a, b = t[i], t[(i + 1) % 3]; use.setdefault((min(a, b), max(a, b)), []).append(k)
+        inner = sorted(((edge_len(a, b), a, b) for (a, b), ks in use.items() if len(set(ks)) == 2), reverse=True)
+        pick = next(((L, a, b) for L, a, b in inner if L > target and all(L >= longest(tris[k]) - 1e-12 for k in use[(a, b)])), None)
+        if pick is None: return new
+        _, a, b = pick
+        n = N[a] + N[b]; P.append((P[a] + P[b]) / 2); N.append(n / max(np.linalg.norm(n), 1e-9)); m = len(P) - 1; new.append(m)
+        for k in use[(a, b)]:
+            t = tris[k]; i = [j for j in range(3) if {t[j], t[(j + 1) % 3]} == {a, b}][0]
+            p0, p1, p2 = t[i], t[(i + 1) % 3], t[(i + 2) % 3]
+            tris[k] = [p0, m, p2]; tris.append([m, p1, p2])
+
+def holes_of(loops, opening_of, P, opening):
+    """The holes among a garment's boundary loops, as closed vertex lists in the loops' winding, each with the set of its
+    edges (v, w) that are chords: edges not there yet, to be laid along the cloth. A loop on the opening cut all the way
+    round is an opening and stays; one off it all the way round is a hole. A loop partly on the cut is an opening with
+    gaps: each stretch off the cut (a run) is a hole, closed by a chord along the opening from the run's last vertex back
+    to its first, when both are on the same opening. On the shorts of the bigger variants the slit runs up one inner
+    thigh, over the crotch and down the other, so a run leaves one leg's hem and comes back on the other's, and a second
+    run goes back. Those two are cut at their highest point off the openings (the crotch, front and back) and joined
+    there by a chord across the crotch, which makes one hole per inner thigh, each closed along its own hem."""
+    holes = []
+    for loop in loops:
+        on = [opening_of.get(v) for v in loop]
+        if all(o is not None for o in on): continue
+        if all(o is None for o in on): holes.append((loop, set())); continue
+        k0 = next(k for k in range(len(loop)) if on[k] is not None and on[k - 1] is None)   # where a run ends on the cut
+        L = loop[k0:] + loop[:k0]; O = on[k0:] + on[:k0]
+        runs, k = [], 0
+        while k < len(L):   # L starts on the cut; each run: [last on-cut vertex, off-cut ..., first on-cut vertex]
+            if O[k] is not None and k + 1 < len(L) and O[k + 1] is None:
+                j = k + 1
+                while j < len(L) and O[j] is None: j += 1
+                runs.append(L[k:j + 1] if j < len(L) else L[k:] + L[:1]); k = j
+            else: k += 1
+        across = [r for r in runs if opening_of[r[0]] != opening_of[r[-1]]]
+        for r in runs:
+            if r not in across: holes.append((r, {(r[-1], r[0])}))
+        if len(across) == 2:
+            r1, r2 = across
+            if opening_of[r2[0]] != opening_of[r1[-1]]: r1, r2 = r2, r1
+            top = lambda r: 1 + int(np.argmax(opening(P[r[1:-1]], np.zeros((len(r) - 2, 3)))))
+            i1, i2 = top(r1), top(r2)
+            holes.append((r1[:i1 + 1] + r2[i2:], {(r1[i1], r2[i2]), (r2[-1], r1[0])}))
+            holes.append((r2[:i2 + 1] + r1[i1:], {(r2[i2], r1[i1]), (r1[-1], r2[0])}))
+        elif across:   # no pairing to make: one hole round all of them, chords between
+            poly, chords = [], set()
+            for r in across:
+                if poly: chords.add((poly[-1], r[0]))
+                poly += r
+            chords.add((poly[-1], poly[0])); holes.append((poly, chords))
+    return holes
+
+def tidy_shell(P, N, G, tris, g, S, opening_of, opening, log=print, step=.035):
+    """After the cut: keeps the garment's largest connected piece (scraps of the inner wall go) and closes its holes
+    (holes_of): the small ones the cut leaves where the fabric and the inner wall touch, and on the shorts the slit up each
+    inner thigh, where the thigh reaches through Houdini's inseam cut so its solid has no fabric. A patch spans the hole's
+    loop (its chords divided every `step` metres) with the smallest area (fill_polygon), refined to the same density, and
+    every point it adds is moved along its normal onto the cloth: the garment's outer surface (sdf_hi.garment without the
+    inner wall) or, where the body reaches past that, 3 mm over the skin. A chord's points move along the opening it
+    follows, if any. opening_of: vertex -> opening, for the vertices on the opening cut; opening: the garment's opening
+    function."""
+    ids = [k for k, (t, gg) in enumerate(tris) if gg == g]
+    parent = {}
+    def find(a):
+        while parent.setdefault(a, a) != a: parent[a] = parent[parent[a]]; a = parent[a]
+        return a
+    for k in ids:
+        t = tris[k][0]; parent[find(t[1])] = find(t[0]); parent[find(t[2])] = find(t[0])
+    area = {}
+    for k in ids:
+        t = tris[k][0]; r = find(t[0])
+        area[r] = area.get(r, 0) + np.linalg.norm(np.cross(P[t[1]] - P[t[0]], P[t[2]] - P[t[0]]))
+    keep = max(area, key=area.get) if area else None
+    tris = [(t, gg) for t, gg in tris if gg != g or find(t[0]) == keep]
+    holes = holes_of(boundary_loops(P, tris, g), opening_of, P, opening)
+    cloth = lambda X: np.minimum(S.garment(X, g, inner=False), S.core(X) - .003)
+    P, N, G = list(P), list(N), list(G); patches = []; closed = []
+    def onto_cloth(ids):
+        X = np.array([P[i] for i in ids]); Nv = np.array([N[i] for i in ids])
+        for _ in range(6):   # Newton steps along each point's normal, at most 1 cm each
+            f = cloth(X); df = (cloth(X + Nv * 1e-4) - cloth(X - Nv * 1e-4)) / 2e-4
+            X = X - Nv * np.clip(f / np.where(np.abs(df) < .2, 1, df), -.01, .01)[:, None]
+        for i, x in zip(ids, X): P[i] = x
+    chord_cache = {}
+    def chord(v, w):   # points every `step` on the line from v to w, shared by the two patches either side of it
+        if (w, v) in chord_cache: return chord_cache[(w, v)][::-1]
+        m = int(np.linalg.norm(P[w] - P[v]) / step); pts = []
+        along = opening_of.get(v) is not None and opening_of.get(v) == opening_of.get(w)
+        for k in range(1, m + 1):
+            f = k / (m + 1); x = (1 - f) * P[v] + f * P[w]; n = (1 - f) * N[v] + f * N[w]
+            if along:   # along the opening, not across it
+                e = np.eye(3) * 1e-4; d = np.array([opening((x + e[j])[None], n[None])[0] - opening((x - e[j])[None], n[None])[0] for j in range(3)])
+                d /= max(np.linalg.norm(d), 1e-12); n = n - d * (n @ d)
+            P.append(x); N.append(n / max(np.linalg.norm(n), 1e-9)); pts.append(len(P) - 1)
+        if pts: onto_cloth(pts)
+        chord_cache[(v, w)] = pts; return pts
+    for poly, chords in holes:
+        ring = []
+        for i, v in enumerate(poly):
+            ring.append(v); w = poly[(i + 1) % len(poly)]
+            if (v, w) in chords: ring += chord(v, w)
+        closed.append(round(float(sum(np.linalg.norm(P[ring[i]] - P[ring[i - 1]]) for i in range(len(ring)))) * UNITS_PER_M, 3))
+        ring = ring[::-1]   # the patch runs each edge the other way from the triangle that owns it
+        tri = [[ring[i] for i in t] for t in fill_polygon(np.array([P[v] for v in ring]))]
+        tri = [t for t in tri if len(set(t)) == 3]   # a loop that touches itself visits a vertex twice
+        added = refine_patch(P, N, tri, step)
+        if added: onto_cloth(added)
+        patches += [(t, g) for t in tri]
+    G += [g] * (len(P) - len(G))
+    log('  %s: %d holes closed (loop lengths, units: %s)' % (g, len(closed), sorted(closed, reverse=True)))
+    return np.array(P), np.array(N), np.array(G, dtype=object).astype(str), tris + patches
 
 def geometry(name, spec, objpath):
     """Stage 1: the final triangles. The Houdini OBJ, the cloud-meshed sneakers, afro and hands, the forearm reshaped into
-    the wrist, the openings clipped, buried and covered faces dropped, the trim added and the headband's normals averaged
+    the wrist, the jersey and shorts cut into whole shells (weld_shells, kit_cut, clip_openings, tidy_shell: exactly their
+    openings as edge loops), buried and covered faces dropped, the trim added and the headband's normals averaged
     (before the bake, which must see the normals the GLB carries). Returns the vertex arrays (P, N, G), the triangles
     [(indices, group)], the trim's weight sources and centre lines, and the joints."""
     v = spec['variants'][name]; H = v['height_m']
@@ -403,14 +648,24 @@ def geometry(name, spec, objpath):
         G = np.concatenate([G, vg])
         tris += [([base + int(a), base + int(b), base + int(c)], str(gg)) for (a, b, c), gg in zip(m['F'], gname)]
     G = G.astype(str)
-    # the forearm ends in the new wrist, and is cut cleanly just past the joint, where the hand takes over
+    # the forearm ends in the new wrist (and is cut just past the joint below, where the hand takes over)
     P, N = reshape_wrists(P, N, G, name)
-    shapes = opening_shapes(H, v['shoulder'])
-    for side in ('L', 'R'):
+    if os.path.join(SRC, 'bake') not in sys.path: sys.path.insert(0, os.path.join(SRC, 'bake'))
+    import sdf_hi
+    S = sdf_hi.PlayerSDF(spec, name)
+    # the jersey and shorts: one shell each, cut along their openings (neck, armholes, hem; waist, legs), then to the
+    # fabric side (the inner wall goes), then the largest piece kept and the holes left in it closed
+    N, tris = weld_shells(P, N, tris)
+    openings, fabric = kit_cut(S, H, v['shoulder'])
+    for side in ('L', 'R'):   # the forearm is cut cleanly just past the wrist joint, where the hand takes over
         o, R = cm.part_frame(name, 'hand_' + side)
-        shapes['arm_' + side] = [lambda p, o=o, ax=R[:, 1]: cm.ARM_CUT * H - (p - o) @ ax]
-    # clean openings: cut the jersey and shorts along smooth neckline, armhole, hem and waistband shapes, the arms at the hand
-    P, N, G, tris = clip_openings(P, N, G, tris, shapes)
+        openings['arm_' + side] = lambda X, Nv, o=o, ax=R[:, 1]: cm.ARM_CUT * H - (X - o) @ ax
+    P, N, G, tris, cut = clip_openings(P, N, G, tris, openings)
+    opening_of = {}   # the vertices on the opening cut, by the opening (edge loop) they are on
+    for g in ('jersey', 'shorts'):
+        for k, loop in enumerate(boundary_loops(P, tris, g)): opening_of.update({v: (g, k) for v in loop if v in cut})
+    P, N, G, tris, _ = clip_openings(P, N, G, tris, fabric)
+    for g in ('jersey', 'shorts'): P, N, G, tris = tidy_shell(P, N, G, tris, g, S, opening_of, openings[g])
     # hands: the anatomical cloud-meshed hand (palm, fingers, thumb), rigid on the wrist bone (rig), over the end of the forearm
     for side in ('L', 'R'):
         m = cm.part_mesh(name, 'hand_' + side); base = len(P); n = len(m['V'])
@@ -421,16 +676,12 @@ def geometry(name, spec, objpath):
     # cut caps, the hand's cap inside the forearm and the forearm's end under the hand
     low = np.where(P[:, 1] < .2 * H)[0]; covered = np.zeros(len(P), bool); covered[low] = cm.shoe_covers(name, P[low])
     drop = {ti for ti, (tri, g) in enumerate(tris) if g == 'core' and covered[tri].all()}
-    if os.path.join(SRC, 'bake') not in sys.path: sys.path.insert(0, os.path.join(SRC, 'bake'))
-    import sdf_hi
-    S = sdf_hi.PlayerSDF(spec, name)
     rules = {g: S.core for g in ('hair_buzz', 'hair_crop', 'hair_rows', 'hair_afro', 'headband')}
     for side in ('L', 'R'):
         rules['hand_' + side] = lambda X, side=side: cm.arm_sdf(name, side, X)
         rules['arm_' + side] = lambda X, side=side: cm.hand_sdf(name, side, X)
     drop |= buried(P, tris, rules)
     # skin hidden under the jersey and shorts is removed (no poke-through, fewer triangles)
-    drop |= inside_body(P, N, G, tris, H)
     hidden = covered_body(P, N, G, tris, H, .81 * H, drop)   # skin below the old neck height only (the collar stays)
     tris = [(tri, g) for ti, (tri, g) in enumerate(tris) if ti not in drop and not (g == 'core' and hidden[tri].all())]
     n_before_trim = len(P)

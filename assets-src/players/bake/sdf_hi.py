@@ -179,7 +179,10 @@ class PlayerSDF:
             d = smax(d, -sdell(L - [sd * (self.HW + .004), 0, -.015], (.026, .042, .03)), t)
         return d
 
-    def garment(self, P, part, core=None):
+    def garment(self, P, part, core=None, inner=True):
+        """The SDF of a garment or hair part. The jersey and shorts are solids between their outer surface and an inner wall
+        4 mm under the skin; inner=False leaves out that inner wall (the outer surface and the cut caps only), so the build
+        can tell the fabric from the wall (build_players.py fabric_side)."""
         H, SH = self.H, self.SH
         x, y, z = P[..., 0], P[..., 1], P[..., 2]
         if part == 'jersey':
@@ -193,7 +196,7 @@ class PlayerSDF:
                 d = smax(d, -sdell(P - [sd * .118 * H * SH, .762 * H, -.006 * H], (.05 * H, .072 * H, .075 * H)), .006)
             d = smax(d, -sdell(P - [0, .835 * H, .03 * H], (.048 * H, .06 * H, .06 * H)), .005)
             d = smax(d, -sdell(P - [0, .85 * H, -.035 * H], (.045 * H, .035 * H, .05 * H)), .005)
-            return smax(d, -(body + .004), .002)
+            return smax(d, -(body + .004), .002) if inner else d
         if part == 'shorts':
             body = self.core(P) if core is None else core
             d = body - .012
@@ -205,7 +208,7 @@ class PlayerSDF:
             d = smax(d, .325 * H - y, .004)
             d = smax(d, y - .578 * H, .004)
             d = d - .0018 * np.sin(np.arctan2(z, x) * 18.0) * smooth(.53 * H, .57 * H, y)
-            return smax(d, -(body + .004), .002)
+            return smax(d, -(body + .004), .002) if inner else d
         if part == 'shoes':
             d = None
             for sd in (-1.0, 1.0):

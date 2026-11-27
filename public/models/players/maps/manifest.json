@@ -2,10 +2,10 @@
  "center": {
   "files": {
    "center_gear.png": 1408992,
-   "center_kit.png": 790243,
-   "center_skin.png": 2021313,
-   "center_skin_1k.png": 812982,
-   "center_kit_512.png": 342751,
+   "center_kit.png": 822952,
+   "center_skin.png": 1897721,
+   "center_skin_1k.png": 782751,
+   "center_kit_512.png": 350262,
    "center_gear_512.png": 507887
   },
   "sizes": {
@@ -18,15 +18,15 @@
    "kit": 512,
    "gear": 512
   },
-  "uvHash": "728d674f854fbdcc"
+  "uvHash": "38bdaf9e23880fa9"
  },
  "forward": {
   "files": {
    "forward_gear.png": 1397151,
-   "forward_kit.png": 811960,
-   "forward_skin.png": 2034729,
-   "forward_skin_1k.png": 820062,
-   "forward_kit_512.png": 349297,
+   "forward_kit.png": 779277,
+   "forward_skin.png": 1963804,
+   "forward_skin_1k.png": 808069,
+   "forward_kit_512.png": 331802,
    "forward_gear_512.png": 506508
   },
   "sizes": {
@@ -39,15 +39,15 @@
    "kit": 512,
    "gear": 512
   },
-  "uvHash": "6975e5506569ae75"
+  "uvHash": "3e2b0e32f18dffa9"
  },
  "guard": {
   "files": {
    "guard_gear.png": 1412085,
-   "guard_kit.png": 812562,
-   "guard_skin.png": 2078857,
-   "guard_skin_1k.png": 829109,
-   "guard_kit_512.png": 344599,
+   "guard_kit.png": 802633,
+   "guard_skin.png": 1981978,
+   "guard_skin_1k.png": 809746,
+   "guard_kit_512.png": 339811,
    "guard_gear_512.png": 513488
   },
   "sizes": {
@@ -60,6 +60,6 @@
    "kit": 512,
    "gear": 512
   },
-  "uvHash": "0c005c2e1969f41d"
+  "uvHash": "d88822b944157e65"
  }
 }

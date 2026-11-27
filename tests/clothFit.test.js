@@ -36,7 +36,8 @@ test('cloth fit: skin under the kit and sleeves is marked, skin at the openings 
       const b = bones[skin.getX(i)];
       if (at(i, 0) && /wrist|elbow|head|neck/.test(b)) wrongly++;
     }
-    assert.ok(kit > 300, `${v}: the torso and hips under the kit (${kit})`);
+    // (the build drops the skin wholly under the kit, so what is left to mark is the skin near its openings: 250-550)
+    assert.ok(kit > 200, `${v}: the torso and hips under the kit (${kit})`);
     assert.equal(wrongly, 0, `${v}: no arm, hand or head skin is hidden by the kit`);
     void pos;
     assert.ok(named.body_mesh_lod1.geometry.attributes.kCover, 'the far mesh has it too');
@@ -57,15 +58,38 @@ test('hand fit: each wrist, its knuckle line part-way down the hand, and the fin
   }
 });
 
-test('binding: lifted off the body along the skin (not fattened), only real openings kept, scraps gone', async () => {
-  const { trimOpenings } = await import('../src/clothFit.js');
+test('binding: one tube per opening (neck, armholes, waist, legs), lifted off the body along the skin (not fattened)', async () => {
   for (const v of ['guard', 'forward', 'center']) {
     const g = await load(v),
       named = {};
     g.scene.traverse(o => o.isMesh && (named[o.name] = o));
-    const before = trimOpenings(named.trim_mesh),
-      scraps = before.length - before.reduce((s, x) => s + x, 0);
-    assert.ok(scraps > 0 && scraps < before.length * 0.3, `${v}: a few scraps (${scraps} vertices)`);
+    {
+      // the binding's pieces (welded at 2 mm): one closed tube per opening, each 0.2 units across or more (no scraps)
+      const a = named.trim_mesh.geometry.attributes.position,
+        idx = named.trim_mesh.geometry.index.array,
+        id = new Map(),
+        up = [],
+        root = x => (up[x] === x ? x : (up[x] = root(up[x]))),
+        vid = i => {
+          const k = [0, 1, 2].map(c => Math.round(a.getComponent(i, c) / 0.002)).join();
+          if (!id.has(k)) id.set(k, up.push(up.length) - 1);
+          return id.get(k);
+        };
+      for (let t = 0; t < idx.length; t += 3) {
+        const r = root(vid(idx[t]));
+        up[root(vid(idx[t + 1]))] = r;
+        up[root(vid(idx[t + 2]))] = r;
+      }
+      const box = new Map();
+      for (let i = 0; i < a.count; i++) {
+        const r = root(vid(i));
+        if (!box.has(r)) box.set(r, new THREE.Box3());
+        box.get(r).expandByPoint(new THREE.Vector3().fromBufferAttribute(a, i));
+      }
+      const sizes = [...box.values()].map(b => Math.max(...b.getSize(new THREE.Vector3()).toArray()));
+      assert.equal(sizes.length, 6, `${v}: binding pieces ${sizes.map(s => s.toFixed(2)).join(', ')}`);
+      assert.ok(Math.min(...sizes) >= 0.2, `${v}: no scrap of binding (${Math.min(...sizes).toFixed(3)})`);
+    }
     prepareCloth(g);
     const trim = named.trim_mesh,
       push = trim.geometry.attributes.kPush,
@@ -89,7 +113,6 @@ test('binding: lifted off the body along the skin (not fattened), only real open
     let away = 0,
       n = 0;
     for (const i of used) {
-      assert.equal(before[i], 1, `${v}: vertex ${i} of a scrap still drawn`);
       if (n >= 200 || i % 3) continue; // a sample is enough
       const p = new THREE.Vector3().fromBufferAttribute(pos, i),
         d = new THREE.Vector3().fromBufferAttribute(push, i),

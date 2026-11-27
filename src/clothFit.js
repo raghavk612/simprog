@@ -1,14 +1,14 @@
 // Clean bindings and no skin through the clothes, worked out once per body variant from the meshes themselves (the
 // Houdini source is not needed):
 //   the binding tube (trim_mesh round the neck, armholes and hems) is smoothed (smoothTrim): as modelled it kinked into
-//          flaps at the shoulders; its scraps on seam gaps are dropped (trimOpenings); kPush, the direction to lift it
-//          off the body (trimPush: the normal of the torso or thigh skin under it, not the tube's own normals)
+//          flaps at the shoulders; kPush, the direction to lift it off the body (trimPush: the normal of the torso or
+//          thigh skin under it, not the tube's own normals)
 //   kCover (a vertex attribute on the body skin) x: the skin vertex is under the kit (jersey or shorts), well away from
 //          any opening; y, z: it belongs to the limb an arm or leg sleeve follows. The skin shader (materials.js patch,
 //          cover) does not draw skin wholly under the kit, nor the sleeved limb's skin between the sleeve's two planes
 //          (sleeveRims), so a bending elbow or hip can never push it through and a sleeve's edge is straight.
-// The meshes' own topology is not trusted (their panels meet with gaps and their edges split into fragments): positions
-// are welded within a small tolerance, in the template's rest pose.
+// The meshes' vertices are split along their UV seams, so positions are welded within a small tolerance, in the template's
+// rest pose.
 import * as THREE from 'three';
 
 function worldPositions(mesh) {
@@ -114,56 +114,6 @@ export function smoothTrim(mesh, { steps = 6, lambda = 0.5, tol = 0.002 } = {}) 
   a.needsUpdate = true;
   g.computeBoundingSphere();
   return cur.length;
-}
-
-/* The binding's real openings (neck, armholes, waist, leg hems) and its scraps: the build also swept a tube along a few
-   short open edges where the kit's panels meet with gaps, which came out as crumpled bits 2 to 16 cm across (a white Y on
-   the hip; the real openings are 26 cm and more). They are not drawn; the skin near them stays drawn (they sit on holes
-   in the kit). Pieces are found by welding within 2 mm; a piece under `minSize` across is a scrap. Returns a flag per
-   vertex, 1 for a real opening. */
-export function trimOpenings(trim, minSize = 0.2) {
-  const a = trim.geometry.attributes.position,
-    n = a.count,
-    id = new Int32Array(n),
-    weld = new Map();
-  for (let i = 0; i < n; i++) {
-    const k = `${Math.round(a.getX(i) / 0.002)},${Math.round(a.getY(i) / 0.002)},${Math.round(a.getZ(i) / 0.002)}`;
-    if (!weld.has(k)) weld.set(k, weld.size);
-    id[i] = weld.get(k);
-  }
-  const up = Int32Array.from({ length: weld.size }, (_, i) => i),
-    root = x => {
-      while (up[x] !== x) x = up[x] = up[up[x]];
-      return x;
-    },
-    idx = triIndex(trim.geometry);
-  for (let t = 0; t < idx.length; t += 3) {
-    const r = root(id[idx[t]]);
-    up[root(id[idx[t + 1]])] = r;
-    up[root(id[idx[t + 2]])] = r;
-  }
-  const box = new Map();
-  for (let i = 0; i < n; i++) {
-    const r = root(id[i]);
-    if (!box.has(r)) box.set(r, new THREE.Box3());
-    box.get(r).expandByPoint(new THREE.Vector3(a.getX(i), a.getY(i), a.getZ(i)));
-  }
-  const real = new Map(
-      [...box].map(([r, b]) => [r, Math.max(...b.getSize(new THREE.Vector3()).toArray()) >= minSize]),
-    ),
-    out = new Uint8Array(n);
-  for (let i = 0; i < n; i++) out[i] = real.get(root(id[i])) ? 1 : 0;
-  return out;
-}
-/* Drops the triangles of a mesh that touch a vertex not kept. */
-function keepTriangles(mesh, keep) {
-  const g = mesh.geometry,
-    idx = triIndex(g),
-    out = [];
-  for (let t = 0; t < idx.length; t += 3)
-    if (keep[idx[t]] && keep[idx[t + 1]] && keep[idx[t + 2]]) out.push(idx[t], idx[t + 1], idx[t + 2]);
-  g.setIndex(out);
-  return (idx.length - out.length) / 3;
 }
 
 /* Whether a skin vertex follows the torso or a thigh most (the skin the kit can lie on). */
@@ -409,9 +359,7 @@ export function prepareCloth(template) {
   scene.traverse(o => {
     if (o.isMesh && o.name) named[o.name] = o;
   });
-  const out = { covered: {} },
-    openings = named.trim_mesh ? trimOpenings(named.trim_mesh) : null;
-  if (openings) out.scraps = openings.length - openings.reduce((s, v) => s + v, 0);
+  const out = { covered: {} };
   // the far mesh (scripts/player_lods.mjs) keeps the near mesh's vertices and only drops triangles: copy, do not redo
   const sameVerts = (a, b) =>
     a &&
@@ -437,14 +385,10 @@ export function prepareCloth(template) {
           arm && { mesh: arm, slot: 1 },
           leg && { mesh: leg, slot: 2 },
         ].filter(Boolean),
-        // every piece of the binding counts as an opening, the scraps too: they sit on holes in the kit, where the skin
-        // under them must stay drawn or the hole would show through the body (the scraps themselves are not drawn)
+        // the binding marks the openings (neck, armholes, waist, legs), where the skin stays drawn
         named.trim_mesh,
       ).reduce((c, v, i) => ((c[i % 3] += v), c), [0, 0, 0]);
     if (trim) {
-      // the scraps go (the far mesh keeps the near mesh's vertices, so the same flags fit it)
-      if (openings && trim.geometry.attributes.position.count === openings.length)
-        keepTriangles(trim, openings);
       smoothTrim(trim); // after the coverage, which reads where the openings are from the tube as modelled
       if (lod && sameVerts(named.trim_mesh, trim) && named.trim_mesh.geometry.attributes.kPush)
         trim.geometry.setAttribute('kPush', named.trim_mesh.geometry.attributes.kPush);
