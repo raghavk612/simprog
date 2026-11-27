@@ -30,7 +30,8 @@
   --ls: 1.1;
 }
 /* The navigation's italic capitals are for Latin type only: Japanese, Chinese and Devanagari, and the Modern and Readable
-   font settings, get upright text in its own case, never a synthesised slant. */
+   font settings, get upright text in its own case, never a synthesised slant. Every italic or uppercase rule in
+   theme.css belongs here (tests/theme.test.js checks). */
 :is(:lang(ja), :lang(zh), :lang(hi), .a11y-font-modern, .a11y-font-readable)
   :is(
     .topbar .main-nav .nav-item,
@@ -43,7 +44,16 @@
     .sb-next dd b,
     .page-head h1,
     .ph-ghost,
-    .ph-chip dt
+    .ph-chip dt,
+    .rail-card h2,
+    .strip-wrap h2,
+    .rail-tag,
+    .sc-tag,
+    .rail-facts dt,
+    .bracket-seed small,
+    .sc-num,
+    .sc-next,
+    .bracket-seed strong
   ) {
   font-style: normal;
   font-synthesis-style: none;

@@ -69,3 +69,19 @@ test('light mode is a palette, not a filter over the page', () => {
   assert.ok(!/invert\(/.test(read('../src/settings.js')));
   assert.ok(!/invert\(/.test(read('../src/a11y.css')));
 });
+test('italic or uppercase type in theme.css is upright and in its own case for ja, zh, hi and the Modern and Readable fonts', () => {
+  const a11y = read('../src/a11y.css');
+  const list =
+    /:is\(:lang\(ja\), :lang\(zh\), :lang\(hi\), \.a11y-font-modern, \.a11y-font-readable\)\s*:is\(([^{]*?)\)\s*\{/
+      .exec(a11y)[1]
+      .split(',')
+      .map(x => x.trim().replace(/\s+/g, ' '));
+  // the wordmark is a logotype, which keeps its own lettering
+  const exempt = ['.topbar .brand'];
+  const missing = [];
+  for (const m of theme.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g))
+    if (/font(-style)?:\s*italic|text-transform:\s*uppercase/.test(m[2]))
+      for (const sel of m[1].split(',').map(x => x.trim().replace(/\s+/g, ' ')))
+        if (!list.includes(sel) && !exempt.includes(sel)) missing.push(sel);
+  assert.deepEqual(missing, []);
+});
