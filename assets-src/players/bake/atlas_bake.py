@@ -182,7 +182,7 @@ class TrimSDF:
 def player_sdf(variant, trim_tubes=None, use_detail=True):
     """sdf_hi.PlayerSDF with D1's parts wired in: the arms as the GLB has them (arm_sdf), the hands, sneakers and afro in
     their own frames with their layouts, the sneakers' union as the 'shoes' occluder, the bare leg above the shoes, and
-    the trim tube."""
+    the trim tube, and each side of the core and the shorts alone (the shorts' AO)."""
     cm = cloud()
     S = sdf_hi.PlayerSDF(sdf_hi.load_spec(), variant, dt.detail if use_detail else None)
     H = S.H
@@ -200,6 +200,9 @@ def player_sdf(variant, trim_tubes=None, use_detail=True):
     S.add_local_part('hair_afro', lambda Q: cm.part_sdf(variant, 'hair_afro', Q + O), O, np.eye(3))
     S.add_override('shoes', lambda P: np.minimum(S.sdf('shoe_L', P), S.sdf('shoe_R', P)))
     S.add_override('legs', lambda P: np.maximum(S.core(P), FOOT_CUT * H - np.asarray(P)[..., 1]))
+    for side, sg in (('L', 1), ('R', -1)):   # one side of the body (x >= 0 is the player's left): see ao_side
+        S.add_override('core_' + side, lambda P, sg=sg: np.maximum(S.core(P), -sg * np.asarray(P)[..., 0]))
+        S.add_override('shorts_' + side, lambda P, sg=sg: np.maximum(S.garment(P, 'shorts'), -sg * np.asarray(P)[..., 0]))
     if trim_tubes:
         S.add_override('trim', TrimSDF(trim_tubes))
     return S
@@ -243,8 +246,25 @@ def _work(task):
     t, hit, Ph, nh = proto.surface_normals(lambda P, n: S.sdf_hi(part, P, n), P0, N0)
     if kind == 'normal':
         return t, hit, nh
+    if part == 'shorts':
+        return t, hit, ao_side(S, Ph, nh, N0)
     ao = proto.ambient_occlusion(lambda Q: S.scene(Q, ao_parts(part), hi_part=part, n=N0), Ph, nh)
     return t, hit, ao
+
+
+# the shorts' own detail (folds, seams) on each side, for its cavity AO
+for _s in ('L', 'R'): dt.DETAILS.setdefault('shorts_' + _s, dt.DETAILS.get('shorts', []))
+
+def ao_side(S, Ph, nh, N0):
+    """The shorts' AO, each leg of them occluded by its own side of the body only (and the jersey and the shoes): in the
+    rest pose the thighs nearly touch, and the other thigh would print a black inner leg on cloth that, in a stance or a
+    stride, faces the open court (as ao_parts keeps the swinging arms off the torso)."""
+    ao = np.zeros(len(Ph))
+    for side, m in (('L', Ph[:, 0] >= 0), ('R', Ph[:, 0] < 0)):
+        if m.any():
+            occ = ('core_' + side, 'jersey', 'shorts_' + side, 'shoes')
+            ao[m] = proto.ambient_occlusion(lambda Q: S.scene(Q, occ, hi_part='shorts_' + side, n=N0[m]), Ph[m], nh[m])
+    return ao
 
 
 def run(kind, parts, P0, N0, pool):

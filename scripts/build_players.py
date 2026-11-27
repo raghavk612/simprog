@@ -210,6 +210,40 @@ def covered_body(P, N, G, tris, H, neck_y, gone=(), margin=.07 / UNITS_PER_M):
         hidden[idx] = (along > -.004 * H) & (along < .04 * H) & (lateral < .012 * H) & facing
     return hidden
 
+def closest_on_triangles(X, A, B, C):
+    """For points X (n, 3) and triangles A, B, C (m, 3) each: the closest point on the triangles, its distance and the
+    triangle it is on (brute force in blocks; for a few hundred points)."""
+    best = np.full(len(X), np.inf); cp = np.zeros_like(X); tri = np.zeros(len(X), int)
+    for k in range(0, len(A), 256):
+        a, b, c = A[k:k + 256], B[k:k + 256], C[k:k + 256]
+        ab, ac = b - a, c - a; n = np.cross(ab, ac); nn = np.maximum((n * n).sum(1), 1e-18)
+        d = X[:, None, :] - a[None]
+        v = (np.cross(d, ac[None]) * n[None]).sum(-1) / nn; w = (np.cross(ab[None], d) * n[None]).sum(-1) / nn
+        inside = (v >= 0) & (w >= 0) & (v + w <= 1)
+        face = a[None] + v[..., None] * ab[None] + w[..., None] * ac[None]
+        q, qd = None, None
+        for p0, p1 in ((a, b), (b, c), (c, a)):   # off the face: the nearest point of the nearest edge
+            e = p1 - p0; t = np.clip(((X[:, None, :] - p0[None]) * e[None]).sum(-1) / np.maximum((e * e).sum(1), 1e-18), 0, 1)
+            qe = p0[None] + t[..., None] * e[None]; de = ((X[:, None, :] - qe) ** 2).sum(-1)
+            q, qd = (qe, de) if q is None else (np.where((de < qd)[..., None], qe, q), np.minimum(de, qd))
+        q = np.where(inside[..., None], face, q)
+        dist = ((X[:, None, :] - q) ** 2).sum(-1); j = dist.argmin(1); r = np.arange(len(X))
+        upd = dist[r, j] < best
+        best[upd] = dist[r, j][upd]; cp[upd] = q[r, j][upd]; tri[upd] = k + j[upd]
+    return cp, np.sqrt(best), tri
+
+def between_legs(P, G, tris, H, band=(.335, .455), half=.02, reach=.01):
+    """Skin between the thighs, under the crotch and above the hems (|x| under `half` H), within `reach` metres of the
+    shorts. Where the thighs touch, the inner-thigh fabric of each leg runs right over (or a few millimetres under) it, so
+    in a wide stance it would show through. It goes; the legs of the shorts are closed tubes."""
+    T = np.array([t for t, g in tris if g == 'shorts'])
+    skin = np.where((G == 'core') & (P[:, 1] > band[0] * H) & (P[:, 1] < band[1] * H) & (np.abs(P[:, 0]) < half * H))[0]
+    out = np.zeros(len(P), bool)
+    if not len(T) or not len(skin): return out
+    _, dist, _ = closest_on_triangles(P[skin], P[T[:, 0]], P[T[:, 1]], P[T[:, 2]])
+    out[skin] = dist < reach
+    return out
+
 def inside_body(P, N, G, tris, H):
     """Clothing triangles that lie inside the body. Houdini builds each garment as a solid that contains the body, so the
     carved neck scoop, armholes and the flat cut caps run through the skin and show as ragged patches. Dropping them leaves
@@ -557,7 +591,7 @@ def tidy_shell(P, N, G, tris, g, S, opening_of, opening, log=print, step=.035):
     every point it adds is moved along its normal onto the cloth: the garment's outer surface (sdf_hi.garment without the
     inner wall) or, where the body reaches past that, 3 mm over the skin. A chord's points move along the opening it
     follows, if any. opening_of: vertex -> opening, for the vertices on the opening cut; opening: the garment's opening
-    function."""
+    function. Also returns, for each point it adds, the side (True: x >= 0) of the thigh its patch covers."""
     ids = [k for k, (t, gg) in enumerate(tris) if gg == g]
     parent = {}
     def find(a):
@@ -572,8 +606,9 @@ def tidy_shell(P, N, G, tris, g, S, opening_of, opening, log=print, step=.035):
     keep = max(area, key=area.get) if area else None
     tris = [(t, gg) for t, gg in tris if gg != g or find(t[0]) == keep]
     holes = holes_of(boundary_loops(P, tris, g), opening_of, P, opening)
+    n_before = len(P)
     cloth = lambda X: np.minimum(S.garment(X, g, inner=False), S.core(X) - .003)
-    P, N, G = list(P), list(N), list(G); patches = []; closed = []
+    P, N, G = list(P), list(N), list(G); patches = []; closed = []; side = {}
     def onto_cloth(ids):
         X = np.array([P[i] for i in ids]); Nv = np.array([N[i] for i in ids])
         for _ in range(6):   # Newton steps along each point's normal, at most 1 cm each
@@ -605,9 +640,13 @@ def tidy_shell(P, N, G, tris, g, S, opening_of, opening, log=print, step=.035):
         added = refine_patch(P, N, tri, step)
         if added: onto_cloth(added)
         patches += [(t, g) for t in tri]
+        left = bool(np.mean([P[v][0] for v in poly]) >= 0)   # the thigh (side) the patch covers
+        for t in tri:
+            for v in t:
+                if v >= n_before: side.setdefault(v, left)
     G += [g] * (len(P) - len(G))
     log('  %s: %d holes closed (loop lengths, units: %s)' % (g, len(closed), sorted(closed, reverse=True)))
-    return np.array(P), np.array(N), np.array(G, dtype=object).astype(str), tris + patches
+    return np.array(P), np.array(N), np.array(G, dtype=object).astype(str), tris + patches, side
 
 def geometry(name, spec, objpath):
     """Stage 1: the final triangles. The Houdini OBJ, the cloud-meshed sneakers, afro and hands, the forearm reshaped into
@@ -665,7 +704,9 @@ def geometry(name, spec, objpath):
     for g in ('jersey', 'shorts'):
         for k, loop in enumerate(boundary_loops(P, tris, g)): opening_of.update({v: (g, k) for v in loop if v in cut})
     P, N, G, tris, _ = clip_openings(P, N, G, tris, fabric)
-    for g in ('jersey', 'shorts'): P, N, G, tris = tidy_shell(P, N, G, tris, g, S, opening_of, openings[g])
+    patch_side = {}   # vertex -> True for the left thigh, for the points the patches add (shorts_weights)
+    for g in ('jersey', 'shorts'):
+        P, N, G, tris, sd = tidy_shell(P, N, G, tris, g, S, opening_of, openings[g]); patch_side.update(sd)
     # hands: the anatomical cloud-meshed hand (palm, fingers, thumb), rigid on the wrist bone (rig), over the end of the forearm
     for side in ('L', 'R'):
         m = cm.part_mesh(name, 'hand_' + side); base = len(P); n = len(m['V'])
@@ -683,7 +724,9 @@ def geometry(name, spec, objpath):
     drop |= buried(P, tris, rules)
     # skin hidden under the jersey and shorts is removed (no poke-through, fewer triangles)
     hidden = covered_body(P, N, G, tris, H, .81 * H, drop)   # skin below the old neck height only (the collar stays)
-    tris = [(tri, g) for ti, (tri, g) in enumerate(tris) if ti not in drop and not (g == 'core' and hidden[tri].all())]
+    gap = between_legs(P, G, tris, H)   # every triangle touching it goes, so no sliver of it is left at the border
+    tris = [(tri, g) for ti, (tri, g) in enumerate(tris)
+            if ti not in drop and not (g == 'core' and (hidden[tri].all() or gap[tri].any()))]
     n_before_trim = len(P)
     P, N, G, tris, trim_src, tubes = add_trim(P, N, G, tris, H)
     # the headband is pushed out along its normals in the game (materials.js inflate); with split normals at its edges the
@@ -695,12 +738,67 @@ def geometry(name, spec, objpath):
         for ids in groups.values():
             n = N[ids].sum(0); N[ids] = n / max(np.linalg.norm(n), 1e-9)
     return {'name': name, 'v': v, 'H': H, 'J': J, 'P': P, 'N': N, 'G': G, 'tris': tris,
-            'trim_first': n_before_trim, 'trim_src': trim_src, 'trim_tubes': tubes}
+            'trim_first': n_before_trim, 'trim_src': trim_src, 'trim_tubes': tubes, 'patch_side': patch_side}
+
+def body_weights(P, geo, side_L):
+    """The skin's weights (n x bones) at points P: each leg's chain (hip > knee > ankle) below the hip, blended into the
+    pelvis by how far along the thigh a point is, the pelvis share then spread up the torso chain by height (pelvis >
+    spine > chest > neck) and the head above the jaw line. side_L: which leg a point belongs to (x >= 0 for the skin)."""
+    v, H, J = geo['v'], geo['H'], geo['J']
+    W = np.zeros((len(P), len(BONES)))
+    for side, sm in (('L', side_L), ('R', ~side_L)):
+        hip, knee = J['hip_' + side], J['knee_' + side]
+        thigh = (knee - hip) / np.linalg.norm(knee - hip)
+        t = (P - hip) @ thigh
+        legness = smooth(-.03 * H, .045 * H, t)  # 0 = pelvis, 1 = leg
+        bones = ['hip_' + side, 'knee_' + side, 'ankle_' + side]
+        jx = [hip, knee, J['ankle_' + side], J['toe_' + side]]
+        w = chain_weights(P[sm], jx, bones, [0, .022 * H, .012 * H])
+        for i, b in enumerate(bones): W[sm, BI[b]] += w[:, i] * legness[sm][:, None].ravel()
+        W[sm, BI['pelvis']] += 1 - legness[sm]
+    # torso chain: redistribute the pelvis share up the spine by height, then the head takes everything above the jaw line
+    # (head_weight), blending into the neck below it
+    torso = W[:, BI['pelvis']].copy()
+    ys = P[:, 1]
+    tb = ['pelvis', 'spine', 'chest', 'neck']
+    jy = [J['pelvis'][1], J['spine'][1], J['chest'][1], J['neck'][1]]
+    widths = [0, .02 * H, .02 * H, .035]
+    tw = np.zeros((len(P), len(tb) + 1)); tw[:, 0] = 1
+    for i in range(1, len(tb)):
+        w = smooth(jy[i] - widths[i], jy[i] + widths[i], ys); tw[:, i] = tw[:, i - 1] * w; tw[:, i - 1] *= (1 - w)
+    hw = head_weight(head_local(P, v))
+    tw[:, :len(tb)] *= (1 - hw)[:, None]; tw[:, len(tb)] = hw
+    for i, b in enumerate(tb + ['head']): W[:, BI[b]] = torso * tw[:, i]
+    return W
+
+def top4(W):
+    """The 4 strongest influences of each row, normalised: (indices, weights)."""
+    order = np.argsort(-W, axis=1)[:, :4]
+    JW = np.take_along_axis(W, order, 1); JW[JW < 1e-3] = 0
+    JW /= np.maximum(JW.sum(1, keepdims=True), 1e-9)
+    return np.where(JW > 0, order, 0), JW
+
+def shorts_weights(ids, geo):
+    """The shorts' weights at vertices ids: the skin's own (body_weights) evaluated at each point of the fabric, so the
+    cloth over a thigh turns with that thigh exactly as the skin under it, smoothly from vertex to vertex (copying the
+    nearest skin vertex made neighbours on the inner thigh take a crotch vertex's or the other leg's weights, and a wide
+    stance stretched them into streaks). Each point follows the leg on its side of the middle, and a patch's points the
+    thigh it covers (geo['patch_side']: where the thighs touch, one thigh's patch can cross the middle). At the
+    crotch, within 1.5 cm of the middle, the two legs' weights are averaged (half each at x = 0), so the crotch panel
+    never splits between the legs."""
+    H, P = geo['H'], geo['P'][ids]; x, y = P[:, 0], P[:, 1]
+    side = geo.get('patch_side', {})   # the points of a patch on an inner thigh belong to that thigh, whatever their x
+    side_L = np.array([side.get(int(v), xv >= 0) for v, xv in zip(ids, x)])
+    WL = body_weights(P, geo, np.ones(len(P), bool)); WR = body_weights(P, geo, np.zeros(len(P), bool))
+    b = ((1 - smooth(0, .02 * H, np.abs(x))) * smooth(.39 * H, .43 * H, y))[:, None] / 2
+    own, other = np.where(side_L[:, None], WL, WR), np.where(side_L[:, None], WR, WL)
+    return top4((1 - b) * own + b * other)
 
 def rig(geo):
     """Stage 4: skin weights (4 influences) for every vertex of the geometry: arms down the chest > shoulder > elbow >
-    wrist chain, legs, the torso chain and the head, garments and hair copying the skin under them, the hands rigid on the
-    wrist and the trim following the fabric it binds. Weights depend only on position and group, so a vertex split by a UV
+    wrist chain, legs, the torso chain and the head (body_weights), garments and hair copying the skin under them (the
+    shorts: the skin's weights at the fabric itself, shorts_weights), the hands rigid on the wrist and the trim following
+    the fabric it binds. Weights depend only on position and group, so a vertex split by a UV
     seam gets the same weights on both sides."""
     v, H, J, P, G = geo['v'], geo['H'], geo['J'], geo['P'], geo['G']
     W = np.zeros((len(P), len(BONES)))
@@ -713,58 +811,22 @@ def rig(geo):
         for i, b in enumerate(bones): W[m, BI[b]] = w[:, i]
     # body: legs below the hip, torso and head above
     core = G == 'core'
-    side_L = P[:, 0] >= 0
-    for side, sm in (('L', side_L), ('R', ~side_L)):
-        hip, knee = J['hip_' + side], J['knee_' + side]
-        thigh = (knee - hip) / np.linalg.norm(knee - hip)
-        t = (P - hip) @ thigh
-        legness = smooth(-.03 * H, .045 * H, t)  # 0 = pelvis, 1 = leg
-        m = core & sm
-        bones = ['hip_' + side, 'knee_' + side, 'ankle_' + side]
-        jx = [hip, knee, J['ankle_' + side], J['toe_' + side]]
-        w = chain_weights(P[m], jx, bones, [0, .022 * H, .012 * H])
-        for i, b in enumerate(bones): W[m, BI[b]] += w[:, i] * legness[m][:, None].ravel()
-        W[m, BI['pelvis']] += 1 - legness[m]
-    # torso chain: redistribute the pelvis share up the spine by height (pelvis > spine > chest > neck), then the head
-    # takes everything above the jaw line (head_weight), blending into the neck below it
-    torso = W[:, BI['pelvis']].copy()
-    ys = P[:, 1]
-    tb = ['pelvis', 'spine', 'chest', 'neck']
-    jy = [J['pelvis'][1], J['spine'][1], J['chest'][1], J['neck'][1]]
-    widths = [0, .02 * H, .02 * H, .035]
-    tw = np.zeros((len(P), len(tb) + 1)); tw[:, 0] = 1
-    for i in range(1, len(tb)):
-        w = smooth(jy[i] - widths[i], jy[i] + widths[i], ys); tw[:, i] = tw[:, i - 1] * w; tw[:, i - 1] *= (1 - w)
-    hw = head_weight(head_local(P, v))
-    tw[:, :len(tb)] *= (1 - hw)[:, None]; tw[:, len(tb)] = hw
-    tb = tb + ['head']
-    for i, b in enumerate(tb): W[core, BI[b]] = 0
-    for i, b in enumerate(tb): W[core, BI[b]] += torso[core] * tw[core, i]
+    W[core] = body_weights(P[core], geo, P[core, 0] >= 0)
     # keep the 4 strongest influences, normalised
-    order = np.argsort(-W, axis=1)[:, :4]
-    JW = np.take_along_axis(W, order, 1); JW[JW < 1e-3] = 0
-    JW /= np.maximum(JW.sum(1, keepdims=True), 1e-9)
-    JI = np.where(JW > 0, order, 0)
-    # clothing and hair follow the skin under them: copy the weights of the nearest body vertex of their source part
+    JI, JW = top4(W)
+    # clothing and hair follow the skin under them: copy the weights of the nearest body vertex of their source part (the
+    # shorts: the skin's weights at the fabric itself)
     for g, (srcpart, _) in GARMENTS.items():
         m = np.where(G == g)[0]
         if not len(m): continue
+        if g == 'shorts':
+            JI[m], JW[m] = shorts_weights(m, geo); continue
         src = np.where(G == srcpart)[0]
         near = np.empty(len(m), int)
         for k in range(0, len(m), 512):
             d = ((P[m[k:k + 512], None, :] - P[None, src, :]) ** 2).sum(-1)
             near[k:k + 512] = src[d.argmin(1)]
         JW[m] = JW[near]; JI[m] = JI[near]
-        if g == 'shorts':
-            # the crotch panel follows the pelvis, not one thigh, so the shorts never split down the middle on a wide stride
-            mid = (1 - smooth(.012 * H, .05 * H, np.abs(P[m, 0]))) * smooth(.43 * H, .49 * H, P[m, 1])
-            for k, vi in enumerate(m):
-                if mid[k] <= 0: continue
-                w = dict(zip(JI[vi].tolist(), (JW[vi] * (1 - mid[k])).tolist()))
-                w[BI['pelvis']] = w.get(BI['pelvis'], 0) + mid[k]
-                top = sorted(w.items(), key=lambda kv: -kv[1])[:4]
-                JI[vi] = [t[0] for t in top] + [0] * (4 - len(top)); JW[vi] = [t[1] for t in top] + [0] * (4 - len(top))
-                JW[vi] /= max(JW[vi].sum(), 1e-9)
     # hands: rigid on the wrist bone
     for side in ('L', 'R'):
         m = G == 'hand_' + side
