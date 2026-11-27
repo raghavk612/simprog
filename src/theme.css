@@ -1123,7 +1123,9 @@ body.live-match .subnav {
   flex: none;
 }
 /* A row of tabs too wide for the screen shows a ›/‹ plate at the edge that has more (shell.js keepNavTabInView sets
-   data-more), so the hidden tabs read as "scroll" and not as missing. */
+   data-more), so the hidden tabs read as "scroll" and not as missing. The plate sits flush with the scroller's edge (its
+   6px focus-ring padding cancelled) and keeps 12px of solid band before its arrow, so a tab's text is hidden under it,
+   never shown beside or around the arrow. */
 .subnav nav[data-more]::before,
 .subnav nav[data-more]::after {
   position: sticky;
@@ -1132,7 +1134,6 @@ body.live-match .subnav {
   display: none;
   align-items: center;
   align-self: stretch;
-  padding: 0 6px;
   background: var(--band);
   color: var(--ink-2);
   font-weight: 700;
@@ -1141,14 +1142,16 @@ body.live-match .subnav {
 .subnav nav:is([data-more='start'], [data-more='both'])::before {
   content: '‹';
   display: flex;
-  left: 0;
+  left: -6px;
   order: -1;
+  padding: 0 12px 0 6px;
 }
 .subnav nav:is([data-more='end'], [data-more='both'])::after {
   content: '›';
   display: flex;
-  right: 0;
+  right: -6px;
   order: 99;
+  padding: 0 6px 0 12px;
 }
 
 /* The scorebug: one solid plate of label and value pairs, a team block in a purple tint (never the button's fill) and
@@ -1596,13 +1599,16 @@ body.live-match .subnav {
   z-index: -2;
   background: linear-gradient(90deg, var(--accent-soft), transparent 60%) var(--band);
 }
-/* The ghost word starts at the header's centre (50vw from the band's left edge) and runs off the right edge. */
+/* The ghost word starts at the header's centre (50vw from the band's left edge) and ends by the grid's right edge (or the
+   render's slot): shell.js fitGhost sizes it so the whole word shows (pageHead.js ghostFit). Only a word too long even
+   at the floor size is cut, and it fades out (.squeezed). */
 .ph-ghost {
   z-index: -1;
   display: flex;
   align-items: center;
   overflow: hidden;
   padding-left: 50vw;
+  padding-right: calc(50vw - 50%);
   color: transparent;
   -webkit-text-stroke: 0.02em var(--line-2);
   font: italic 900
@@ -1700,12 +1706,14 @@ body.live-match .subnav {
       linear-gradient(0deg, transparent, var(--page) 18%);
     mask-composite: intersect;
   }
-  /* The ghost word ends where the render's slot begins, fading out over its last 140px, so the art never sits on its
-     letters (a word cut off by the trophy read as "JOURNA"). */
+  /* The ghost word's span ends 24px before the render's slot, so the art never sits on its letters. */
   .page-head:has(.ph-hero) .ph-ghost {
     margin-right: var(--ph-art);
-    mask-image: linear-gradient(90deg, var(--ink) calc(100% - 140px), transparent);
+    padding-right: 24px;
   }
+}
+.page-head .ph-ghost.squeezed {
+  mask-image: linear-gradient(90deg, var(--ink) calc(100% - 140px), transparent);
 }
 /* The header's ends: beyond the 1600px grid the band runs on into the window's margins, and those empty stretches carry
    the stripes of the top bar's (parallel to the slab edges, 2px every 14px, --stripe), faded at both ends of each. They
@@ -1896,7 +1904,7 @@ body.live-match .subnav {
   border: 2px solid var(--score);
   border-radius: 6px;
   pointer-events: none;
-  animation: coach-ring 2.4s ease-in-out infinite;
+  animation: coach-ring 2.4s ease-in-out 3; /* noticed, then still: nothing loops */
 }
 @keyframes coach-ring {
   50% {
@@ -1976,11 +1984,14 @@ body.live-match .subnav {
   line-height: 1.4;
   color: var(--ink);
 }
-/* The one thing to press: a flat outline that breathes. With reduced motion it simply stays. */
+/* The one thing to press: a flat outline that breathes three times when its step opens (tutorial.js glow adds .pulsing
+   for that long, so a redraw does not start it again), then stays. With reduced motion it simply stays. */
 .coach-glow {
   outline: 2px solid var(--score);
   outline-offset: 3px;
-  animation: coach-pulse 1.6s ease-in-out infinite;
+}
+.coach-glow.pulsing {
+  animation: coach-pulse 1.6s ease-in-out 3;
 }
 /* While a dialog is open it is the thing to act on: the ring and glow behind it go quiet (a glow inside it stays). */
 body:has(#modal[open]) .coach-ring {
@@ -2000,7 +2011,7 @@ body:has(#modal[open]) .coach-glow:not(#modal *) {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .coach-glow,
+  .coach-glow.pulsing,
   .coach-ring {
     animation: none;
   }
@@ -2975,7 +2986,6 @@ body[data-view='game'] .page-action {
     grid-template-columns: minmax(0, 1fr);
     max-height: calc(100dvh - 32px);
     overflow-y: auto;
-    overscroll-behavior: contain;
     scrollbar-width: thin;
   }
   /* Standings beside the rail: the table keeps its full width in the first column, the leaders and the achievements

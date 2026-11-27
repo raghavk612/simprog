@@ -10,7 +10,7 @@ import { arena, modal, app } from './ui/page.js';
 import { data, view, ui, setData, setView, restoreSave } from './ui/store.js';
 import { html } from './ui/markup.js';
 import { installGlyphFallback } from './ui/art.js';
-import { render, applyArena, syncCrowd, keepNavTabInView, syncCameraButtons } from './ui/shell.js';
+import { render, applyArena, syncCrowd, keepNavTabInView, syncCameraButtons, fitGhost } from './ui/shell.js';
 import { onAction, onChange } from './ui/actions.js';
 import { onShortcut, pickWithNumberKeys } from './ui/keyboard.js';
 import { fpHud, reportPlay, syncPresentation, watchTick } from './ui/playback.js';
@@ -83,6 +83,7 @@ setInterval(() => {
 }, 100);
 onSettingsChange(type => {
   applyArena();
+  if (type === 'a11y') fitGhost();
   if (type === 'a11y' && view === 'landing') syncTitlePause();
   if (type === 'sound') syncCrowd();
 });

@@ -36,7 +36,7 @@ import { practice } from './screens/prep.js';
 import { recruit, staffView, skillsView, gear } from './screens/breaks.js';
 import { NAV, navGroup, subTabs, breakFoot, subnavGo, tabNumber } from './nav.js';
 import { scorebugData } from './scorebug.js';
-import { headEnters } from './pageHead.js';
+import { headEnters, ghostFit, ghostSplit } from './pageHead.js';
 import { tabMorphs, scoreFlash } from './navMotion.js';
 import { game } from './screens/game.js';
 import { journal, bracketView, standingsView, dataView } from './screens/season.js';
@@ -296,6 +296,7 @@ export function render() {
       </div>`;
   }
   if (enter) $('.page-head')?.classList.add('enter');
+  fitGhost();
   for (const k of flash.keys) $(`.scorebug .sb-${k} dd`)?.classList.add('sb-flash');
   const target = $('#arena');
   if (target) {
@@ -322,6 +323,43 @@ export function render() {
     window.scrollTo(0, keep.y);
   }
 }
+// The ghost word is sized to show whole in its span (pageHead.js ghostFit), on two lines where a name of several words
+// needs that: measured after each render, when the window is resized, once the fonts have loaded and when the text size
+// or font changes (main.js). Its words are measured on one line at the CSS size; the name is kept in data-word.
+export function fitGhost() {
+  const g = $('.page-head .ph-ghost');
+  if (!g) return;
+  const name = (g.dataset.word ??= g.textContent);
+  g.textContent = name;
+  g.style.fontSize = '';
+  g.classList.remove('squeezed');
+  const cs = getComputedStyle(g),
+    size = parseFloat(cs.fontSize),
+    room = { w: g.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), h: g.clientHeight },
+    text = g.firstChild,
+    words = [...name.matchAll(/\S+/g)].map(m => [m.index, m.index + m[0].length]);
+  if (!text || !words.length || room.w <= 0) return;
+  const width = (a, b) => {
+    const r = document.createRange();
+    r.setStart(text, words[a][0]);
+    r.setEnd(text, words[b - 1][1]);
+    return r.getBoundingClientRect().width;
+  };
+  const split = ghostSplit(words.length, width),
+    fit = ghostFit({ one: width(0, words.length), two: split?.widest, room, size });
+  if (fit.size !== size) g.style.fontSize = `${fit.size}px`;
+  g.classList.toggle('squeezed', fit.squeezed);
+  if (fit.lines === 2) {
+    const at = words[split.at][0];
+    g.replaceChildren(name.slice(0, at).trimEnd(), document.createElement('br'), name.slice(at));
+  }
+}
+let fitFrame = 0;
+window.addEventListener('resize', () => {
+  cancelAnimationFrame(fitFrame);
+  fitFrame = requestAnimationFrame(fitGhost);
+});
+document.fonts?.addEventListener?.('loadingdone', fitGhost);
 // A nav button opens its page with the open tab's plate morphing into place (navMotion.js tabMorphs says when; theme.css
 // draws it in 180 ms). The page itself swaps at once and stays clickable while the plate moves.
 export function goFromNav(v) {

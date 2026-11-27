@@ -71,6 +71,8 @@ write templates over as many lines as you like. Put text from the save or the da
 - **A page's header:** start the page with `header(title, subLine)` (`markup.js`); it draws the band, the ghost word (the
   page's `nav.<route>` name), the group's render from 1200 px and the page's stat chips (`headChips` in `pageHead.js`:
   at most three, never a number the scorebug shows). Home has none. The title slides in only when the page changes.
+  The ghost word is sized after each render to show whole beside the render (`fitGhost` in `shell.js`, `ghostFit` in
+  `pageHead.js`).
 - **The layout** (`theme.css`, "Layout that fills the screen"): everything sits on one 1600 px grid (`--shell-max`);
   beyond it a wide screen shows the floor texture in the margins. Journal, Bracket, Standings and Skills wrap their body
   in `withRail()` (`rail.js`): a 320 px rail from 1440 px, under the page below that, with information and secondary

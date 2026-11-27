@@ -203,12 +203,23 @@ function pinned(el) {
   return false;
 }
 // The page redraws under the card, so the glow is put back on every tick.
+// It pulses only in the first PULSE_MS of its step (three breaths, theme.css): a redraw after that puts back a still
+// outline, so the glow never loops.
+const PULSE_MS = 3 * 1600;
+let pulse = { key: null, at: 0 };
 function glow(r) {
   const sel = r?.open === 'card' ? step(r).act : null;
   document.querySelectorAll('.coach-glow').forEach(x => {
-    if (!sel || !x.matches(sel)) x.classList.remove('coach-glow');
+    if (!sel || !x.matches(sel)) x.classList.remove('coach-glow', 'pulsing');
   });
-  if (sel) document.querySelectorAll(sel).forEach(x => x.classList.add('coach-glow'));
+  if (!sel) return;
+  const key = `${r.lesson.id}:${r.i}`;
+  if (pulse.key !== key) pulse = { key, at: performance.now() };
+  const pulsing = performance.now() - pulse.at < PULSE_MS;
+  document.querySelectorAll(sel).forEach(x => {
+    x.classList.add('coach-glow');
+    if (pulsing) x.classList.add('pulsing');
+  });
 }
 function open(r, c) {
   const s = step(r);

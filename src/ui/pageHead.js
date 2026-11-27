@@ -35,3 +35,31 @@ export function headEnters({ from, to, way = false, reduced = false }) {
   if (way || reduced) return false;
   return !NO_HEAD.includes(to) && to !== 'game';
 }
+
+// The ghost word shows whole in the free span between the text column and the render slot (or the grid's edge): its
+// font size shrinks from the CSS size until the name fits on one line, down to GHOST_FLOOR px. A name of several words
+// that needs less than that goes on two lines instead (both within the band's height, at the 0.8 line height). Only a
+// name that fits neither way (a long one in another language) stays at the floor on one line and fades out at its end
+// (`squeezed`). `one` is the name's width on one line at `size`, `two` the wider of its two lines (ghostSplit), `room`
+// the span ({ w, h }); nothing changes where there is no room to measure (the ghost is hidden on a phone).
+export const GHOST_FLOOR = 64;
+const LINE = 0.8;
+const down = x => Math.floor(x * 0.98 * 2) / 2;
+export function ghostFit({ one, two = null, room, size }) {
+  if (!one || !room.w || one <= room.w) return { size, lines: 1, squeezed: false };
+  const single = down((size * room.w) / one);
+  if (single >= GHOST_FLOOR) return { size: single, lines: 1, squeezed: false };
+  const double = two ? down(Math.min((size * room.w) / two, room.h / (2 * LINE), size)) : 0;
+  if (double >= GHOST_FLOOR) return { size: double, lines: 2, squeezed: false };
+  return { size: GHOST_FLOOR, lines: 1, squeezed: (one * GHOST_FLOOR) / size > room.w };
+}
+// Where a name of `n` words breaks into two lines so the wider line is as short as it can be. `width(a, b)` is the
+// width of words a to b - 1 on one line. null for a single word.
+export function ghostSplit(n, width) {
+  let best = null;
+  for (let at = 1; at < n; at++) {
+    const widest = Math.max(width(0, at), width(at, n));
+    if (!best || widest < best.widest) best = { at, widest };
+  }
+  return best;
+}

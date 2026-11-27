@@ -3,7 +3,15 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as E from '../src/engine.js';
 import { NAV } from '../src/ui/nav.js';
-import { headModel, headChips, headEnters, HERO_GROUPS } from '../src/ui/pageHead.js';
+import {
+  headModel,
+  headChips,
+  headEnters,
+  ghostFit,
+  ghostSplit,
+  GHOST_FLOOR,
+  HERO_GROUPS,
+} from '../src/ui/pageHead.js';
 
 const data = JSON.parse(fs.readFileSync(new URL('../public/data/kangs.json', import.meta.url), 'utf8'));
 const season = () => {
@@ -86,4 +94,55 @@ test('the header enters only when the view changes, never on the way to play or 
   assert.equal(headEnters({ from: null, to: 'practice' }), false, 'first paint');
   assert.equal(headEnters({ from: 'roster', to: 'home' }), false, 'Home has no header');
   assert.equal(headEnters({ from: 'home', to: 'practice' }), true);
+});
+
+const room = { w: 355, h: 176 };
+test('the ghost word is sized to show whole in the free span, shrinking below its usual size when it must', () => {
+  // At its CSS size (173 px at 1440) JOURNAL is 780 px wide; the span before the render is 355 px.
+  const fit = ghostFit({ one: 780, room, size: 173 });
+  assert.equal(fit.lines, 1);
+  assert.ok(fit.size < 173 && fit.size >= GHOST_FLOOR, `${fit.size}`);
+  assert.ok((780 * fit.size) / 173 <= 355, 'the whole word fits');
+  assert.equal(fit.squeezed, false);
+  assert.deepEqual(
+    ghostFit({ one: 300, room, size: 173 }),
+    { size: 173, lines: 1, squeezed: false },
+    'a short word keeps its size',
+  );
+  assert.deepEqual(
+    ghostFit({ one: 780, room: { w: 0, h: 0 }, size: 173 }),
+    { size: 173, lines: 1, squeezed: false },
+    'hidden (a phone)',
+  );
+});
+test('a name of several words too long for one line at the floor goes on two lines before it is ever cut', () => {
+  // REAL KANGS DATA: 1300 px on one line at 173 px (47 px at 355), REAL KANGS / DATA widest 870 px.
+  const two = ghostFit({ one: 1300, two: 870, room, size: 173 });
+  assert.equal(two.lines, 2);
+  assert.equal(two.squeezed, false);
+  assert.ok(two.size >= GHOST_FLOOR && (870 * two.size) / 173 <= 355, `${two.size}`);
+  assert.ok(two.size * 0.8 * 2 <= room.h, 'both lines fit the band');
+  // One line at the floor is preferred over two when it fits there.
+  assert.equal(ghostFit({ one: 900, two: 470, room, size: 173 }).lines, 1);
+});
+test('only a name that fits neither way is cut: at the floor, fading out at its end', () => {
+  assert.deepEqual(ghostFit({ one: 2400, two: 1300, room, size: 173 }), {
+    size: GHOST_FLOOR,
+    lines: 1,
+    squeezed: true,
+  });
+  assert.deepEqual(
+    ghostFit({ one: 2400, room, size: 173 }),
+    { size: GHOST_FLOOR, lines: 1, squeezed: true },
+    'one long word',
+  );
+  // At the floor exactly it fits: not cut, whatever the rounding.
+  assert.equal(ghostFit({ one: 355 * (173 / GHOST_FLOOR), room, size: 173 }).squeezed, false);
+});
+test('the two-line split keeps the wider line as short as it can', () => {
+  // Word widths 300, 400, 200 with 40 px spaces: [REAL] [KANGS DATA] is 640 wide, [REAL KANGS] [DATA] is 740.
+  const words = [300, 400, 200],
+    width = (a, b) => words.slice(a, b).reduce((t, x) => t + x, 0) + 40 * (b - a - 1);
+  assert.deepEqual(ghostSplit(3, width), { at: 1, widest: 640 });
+  assert.equal(ghostSplit(1, width), null, 'one word cannot split');
 });
