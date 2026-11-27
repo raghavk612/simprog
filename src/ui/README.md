@@ -28,6 +28,7 @@ write templates over as many lines as you like. Put text from the save or the da
 | `shell.js`           | `PAGES`, top bar, the band under it, `render()`, `go()`, camera buttons       |
 | `scorebug.js`        | what the band's scorebug shows (next game, record, tokens, slots, track)      |
 | `pageHead.js`        | what a page header holds (ghost word, group render, stat chips), its entrance |
+| `navMotion.js`       | when the open tab's plate morphs and when the record or tokens flash          |
 | `seasonModel.js`     | the Journal's game strip, the Bracket's seed, what the context rail holds     |
 | `rail.js`            | the context rail beside Journal, Bracket, Standings and Skills                |
 | `renderKeep.js`      | what `render()` keeps from the DOM: open drawers, tables' side scroll         |
@@ -78,7 +79,9 @@ write templates over as many lines as you like. Put text from the save or the da
 - **The navigation's look** (`theme.css`, "Game navigation"): slanted slabs at one angle (`--slant`), each slant on a
   decorative `::before` so the button itself stays a rectangle with its focus ring; the open page is an inverted plate
   with a `--tab-edge` bar. Sub-tabs carry a numeral only where their order is real (`tabNumber` in `nav.js`). High
-  contrast and forced colours for it are at the end of `a11y.css`.
+  contrast and forced colours for it are at the end of `a11y.css`. Motion plays once per change and never loops: a nav
+  click morphs the open plates (a View Transition, `goFromNav` in `shell.js`), and a changed record or token count
+  flashes a gold underline; `navMotion.js` decides both, and reduced motion and Fewer flashes turn them off.
 
 Run `npm test`, and `npm run format` before committing.
 

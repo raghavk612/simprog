@@ -1085,6 +1085,26 @@ body.live-match .subnav {
   height: 4px;
   background: var(--tab-edge);
 }
+/* A nav click: the open tab's plate and the open group's plate morph into their new places over 180ms (shell.js
+   goFromNav starts a View Transition; navMotion.js says when). Only the plates are captured: the page itself swaps at
+   once, and clicks go straight through to it while the plates move. Reduced motion skips it (a11y.css and the JS). */
+:root {
+  view-transition-name: none;
+}
+::view-transition {
+  pointer-events: none;
+}
+.subnav .sub-item[aria-current='page'] {
+  view-transition-name: current-tab;
+}
+.topbar .main-nav .nav-item.active {
+  view-transition-name: current-group;
+}
+::view-transition-group(current-tab),
+::view-transition-group(current-group) {
+  animation-duration: 180ms;
+  animation-timing-function: cubic-bezier(0.3, 0.7, 0.2, 1);
+}
 /* The break's name: a level stamp, never rotated. */
 .subnav .break-name {
   flex: none;
@@ -1224,6 +1244,30 @@ body.live-match .subnav {
   color: var(--score);
   font: 800 calc(22px * var(--ts, 1) * var(--ls, 1)) / 1 var(--display);
   font-variant-numeric: tabular-nums;
+}
+/* A record or token count that just changed: a gold underline flashes once under it, 300ms (navMotion.js scoreFlash
+   adds .sb-flash for one render). At rest the line is invisible, so with its animation switched off (reduced motion,
+   Fewer flashes) nothing shows. */
+.scorebug dd.sb-flash {
+  position: relative;
+}
+.scorebug dd.sb-flash::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0; /* just above the season track along the plate's foot */
+  height: 2px;
+  background: var(--tab-edge);
+  opacity: 0;
+  pointer-events: none;
+  animation: sb-flash 300ms ease-out;
+}
+@keyframes sb-flash {
+  0%,
+  35% {
+    opacity: 1;
+  }
 }
 .sb-next dd > span {
   color: var(--ink-2);

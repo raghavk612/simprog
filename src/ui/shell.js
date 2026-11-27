@@ -37,6 +37,7 @@ import { recruit, staffView, skillsView, gear } from './screens/breaks.js';
 import { NAV, navGroup, subTabs, breakFoot, subnavGo, tabNumber } from './nav.js';
 import { scorebugData } from './scorebug.js';
 import { headEnters } from './pageHead.js';
+import { tabMorphs, scoreFlash } from './navMotion.js';
 import { game } from './screens/game.js';
 import { journal, bracketView, standingsView, dataView } from './screens/season.js';
 import { demo, renderDemoGuide, leaveDemo } from './demo.js';
@@ -200,6 +201,8 @@ export const wayClick = on => {
 const reducedMotion = () =>
   document.documentElement.classList.contains('a11y-reduced-motion') ||
   !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+// The record and tokens the scorebug last showed (navMotion.js scoreFlash): a change flashes once on the next render.
+let scoreMemo = null;
 // On a phone the page's .page-action is a bar docked above the tab bar: its height goes into --action-bar-h, so the
 // page keeps that much room at its foot and notifications sit above it (theme.css).
 const actionBar =
@@ -250,8 +253,15 @@ export function render() {
   const enter = headEnters({ from: renderedView, to: view, way: viaWay, reduced: reducedMotion() });
   viaWay = false;
   renderedView = view;
+  const live = isLiveMatch(view, state, ui),
+    flash = scoreFlash(scoreMemo, view === 'landing' ? null : state, {
+      shown: !live,
+      reduced: reducedMotion(),
+      noFlash: document.documentElement.classList.contains('a11y-no-flash'),
+    });
+  scoreMemo = flash.memo;
   document.body.dataset.view = view;
-  document.body.classList.toggle('live-match', isLiveMatch(view, state, ui));
+  document.body.classList.toggle('live-match', live);
   document.body.append(host);
   if (view === 'landing') {
     app.innerHTML = landing();
@@ -286,6 +296,7 @@ export function render() {
       </div>`;
   }
   if (enter) $('.page-head')?.classList.add('enter');
+  for (const k of flash.keys) $(`.scorebug .sb-${k} dd`)?.classList.add('sb-flash');
   const target = $('#arena');
   if (target) {
     arena.mount(target);
@@ -310,6 +321,19 @@ export function render() {
     if (el && !el.disabled) el.focus({ preventScroll: true });
     window.scrollTo(0, keep.y);
   }
+}
+// A nav button opens its page with the open tab's plate morphing into place (navMotion.js tabMorphs says when; theme.css
+// draws it in 180 ms). The page itself swaps at once and stays clickable while the plate moves.
+export function goFromNav(v) {
+  const morph = tabMorphs({
+    nav: true,
+    from: view,
+    to: v,
+    supported: typeof document.startViewTransition === 'function',
+    reduced: reducedMotion(),
+  });
+  if (morph) document.startViewTransition(() => go(v));
+  else go(v);
 }
 // The ambient crowd runs only during a live game.
 export function syncCrowd() {

@@ -15,7 +15,8 @@ import { state, view, save, ui, setSort } from './store.js';
 import { arena, modal } from './page.js';
 import { signed } from './markup.js';
 import { dismissText } from '../shopFit.js';
-import { go, render, setCamera, wayClick } from './shell.js';
+import { go, goFromNav, render, setCamera, wayClick } from './shell.js';
+import { NAV_BUTTONS } from './navMotion.js';
 import { notify, actionToast } from './toast.js';
 import { confirmDialog, openSettings, credits } from './dialogs.js';
 import { rules } from './handbook.js';
@@ -274,7 +275,8 @@ export async function onAction(e) {
   wayClick(el.classList.contains('primary'));
   if (el.dataset.view) {
     play('uiClick');
-    go(el.dataset.view);
+    if (el.matches(NAV_BUTTONS)) goFromNav(el.dataset.view);
+    else go(el.dataset.view);
     return;
   }
   const a = el.dataset.action;

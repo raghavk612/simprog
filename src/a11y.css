@@ -498,8 +498,26 @@ button.small,
   scroll-behavior: auto !important;
 }
 
+/* The nav's tab morph is a View Transition: its pseudo-elements hang off the root, outside the rule above, so they need
+   their own (shell.js also skips starting it). The scorebug's flash is an ::after, covered above; the media query
+   covers the system setting when the app's own is off. */
+.a11y-reduced-motion::view-transition-group(*),
+.a11y-reduced-motion::view-transition-old(*),
+.a11y-reduced-motion::view-transition-new(*) {
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  .scorebug dd.sb-flash::after {
+    animation: none !important;
+  }
+}
+
 /* ---- Fewer flashes: no animation or hover brightness changes ---- */
-.a11y-no-flash * {
+.a11y-no-flash *,
+.a11y-no-flash .scorebug dd.sb-flash::after {
   animation: none !important;
 }
 .a11y-no-flash button:hover:not(:disabled) {
