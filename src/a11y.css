@@ -1353,6 +1353,14 @@ dialog:has(.settings) .modal-content {
   .coach-glyph {
     stroke: CanvasText;
   }
+  /* The way forward has no border of its own (its fill is the cue), so the system would draw it as bare text: a border
+     gives it the button's outline. */
+  .primary {
+    border: 2px solid ButtonText;
+  }
+  .primary:disabled {
+    border-color: GrayText;
+  }
   /* Page headers: the ghost word, the render (url images survive forced colours) and the chips' plates go; each chip
      keeps a border. */
   .ph-ghost,
