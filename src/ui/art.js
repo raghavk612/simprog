@@ -42,17 +42,33 @@ export function uiPicture(
 }
 
 // A small glyph (the token coin, the coach's whistle) in a 24 px box. Its SVG stays underneath: theme.css shows it when
-// the image fails (installGlyphFallback marks the box), in high contrast and in forced colours, so the box is never empty.
+// the image fails, in high contrast and in forced colours, so the box is never empty. render() rebuilds the page after
+// every change, so a failure is remembered by asset name (failedGlyphs): later renders draw the SVG alone, with no
+// image to flash empty or request again.
+const failedGlyphs = new Set();
 export function glyphImage(name, svgPath, svgCls = '') {
-  return `<span class="art-glyph"><svg class="${svgCls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${svgPath}</svg>${uiPicture(name, { w: 24, h: 24, files: trio(name), blank: '(forced-colors: active)' })}</span>`;
+  const failed = failedGlyphs.has(name),
+    icon = `<svg class="${svgCls}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${svgPath}</svg>`;
+  return `<span class="art-glyph${failed ? ' no-img' : ''}" data-glyph="${name}">${icon}${
+    failed ? '' : uiPicture(name, { w: 24, h: 24, files: trio(name), blank: '(forced-colors: active)' })
+  }</span>`;
 }
 // The Kangs mark (purple, with white details) at 42 px, for themed pages in light mode; `cls` goes on the picture.
 export const logoMark = cls =>
   uiPicture('logo', { w: 42, h: 42, cls, imgCls: 'logo-img', files: logoTrio, blank: '' });
 
-// An image that fails leaves its glyph box showing the SVG underneath (error does not bubble: listen on capture).
+// An image that fails is remembered and leaves its box showing the SVG underneath (error does not bubble: capture).
 export function installGlyphFallback(doc = document) {
-  doc.addEventListener('error', e => e.target?.closest?.('.art-glyph')?.classList.add('no-img'), true);
+  doc.addEventListener(
+    'error',
+    e => {
+      const box = e.target?.closest?.('.art-glyph');
+      if (!box) return;
+      failedGlyphs.add(box.dataset.glyph);
+      box.classList.add('no-img');
+    },
+    true,
+  );
 }
 
 // The empty-state render (a name in public/images/ui/) a page shows while it has nothing to list, else null.

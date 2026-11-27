@@ -2,7 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as E from '../src/engine.js';
-import { emptyArt, isLiveMatch, uiPicture, glyphImage, logoMark } from '../src/ui/art.js';
+import {
+  emptyArt,
+  isLiveMatch,
+  uiPicture,
+  glyphImage,
+  logoMark,
+  installGlyphFallback,
+} from '../src/ui/art.js';
 import { headModel } from '../src/ui/pageHead.js';
 
 const data = JSON.parse(fs.readFileSync(new URL('../public/data/kangs.json', import.meta.url), 'utf8'));
@@ -83,4 +90,19 @@ test('every wired file exists, in both formats, within the spec budgets', () => 
       for (const x of ['avif', 'webp']) assert.ok(size(`${n}-${px}.${x}`) <= 6 * 1024, `${n}-${px}.${x}`);
   for (const px of [42, 84, 126])
     for (const x of ['avif', 'webp']) assert.ok(size(`logo-${px}.${x}`) <= 10 * 1024, `logo-${px}.${x}`);
+});
+
+test('a glyph image that failed is not emitted again: later renders draw the SVG only', () => {
+  let onError;
+  installGlyphFallback({ addEventListener: (type, fn) => type === 'error' && (onError = fn) });
+  const box = { dataset: { glyph: 'coin' }, classList: { add() {} } };
+  assert.match(glyphImage('coin', '<path/>', 'sb-coin'), /<img /, 'before a failure it asks for the image');
+  onError({ target: { closest: () => box } });
+  for (let i = 0; i < 3; i++) {
+    const g = glyphImage('coin', '<path/>', 'sb-coin');
+    assert.doesNotMatch(g, /<img|<picture|<source/, 'no image to request again');
+    assert.match(g, /art-glyph no-img/);
+    assert.match(g, /<svg class="sb-coin"/);
+  }
+  assert.match(glyphImage('whistle', '<path/>', 'coach-glyph'), /<img /, 'only the failed asset is dropped');
 });

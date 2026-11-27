@@ -201,12 +201,25 @@ for (const theme of ['dark', 'light']) {
     ),
   );
 }
-// 5. An image that fails: the glyph box shows its SVG, never an empty box.
+// 5. An image that fails: the glyph box shows its SVG, never an empty box, and a second render does not ask again.
 {
-  const f = await run('broken', { abort: /\/(coin|whistle)-/, views: ['season'], shotViews: ['season'] });
+  const f = await run('broken', {
+    abort: /\/(coin|whistle)-/,
+    views: ['season', 'bracket', 'season'],
+    shotViews: ['season'],
+  });
+  for (const v of ['season', 'bracket'])
+    expect(
+      f[v].glyphs.length === 2 && f[v].glyphs.every(g => g.svg && !g.img),
+      `broken images ${v}: ${JSON.stringify(f[v].glyphs)}`,
+    );
   expect(
-    f.season.glyphs.length === 2 && f.season.glyphs.every(g => g.svg && !g.img),
-    `broken images: ${JSON.stringify(f.season.glyphs)}`,
+    !f.bracket.files.some(x => /^(coin|whistle)/.test(x)),
+    `a later render asked again: ${f.bracket.files}`,
+  );
+  console.log(
+    'broken: requests of the first render',
+    JSON.stringify(f.all.filter(x => /^(coin|whistle)/.test(x))),
   );
 }
 await browser.close();
