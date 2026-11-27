@@ -1752,6 +1752,8 @@ export default {
     },
     item: '第{{r}}ラウンド：{{opp}}、{{status}}',
     title: 'プレーオフのトーナメント表',
+    seed: '今日シーズンが終わった場合のシード',
+    seedOf: '{{n}}チーム中',
   },
   ev: {
     walkon: {
@@ -2172,5 +2174,17 @@ export default {
   },
   head: {
     opp: '相手の強さ',
+  },
+  rail: {
+    label: 'リーグの状況',
+    last: '前回の結果',
+    top: '上位4チーム',
+    theirRecord: '相手の成績',
+    place: 'あなたの順位：{{of}}チーム中{{rank}}位',
+    toGame: '試合当日で確認',
+    toStandings: '順位表を見る',
+  },
+  strip: {
+    title: '試合ごとの記録',
   },
 };

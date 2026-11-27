@@ -1832,6 +1832,8 @@ export default {
     },
     item: 'Tour {{r}} : {{opp}}, {{status}}',
     title: 'Tableau des playoffs',
+    seed: 'Votre tête de série si la saison s’arrêtait aujourd’hui',
+    seedOf: 'sur {{n}}',
   },
   ev: {
     walkon: {
@@ -2313,5 +2315,17 @@ export default {
   },
   head: {
     opp: 'Force adverse',
+  },
+  rail: {
+    label: 'La ligue en bref',
+    last: 'Dernier résultat',
+    top: 'Les quatre premiers',
+    theirRecord: 'Leur bilan',
+    place: 'Votre place : {{rank}} sur {{of}}',
+    toGame: 'Aperçu au Jour de match',
+    toStandings: 'Classement complet',
+  },
+  strip: {
+    title: 'Match par match',
   },
 };

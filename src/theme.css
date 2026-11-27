@@ -2246,14 +2246,17 @@ body[data-view='recruit'] .card h2 {
 .gear-shop-col {
   min-width: 0;
 }
+/* The loadout is the shorter column: pinned while the shop runs on, so it reads as held in place, not unfinished. */
+.gear-layout > .gear-loadout {
+  position: sticky;
+  top: 16px;
+}
 .gear-shop-heading {
   margin: 0 0 10px;
 }
 .gear-shop {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
-  max-height: calc(100dvh - 210px - var(--ph-room));
-  overflow: auto;
 }
 .card.skill-tree {
   padding: 14px 18px;
@@ -2285,7 +2288,6 @@ body[data-view='recruit'] .card h2 {
   gap: 10px 8px;
   padding: 14px 12px 22px;
 }
-.fit-row,
 .standings-grid {
   align-items: start;
 }
@@ -2297,8 +2299,7 @@ body[data-view='recruit'] .card h2 {
 .fit-col {
   min-height: 0;
 }
-.fit-scroll,
-.journal-log.fit-scroll {
+.fit-scroll {
   max-height: calc(100dvh - 240px - var(--ph-room));
   overflow: auto;
 }
@@ -2687,15 +2688,12 @@ body[data-view='game'] .page-action {
   .data-cols {
     grid-template-columns: minmax(0, 1fr);
   }
-  .prep-side {
+  .prep-side,
+  .gear-layout > .gear-loadout {
     position: static;
   }
   .squad.starters {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .gear-shop {
-    max-height: none;
-    overflow: visible;
   }
 }
 @media (max-width: 760px) {
@@ -2715,7 +2713,6 @@ body[data-view='game'] .page-action {
     padding: 14px 12px 24px;
   }
   .fit-scroll,
-  .journal-log.fit-scroll,
   body[data-view='data'] .table-wrap {
     max-height: none;
   }
@@ -2803,4 +2800,353 @@ body[data-view='game'] .page-action {
 .recruit-fit.starts {
   color: var(--good);
   font-weight: 600;
+}
+
+/* ---- Layout that fills the screen (docs/superpowers/reports/2026-11-26-game-nav-design.md, "Layout"): the floor in the
+   margins of a wide screen, the context rail, the Journal's game-by-game strip, the Bracket's seed and the uneven
+   columns pinned. High contrast and forced colours are in a11y.css. ---- */
+
+/* The floor: beyond the 1600px grid the margins show the gym's boards (public/images/ui/hardwood, as a luminance mask
+   over --ink) at a few percent. One plate per margin, behind the page (.content is their stacking context); nothing
+   readable ever sits in the margins, and Home and the live game keep the gym. */
+@media (min-width: 1601px) {
+  body:not(.live-match):not([data-view='home']) .content {
+    --floor-alpha: 0.07; /* over the mask's mid-grey boards: about 4% on average */
+    flex-grow: 1; /* down to the window's foot on a short page */
+    position: relative;
+    isolation: isolate;
+  }
+  body:not(.live-match):not([data-view='home']) .content::before,
+  body:not(.live-match):not([data-view='home']) .content::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    bottom: 0;
+    width: calc(50vw - 50%);
+    background: var(--ink);
+    opacity: var(--floor-alpha);
+    mask: url('/images/ui/hardwood.webp') 0 0 / 1024px 128px repeat luminance;
+    pointer-events: none;
+  }
+  body:not(.live-match):not([data-view='home']) .content::before {
+    left: calc(50% - 50vw);
+  }
+  body:not(.live-match):not([data-view='home']) .content::after {
+    right: calc(50% - 50vw);
+  }
+}
+
+/* The context rail (rail.js): from 1440px a 320px column beside the page, pinned while the page scrolls; below that
+   its cards follow the page, side by side where they fit. */
+.railed {
+  display: grid;
+  gap: 20px;
+}
+.railed-main {
+  min-width: 0;
+}
+.context-rail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+@media (min-width: 1440px) {
+  .railed {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+  }
+  .context-rail {
+    position: sticky;
+    top: 16px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Standings beside the rail: the table keeps its full width in the first column, the leaders and the achievements
+     share the second. */
+  .railed .standings-grid {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  }
+  .railed .standings-grid > :first-child {
+    grid-row: span 2;
+  }
+}
+.rail-card {
+  padding: 16px 18px;
+}
+.rail-card h2,
+.strip-wrap h2 {
+  margin: 0 0 12px;
+  color: var(--ink);
+  font: italic 800 calc(18px * var(--ts, 1) * var(--ls, 1)) / 1.1 var(--display);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.rail-card > .secondary {
+  width: 100%;
+  margin: 0;
+}
+.rail-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  font: 700 calc(22px * var(--ts, 1) * var(--ls, 1)) / 1.1 var(--display);
+}
+.rail-team b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.rail-crest {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+.rail-crest.ph {
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  background: var(--panel-3);
+  color: var(--ink);
+  font: 700 calc(12px * var(--ts, 1) * var(--ls, 1)) var(--body);
+}
+.rail-tag,
+.sc-tag {
+  flex: none;
+  padding: 2px 7px;
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  color: var(--ink-2);
+  font: 600 calc(12px * var(--ts, 1) * var(--ls, 1)) / 1.2 var(--body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.rail-tag {
+  margin-left: auto;
+}
+.rail-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 0 10px;
+}
+.rail-facts dt,
+.bracket-seed small {
+  color: var(--ink-2);
+  font: 600 calc(12px * var(--ts, 1) * var(--ls, 1)) / 1.2 var(--body);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.rail-facts dd {
+  margin: 4px 0 0;
+  color: var(--ink);
+  font: 700 calc(18px * var(--ts, 1) * var(--ls, 1)) / 1.1 var(--display);
+}
+.rail-when,
+.rail-place {
+  margin: 0 0 12px;
+  color: var(--ink-2);
+  font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
+}
+.rail-result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 12px;
+  font-size: calc(15px * var(--ts, 1) * var(--ls, 1));
+}
+.rail-result small {
+  display: block;
+  color: var(--ink-2);
+  font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+}
+.rail-result > strong {
+  margin-left: auto;
+  font: 700 calc(24px * var(--ts, 1) * var(--ls, 1)) / 1 var(--display);
+  font-variant-numeric: tabular-nums;
+}
+.rail-table {
+  display: grid;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.rail-table li {
+  display: grid;
+  grid-template-columns: 2em minmax(0, 1fr) auto;
+  gap: 8px;
+  margin: 0;
+  padding: 7px 8px;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  font-size: calc(14px * var(--ts, 1) * var(--ls, 1));
+  font-variant-numeric: tabular-nums;
+}
+.rail-table li.you {
+  border-left: 3px solid var(--accent-ink);
+  background: var(--accent-soft);
+  font-weight: 800;
+}
+.rt-pct {
+  color: var(--ink-2);
+}
+.rail-table li.you .rt-pct {
+  color: var(--ink);
+}
+
+/* The Journal's strip: the season game by game, numbered like a setlist. Played games are solid with their result,
+   the next one has the gold edge, the rest are ghosted (a dashed outline, no fill: text keeps full contrast). Two rows
+   on a wide page; on narrower pages one row that scrolls sideways, the next game kept in view (shell.js). */
+.strip-wrap {
+  margin-bottom: 20px;
+  padding: 16px 18px;
+}
+.season-strip {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0 0 4px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+}
+.strip-card {
+  position: relative; /* holds its screen-reader text inside the scrolling row */
+  display: flex;
+  flex: 0 0 112px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+  min-height: 104px;
+  margin: 0;
+  padding: 8px 10px 9px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: var(--panel-2);
+  scroll-snap-align: center;
+}
+@media (min-width: 1000px) {
+  .season-strip {
+    display: grid;
+    grid-template-columns: repeat(var(--strip-cols, 9), minmax(0, 1fr));
+    overflow: visible;
+  }
+}
+.sc-num {
+  color: var(--ink-2);
+  font: italic 900 calc(22px * var(--ts, 1) * var(--ls, 1)) / 1 var(--display);
+  letter-spacing: 0.03em;
+}
+.sc-opp {
+  max-width: 100%;
+  color: var(--ink);
+  font: 700 calc(15px * var(--ts, 1) * var(--ls, 1)) / 1.1 var(--display);
+  overflow-wrap: anywhere;
+}
+.sc-res {
+  margin-top: auto;
+  color: var(--ink);
+  font: 800 calc(16px * var(--ts, 1) * var(--ls, 1)) / 1 var(--display);
+  font-variant-numeric: tabular-nums;
+}
+.sc-win .sc-res b {
+  color: var(--good);
+}
+.sc-loss .sc-res b {
+  color: var(--bad);
+}
+.sc-date {
+  color: var(--ink-2);
+  font: 600 calc(12px * var(--ts, 1) * var(--ls, 1)) / 1.2 var(--body);
+}
+.strip-card.left {
+  border-style: dashed;
+  background: none;
+}
+.strip-card.left .sc-opp {
+  color: var(--ink-2);
+}
+.strip-card.next {
+  border: 2px solid var(--tab-edge);
+  background: var(--panel);
+}
+.sc-next {
+  color: var(--tab-edge);
+  font-style: italic;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* The Journal's columns: the results are the shorter one, pinned (with their own scroll) while the trail runs on. */
+.journal-cols {
+  align-items: start;
+}
+.journal-cols .journal-log {
+  max-height: none;
+  overflow: visible;
+}
+@media (min-width: 851px) {
+  .journal-cols > .journal-results {
+    position: sticky;
+    top: 16px;
+  }
+  .journal-results .fit-scroll {
+    max-height: calc(100dvh - 140px);
+  }
+}
+
+/* The Bracket before the run: "your seed if the season ended today" beside the gate line, the empty-state render, and
+   the rounds still to come drawn as a skeleton (dashed, no fill). */
+.bracket-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 28px;
+  margin-bottom: 14px;
+}
+.bracket-top > div:first-child {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+.bracket-top .bracket-gate {
+  margin-bottom: 0;
+}
+.bracket-seed {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 20px 10px 16px;
+  border-left: 4px solid var(--tab-edge);
+  background: var(--panel-2);
+}
+.bracket-seed strong {
+  color: var(--score);
+  font: italic 900 calc(56px * var(--ts, 1) * var(--ls, 1)) / 1 var(--display);
+  font-variant-numeric: tabular-nums;
+}
+.bracket-seed p {
+  max-width: 18ch;
+  margin: 0;
+  color: var(--ink);
+  font: 700 calc(15px * var(--ts, 1) * var(--ls, 1)) / 1.3 var(--body);
+}
+.bracket-seed small {
+  display: block;
+  margin-top: 4px;
+}
+.bracket-art img {
+  display: block;
+  width: 200px;
+  height: 150px;
+}
+.bracket-card.skeleton .bracket .round.upcoming {
+  border-style: dashed;
+  background: none;
+}
+@media (max-width: 620px) {
+  .bracket-art {
+    display: none;
+  }
 }

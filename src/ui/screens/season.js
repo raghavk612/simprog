@@ -1,7 +1,7 @@
 // The Season tab: the journal (results and the decision trail), the final-run bracket, standings with leaders and
 // achievements, and the real team data. A finished season adds the report card.
 import * as E from '../../engine.js';
-import { tu, t, formatDate, formatNumber, formatDateTime, localeTag } from '../../i18n/index.js';
+import { tu, t, formatDate, formatNumber, formatDateTime } from '../../i18n/index.js';
 import { logText, tv } from '../../narrative.js';
 import { achievements } from '../../achievements.js';
 import {
@@ -19,11 +19,14 @@ import {
 } from '../store.js';
 import { sortRows, sortHead, yearRank, heightInches, standingsRows } from '../lists.js';
 import { html, esc, btn, oppBadge, header, LOGO_WHITE, pill } from '../markup.js';
+import { seasonStrip, bracketSeed } from '../seasonModel.js';
+import { withRail, pctText } from '../rail.js';
 import { notify } from '../toast.js';
 import { $ } from '../page.js';
 import { stage, render } from '../shell.js';
 import { clearPreviews } from './landing.js';
 
+const UI_IMG = `${import.meta.env?.BASE_URL ?? '/'}images/ui/`;
 let dataLevel = null; // the level shown on the data page; defaults to the one being coached
 
 // ESPN-style season leaders: category, player, per-game value.
@@ -80,7 +83,8 @@ export async function copyCode(c) {
 }
 // The final run drawn as a bracket: four win-or-go-home rounds that fill in as games are played.
 function bracket() {
-  const B = E.runBracket(state);
+  const B = E.runBracket(state),
+    seed = bracketSeed(state);
   const gate =
     B.gate === 'qualified'
       ? t('bracket.qualified', { w: B.wins, need: B.need })
@@ -88,10 +92,27 @@ function bracket() {
         ? t('bracket.failed', { w: B.wins, cut: B.cut, need: B.need })
         : t('bracket.open', { w: B.wins, need: B.need, cut: B.cut, played: B.played });
   return html`
-    <section class="card bracket-card" aria-labelledby="bracket-h">
-      <span class="eyebrow">${tu('bracket.kicker')}</span>
-      <h2 id="bracket-h">${t('bracket.title')}</h2>
-      <p class="bracket-gate ${B.gate}">${gate}</p>
+    <section class="card bracket-card${seed ? ' skeleton' : ''}" aria-labelledby="bracket-h">
+      <div class="bracket-top">
+        <div>
+          <span class="eyebrow">${tu('bracket.kicker')}</span>
+          <h2 id="bracket-h">${t('bracket.title')}</h2>
+          <p class="bracket-gate ${B.gate}">${gate}</p>
+        </div>
+        ${
+          seed
+            ? html`
+              <div class="bracket-seed">
+                <strong>${seed.seed}</strong>
+                <p>${t('bracket.seed')}<small>${t('bracket.seedOf', { n: seed.of })}</small></p>
+              </div>
+              <picture class="bracket-art">
+                <source type="image/avif" srcset="${UI_IMG}empty-bracket.avif">
+                <img src="${UI_IMG}empty-bracket.webp" alt="" width="200" height="150" decoding="async">
+              </picture>`
+            : ''
+        }
+      </div>
       <ol class="bracket" aria-label="${esc(t('bracket.aria'))}">
         ${B.rounds
           .map((r, i) => {
@@ -105,56 +126,88 @@ function bracket() {
       </ol>
     </section>`;
 }
-export function journal() {
+// The season game by game (seasonModel.js seasonStrip): played games with their result, the next one marked, the rest
+// ghosted. Two rows on a desktop; one row that scrolls sideways on a phone (shell.js keeps the next game in view).
+function strip() {
+  const cards = seasonStrip(state);
   return html`
-    ${header(t('nav.season'), t('journal.intro'))}
-    ${
-      state.finished
-        ? html`
-          <section class="card purple">
-            <span class="eyebrow">${state.champion ? tu('journal.bannerYours') : tu('journal.teaches')}</span>
-            <h2>${state.champion ? t('home.champions') : t('journal.whistle')}</h2>
-            <p>
-              ${t('journal.summary', { coach: esc(state.coach), w: state.wins, l: state.losses, fans: formatNumber(state.fans), chem: Math.round(state.chemistry) })}
-            </p>
-            ${btn(t('journal.newSeason'), 'new-season', 'secondary')}
-            ${btn(t('journal.export'), 'export', 'secondary')}
-          </section>
-          ${reportCard()}`
-        : ''
-    }
-    <div class="cards two fit-row">
-      <section class="card fit-col">
-        <h2>${t('journal.scoreboard')}</h2>
-        <div class="fit-scroll" tabindex="0">
-          ${state.results.map((r, i) => `<button class="result-row" data-action="result" data-index="${i}"><b class="${r.won ? 'win' : 'loss'}">${r.won ? 'W' : 'L'}<span class="sr-only"> ${r.won ? t('result.win') : t('result.loss')}</span></b><span>${esc(r.opponent)}<small>${esc(formatDate(r.date))}</small></span><strong>${r.home}–${r.away}</strong><span>${t('journal.replay')}</span></button>`).join('') || `<p>${t('journal.noGames')}</p>`}
-        </div>
-      </section>
-      <section class="card fit-col">
-        <h2>${t('journal.trail')}</h2>
-        <div class="journal-log fit-scroll" tabindex="0">
-          ${state.log.map(l => `<p><small>${tu('journal.gameN', { n: l.week })}</small>${esc(logText(l))}</p>`).join('') || `<p>${t('journal.trailEmpty')}</p>`}
-        </div>
-      </section>
-    </div>`;
+    <section class="card strip-wrap" aria-labelledby="strip-h">
+      <h2 id="strip-h">${t('strip.title')}</h2>
+      <ol class="season-strip" style="--strip-cols:${Math.ceil(cards.length / 2)}">
+        ${cards
+          .map(
+            c => html`
+              <li class="strip-card ${c.status}${c.result ? (c.result.won ? ' sc-win' : ' sc-loss') : ''}">
+                <span class="sc-num" aria-hidden="true">${c.n}</span><span class="sr-only">${t('journal.gameN', { n: +c.n })}</span><b class="sc-opp">${esc(c.opponent)}</b><span class="sc-tag">${t(c.home ? 'game.homeGame' : 'game.awayGame')}</span>${
+                  c.result
+                    ? `<span class="sc-res"><b aria-hidden="true">${c.result.won ? 'W' : 'L'}</b><span class="sr-only">${t(c.result.won ? 'result.win' : 'result.loss')}</span> ${c.result.for}–${c.result.against}</span>`
+                    : c.status === 'next'
+                      ? `<span class="sc-res sc-next">${t('scorebug.next')}</span>`
+                      : `<span class="sc-res sc-date">${esc(formatDate(c.date))}</span>`
+                }
+              </li>`,
+          )
+          .join('')}
+      </ol>
+    </section>`;
+}
+export function journal() {
+  return withRail(
+    'season',
+    header(t('nav.season'), t('journal.intro')),
+    html`
+      ${
+        state.finished
+          ? html`
+            <section class="card purple">
+              <span class="eyebrow">${state.champion ? tu('journal.bannerYours') : tu('journal.teaches')}</span>
+              <h2>${state.champion ? t('home.champions') : t('journal.whistle')}</h2>
+              <p>
+                ${t('journal.summary', { coach: esc(state.coach), w: state.wins, l: state.losses, fans: formatNumber(state.fans), chem: Math.round(state.chemistry) })}
+              </p>
+              ${btn(t('journal.newSeason'), 'new-season', 'secondary')}
+              ${btn(t('journal.export'), 'export', 'secondary')}
+            </section>
+            ${reportCard()}`
+          : ''
+      }
+      ${strip()}
+      <div class="cards two journal-cols">
+        <section class="card journal-results">
+          <h2>${t('journal.scoreboard')}</h2>
+          <div class="fit-scroll" tabindex="0">
+            ${state.results.map((r, i) => `<button class="result-row" data-action="result" data-index="${i}"><b class="${r.won ? 'win' : 'loss'}">${r.won ? 'W' : 'L'}<span class="sr-only"> ${r.won ? t('result.win') : t('result.loss')}</span></b><span>${esc(r.opponent)}<small>${esc(formatDate(r.date))}</small></span><strong>${r.home}–${r.away}</strong><span>${t('journal.replay')}</span></button>`).join('') || `<p>${t('journal.noGames')}</p>`}
+          </div>
+        </section>
+        <section class="card">
+          <h2>${t('journal.trail')}</h2>
+          <div class="journal-log">
+            ${state.log.map(l => `<p><small>${tu('journal.gameN', { n: l.week })}</small>${esc(logText(l))}</p>`).join('') || `<p>${t('journal.trailEmpty')}</p>`}
+          </div>
+        </section>
+      </div>`,
+  );
 }
 export function bracketView() {
-  return html`
-    ${header(t('nav.bracket'))}
-    <div class="season-path" aria-label="${esc(t('journal.path'))}">
-      ${(P => [
-        ['01', t('journal.regular'), state.week < P.stretch],
-        ['02', stages().stretch, state.week >= P.stretch && state.week < P.cut],
-        ['03', stages().run, state.week >= P.cut],
-      ])(plan())
-        .map(
-          ([n, l, cur], i) =>
-            `${i ? '<i aria-hidden="true">→</i>' : ''}<span class="${cur ? 'current' : ''}"${cur ? ' aria-current="step"' : ''}>${n} / ${l}</span>`,
-        )
-        .join('')}
-    </div>
-    ${bracket()}
-    ${codeCard()}`;
+  return withRail(
+    'bracket',
+    header(t('nav.bracket')),
+    html`
+      <div class="season-path" aria-label="${esc(t('journal.path'))}">
+        ${(P => [
+          ['01', t('journal.regular'), state.week < P.stretch],
+          ['02', stages().stretch, state.week >= P.stretch && state.week < P.cut],
+          ['03', stages().run, state.week >= P.cut],
+        ])(plan())
+          .map(
+            ([n, l, cur], i) =>
+              `${i ? '<i aria-hidden="true">→</i>' : ''}<span class="${cur ? 'current' : ''}"${cur ? ' aria-current="step"' : ''}>${n} / ${l}</span>`,
+          )
+          .join('')}
+      </div>
+      ${bracket()}
+      ${codeCard()}`,
+  );
 }
 export function standingsView() {
   const teams = {};
@@ -168,18 +221,13 @@ export function standingsView() {
       ...teams,
     },
   );
-  // basketball's ".750" (and "1.000"), in the reader's number format; a team yet to play has none
-  const pct = v =>
-    v == null
-      ? '—'
-      : v
-          .toLocaleString(localeTag(), { minimumFractionDigits: 3, maximumFractionDigits: 3 })
-          .replace(/^0(?=\D)/, '');
   // a short column name on screen, its full name for a screen reader and on hover
   const col = k =>
     `<th scope="col" class="num" title="${esc(t(`journal.col.${k}Full`))}"><span aria-hidden="true">${t(`journal.col.${k}`)}</span><span class="sr-only">${t(`journal.col.${k}Full`)}</span></th>`;
-  return html`
-    ${header(t('nav.standings'))}
+  return withRail(
+    'standings',
+    header(t('nav.standings')),
+    html`
     <div class="standings-grid">
       <section class="card fit-col">
         <h2>${t('journal.table')}</h2>
@@ -194,7 +242,7 @@ export function standingsView() {
                 .map(
                   r => html`
                     <tr class="${r.you ? 'you' : ''}">
-                      <td class="num">${r.rank}</td><th scope="row">${r.you ? t('journal.you', { team: esc(t('game.kangs')) }) : esc(r.name)}</th><td class="num">${r.w}</td><td class="num">${r.l}</td><td class="num">${pct(r.pct)}</td><td class="num">${r.gb ? formatNumber(r.gb) : '—'}</td>
+                      <td class="num">${r.rank}</td><th scope="row">${r.you ? t('journal.you', { team: esc(t('game.kangs')) }) : esc(r.name)}</th><td class="num">${r.w}</td><td class="num">${r.l}</td><td class="num">${pctText(r.pct)}</td><td class="num">${r.gb ? formatNumber(r.gb) : '—'}</td>
                     </tr>`,
                 )
                 .join('')}
@@ -204,7 +252,8 @@ export function standingsView() {
       </section>
       ${leadersCard()}
       ${achCard()}
-    </div>`;
+    </div>`,
+  );
 }
 // Achievements: earned ones are marked and highlighted, locked ones dimmed and labelled in words, with progress where it makes sense.
 function achCard() {

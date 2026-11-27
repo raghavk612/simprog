@@ -1743,6 +1743,8 @@ export default {
     },
     item: 'दौर {{r}}: {{opp}}, {{status}}',
     title: 'प्लेऑफ़ ब्रैकेट',
+    seed: 'अगर सीज़न आज ख़त्म हो तो आपकी सीड',
+    seedOf: '{{n}} में से',
   },
   ev: {
     walkon: {
@@ -2183,5 +2185,17 @@ export default {
   },
   head: {
     opp: 'प्रतिद्वंद्वी की ताक़त',
+  },
+  rail: {
+    label: 'लीग एक नज़र में',
+    last: 'पिछला नतीजा',
+    top: 'शीर्ष चार',
+    theirRecord: 'उनका रिकॉर्ड',
+    place: 'आपका स्थान: {{of}} में {{rank}}',
+    toGame: 'मैच का दिन खोलें',
+    toStandings: 'पूरी तालिका',
+  },
+  strip: {
+    title: 'मैच दर मैच',
   },
 };

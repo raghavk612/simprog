@@ -7,12 +7,10 @@ import { standingsRows } from './lists.js';
 import { standingsRank } from '../recap.js';
 import { seasonTrack } from './scorebug.js';
 
-// One card per scheduled game: its number ("01"), the opponent, home or away, the date, whether it is part of the
-// elimination run, and its state as on the scorebug's track ('played', 'next', 'left'). A played game carries its
+// One card per scheduled game: its number ("01"), the opponent, home or away, the date, and its state as on the scorebug's track ('played', 'next', 'left'). A played game carries its
 // result: won, the Kangs' score first, and the index of the result for its replay.
 export function seasonStrip(s) {
-  const cut = E.seasonPlan(s).cut,
-    track = seasonTrack(s);
+  const track = seasonTrack(s);
   return s.schedule.map((g, i) => {
     const r = track[i] === 'played' ? s.results[i] : null;
     return {
@@ -20,7 +18,6 @@ export function seasonStrip(s) {
       opponent: g.opponent,
       home: !!g.home,
       date: g.date,
-      run: i >= cut,
       status: track[i],
       result: r ? { won: r.won, for: r.home, against: r.away, index: i } : null,
     };
@@ -78,12 +75,8 @@ export function railModel(s, v) {
   if (v !== 'standings' && s.standings) {
     const rows = standingsRows(s.standings).slice(0, TOP);
     top = {
-      // the Kangs' own row has their place and percentage, never their record (the scorebug shows it)
-      rows: rows.map(x =>
-        x.you
-          ? { rank: x.rank, name: x.name, you: true, pct: x.pct }
-          : { rank: x.rank, name: x.name, you: false, pct: x.pct, w: x.w, l: x.l },
-      ),
+      // the place, the name and the winning percentage: never the Kangs' record, which the scorebug shows
+      rows: rows.map(x => ({ rank: x.rank, name: x.name, you: x.you, pct: x.pct })),
       place: rows.some(x => x.you) ? null : standingsRank(s),
       link: usable('standings'),
     };

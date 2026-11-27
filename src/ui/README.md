@@ -28,6 +28,8 @@ write templates over as many lines as you like. Put text from the save or the da
 | `shell.js`           | `PAGES`, top bar, the band under it, `render()`, `go()`, camera buttons       |
 | `scorebug.js`        | what the band's scorebug shows (next game, record, tokens, slots, track)      |
 | `pageHead.js`        | what a page header holds (ghost word, group render, stat chips), its entrance |
+| `seasonModel.js`     | the Journal's game strip, the Bracket's seed, what the context rail holds     |
+| `rail.js`            | the context rail beside Journal, Bracket, Standings and Skills                |
 | `renderKeep.js`      | what `render()` keeps from the DOM: open drawers, tables' side scroll         |
 | `actions.js`         | what every `data-action` button and form field does                           |
 | `keyboard.js`        | shortcut keys                                                                 |
@@ -68,6 +70,11 @@ write templates over as many lines as you like. Put text from the save or the da
 - **A page's header:** start the page with `header(title, subLine)` (`markup.js`); it draws the band, the ghost word (the
   page's `nav.<route>` name), the group's render from 1200 px and the page's stat chips (`headChips` in `pageHead.js`:
   at most three, never a number the scorebug shows). Home has none. The title slides in only when the page changes.
+- **The layout** (`theme.css`, "Layout that fills the screen"): everything sits on one 1600 px grid (`--shell-max`);
+  beyond it a wide screen shows the floor texture in the margins. Journal, Bracket, Standings and Skills wrap their body
+  in `withRail()` (`rail.js`): a 320 px rail from 1440 px, under the page below that, with information and secondary
+  links only (never the way forward, never a scorebug number; `seasonModel.js railModel`). Where two columns differ in
+  height, the shorter one is `position: sticky; top: 16px`.
 - **The navigation's look** (`theme.css`, "Game navigation"): slanted slabs at one angle (`--slant`), each slant on a
   decorative `::before` so the button itself stays a rectangle with its focus ring; the open page is an inverted plate
   with a `--tab-edge` bar. Sub-tabs carry a numeral only where their order is real (`tabNumber` in `nav.js`). High

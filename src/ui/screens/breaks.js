@@ -13,6 +13,7 @@ import { render } from '../shell.js';
 import { notify } from '../toast.js';
 import { $ } from '../page.js';
 import { prospectFit, fitLine, teamNeeds, needsLine, shortText } from '../../shopFit.js';
+import { withRail } from '../rail.js';
 
 // Tryouts. Each card's buttons are secondary: the page's one primary action is top right (leaving the break, or the
 // week's next step). The line at the top says what the team needs; each card shows the prospect's OVR on the roster's
@@ -84,7 +85,7 @@ export function setGearFilter(f) {
 }
 // The skill tree: unlock new moves with tokens (the tree itself is drawn by skillsView.js).
 export function skillsView() {
-  return `${header(t('nav.skills'))}${skillTreeCard(state)}`;
+  return withRail('skills', header(t('nav.skills')), skillTreeCard(state));
 }
 // Selecting a move shows it in the detail panel; focus follows so the tree stays one Tab stop.
 export function pickSkill(key) {

@@ -53,19 +53,14 @@ test('a played game shows its result (won, the Kangs score first, the result ind
   assert.equal(strip[1].status, 'next');
   assert.equal(strip.filter(c => c.status === 'next').length, 1);
 });
-test('the strip marks the elimination run, and a finished season has no next card', () => {
-  const s = season(),
-    P = E.seasonPlan(s),
-    strip = seasonStrip(s);
-  assert.deepEqual(
-    strip.map(c => c.run),
-    s.schedule.map((_, i) => i >= P.cut),
-  );
+test('a finished season has no next card, even when it ended early', () => {
+  const s = season();
   s.week = 9;
   s.finished = true;
-  assert.ok(!seasonStrip(s).some(c => c.status === 'next'));
+  const strip = seasonStrip(s);
+  assert.ok(!strip.some(c => c.status === 'next'));
+  assert.equal(strip.filter(c => c.status === 'played').length, 9);
 });
-
 test('your seed if the season ended today is the Standings page’s own place, shown only before the run', () => {
   const s = playOne(season());
   const seed = bracketSeed(s),

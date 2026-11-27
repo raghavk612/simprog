@@ -1,0 +1,86 @@
+{
+  "en": {
+    "rail.label": "Around the league",
+    "rail.last": "Last result",
+    "rail.top": "Top four",
+    "rail.theirRecord": "Their record",
+    "rail.place": "Your place: {{rank}} of {{of}}",
+    "rail.toGame": "Preview on Game day",
+    "rail.toStandings": "Full standings",
+    "strip.title": "Game by game",
+    "bracket.seed": "Your seed if the season ended today",
+    "bracket.seedOf": "of {{n}}"
+  },
+  "es": {
+    "rail.label": "La liga de un vistazo",
+    "rail.last": "Último resultado",
+    "rail.top": "Los cuatro primeros",
+    "rail.theirRecord": "Su récord",
+    "rail.place": "Tu puesto: {{rank}} de {{of}}",
+    "rail.toGame": "Ver en Día de partido",
+    "rail.toStandings": "Clasificación completa",
+    "strip.title": "Partido a partido",
+    "bracket.seed": "Tu cabeza de serie si la temporada terminara hoy",
+    "bracket.seedOf": "de {{n}}"
+  },
+  "fr": {
+    "rail.label": "La ligue en bref",
+    "rail.last": "Dernier résultat",
+    "rail.top": "Les quatre premiers",
+    "rail.theirRecord": "Leur bilan",
+    "rail.place": "Votre place : {{rank}} sur {{of}}",
+    "rail.toGame": "Aperçu au Jour de match",
+    "rail.toStandings": "Classement complet",
+    "strip.title": "Match par match",
+    "bracket.seed": "Votre tête de série si la saison s’arrêtait aujourd’hui",
+    "bracket.seedOf": "sur {{n}}"
+  },
+  "it": {
+    "rail.label": "Il campionato in breve",
+    "rail.last": "Ultimo risultato",
+    "rail.top": "Le prime quattro",
+    "rail.theirRecord": "Il loro record",
+    "rail.place": "Il tuo posto: {{rank}} su {{of}}",
+    "rail.toGame": "Anteprima nel Giorno della partita",
+    "rail.toStandings": "Classifica completa",
+    "strip.title": "Partita per partita",
+    "bracket.seed": "La tua testa di serie se la stagione finisse oggi",
+    "bracket.seedOf": "su {{n}}"
+  },
+  "ja": {
+    "rail.label": "リーグの状況",
+    "rail.last": "前回の結果",
+    "rail.top": "上位4チーム",
+    "rail.theirRecord": "相手の成績",
+    "rail.place": "あなたの順位：{{of}}チーム中{{rank}}位",
+    "rail.toGame": "試合当日で確認",
+    "rail.toStandings": "順位表を見る",
+    "strip.title": "試合ごとの記録",
+    "bracket.seed": "今日シーズンが終わった場合のシード",
+    "bracket.seedOf": "{{n}}チーム中"
+  },
+  "zh": {
+    "rail.label": "联赛概况",
+    "rail.last": "上一场结果",
+    "rail.top": "前四名",
+    "rail.theirRecord": "对手战绩",
+    "rail.place": "你的排名：{{of}} 队中第 {{rank}}",
+    "rail.toGame": "在比赛日预览",
+    "rail.toStandings": "完整排名",
+    "strip.title": "逐场赛程",
+    "bracket.seed": "如果赛季今天结束，你的种子排位",
+    "bracket.seedOf": "共 {{n}} 队"
+  },
+  "hi": {
+    "rail.label": "लीग एक नज़र में",
+    "rail.last": "पिछला नतीजा",
+    "rail.top": "शीर्ष चार",
+    "rail.theirRecord": "उनका रिकॉर्ड",
+    "rail.place": "आपका स्थान: {{of}} में {{rank}}",
+    "rail.toGame": "मैच का दिन खोलें",
+    "rail.toStandings": "पूरी तालिका",
+    "strip.title": "मैच दर मैच",
+    "bracket.seed": "अगर सीज़न आज ख़त्म हो तो आपकी सीड",
+    "bracket.seedOf": "{{n}} में से"
+  }
+}

@@ -1611,6 +1611,8 @@ export default {
     },
     item: 'Round {{r}}: {{opp}}, {{status}}',
     title: 'Playoff bracket',
+    seed: 'Your seed if the season ended today',
+    seedOf: 'of {{n}}',
   },
   ev: {
     walkon: {
@@ -2034,5 +2036,17 @@ export default {
   },
   head: {
     opp: 'Opponent strength',
+  },
+  rail: {
+    label: 'Around the league',
+    last: 'Last result',
+    top: 'Top four',
+    theirRecord: 'Their record',
+    place: 'Your place: {{rank}} of {{of}}',
+    toGame: 'Preview on Game day',
+    toStandings: 'Full standings',
+  },
+  strip: {
+    title: 'Game by game',
   },
 };

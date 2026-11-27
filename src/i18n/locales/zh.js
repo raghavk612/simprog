@@ -1623,6 +1623,8 @@ export default {
     },
     item: '第 {{r}} 轮：{{opp}}，{{status}}',
     title: '季后赛对阵图',
+    seed: '如果赛季今天结束，你的种子排位',
+    seedOf: '共 {{n}} 队',
   },
   ev: {
     walkon: {
@@ -2024,5 +2026,17 @@ export default {
   },
   head: {
     opp: '对手强度',
+  },
+  rail: {
+    label: '联赛概况',
+    last: '上一场结果',
+    top: '前四名',
+    theirRecord: '对手战绩',
+    place: '你的排名：{{of}} 队中第 {{rank}}',
+    toGame: '在比赛日预览',
+    toStandings: '完整排名',
+  },
+  strip: {
+    title: '逐场赛程',
   },
 };

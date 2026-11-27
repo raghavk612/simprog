@@ -370,9 +370,10 @@ export function syncCameraButtons(mode) {
   });
 }
 // On phones the nav is a scrolling bottom tab bar: after each render keep the current page's tab in view.
-// On a narrow screen the top tabs and the sub-tabs scroll sideways: keep the open one of each centred.
+// On a narrow screen the top tabs and the sub-tabs scroll sideways: keep the open one of each centred. So does the
+// Journal's game-by-game strip on a phone: its next game is kept centred.
 export function keepNavTabInView() {
-  for (const n of document.querySelectorAll('.nav-item.active, .sub-item.active')) {
+  for (const n of document.querySelectorAll('.nav-item.active, .sub-item.active, .strip-card.next')) {
     const bar = n.parentElement;
     if (bar.scrollWidth <= bar.clientWidth) continue;
     const r = n.getBoundingClientRect();

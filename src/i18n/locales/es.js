@@ -1798,6 +1798,8 @@ export default {
     },
     item: 'Ronda {{r}}: {{opp}}, {{status}}',
     title: 'Cuadro de eliminatorias',
+    seed: 'Tu cabeza de serie si la temporada terminara hoy',
+    seedOf: 'de {{n}}',
   },
   ev: {
     walkon: {
@@ -2245,5 +2247,17 @@ export default {
   },
   head: {
     opp: 'Fuerza del rival',
+  },
+  rail: {
+    label: 'La liga de un vistazo',
+    last: 'Último resultado',
+    top: 'Los cuatro primeros',
+    theirRecord: 'Su récord',
+    place: 'Tu puesto: {{rank}} de {{of}}',
+    toGame: 'Ver en Día de partido',
+    toStandings: 'Clasificación completa',
+  },
+  strip: {
+    title: 'Partido a partido',
   },
 };

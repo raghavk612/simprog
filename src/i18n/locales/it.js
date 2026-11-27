@@ -1808,6 +1808,8 @@ export default {
     },
     item: 'Turno {{r}}: {{opp}}, {{status}}',
     title: 'Tabellone dei playoff',
+    seed: 'La tua testa di serie se la stagione finisse oggi',
+    seedOf: 'su {{n}}',
   },
   ev: {
     walkon: {
@@ -2263,5 +2265,17 @@ export default {
   },
   head: {
     opp: 'Forza avversario',
+  },
+  rail: {
+    label: 'Il campionato in breve',
+    last: 'Ultimo risultato',
+    top: 'Le prime quattro',
+    theirRecord: 'Il loro record',
+    place: 'Il tuo posto: {{rank}} su {{of}}',
+    toGame: 'Anteprima nel Giorno della partita',
+    toStandings: 'Classifica completa',
+  },
+  strip: {
+    title: 'Partita per partita',
   },
 };
