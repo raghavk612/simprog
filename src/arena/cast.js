@@ -1,7 +1,8 @@
 // Who is on the floor (Arena methods, mixed into Arena.prototype by src/arena.js: `this` is the Arena). Ten player groups
 // (people; 0-4 the Kangs, 5-9 the visitors) each carry a body from src/players.js, classic figures or the rigged athletes
 // per the Players setting and graphics level (applyPlayers, styleBody), dressed as a person (setIdentity): kit colours,
-// name and number, captain's badge, and the body, height, skin and face that person has wherever he is drawn.
+// name and number, captain's badge, socks and shoes, and the body, height, skin and face that person has wherever he is
+// drawn.
 // Contract with the rest of the gym: a player's identity is p.userData.identity, a key whose first field is the person's
 // id (cast() keeps a body on the person who wears it when a play re-orders people); p.userData.person and p.userData.slot
 // say who and which slot; bodies are swapped, never re-dressed per frame. updateLods picks each athlete's level of detail
@@ -11,7 +12,7 @@ import { boardGame } from '../scoreboard.js';
 import { oppRoster } from '../engine.js';
 import { visitorCast, rosterRecord } from '../identities.js';
 import { arenaPlayers, bodyPixels, lodFor } from '../graphics.js';
-import { gymColors, visitorKit } from '../kits.js';
+import { gymColors, visitorKit, homeFeet, visitorFeet } from '../kits.js';
 import {
   classicBody,
   attachBody,
@@ -23,6 +24,7 @@ import {
   loadAthletes,
   bodyFor,
   personSeed,
+  feetFor,
   CLASSIC_SKIN,
 } from '../players.js';
 import { KANGS_PURPLE } from '../kits.js';
@@ -142,7 +144,15 @@ export const castMethods = {
     );
     p.scale.setScalar(fit.scale);
     if (this.playerStyle === 'athletes' && this.templates && this.styleBody(p)) return;
-    p.userData.body?.setSkin?.(CLASSIC_SKIN[lookFor(personSeed(p.userData.person, p.userData.slot)).skin]);
+    const look = lookFor(personSeed(p.userData.person, p.userData.slot));
+    p.userData.body?.setSkin?.(CLASSIC_SKIN[look.skin]);
+    // the team's socks and his pick of its shoes (src/kits.js; the visitors' from their school colours)
+    p.userData.body?.setFeet?.(
+      feetFor(
+        home ? homeFeet(this.state?.kit || 'home') : this.visitorTeamFeet || visitorFeet('', [vb, vf]),
+        look,
+      ),
+    );
     const cap = home && person?.id != null && person.id === this.state?.captain,
       key = [
         person?.id,
@@ -177,6 +187,7 @@ export const castMethods = {
     if (!s) return;
     const opp = boardGame(s, this.event).opponent;
     this.visitorColors = visitorKit(opp, gymColors(s.kit || 'home', s.trim || '#ffffff')[0]);
+    this.visitorTeamFeet = visitorFeet(opp, this.visitorColors);
     visitorCast(oppRoster(s, opp), this.clips?.[1], opp).forEach((v, i) =>
       this.setIdentity(this.people[i + 5], v, false, this.visitorColors),
     );

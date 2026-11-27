@@ -156,14 +156,6 @@ const aoAlpha = frag =>
   frag
     .replace('#include <map_fragment>', '#include <map_fragment>\n float kAoFade = 0.0;')
     .replace('#include <aomap_fragment>', AO_ALPHA);
-/* For materials without the detail patch (shoes, sole): only the AO-in-alpha read. */
-function withAoAlpha(material) {
-  material.onBeforeCompile = shader => {
-    shader.fragmentShader = aoAlpha(shader.fragmentShader);
-  };
-  material.customProgramCacheKey = () => 'kangs-ao-alpha';
-  return material;
-}
 /* strands: the hair's anisotropic highlight runs along the head's up direction (as it did on the old cylindrical UVs). The
    GLB's tangents now follow the atlas charts, which point anywhere, so the direction is the skinned rest-pose up instead. */
 /* inflate (game units): clothing is pushed out along its normals after skinning starts, so the skin under it never pokes
@@ -190,6 +182,7 @@ function patch(
     sway = false,
     push = false,
     cut = false,
+    sock = false,
   } = {},
 ) {
   // sway: the loose shorts lag and flutter (a spring motion.js drives from the body's acceleration, kSway, in the body's
@@ -218,6 +211,13 @@ function patch(
       // straight edge (x top, y bottom, in the bind pose; the arm hangs, so they run across the limb)
       { kArmRim: { value: new THREE.Vector2(-9, 9) }, kLegRim: { value: new THREE.Vector2(-9, 9) } },
     );
+  // sock: a sock drawn on the skin of the lower leg (no geometry), up to a line of the bind pose (kSockY.x), with a ribbed
+  // cuff kSockY.y deep, in kSockC.rgb (kSockC.w 0: no sock). src/players.js setFeet sets it.
+  if (sock)
+    material.userData.sock = {
+      kSockC: { value: new THREE.Vector4(1, 1, 1, 0) },
+      kSockY: { value: new THREE.Vector2(0, 0.02) },
+    };
   // cut: a sleeve drawn only between two heights of the bind pose (the same planes the skin is hidden between)
   if (cut) material.userData.cut = { value: new THREE.Vector2(9, -9) };
   if (print)
@@ -254,6 +254,7 @@ function patch(
       shader.uniforms.kLegRim = material.userData.coverOn.kLegRim;
     }
     if (cut) shader.uniforms.kCut = material.userData.cut;
+    if (sock) Object.assign(shader.uniforms, material.userData.sock);
     if (hands) Object.assign(shader.uniforms, material.userData.hands);
     if (sway) Object.assign(shader.uniforms, material.userData.sway);
     shader.vertexShader = shader.vertexShader
@@ -312,6 +313,7 @@ function patch(
             ? '\nvarying vec3 vKCover; uniform vec3 kCoverOn; uniform vec2 kArmRim; uniform vec2 kLegRim;'
             : '') +
           (cut ? '\nuniform vec2 kCut;' : '') +
+          (sock ? '\nuniform vec4 kSockC; uniform vec2 kSockY;' : '') +
           (face ? '\nuniform sampler2D kFaceMap; uniform vec3 kFaceCenter; uniform vec2 kFaceSize;' : '') +
           (print
             ? '\nuniform sampler2D kPrintF; uniform sampler2D kPrintB; uniform vec2 kPrintFC; uniform vec2 kPrintBC; uniform vec2 kPrintSize; uniform float kPrintMinY; uniform float kPrintOn;'
@@ -328,6 +330,43 @@ function patch(
   }
  }`,
       );
+    // sock: the colour over the skin below the sock line (an antialiased edge), then knit ribs running up the leg (the
+    // triplanar bump on the rest pose, across the leg seen from the front and from the side), deepest in the cuff
+    if (sock)
+      frag = frag
+        .replace(
+          '#include <color_fragment>',
+          `#include <color_fragment>
+ float kSock = 0.0, kRib = 0.0;
+ if (kSockC.w > 0.5) {
+  float e = max(fwidth(vKRest.y), 1e-4);
+  kSock = 1.0 - smoothstep(kSockY.x - e, kSockY.x + e, vKRest.y);
+  kRib = kSock * smoothstep(kSockY.x - kSockY.y - e, kSockY.x - kSockY.y + e, vKRest.y);
+  diffuseColor.rgb = mix(diffuseColor.rgb, kSockC.rgb * (1.0 - 0.07 * kRib), kSock);
+ }`,
+        )
+        .replace(
+          '#include <clearcoat_normal_fragment_begin>',
+          ` if (kSock > 0.0) {
+  float kRf = 1.0 - smoothstep(1.2, 4.0, length(vViewPosition));
+  if (kRf > 0.0) {
+   vec3 rn = normalize(vKRestN);
+   float wx = rn.x * rn.x, wz = rn.z * rn.z, f = 6.2831853 / 0.0055;
+   float h = (wz * sin(vKRest.x * f) + wx * sin(vKRest.z * f)) / max(wx + wz, 1e-3);
+   normal = kPerturb(-vViewPosition, normal, vec2(dFdx(h), dFdy(h)) * (0.06 + 0.16 * kRib) * kSock * kRf, faceDirection);
+  }
+ }
+#include <clearcoat_normal_fragment_begin>`,
+        )
+        .replace(
+          '#include <lights_physical_fragment>',
+          `#include <lights_physical_fragment>
+ material.roughness = mix(material.roughness, 0.92, kSock);
+ material.specularColor *= 1.0 - 0.6 * kSock;
+ #ifdef USE_CLEARCOAT
+ material.clearcoat *= 1.0 - kSock;
+ #endif`,
+        );
     // face: features painted straight onto the head (projected from the front in the rest pose), so they share the skin's lighting.
     // The map holds two layers (see faceTexture): the top half for skin facing forward (features, soft shadows), the bottom
     // half for skin facing down (shadow under the brow, nose, lower lip and jaw), which a front projection would otherwise smear.
@@ -402,14 +441,14 @@ function patch(
  for (int i = 0; i < NUM_DIR_LIGHTS; i++) {
   float ndl = dot(normal, directionalLights[i].direction);
   float wrapped = max(0.0, (ndl + ${wrap.toFixed(3)}) / ${(1 + wrap).toFixed(3)}) - max(0.0, ndl);
-  reflectedLight.directDiffuse += directionalLights[i].color * wrapped * diffuseColor.rgb * vec3(${scatter.map(v => v.toFixed(3)).join(',')});
+  reflectedLight.directDiffuse += directionalLights[i].color * wrapped * diffuseColor.rgb * vec3(${scatter.map(v => v.toFixed(3)).join(',')})${sock ? ' * (1.0 - 0.7 * kSock)' : ''};
  }
  #endif`,
       );
     shader.fragmentShader = frag;
   };
   material.customProgramCacheKey = () =>
-    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}-${strands ? 1 : 0}-${cover ? 1 : 0}-${hands ? 1 : 0}-${sway ? 1 : 0}-${push ? 1 : 0}-${cut ? 1 : 0}`;
+    `kangs-${map.uuid}-${wrap}-${face ? 1 : 0}-${inflate}-${print ? 1 : 0}-${strands ? 1 : 0}-${cover ? 1 : 0}-${hands ? 1 : 0}-${sway ? 1 : 0}-${push ? 1 : 0}-${cut ? 1 : 0}-${sock ? 1 : 0}`;
   return material;
 }
 
@@ -437,6 +476,7 @@ export function skinMaterial(color, face = null) {
       face,
       cover: true,
       hands: true,
+      sock: true,
     },
   );
 }
@@ -456,19 +496,95 @@ export function clothMaterial(color) {
     { map: MAPS.mesh(), scale: 22, bump: 0.18, fadeFar: 3.2, inflate: KIT_INFLATE, print: true, sway: true },
   );
 }
-// Shoes: smooth leather-like upper with a little gloss; matte rubber sole.
-export const shoeMaterial = color =>
-  withAoAlpha(
+// Shoes: smooth leather-like upper with a little gloss, matte rubber below; coloured by zone from a colourway (src/kits.js)
+// in the shader. The zones (src/clothFit.js shoeZones and shoeZoneAt; keep SHOE_ZONE_GLSL alike) are worked out per
+// variant in the bind pose, so they stay on the shoe as it moves. Zones: 0 upper, 1 toe box, 2 heel counter, 3 side panel,
+// 4 midsole band, 5 outsole. The upper and the sole share one set of uniforms (shoeUniforms) per body.
+export function shoeUniforms() {
+  return {
+    kShoeCol: { value: [0xf4f4f4, 0xf4f4f4, 0xf4f4f4, 0x1d1d22].map(c => new THREE.Color(c)) },
+    kShoeZ0: { value: new THREE.Vector4(-9, 9, -9, 9) }, // heel, toe, heel counter's front edge, toe box's back edge
+    kShoeZ1: { value: new THREE.Vector4(-1, -1, 1, 0.13) }, // midsole band low and high, collar, side panel width
+    kShoeZ2: { value: new THREE.Vector4(0.3, 0.74, 0.62, 0.22) }, // side panel: t0, t1, h0, h1
+  };
+}
+/* The variant's zones (src/clothFit.js shoeZones) into the uniforms. */
+export function setShoeZones(u, z, panelWidth = 0.13) {
+  if (!z) return;
+  u.kShoeZ0.value.set(z.heel, z.toe, z.counter, z.toeBox);
+  u.kShoeZ1.value.set(z.band[0], z.band[1], z.collar, panelWidth);
+  u.kShoeZ2.value.set(z.panel.t0, z.panel.t1, z.panel.h0, z.panel.h1);
+}
+/* A colourway [upper, accent, midsole band, outsole] (hex or CSS colours) into the uniforms. */
+export const setShoeColours = (u, colourway) => colourway.forEach((c, k) => u.kShoeCol.value[k].set(c));
+export const SHOE_ZONE_GLSL = `
+uniform vec3 kShoeCol[4]; uniform vec4 kShoeZ0; uniform vec4 kShoeZ1; uniform vec4 kShoeZ2;
+varying vec3 vKShoeP; varying vec3 vKShoeN;
+int kShoeZone(vec3 p, vec3 n, bool sole){
+ if (p.y < kShoeZ1.x) return 5;
+ if (p.y < kShoeZ1.y || sole) return 4;
+ float t = (p.z - kShoeZ0.x) / (kShoeZ0.y - kShoeZ0.x), h = (p.y - kShoeZ1.y) / (kShoeZ1.z - kShoeZ1.y);
+ if (p.z < kShoeZ0.z && h < 0.85) return 2;
+ if (p.z > kShoeZ0.w) return 1;
+ if (abs(n.x) > 0.4 && t > kShoeZ2.x && t < kShoeZ2.y) {
+  float s = (t - kShoeZ2.x) / (kShoeZ2.y - kShoeZ2.x);
+  if (abs(h - mix(kShoeZ2.z, kShoeZ2.w, s)) < kShoeZ1.w * (1.0 - 0.55 * s)) return 3;
+ }
+ return 0;
+}`;
+function shoePatch(material, u, sole) {
+  material.userData.shoe = u;
+  material.onBeforeCompile = shader => {
+    Object.assign(shader.uniforms, u);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vKShoeP; varying vec3 vKShoeN;')
+      .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\nvKShoeN = objectNormal;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvKShoeP = transformed;');
+    shader.fragmentShader = aoAlpha(
+      shader.fragmentShader
+        .replace('#include <common>', '#include <common>\n' + SHOE_ZONE_GLSL)
+        .replace(
+          '#include <color_fragment>',
+          `#include <color_fragment>
+ float kZR = 0.36, kZC = 1.0;
+ {
+  int z = kShoeZone(vKShoeP, normalize(vKShoeN), ${sole ? 'true' : 'false'});
+  vec3 c = kShoeCol[0];
+  if (z == 1) { c = mix(kShoeCol[0], kShoeCol[1], 0.35); kZR = 0.46; kZC = 0.8; }
+  else if (z == 2) { c = kShoeCol[1]; kZR = 0.32; }
+  else if (z == 3) { c = kShoeCol[1]; kZR = 0.4; }
+  else if (z == 4) { c = kShoeCol[2]; kZR = 0.55; kZC = 0.0; }
+  else if (z == 5) { c = kShoeCol[3]; kZR = 0.85; kZC = 0.0; }
+  diffuseColor.rgb *= c;
+ }`,
+        )
+        .replace(
+          '#include <roughnessmap_fragment>',
+          '#include <roughnessmap_fragment>\n roughnessFactor = kZR;',
+        )
+        .replace(
+          '#include <lights_physical_fragment>',
+          '#include <lights_physical_fragment>\n #ifdef USE_CLEARCOAT\n material.clearcoat *= kZC;\n #endif',
+        ),
+    );
+  };
+  material.customProgramCacheKey = () => `kangs-shoe-${sole ? 1 : 0}`;
+  return material;
+}
+export const shoeMaterial = (u = shoeUniforms()) =>
+  shoePatch(
     new THREE.MeshPhysicalMaterial({
-      color,
+      color: 0xffffff,
       roughness: 0.36,
       clearcoat: 0.55,
       clearcoatRoughness: 0.22,
       name: 'shoes',
     }),
+    u,
+    false,
   );
-export const soleMaterial = color =>
-  withAoAlpha(new THREE.MeshStandardMaterial({ color, roughness: 0.75, name: 'sole' }));
+export const soleMaterial = (u = shoeUniforms()) =>
+  shoePatch(new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.75, name: 'sole' }), u, true);
 // Hair: soft highlight that runs round the head (anisotropic), fine strands.
 export function hairMaterial(color) {
   return patch(

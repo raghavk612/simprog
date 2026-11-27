@@ -147,3 +147,59 @@ export function visitorKit(opponent, home = KITS.home.body) {
   const ink = [primary, team?.secondary].find(c => c && luminance(c) < 0.35) || DARK_INK;
   return [ROAD_WHITE, ink];
 }
+
+/* ---- Socks and shoes: the team's socks and three shoe colourways; each player wears one (src/players.js feetFor) ---- */
+// A colourway is [upper, accent, midsole band, outsole]: the upper and toe box in the first, the heel counter and side
+// panel in the second, a band round the midsole in the third (src/clothFit.js shoeZones), and gum or dark rubber below.
+export const GUM = '#a0683c',
+  OUTSOLE_DARK = '#1c1b20';
+const K_WHITE = '#f2f0f5',
+  K_PURPLE = KITS.home.body,
+  K_GOLD = KITS.home.accent,
+  K_BLACK = KITS.alternate.body,
+  K_BRIGHT = KITS.alternate.trim;
+/* Every colour the Kangs' socks and shoes are made from (white, purple, gold, black). */
+export const KANGS_FEET_COLORS = [K_WHITE, K_PURPLE, K_GOLD, K_BLACK, K_BRIGHT, KITS.away.trim];
+// the Kangs: white, purple and gold; purple and gold; or black and purple. Socks in white, black or purple, by kit.
+const KANGS_SHOES = [
+  [K_WHITE, K_PURPLE, K_GOLD, GUM],
+  [K_PURPLE, K_GOLD, K_WHITE, OUTSOLE_DARK],
+  [K_BLACK, K_BRIGHT, K_WHITE, OUTSOLE_DARK],
+];
+const KANGS_SOCKS = {
+  home: K_WHITE,
+  away: KITS.away.trim,
+  alternate: K_BLACK,
+  throwback: K_WHITE,
+  seniornight: K_WHITE,
+  blackout: K_BLACK,
+};
+export const homeFeet = (kit = 'home') => ({
+  sock: KANGS_SOCKS[kit] || KANGS_SOCKS.home,
+  colourways: KANGS_SHOES,
+});
+/* The visitors' socks (their jersey colour) and shoes, from their kit ([jersey, lettering], visitorKit) and their school's
+   colours: three colourways, each upper with the most different of those colours as its accent and band. */
+export function visitorFeet(opponent, [jersey, ink] = visitorKit(opponent)) {
+  const team = TEAM_COLORS[logoSlug(opponent)],
+    palette = [];
+  // near-identical colours (road white and a white second colour) count once
+  for (const c of [jersey, ink, team?.primary, team?.secondary])
+    if (c && !palette.some(p => colorDistance(p, c) < 8)) palette.push(c.toLowerCase());
+  const far = (c, not = []) =>
+      palette
+        .filter(x => x !== c && !not.includes(x))
+        .sort((a, b) => colorDistance(b, c) - colorDistance(a, c))[0],
+    rubber = c => (luminance(c) > 0.35 ? GUM : OUTSOLE_DARK),
+    out = [],
+    add = c => out.length < 3 && !out.some(o => o.join() === c.join()) && out.push(c);
+  for (const u of palette) {
+    const accent = far(u) ?? u,
+      next = far(u, [accent]),
+      band = next && colorDistance(next, u) > 25 ? next : accent; // a band that stands out from the upper
+    add([u, accent, band, rubber(u)]);
+  }
+  // a school with two colours: also a plain upper with a band in the other one
+  for (const u of palette) add([u, u, far(u) ?? u, rubber(u)]);
+  return { sock: palette[0], colourways: out };
+}

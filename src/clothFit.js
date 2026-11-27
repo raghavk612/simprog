@@ -7,6 +7,8 @@
 //          any opening; y, z: it belongs to the limb an arm or leg sleeve follows. The skin shader (materials.js patch,
 //          cover) does not draw skin wholly under the kit, nor the sleeved limb's skin between the sleeve's two planes
 //          (sleeveRims), so a bending elbow or hip can never push it through and a sleeve's edge is straight.
+//   feet: the shoe's zones (upper, toe box, heel counter, side panel, midsole band, outsole) and the sock lines
+//          (shoeZones), for the shoe shader and the sock the skin shader draws
 // The meshes' vertices are split along their UV seams, so positions are welded within a small tolerance, in the template's
 // rest pose.
 import * as THREE from 'three';
@@ -349,6 +351,82 @@ export function handFit(body) {
   return out;
 }
 
+/* ---- Feet: the shoe's zones and the sock lines, in the bind pose (the feet stand flat, the toes forward, +z) ---- */
+// Zones of the shoe, coloured by the shoe shader (materials.js shoeMaterial) from a colourway (src/kits.js): the upper
+// and toe box in its first colour, the heel counter and side panel in its accent, a band round the midsole, the outsole.
+export const SHOE_ZONES = ['upper', 'toe', 'heel', 'panel', 'midsole', 'outsole'];
+// how far up the shin each sock reaches above the ankle joint, as a part of the shin (ankle to knee): a crew sock
+// 0.13-0.15 units on the three variants
+export const SOCK_LINE = { crew: 0.27, mid: 0.16, ankle: 0.09 };
+// the side panel: a stripe across the side of the upper, from high at the heel end (h0 of the way from the midsole band
+// to the collar, at t0 of the way from heel to toe) down to h1 at t1, narrowing as it goes (width PANEL_W)
+const PANEL = { t0: 0.3, t1: 0.74, h0: 0.62, h1: 0.22 },
+  PANEL_W = 0.13;
+/* The zones of one variant's shoes (upper: the 'shoes' primitive, sole: the 'sole' one) and its sock lines, from the
+   meshes and the body's ankle and knee joints. Heights and lengths in the bind pose (the floor is y = 0). */
+export function shoeZones(upper, sole, body) {
+  const sk = body?.skeleton;
+  if (!upper || !sole || !sk) return null;
+  const joint = name => {
+    const i = sk.bones.findIndex(b => b.name === name);
+    return i < 0 ? null : new THREE.Vector3().setFromMatrixPosition(sk.boneInverses[i].clone().invert());
+  };
+  const ankle = joint('ankle_R'),
+    knee = joint('knee_R');
+  if (!ankle || !knee) return null;
+  const range = (mesh, k) => {
+    const a = mesh.geometry.attributes.position;
+    let lo = Infinity,
+      hi = -Infinity;
+    for (let i = 0; i < a.count; i++) {
+      const v = a.getComponent(i, k);
+      lo = Math.min(lo, v);
+      hi = Math.max(hi, v);
+    }
+    return [lo, hi];
+  };
+  const [uz0, uz1] = range(upper, 2),
+    [sz0, sz1] = range(sole, 2),
+    [floor, soleTop] = range(sole, 1),
+    heel = Math.min(uz0, sz0),
+    toe = Math.max(uz1, sz1),
+    len = toe - heel,
+    collar = range(upper, 1)[1],
+    shin = knee.y - ankle.y,
+    sh = soleTop - floor;
+  return {
+    ankle: [Math.abs(ankle.x), ankle.y, ankle.z],
+    heel,
+    toe,
+    collar,
+    // the heel counter: the cup round the heel, to just behind the ankle
+    counter: Math.min(ankle.z - 0.012, heel + 0.26 * len),
+    toeBox: heel + 0.74 * len,
+    // the midsole band, between the outsole and the upper (from 28% to 66% of the sole's height: 0.011-0.030 units)
+    band: [floor + 0.28 * sh, floor + 0.66 * sh],
+    panel: PANEL,
+    socks: Object.fromEntries(Object.entries(SOCK_LINE).map(([k, f]) => [k, ankle.y + f * shin])),
+  };
+}
+/* Which zone a point of the shoe (bind pose position p and normal n) is in; the shoe shader does the same per pixel
+   (materials.js SHOE_ZONE_GLSL, keep the two alike). sole: the point is on the sole primitive. */
+export function shoeZoneAt(z, p, n, sole = false) {
+  const [, y, pz] = p;
+  if (y < z.band[0]) return 'outsole';
+  if (y < z.band[1] || sole) return 'midsole';
+  const t = (pz - z.heel) / (z.toe - z.heel),
+    h = (y - z.band[1]) / (z.collar - z.band[1]);
+  if (pz < z.counter && h < 0.85) return 'heel';
+  if (pz > z.toeBox) return 'toe';
+  const P = z.panel;
+  if (Math.abs(n[0]) > 0.4 && t > P.t0 && t < P.t1) {
+    const s = (t - P.t0) / (P.t1 - P.t0);
+    if (Math.abs(h - (P.h0 + (P.h1 - P.h0) * s)) < PANEL_W * (1 - 0.55 * s)) return 'panel';
+  }
+  return 'upper';
+}
+export const PANEL_WIDTH = PANEL_W;
+
 /* Works the attributes out for a loaded athlete template (gltf), once. Every level of detail gets its own. */
 export function prepareCloth(template) {
   template.userData ??= {};
@@ -396,6 +474,9 @@ export function prepareCloth(template) {
     }
   }
   if (named.body_mesh) out.hands = handFit(named.body_mesh);
+  // the shoe's zones and the sock lines (the near meshes; the far ones share their vertices)
+  const shoeMesh = name => Object.values(named).find(o => o.material?.name === name && !/_lod1/.test(o.name));
+  out.feet = shoeZones(shoeMesh('shoes'), shoeMesh('sole'), named.body_mesh);
   // the sleeves' planes (bind pose heights)
   out.sleeves = {};
   if (named.sleeve_arm_mesh) out.sleeves.arm = sleeveRims(named.sleeve_arm_mesh);

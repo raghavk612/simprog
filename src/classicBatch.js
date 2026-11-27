@@ -5,6 +5,9 @@
 // body interface); their own meshes leave the main camera's layer, and every frame each part's world matrix and colour are
 // copied into its instance. A part that is hidden (the head in Player view, a player who is not drawn) is drawn at zero
 // scale. Shadows and the court mirror see the instances.
+// A part with a band (userData.band: the sock on the shin, the sole on the shoe, src/players.js classicBody) is drawn in
+// its band colour below a height of its own geometry, per instance (attribute kBand: rgb and the height), on the same
+// instanced mesh: no extra draw.
 import * as THREE from 'three';
 
 export const HIDDEN_LAYER = 31; // where a batched figure's own meshes go (no camera renders it)
@@ -23,6 +26,27 @@ const ZERO = new THREE.Matrix4().makeScale(0, 0, 0),
   _pv = new THREE.Matrix4(),
   _sphere = new THREE.Sphere(new THREE.Vector3(), 1.4); // round a standing figure (about 2 units tall)
 
+/* The batch's material for parts with a band: below kBand.w (the part's own y) the band colour replaces the part's. */
+function bandedMaterial() {
+  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.68 });
+  m.onBeforeCompile = shader => {
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nattribute vec4 kBand; varying vec4 vKBand; varying float vKY;',
+      )
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvKBand = kBand; vKY = position.y;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec4 vKBand; varying float vKY;')
+      .replace(
+        '#include <color_fragment>',
+        '#include <color_fragment>\n if (vKY < vKBand.w) diffuseColor.rgb = vKBand.rgb;',
+      );
+  };
+  m.customProgramCacheKey = () => 'kangs-classic-band';
+  return m;
+}
+
 export class ClassicBatch {
   constructor(scene, size = 10) {
     this.scene = scene;
@@ -30,11 +54,16 @@ export class ClassicBatch {
     this.meshes = null;
     this.bodies = new WeakSet();
     this.material = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.68 });
+    this.banded = bandedMaterial();
   }
   /* Builds the instanced meshes from the first classic body seen (every classic body has the same part shapes). */
   build(body) {
     this.meshes = partsOf(body).map(m => {
-      const im = new THREE.InstancedMesh(m.geometry, this.material, this.size);
+      const band = !!m.userData.band,
+        geo = band ? m.geometry.clone() : m.geometry;
+      if (band)
+        geo.setAttribute('kBand', new THREE.InstancedBufferAttribute(new Float32Array(this.size * 4), 4));
+      const im = new THREE.InstancedMesh(geo, band ? this.banded : this.material, this.size);
       im.frustumCulled = false; // the players move every frame: bounds from the instances would go stale
       im.castShadow = true;
       im.receiveShadow = false;
@@ -88,6 +117,9 @@ export class ClassicBatch {
         for (let o = m; shown && o && o !== p; o = o.parent) shown = o.visible; // the head in Player view
         im.setMatrixAt(n, shown ? m.matrixWorld : ZERO);
         im.setColorAt(n, m.material.color);
+        const b = m.userData.band,
+          kb = im.geometry.attributes.kBand;
+        if (b && kb) kb.setXYZW(n, b.color.r, b.color.g, b.color.b, b.y);
       });
       n++;
     }
@@ -96,6 +128,7 @@ export class ClassicBatch {
       im.visible = n > 0;
       im.instanceMatrix.needsUpdate = true;
       im.instanceColor.needsUpdate = true;
+      if (im.geometry.attributes.kBand) im.geometry.attributes.kBand.needsUpdate = true;
     }
   }
   /* The court mirror (src/broadcast.js) renders one layer; the instances join it when it is on. */

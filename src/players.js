@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { KITS } from './kits.js';
+import { KITS, homeFeet } from './kits.js';
 import {
   skinMaterial,
   clothMaterial,
@@ -19,11 +19,14 @@ import {
   bentPlane,
   decalMaterial,
   faceTexture,
+  shoeUniforms,
+  setShoeZones,
+  setShoeColours,
   KIT_INFLATE,
   TRIM_INFLATE,
 } from './materials.js';
 import { AthleteMaps, ATLAS_OF, mapsOn, setMaterialMaps } from './playerMaps.js';
-import { prepareCloth } from './clothFit.js';
+import { prepareCloth, PANEL_WIDTH } from './clothFit.js';
 
 export const BODY_PARTS = ['jersey', 'head', 'hair', 'number', 'nameplate', 'capBadge', 'legs', 'arms'];
 // Which body variant a roster position wears (realistic style). Unknown positions fall back to forward.
@@ -32,10 +35,15 @@ export const variantFor = position => {
   return p.includes('guard') ? 'guard' : p.includes('center') ? 'center' : 'forward';
 };
 
-/* The original figure (moved here from arena.js without changes). kit = {mat(color,extra), textTexture(...), capMat}. */
+/* The sock lines on the classic figure's shin (heights of its capsule's own geometry, -0.195 to 0.195; the shoe's top is
+   at -0.11): crew, mid and ankle. */
+const CLASSIC_SOCKS = { crew: 0.03, mid: -0.03, ankle: -0.075 };
+/* The original figure (moved here from arena.js), with a sock band and shoe colours (setFeet).
+   kit = {mat(color,extra), textTexture(...), capMat}. */
 export function classicBody(kit, i, color) {
   const g = new THREE.Group(),
-    parts = { legs: [], arms: [] };
+    parts = { legs: [], arms: [] },
+    feetParts = [];
   const skin = [0x9c6946, 0xe4b58b, 0x66432d, 0xb67e57, 0xd39871][i % 5];
   const jersey = kit.mat(color),
     skins = [];
@@ -120,6 +128,11 @@ export function classicBody(kit, i, color) {
     const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.14, 0.36), kit.mat(0xffffff));
     shoe.position.set(0, -0.34, 0.07);
     knee.add(shoe);
+    // the sock and the sole: a band of colour below a height of the part's own geometry, drawn by the Low batch
+    // (src/classicBatch.js) on the same instanced part; setFeet sets them
+    shin.userData.band = { kind: 'sock', color: new THREE.Color(0xffffff), y: CLASSIC_SOCKS.crew };
+    shoe.userData.band = { kind: 'sole', color: new THREE.Color(0xffffff), y: -0.035 };
+    feetParts.push({ shin, shoe });
     hip.userData.knee = knee;
     parts.legs.push(hip);
     const shoulder = new THREE.Group();
@@ -146,7 +159,17 @@ export function classicBody(kit, i, color) {
   });
   // the person's skin tone (the figure is not rebuilt when the player in it changes)
   const setSkin = hex => skins.forEach(m => m.color.setHex(hex));
-  return { root: g, parts, style: 'classic', variant: 'classic', key: 'classic', setSkin };
+  // his socks (colour and height) and his shoes (the upper's colour, the midsole band's on the sole): see feetFor
+  const setFeet = f => {
+    for (const { shin, shoe } of feetParts) {
+      shin.userData.band.color.set(f.sock);
+      shin.userData.band.y = CLASSIC_SOCKS[f.socks] ?? CLASSIC_SOCKS.crew;
+      shoe.material.color.set(f.shoe[0]);
+      shoe.userData.band.color.set(f.shoe[2]);
+    }
+  };
+  setFeet(feetFor(homeFeet(), { socks: 'crew', shoe: i }));
+  return { root: g, parts, style: 'classic', variant: 'classic', key: 'classic', setSkin, setFeet };
 }
 
 /* Puts a body into a player's outer group, replacing the previous one, and points the player's userData at the new parts.
@@ -234,11 +257,14 @@ const hash = s => {
   for (const c of String(s)) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
   return h >>> 0;
 };
-/* A player's look (hair style and colour, headband, arm and leg sleeves, skin tone and the face's small differences), the
-   same every time for the same player, whichever body slot he is drawn in. */
+export const SOCK_HEIGHTS = ['crew', 'mid', 'ankle'];
+/* A player's look (hair style and colour, headband, arm and leg sleeves, skin tone and the face's small differences, how
+   high his socks reach and which of his team's shoe colourways he wears), the same every time for the same player,
+   whichever body slot he is drawn in. A hash of who he is: never a random stream the simulation draws from. */
 export function lookFor(seed) {
   const h = hash(seed),
-    h2 = hash(`${seed}|face`);
+    h2 = hash(`${seed}|face`),
+    h3 = hash(`${seed}|feet`); // its own hash, so the older parts of the look stay as they were
   return {
     hair: HAIR_STYLES[h % 4],
     hairColor: HAIR_COLORS[(h >>> 4) % HAIR_COLORS.length],
@@ -247,11 +273,20 @@ export function lookFor(seed) {
     legSleeve: (h >>> 14) % 6 === 0,
     skin: h2 % SKIN_TONES.length,
     face: (h2 >>> 4) % 997,
+    socks: SOCK_HEIGHTS[h3 % 3],
+    shoe: (h3 >>> 5) % 3, // which of his team's colourways (src/kits.js)
   };
 }
+/* What a player wears on his feet: his team's socks (src/kits.js homeFeet / visitorFeet) at his height, and his pick of
+   the team's shoe colourways: {sock, socks, shoe: [upper, accent, midsole band, outsole]}. */
+export const feetFor = (team, look) => ({
+  sock: team.sock,
+  socks: SOCK_HEIGHTS.includes(look?.socks) ? look.socks : 'crew',
+  shoe: team.colourways[(look?.shoe ?? 0) % team.colourways.length],
+});
 export const lookKey = l =>
   l
-    ? `${l.hair}${l.headband ? '+band' : ''}${l.armSleeve ? '+arm' : ''}${l.legSleeve ? '+leg' : ''}${l.skin != null ? `|s${l.skin}f${l.face ?? 0}` : ''}`
+    ? `${l.hair}${l.headband ? '+band' : ''}${l.armSleeve ? '+arm' : ''}${l.legSleeve ? '+leg' : ''}${l.socks ? `|${l.socks}${l.shoe ?? 0}` : ''}${l.skin != null ? `|s${l.skin}f${l.face ?? 0}` : ''}`
     : '';
 /* Who a player is, for his look: the Kangs by roster id; visitors by name (their ids are only their slot on the floor). */
 export const personSeed = (person, slot = 0) =>
@@ -468,8 +503,9 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
   }
   const jersey = clothMaterial(color),
     skin = skinMaterial(tone, face),
-    shoes = shoeMaterial(0xf4f4f4),
-    sole = soleMaterial(0x1d1d22),
+    shoeU = shoeUniforms(),
+    shoes = shoeMaterial(shoeU),
+    sole = soleMaterial(shoeU),
     hairMat = hairMaterial(look.hairColor ?? 0x161210),
     band = fabricMaterial(0xffffff),
     sleeve = fabricMaterial(0x111114, 0.01, { cut: true }),
@@ -509,6 +545,20 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
     H.kKnR.value.set(...hands.R.knuckle, hands.R.length);
     H.kKnL.value.set(...hands.L.knuckle, hands.L.length);
   }
+  // socks (the skin shader, materials.js sock) and the shoe's zones (materials.js shoeMaterial), this variant's lines
+  const feetFit = template.userData?.clothFit?.feet,
+    sockU = skin.userData.sock;
+  setShoeZones(shoeU, feetFit, PANEL_WIDTH);
+  const setFeet = f => {
+    setShoeColours(shoeU, f.shoe);
+    if (!sockU || !feetFit) return;
+    const c = new THREE.Color(f.sock),
+      top = feetFit.socks[f.socks] ?? feetFit.socks.crew;
+    sockU.kSockC.value.set(c.r, c.g, c.b, 1);
+    // the cuff: about 2 cm, or half of what shows of an ankle sock above the shoe's collar
+    sockU.kSockY.value.set(top, Math.min(0.02, (top - feetFit.collar) * 0.5));
+  };
+  setFeet(feetFor(homeFeet(), look)); // the Kangs' until the Arena dresses him (the drills keep these)
   // the shorts sway between their waistband and hem (materials.js sway). Jersey and shorts share the kit material: the
   // jersey's lower edge sits inside that range and is tucked in, so it moves with them
   const sh = template.userData?.clothFit?.shorts;
@@ -653,6 +703,7 @@ export function athleteBody(template, kit, i, color, variant, look = lookFor(i),
     height: info.height,
     sharedGeometry: true,
     setLettering,
+    setFeet,
     setLod,
     setDetail,
     lodMeshes,
