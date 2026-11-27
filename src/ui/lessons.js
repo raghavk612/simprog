@@ -485,3 +485,23 @@ export const holdsKeys = ({ open, held, dialog }) => !!open && !!held && !dialog
 // The thing a card points at is wholly out of view: above, below, or under the card docked at the bottom of a phone.
 export const outOfView = (r, height, dockTop = null) =>
   !!r && (r.bottom <= 0 || r.top >= height || (dockTop !== null && r.top >= dockTop));
+// A desktop card's place in the page header (the band's free middle, over the decorative ghost word), beside the title
+// and sub-line and never on them: centred in the band, or from its top when the card is taller than the band (it then
+// hangs below it, still beside the text). null when the header is hidden (the live game), not wholly on screen, or has
+// no room.
+export function headRoom({ head, text, card, screen }) {
+  if (!head?.height || !text || head.top < 0 || head.bottom > screen.h) return null;
+  const left = text.right + 24,
+    top = head.top + Math.max(8, (head.height - card.h) / 2);
+  if (left + card.w > screen.w - 12 || top + card.h > screen.h - 12) return null;
+  return { left, top };
+}
+// A phone's card is docked at the bottom, and the page can scroll anything clear of it. It rises above its target only
+// when the target is on screen under it and scrolling cannot clear it: the page has too little left to scroll (`room`),
+// or the target is fixed in place (the live game's control bar).
+export const liftsDocked = ({ aim, dockTop, h, vh, room, fixed = false }) =>
+  !!aim &&
+  aim.top < vh &&
+  aim.bottom > dockTop &&
+  aim.top - h - 12 >= 12 &&
+  (fixed || room < aim.bottom - dockTop + 12);

@@ -135,7 +135,7 @@ function strip() {
           .map(
             c => html`
               <li class="strip-card ${c.status}${c.result ? (c.result.won ? ' sc-win' : ' sc-loss') : ''}">
-                <span class="sc-num" aria-hidden="true">${c.n}</span><span class="sr-only">${t('journal.gameN', { n: +c.n })}</span><b class="sc-opp">${esc(c.opponent)}</b><span class="sc-tag">${t(c.home ? 'game.homeGame' : 'game.awayGame')}</span>${
+                <span class="sc-num" aria-hidden="true">${c.n}</span><span class="sr-only">${t('journal.gameN', { n: +c.n })}</span><b class="sc-opp" title="${esc(c.opponent)}">${esc(c.opponent)}</b><span class="sc-tag">${t(c.home ? 'game.homeGame' : 'game.awayGame')}</span>${
                   c.result
                     ? `<span class="sc-res"><b aria-hidden="true">${c.result.won ? 'W' : 'L'}</b><span class="sr-only">${t(c.result.won ? 'result.win' : 'result.loss')}</span> ${c.result.for}–${c.result.against}</span>`
                     : c.status === 'next'

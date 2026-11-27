@@ -24,8 +24,9 @@ const pair = name => [
     ['logo-84', 2],
     ['logo-126', 3],
   ];
-// Where a decorative render is hidden (a11y.css hides it in forced colours and in the app's own high contrast setting; the
-// system's more-contrast setting is the default for that setting, so it is blank too and nothing is fetched).
+// Where a decorative render is hidden, its picture gets a blank source, so nothing is downloaded: forced colours, and a
+// system's more-contrast setting (which turns the app's high contrast on by default). The app's high contrast turned on
+// by hand has no media query to match: there the file still downloads and a11y.css hides it.
 const DECORATION = '(forced-colors: active), (prefers-contrast: more)';
 const set = (files, ext) => files.map(([f, d]) => `${UI_IMG}${f}.${ext} ${d}x`).join(', ');
 
@@ -41,8 +42,9 @@ export function uiPicture(
   }${blank ? `<source media="${blank}" srcset="${BLANK}">` : ''}<source type="image/avif" srcset="${set(files, 'avif')}"><source type="image/webp" srcset="${set(files, 'webp')}"><img${imgCls ? ` class="${imgCls}"` : ''} src="${UI_IMG}${files[0][0]}.webp" alt="" width="${w}" height="${h}" decoding="async"></picture>`;
 }
 
-// A small glyph (the token coin, the coach's whistle) in a 24 px box. Its SVG stays underneath: theme.css shows it when
-// the image fails, in high contrast and in forced colours, so the box is never empty. render() rebuilds the page after
+// A small glyph (the token coin, the coach's whistle) in a 24 px box. Its SVG stays underneath, so the box is never empty:
+// theme.css shows it when the image fails, a11y.css in high contrast (the render still downloads there and is hidden)
+// and in forced colours (where the render's source is blank). render() rebuilds the page after
 // every change, so a failure is remembered by asset name (failedGlyphs): later renders draw the SVG alone, with no
 // image to flash empty or request again.
 const failedGlyphs = new Set();

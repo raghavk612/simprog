@@ -47,6 +47,7 @@
     .ph-chip dt,
     .rail-card h2,
     .strip-wrap h2,
+    .journal-cols > .card > h2,
     .rail-tag,
     .sc-tag,
     .rail-facts dt,
@@ -1284,7 +1285,8 @@ dialog:has(.settings) .modal-content {
 /* ---- Page headers in high contrast: no ghost word, no render, no tint; a white rule closes the band, and the stat
    chips keep their slanted plates as a white ring (the same device as the slabs). ---- */
 .a11y-high-contrast .ph-ghost,
-.a11y-high-contrast .ph-hero {
+.a11y-high-contrast .ph-hero,
+.a11y-high-contrast .page-head::after {
   display: none;
 }
 .a11y-high-contrast .page-head {
@@ -1355,6 +1357,7 @@ dialog:has(.settings) .modal-content {
      keeps a border. */
   .ph-ghost,
   .ph-hero,
+  .page-head::after,
   .ph-chip::before,
   .ph-chip::after {
     display: none;
@@ -1377,8 +1380,9 @@ dialog:has(.settings) .modal-content {
 .a11y-high-contrast .empty-art {
   display: none;
 }
-/* The coin and the whistle are renders; high contrast and forced colours draw their SVG glyphs instead (art.js leaves the
-   render out of the markup in high contrast; in forced colours its source is blank). */
+/* The coin and the whistle are renders; high contrast and forced colours draw their SVG glyphs instead. In forced colours
+   art.js gives the picture a blank source, so nothing downloads; in high contrast the render is still in the markup and
+   downloads, and these rules hide it. */
 .a11y-high-contrast .art-glyph > picture {
   display: none;
 }

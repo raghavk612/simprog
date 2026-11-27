@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createSettingsDialog } from '../src/settingsDialog.js';
-import { escapeAnswers, holdsKeys, outOfView } from '../src/ui/lessons.js';
+import { escapeAnswers, holdsKeys, outOfView, headRoom, liftsDocked } from '../src/ui/lessons.js';
 
 const read = f => fs.readFileSync(new URL(f, import.meta.url), 'utf8');
 
@@ -113,4 +113,62 @@ test('Show me appears only when what the card points at is wholly out of view', 
   assert.equal(outOfView(r(700, 760), 800, 690), true, 'under the docked phone card');
   assert.equal(outOfView(r(650, 760), 800, 690), false, 'partly above it');
   assert.equal(outOfView(null, 800), false, 'nothing to point at');
+});
+// A desktop page header at 1440 x 900: the band from 120 to 296, its text column (title and sub-line) to 696.
+const box = (left, top, right, bottom) => ({
+  left,
+  top,
+  right,
+  bottom,
+  width: right - left,
+  height: bottom - top,
+});
+const head = box(0, 120, 1440, 296),
+  text = box(28, 120, 696, 296),
+  card = { w: 380, h: 140 },
+  screen = { w: 1440, h: 900 };
+test("the card's place in the page header is beside its text, never on it", () => {
+  assert.deepEqual(headRoom({ head, text, card, screen }), { left: 720, top: 138 });
+  assert.equal(
+    headRoom({ head: box(0, -60, 1440, 116), text, card, screen }),
+    null,
+    'header scrolled partly away',
+  );
+  assert.deepEqual(
+    headRoom({ head: box(0, 120, 1440, 220), text, card, screen }),
+    { left: 720, top: 128 },
+    'a band shorter than the card (high contrast has no render): from its top, hanging below it beside the text',
+  );
+  assert.equal(
+    headRoom({ head: box(0, 120, 1440, 220), text, card: { w: 380, h: 800 }, screen }),
+    null,
+    'a card that would run off the screen',
+  );
+  assert.equal(
+    headRoom({ head: box(0, 0, 0, 0), text: box(0, 0, 0, 0), card, screen }),
+    null,
+    'the live game hides the header',
+  );
+  assert.equal(
+    headRoom({ head, text: box(28, 120, 1100, 296), card, screen }),
+    null,
+    'no room beside the text',
+  );
+  assert.equal(headRoom({ head: null, text, card, screen }), null, 'a page without a header');
+});
+test("a phone's docked card rises above its target only when the page cannot scroll the target clear", () => {
+  const vh = 844,
+    dockTop = 560,
+    h = 140;
+  // The live game's control bar: on screen under the docked card, and the page cannot scroll.
+  assert.equal(liftsDocked({ aim: box(10, 600, 380, 650), dockTop, h, vh, room: 0 }), true);
+  // Fixed in place (the bar above the tab bar): scrolling never moves it.
+  assert.equal(liftsDocked({ aim: box(10, 600, 380, 650), dockTop, h, vh, room: 2000, fixed: true }), true);
+  // The Skills tree: the page scrolls it clear, so the card stays docked and covers nothing above it.
+  assert.equal(liftsDocked({ aim: box(10, 470, 380, 1400), dockTop, h, vh, room: 1200 }), false);
+  assert.equal(liftsDocked({ aim: box(10, 600, 380, 650), dockTop, h, vh, room: 300 }), false);
+  // Nothing under the card, or no room above the target.
+  assert.equal(liftsDocked({ aim: box(10, 300, 380, 400), dockTop, h, vh, room: 0 }), false);
+  assert.equal(liftsDocked({ aim: box(10, 100, 380, 650), dockTop, h, vh, room: 0 }), false);
+  assert.equal(liftsDocked({ aim: null, dockTop, h, vh, room: 0 }), false);
 });

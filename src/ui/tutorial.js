@@ -136,10 +136,21 @@ function place(r) {
       });
   }
   if (dock) document.documentElement.style.setProperty('--coach-h', `${h + foot}px`);
-  const aim = target(r)?.getBoundingClientRect() ?? null;
+  const aimEl = target(r),
+    aim = aimEl?.getBoundingClientRect() ?? null;
   let top = innerHeight - h - (dock ? foot : 24);
-  // Docked on a phone over something on screen (the live game's control bar cannot scroll): sit just above it instead.
-  const lift = dock && aim && aim.top < innerHeight && aim.bottom > top && aim.top - h - 12 >= 12;
+  // Docked on a phone over its target: the page scrolls the target clear (Show me does it), so the card stays docked and
+  // covers nothing above. Only a target scrolling cannot clear (the live game's control bar) gets the card just above it.
+  const lift =
+    dock &&
+    L.liftsDocked({
+      aim,
+      dockTop: top,
+      h,
+      vh: innerHeight,
+      room: document.documentElement.scrollHeight - innerHeight - scrollY,
+      fixed: pinned(aimEl),
+    });
   const show = card.querySelector('[data-action="lesson-show"]');
   if (show) show.hidden = !L.outOfView(aim, innerHeight, dock && !lift ? top : null);
   if (lift) top = aim.top - h - 12;
@@ -148,12 +159,48 @@ function place(r) {
     card.style.top = `${top}px`;
     return;
   }
-  // Below first, then to the left, and above only as a last resort: the top right is where notifications appear.
-  const below = rect.bottom + 14 + h < innerHeight - 12,
+  // Below first, then to the left; where neither fits, the page header's free middle (over the ghost word, never on the
+  // title or sub-line) before the space above the spot, which is the page's own content; the bottom right as a last
+  // resort (the top right is where notifications appear). Any place that would cover the header's text moves into the
+  // header's free middle too.
+  const headText = $('.page-head .ph-text')?.getBoundingClientRect(),
+    head = L.headRoom({
+      head: $('.page-head')?.getBoundingClientRect(),
+      text: headText,
+      card: { w, h },
+      screen: { w: innerWidth, h: innerHeight },
+    }),
+    below = rect.bottom + 14 + h < innerHeight - 12,
     side = rect.left - 14 - w > 12,
     above = rect.top - 14 - h > 12;
-  card.style.left = `${below || (!side && above) ? Math.max(12, Math.min(innerWidth - w - 12, rect.left)) : side ? rect.left - 14 - w : Math.max(12, innerWidth - w - 12)}px`;
-  card.style.top = `${below ? rect.bottom + 14 : side ? Math.max(12, Math.min(innerHeight - h - 12, rect.top)) : above ? rect.top - 14 - h : Math.max(12, innerHeight - h - 12)}px`;
+  let left =
+    below || (!side && above)
+      ? Math.max(12, Math.min(innerWidth - w - 12, rect.left))
+      : side
+        ? rect.left - 14 - w
+        : Math.max(12, innerWidth - w - 12);
+  top = below
+    ? rect.bottom + 14
+    : side
+      ? Math.max(12, Math.min(innerHeight - h - 12, rect.top))
+      : above
+        ? rect.top - 14 - h
+        : Math.max(12, innerHeight - h - 12);
+  const onText =
+    headText &&
+    left < headText.right &&
+    headText.left < left + w &&
+    top < headText.bottom &&
+    headText.top < top + h;
+  if (head && ((!below && !side) || onText)) ({ left, top } = head);
+  card.style.left = `${left}px`;
+  card.style.top = `${top}px`;
+}
+// Whether an element stays put while the page scrolls (it or a parent is fixed or sticky).
+function pinned(el) {
+  for (let e = el; e && e !== document.body; e = e.parentElement)
+    if (['fixed', 'sticky'].includes(getComputedStyle(e).position)) return true;
+  return false;
 }
 // The page redraws under the card, so the glow is put back on every tick.
 function glow(r) {

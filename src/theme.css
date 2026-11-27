@@ -1700,6 +1700,41 @@ body.live-match .subnav {
       linear-gradient(0deg, transparent, var(--page) 18%);
     mask-composite: intersect;
   }
+  /* The ghost word ends where the render's slot begins, fading out over its last 140px, so the art never sits on its
+     letters (a word cut off by the trophy read as "JOURNA"). */
+  .page-head:has(.ph-hero) .ph-ghost {
+    margin-right: var(--ph-art);
+    mask-image: linear-gradient(90deg, var(--ink) calc(100% - 140px), transparent);
+  }
+}
+/* The header's ends: beyond the 1600px grid the band runs on into the window's margins, and those empty stretches carry
+   the stripes of the top bar's (parallel to the slab edges, 2px every 14px, --stripe), faded at both ends of each. They
+   stop where the grid starts, so nothing is ever written on them. --g is a margin's width in this box's terms (the box is
+   the window wide, the header 1600px less the grid's 28px gutters). High contrast and forced colours drop them. */
+@media (min-width: 1601px) {
+  .page-head::after {
+    --g: calc(50% - var(--shell-max) / 2 + 28px);
+    content: '';
+    position: absolute;
+    z-index: -2;
+    top: 0;
+    bottom: 0;
+    left: calc(50% - 50vw);
+    right: calc(50% - 50vw);
+    background: repeating-linear-gradient(102deg, transparent 0 12px, var(--stripe) 12px 14px);
+    mask-image: linear-gradient(
+      90deg,
+      transparent,
+      var(--ink) calc(var(--g) * 0.3),
+      var(--ink) calc(var(--g) * 0.7),
+      transparent var(--g),
+      transparent calc(100% - var(--g)),
+      var(--ink) calc(100% - var(--g) * 0.7),
+      var(--ink) calc(100% - var(--g) * 0.3),
+      transparent
+    );
+    pointer-events: none;
+  }
 }
 /* The entrance: the title slides 12px and fades in over 200ms, the ghost word 32px over 260ms. */
 @keyframes ph-title-in {
@@ -2932,10 +2967,16 @@ body[data-view='game'] .page-action {
     grid-template-columns: minmax(0, 1fr) 320px;
     align-items: start;
   }
+  /* Pinned, but never taller than the window (large text sizes): past that it scrolls on its own, so its foot stays
+     reachable. */
   .context-rail {
     position: sticky;
     top: 16px;
     grid-template-columns: minmax(0, 1fr);
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
   }
   /* Standings beside the rail: the table keeps its full width in the first column, the leaders and the achievements
      share the second. */
@@ -2949,8 +2990,11 @@ body[data-view='game'] .page-action {
 .rail-card {
   padding: 16px 18px;
 }
+/* The card headings of the pages with a rail: Journal's Results and Decision trail take the same style as its strip and
+   rail, so one page never mixes two. */
 .rail-card h2,
-.strip-wrap h2 {
+.strip-wrap h2,
+.journal-cols > .card > h2 {
   margin: 0 0 12px;
   color: var(--ink);
   font: italic 800 calc(18px * var(--ts, 1) * var(--ls, 1)) / 1.1 var(--display);
@@ -2966,6 +3010,7 @@ body[data-view='game'] .page-action {
   align-items: center;
   gap: 10px;
   margin: 0 0 14px;
+  color: var(--ink);
   font: 700 calc(22px * var(--ts, 1) * var(--ls, 1)) / 1.1 var(--display);
 }
 .rail-team b {
@@ -3114,11 +3159,15 @@ body[data-view='game'] .page-action {
   font: italic 900 calc(22px * var(--ts, 1) * var(--ls, 1)) / 1 var(--display);
   letter-spacing: 0.03em;
 }
+/* An opponent's name wraps between words only; a single word wider than the card ends in an ellipsis (the full name is
+   its title and in the screen-reader text). */
 .sc-opp {
   max-width: 100%;
+  overflow: hidden;
   color: var(--ink);
   font: 700 calc(15px * var(--ts, 1) * var(--ls, 1)) / 1.1 var(--display);
-  overflow-wrap: anywhere;
+  overflow-wrap: normal; /* the page's break-word (a11y.css) would split the word before the ellipsis could show */
+  text-overflow: ellipsis;
 }
 .sc-res {
   margin-top: auto;
@@ -3163,12 +3212,19 @@ body[data-view='game'] .page-action {
   overflow: visible;
 }
 @media (min-width: 851px) {
+  /* The card is never taller than the window: its list takes what the heading leaves and scrolls, so the card's foot
+     stays on screen at any text size. */
   .journal-cols > .journal-results {
     position: sticky;
     top: 16px;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100dvh - 32px);
   }
   .journal-results .fit-scroll {
-    max-height: calc(100dvh - 140px);
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: none;
   }
 }
 

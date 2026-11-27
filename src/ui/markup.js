@@ -36,7 +36,8 @@ export const link = (href, label) => `<a href="${href}" target="_blank" rel="nor
 // chips of the page's own, and from 1200 px the group's render (a phone never downloads it). shell.js render() adds
 // .enter when the page changes (pageHead.js headEnters).
 // The render is not emitted where the page hides the header (the live game and replays); a phone, forced colours and a
-// system's more-contrast setting get a blank source: a hidden render is never downloaded (art.js).
+// system's more-contrast setting get a blank source, so it is not downloaded there (art.js). The app's high contrast
+// turned on by hand still downloads it, and a11y.css hides it.
 export function header(title, description = '', page = view) {
   const m = headModel(page, state) || { ghost: `nav.${page}`, hero: '', chips: [] },
     hero = m.hero && !isLiveMatch(page, state, ui) ? m.hero : '';
