@@ -21,12 +21,12 @@ import { sortRows, sortHead, yearRank, heightInches, standingsRows } from '../li
 import { html, esc, btn, oppBadge, header, LOGO_WHITE, pill } from '../markup.js';
 import { seasonStrip, bracketSeed } from '../seasonModel.js';
 import { withRail, pctText } from '../rail.js';
+import { emptyArt, emptyPicture } from '../art.js';
 import { notify } from '../toast.js';
 import { $ } from '../page.js';
 import { stage, render } from '../shell.js';
 import { clearPreviews } from './landing.js';
 
-const UI_IMG = `${import.meta.env?.BASE_URL ?? '/'}images/ui/`;
 let dataLevel = null; // the level shown on the data page; defaults to the one being coached
 
 // ESPN-style season leaders: category, player, per-game value.
@@ -106,10 +106,7 @@ function bracket() {
                 <strong>${seed.seed}</strong>
                 <p>${t('bracket.seed')}<small>${t('bracket.seedOf', { n: seed.of })}</small></p>
               </div>
-              <picture class="bracket-art">
-                <source type="image/avif" srcset="${UI_IMG}empty-bracket.avif">
-                <img src="${UI_IMG}empty-bracket.webp" alt="" width="200" height="150" decoding="async">
-              </picture>`
+              ${emptyPicture('empty-bracket', 'empty-art bracket-art', '(max-width: 620px)')}`
             : ''
         }
       </div>
@@ -176,6 +173,7 @@ export function journal() {
         <section class="card journal-results">
           <h2>${t('journal.scoreboard')}</h2>
           <div class="fit-scroll" tabindex="0">
+            ${emptyPicture(emptyArt('season', state), 'empty-art journal-art')}
             ${state.results.map((r, i) => `<button class="result-row" data-action="result" data-index="${i}"><b class="${r.won ? 'win' : 'loss'}">${r.won ? 'W' : 'L'}<span class="sr-only"> ${r.won ? t('result.win') : t('result.loss')}</span></b><span>${esc(r.opponent)}<small>${esc(formatDate(r.date))}</small></span><strong>${r.home}–${r.away}</strong><span>${t('journal.replay')}</span></button>`).join('') || `<p>${t('journal.noGames')}</p>`}
           </div>
         </section>

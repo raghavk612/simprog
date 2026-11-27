@@ -27,6 +27,7 @@ import {
   TAB_ICONS,
   NAV_GLYPHS,
 } from './markup.js';
+import { glyphImage, isLiveMatch } from './art.js';
 import { state, view, setView, ui } from './store.js';
 import { landing, titlePreview, syncTitlePause } from './screens/landing.js';
 import { home, nextStepButton } from './screens/home.js';
@@ -123,7 +124,7 @@ function scorebug() {
             : ''
         }
         ${pair('rec', t('scorebug.record'), `${d.wins}–${d.losses}`)}
-        ${pair('tokens', t('scorebug.tokens'), `${svg(NAV_GLYPHS.coin, 'sb-coin')}${formatNumber(d.tokens)}`)}
+        ${pair('tokens', t('scorebug.tokens'), `${glyphImage('coin', NAV_GLYPHS.coin, 'sb-coin')}${formatNumber(d.tokens)}`)}
         ${pair('slots', t('scorebug.slots'), `${d.slots}<span class="sb-pips" aria-hidden="true">${Array.from({ length: d.slotsMax }, (_, i) => `<i class="${i < d.slots ? 'on' : ''}"></i>`).join('')}</span>`)}
         ${d.game ? pair('game', t('scorebug.game'), `${d.game.n}/${d.game.total}`, true) : ''}
       </dl>
@@ -250,10 +251,7 @@ export function render() {
   viaWay = false;
   renderedView = view;
   document.body.dataset.view = view;
-  document.body.classList.toggle(
-    'live-match',
-    view === 'game' && !!(state?.match || ui.closingMatch || ui.replayEvent),
-  );
+  document.body.classList.toggle('live-match', isLiveMatch(view, state, ui));
   document.body.append(host);
   if (view === 'landing') {
     app.innerHTML = landing();
@@ -275,7 +273,7 @@ export function render() {
             </nav>
             <span class="bar-fill" aria-hidden="true"></span>
             <div class="top-tools">
-              <span class="top-coach">${svg(NAV_GLYPHS.whistle, 'coach-glyph')}<span>${t('side.coach', { name: esc(state.coach) })}</span></span>${btn(t('top.settings'), 'settings', '', hint('settings'))}
+              <span class="top-coach">${glyphImage('whistle', NAV_GLYPHS.whistle, 'coach-glyph')}<span>${t('side.coach', { name: esc(state.coach) })}</span></span>${btn(t('top.settings'), 'settings', '', hint('settings'))}
               ${btn(t('top.help'), 'rules', '', hint('rules'))}
             </div>
           </header>

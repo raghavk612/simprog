@@ -20,7 +20,8 @@
     "ladder": "node scripts/auto-ladder.mjs",
     "motion:qa": "node scripts/motion-qa.mjs",
     "motion:render": "node scripts/motion-render.mjs",
-    "golden:update": "UPDATE_GOLDEN=1 node --test tests/golden.test.js"
+    "golden:update": "UPDATE_GOLDEN=1 node --test tests/golden.test.js",
+    "check:art": "node scripts/ui-art-check.mjs"
   },
   "dependencies": {
     "three": "0.180.0"

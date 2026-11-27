@@ -937,6 +937,34 @@ body.live-match .workspace {
   font: 600 calc(14px * var(--ts, 1) * var(--ls, 1)) / 1 var(--body);
   white-space: nowrap;
 }
+.art-glyph {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+}
+.art-glyph picture,
+.art-glyph img {
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+/* The render is the glyph; its SVG shows only where the render cannot (see a11y.css for high contrast and forced colours) */
+.art-glyph > svg {
+  display: none;
+}
+.art-glyph.no-img > svg {
+  display: block;
+}
+.art-glyph.no-img > picture {
+  display: none;
+}
+.logo-img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
 .coach-glyph {
   flex: none;
   width: 18px;
@@ -2824,7 +2852,10 @@ body[data-view='game'] .page-action {
     top: 0;
     bottom: 0;
     width: calc(50vw - 50%);
-    background: var(--ink);
+    /* the grain tile (128 px, mid-grey noise) multiplies the ink, so the boards are speckled; both are decoration in an
+       empty margin, never under text */
+    background: var(--ink) url('/images/ui/grain.webp') 0 0 / 128px 128px repeat;
+    background-blend-mode: multiply;
     opacity: var(--floor-alpha);
     mask: url('/images/ui/hardwood.webp') 0 0 / 1024px 128px repeat luminance;
     pointer-events: none;
@@ -3136,10 +3167,26 @@ body[data-view='game'] .page-action {
   display: block;
   margin-top: 4px;
 }
-.bracket-art img {
+/* The empty-state renders (art.js emptyArt; 400 × 300 files shown at half size, sharp on a 2x screen): the Journal's
+   scorebook, the Bracket's plinth, the Skills locker. Decorative; high contrast and forced colours hide them. */
+.empty-art {
+  display: block;
+}
+.empty-art img {
   display: block;
   width: 200px;
   height: 150px;
+}
+.journal-art {
+  margin: 0 auto 8px;
+  width: 200px;
+}
+.skills-art img {
+  width: 140px;
+  height: 105px;
+}
+.skills-art {
+  margin-left: auto;
 }
 .bracket-card.skeleton .bracket .round.upcoming {
   border-style: dashed;
@@ -3147,6 +3194,6 @@ body[data-view='game'] .page-action {
 }
 @media (max-width: 620px) {
   .bracket-art {
-    display: none;
+    display: none; /* its picture also has a blank source here, so a phone never downloads it */
   }
 }

@@ -1356,14 +1356,28 @@ dialog:has(.settings) .modal-content {
    and the seed keep their words and outlines (the next game says NEXT, results say W or L). ---- */
 .a11y-high-contrast .content::before,
 .a11y-high-contrast .content::after,
-.a11y-high-contrast .bracket-art {
+.a11y-high-contrast .empty-art {
   display: none;
+}
+/* The coin and the whistle are renders; high contrast and forced colours draw their SVG glyphs instead (art.js leaves the
+   render out of the markup in high contrast; in forced colours its source is blank). */
+.a11y-high-contrast .art-glyph > picture {
+  display: none;
+}
+.a11y-high-contrast .art-glyph > svg {
+  display: block;
 }
 @media (forced-colors: active) {
   .content::before,
   .content::after,
-  .bracket-art {
+  .empty-art {
     display: none;
+  }
+  .art-glyph > picture {
+    display: none;
+  }
+  .art-glyph > svg {
+    display: block;
   }
   .bracket-seed,
   .rail-table li.you {

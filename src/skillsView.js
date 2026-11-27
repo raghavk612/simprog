@@ -5,6 +5,7 @@
 import { BASIC_MOVES, SKILL_TREE, unlockedMoves, canUnlock } from './skills.js';
 import { t, tu } from './i18n/index.js';
 import { shortText } from './shopFit.js';
+import { emptyArt, emptyPicture } from './ui/art.js';
 const BRANCHES = Object.keys(SKILL_TREE),
   ALL = Object.values(SKILL_TREE).flat(),
   TOTAL = BASIC_MOVES.length + ALL.length,
@@ -137,7 +138,7 @@ function detail(s, sel) {
 
 export function skillTreeCard(s) {
   const sel = selectedSkill(s);
-  return `<section class="card skill-tree" aria-label="${t('skills.title')}"><div class="skill-head"><p class="skill-intro">${t('skills.intro')}</p><span class="pill">${t('skills.progress', { n: unlockedMoves(s).length, total: TOTAL })}</span></div>
+  return `<section class="card skill-tree" aria-label="${t('skills.title')}"><div class="skill-head"><p class="skill-intro">${t('skills.intro')}</p><span class="pill">${t('skills.progress', { n: unlockedMoves(s).length, total: TOTAL })}</span>${emptyPicture(emptyArt('skills', s), 'empty-art skills-art')}</div>
  <div class="st-board"><div class="st-tree">${BRANCHES.map(b => branch(s, b, sel)).join('')}</div>${detail(s, sel)}</div>
  <div class="st-basics"><h3 class="skill-sub">${t('skills.basic')}</h3><ul class="skill-chips">${BASIC_MOVES.map(k => `<li class="skill-chip"><span class="sr-only">${t('skills.owned')}: </span><span aria-hidden="true">✓</span> ${move(k)}</li>`).join('')}</ul></div></section>`;
 }

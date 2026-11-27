@@ -3,7 +3,8 @@
 import { ariaKey, keyLabel } from '../keys.js';
 import { t, has, up } from '../i18n/index.js';
 import { opponentLogo } from '../logos.js';
-import { keys, state, view } from './store.js';
+import { keys, state, ui, view } from './store.js';
+import { glyphImage, isLiveMatch, logoMark, uiPicture } from './art.js';
 import { headModel } from './pageHead.js';
 
 // ---- Escaping and templates ----
@@ -34,11 +35,11 @@ export const link = (href, label) => `<a href="${href}" target="_blank" rel="nor
 // sub-line, the page's name as a giant outlined ghost word (decoration, hidden from screen readers), up to three stat
 // chips of the page's own, and from 1200 px the group's render (a phone never downloads it). shell.js render() adds
 // .enter when the page changes (pageHead.js headEnters).
-const HERO = `${import.meta.env?.BASE_URL ?? '/'}images/ui/`;
-const BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+// The render is not emitted where the page hides the header (the live game and replays); a phone, forced colours and a
+// system's more-contrast setting get a blank source: a hidden render is never downloaded (art.js).
 export function header(title, description = '', page = view) {
   const m = headModel(page, state) || { ghost: `nav.${page}`, hero: '', chips: [] },
-    set = ext => `${HERO}${m.hero}.${ext} 1x, ${HERO}${m.hero}@2x.${ext} 2x`;
+    hero = m.hero && !isLiveMatch(page, state, ui) ? m.hero : '';
   return html`
     <header class="page-head">
       <span class="ph-ghost" aria-hidden="true">${has(m.ghost) ? t(m.ghost) : ''}</span>
@@ -51,17 +52,7 @@ export function header(title, description = '', page = view) {
           ? `<dl class="ph-chips">${m.chips.map(c => `<div class="ph-chip ph-${c.id}"><dt>${t(c.label)}</dt><dd>${c.value}</dd></div>`).join('')}</dl>`
           : ''
       }
-      ${
-        m.hero
-          ? html`
-            <picture class="ph-hero">
-              <source media="(max-width: 1199px)" srcset="${BLANK}">
-              <source type="image/avif" srcset="${set('avif')}">
-              <source type="image/webp" srcset="${set('webp')}">
-              <img src="${HERO}${m.hero}.webp" alt="" width="480" height="270" decoding="async">
-            </picture>`
-          : ''
-      }
+      ${hero ? uiPicture(hero, { w: 480, h: 270, cls: 'ph-hero', media: '(max-width: 1199px)' }) : ''}
     </header>`;
 }
 // Shortcut hint for a button: announced by screen readers and shown as a tooltip.
@@ -116,11 +107,11 @@ export const chipHtml = c => {
 };
 
 // ---- Logos ----
-const LOGO = `${import.meta.env.BASE_URL}images/kangs-logo.png`;
 export const LOGO_WHITE = `${import.meta.env.BASE_URL}images/kangs-logo-white.png`;
 // The logo for themed pages: white in dark mode, purple in light mode (theme.css shows one). Pages on the 3D gym are always dark and use LOGO_WHITE.
-export const logoPair = (cls, alt = '') =>
-  `<img class="${cls} on-dark" src="${LOGO_WHITE}" alt="${alt}"><img class="${cls} on-light" src="${LOGO}" alt="${alt}">`;
+// Light mode gets the small purple render (public/images/ui/logo-*, about 1 KB instead of the 129 KB PNG); `alt` is always ''.
+export const logoPair = cls =>
+  `<img class="${cls} on-dark" src="${LOGO_WHITE}" alt="">${logoMark(`${cls} on-light`)}`;
 // An opponent's logo if there is one, else the fallback markup.
 export const oppMark = (n, cls, fb) => {
   const u = opponentLogo(n);
@@ -153,8 +144,8 @@ export const TAB_ICONS = {
   season: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M8 14h3M8 17h6"/>',
   shop: '<path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 10V6.5a3 3 0 016 0V10"/>',
 };
-// The navigation's own glyphs: the coach chip's whistle and the scorebug's token coin (the HC-safe fallback for a later
-// coin render).
+// The navigation's own glyphs: the coach chip's whistle and the scorebug's token coin. Their renders (art.js glyphImage)
+// sit on top; these SVGs show when an image fails, in high contrast and in forced colours.
 export const NAV_GLYPHS = {
   whistle:
     '<circle cx="9" cy="14.5" r="5.5"/><path d="M11.5 9.6L20.5 7v4.6l-5.6 1.4"/><circle cx="9" cy="14.5" r="1.6"/><path d="M5.5 9.5L3.5 5"/>',

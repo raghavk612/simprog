@@ -9,6 +9,7 @@ import { t } from './i18n/index.js';
 import { arena, modal, app } from './ui/page.js';
 import { data, view, ui, setData, setView, restoreSave } from './ui/store.js';
 import { html } from './ui/markup.js';
+import { installGlyphFallback } from './ui/art.js';
 import { render, applyArena, syncCrowd, keepNavTabInView, syncCameraButtons } from './ui/shell.js';
 import { onAction, onChange } from './ui/actions.js';
 import { onShortcut, pickWithNumberKeys } from './ui/keyboard.js';
@@ -22,6 +23,7 @@ import { renamePlayer, onRosterKey, onRosterRowClick } from './ui/screens/roster
 import { onSkillKey } from './ui/screens/breaks.js';
 
 // The 3D gym follows the settings, shows the first-person player tag, and reports each play as it resolves.
+installGlyphFallback(); // before the first render: a coin or whistle that fails to load shows its SVG instead
 applyArena();
 setInterval(fpHud, 150);
 // dev builds, or any build opened with ?perf (scripts/perf.mjs measures the built game): the gym for checking plays by
