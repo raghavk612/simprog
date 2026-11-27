@@ -1,6 +1,7 @@
-// Pure helpers for the Team and Season lists: sorting, the standings table, the captain suggestion and
-// the starters' position balance. No DOM and no store here, so tests import it. The sort itself is kept in store.js
+// Pure helpers for the Team and Season lists: sorting, the standings table and its percentages, the captain suggestion
+// and the starters' position balance. No DOM and no store here, so tests import it. The sort itself is kept in store.js
 // (`sorts`), because render() throws the page away after every change.
+import { localeTag } from '../i18n/index.js';
 
 // The next sort after a click on column `key`: the same column flips, a new one starts its natural way
 // ('desc' for numbers, highest first; 'asc' for names).
@@ -29,6 +30,14 @@ export function sortRows(rows, sort, value) {
 
 export const ariaSort = (sort, key) =>
   sort?.key === key ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none';
+
+// Basketball's ".750" (and "1.000") in the reader's number format; a team yet to play has none.
+export const pctText = v =>
+  v == null
+    ? '—'
+    : v
+        .toLocaleString(localeTag(), { minimumFractionDigits: 3, maximumFractionDigits: 3 })
+        .replace(/^0(?=\D)/, '');
 
 // The standings table: by winning percentage (then more wins), level records share a place, games behind the leader.
 export function standingsRows(standings, you = 'Lake Washington') {

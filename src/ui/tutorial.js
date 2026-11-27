@@ -162,11 +162,12 @@ function place(r) {
   // Below first, then to the left; where neither fits, the page header's free middle (over the ghost word, never on the
   // title or sub-line) before the space above the spot, which is the page's own content; the bottom right as a last
   // resort (the top right is where notifications appear). Any place that would cover the header's text moves into the
-  // header's free middle too.
+  // header's free middle too, or, where the header has none left (Prep's stat chips fill it at 1440), to that last resort.
   const headText = $('.page-head .ph-text')?.getBoundingClientRect(),
     head = L.headRoom({
       head: $('.page-head')?.getBoundingClientRect(),
       text: headText,
+      chips: $('.page-head .ph-chips')?.getBoundingClientRect(),
       card: { w, h },
       screen: { w: innerWidth, h: innerHeight },
     }),
@@ -193,6 +194,10 @@ function place(r) {
     top < headText.bottom &&
     headText.top < top + h;
   if (head && ((!below && !side) || onText)) ({ left, top } = head);
+  else if (onText) {
+    left = Math.max(12, innerWidth - w - 12);
+    top = Math.max(12, innerHeight - h - 12);
+  }
   card.style.left = `${left}px`;
   card.style.top = `${top}px`;
 }

@@ -44,12 +44,12 @@ test('before a game is played the first card is next and every other is still to
   assert.ok(strip.slice(1).every(c => c.status === 'left'));
   assert.ok(strip.every(c => c.result === null));
 });
-test('a played game shows its result (won, the Kangs score first, the result index for its replay)', () => {
+test('a played game shows its result (won, the Kangs score first)', () => {
   const s = playOne(season());
   const strip = seasonStrip(s),
     r = s.results[0];
   assert.equal(strip[0].status, 'played');
-  assert.deepEqual(strip[0].result, { won: r.won, for: r.home, against: r.away, index: 0 });
+  assert.deepEqual(strip[0].result, { won: r.won, for: r.home, against: r.away });
   assert.equal(strip[1].status, 'next');
   assert.equal(strip.filter(c => c.status === 'next').length, 1);
 });

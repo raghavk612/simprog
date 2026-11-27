@@ -332,7 +332,7 @@ export function fitGhost() {
   const name = (g.dataset.word ??= g.textContent);
   g.textContent = name;
   g.style.fontSize = '';
-  g.classList.remove('squeezed');
+  g.classList.remove('squeezed', 'two');
   const cs = getComputedStyle(g),
     size = parseFloat(cs.fontSize),
     room = { w: g.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), h: g.clientHeight },
@@ -350,8 +350,11 @@ export function fitGhost() {
   if (fit.size !== size) g.style.fontSize = `${fit.size}px`;
   g.classList.toggle('squeezed', fit.squeezed);
   if (fit.lines === 2) {
-    const at = words[split.at][0];
-    g.replaceChildren(name.slice(0, at).trimEnd(), document.createElement('br'), name.slice(at));
+    // each line its own block in a column (theme.css .ph-ghost.two), so no engine has to lay out a <br> among flex items
+    const at = words[split.at][0],
+      line = text => Object.assign(document.createElement('span'), { textContent: text });
+    g.replaceChildren(line(name.slice(0, at).trimEnd()), line(name.slice(at)));
+    g.classList.add('two');
   }
 }
 let fitFrame = 0;

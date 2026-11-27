@@ -317,3 +317,15 @@ test('offline install leaves the player maps out of the precache (they cache on 
   ];
   assert.deepEqual(precacheList(files), ['dist/index.html', 'dist/models/players/guard.glb']);
 });
+
+test('offline install leaves the UI renders out of the precache too (a page caches the ones it draws)', () => {
+  const files = [
+    'dist/index.html',
+    'dist/images/ui/hero-week.avif',
+    'dist/images/ui/hero-week@2x.webp',
+    'dist/images/ui/grain.webp',
+    'dist/images/opponents/redmond.png',
+  ];
+  assert.deepEqual(precacheList(files), ['dist/index.html', 'dist/images/opponents/redmond.png']);
+  assert.deepEqual(precacheList(['dist\\images\\ui\\logo-42.avif']), [], 'Windows paths too');
+});

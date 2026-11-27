@@ -39,6 +39,7 @@
     .subnav .sub-item,
     .subnav .break-name,
     .subnav .page-action > .primary,
+    body:not(.live-match) .page-action > .primary,
     .scorebug dt,
     .sb-next dd > span,
     .sb-next dd b,
@@ -60,7 +61,11 @@
   font-synthesis-style: none;
   text-transform: none;
 }
-/* Letter-spacing breaks conjunct characters in Devanagari. */
+/* Letter-spacing breaks conjunct characters in Devanagari, so Hindi drops the tracking the navigation, headers,
+   scorebug, rail and strip add to their Latin capitals. */
+:lang(hi) * {
+  letter-spacing: normal !important;
+}
 .a11y-font-modern {
   --body: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, var(--cjk);
   --display: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, var(--cjk);
@@ -187,7 +192,6 @@ kbd {
 .a11y-high-contrast .metrics,
 .a11y-high-contrast .season-path,
 .a11y-high-contrast .choice,
-.a11y-high-contrast .sidebar,
 .a11y-high-contrast .topbar,
 .a11y-high-contrast dialog,
 .a11y-high-contrast .tutorial,
@@ -981,11 +985,6 @@ dialog:has(.settings) .modal-content {
   outline-offset: 3px;
 }
 @media (max-width: 620px) {
-  .a11y-high-contrast body:not(.live-match) .sidebar nav {
-    background: #000;
-    border-top: 2px solid #fff;
-    box-shadow: none;
-  }
   .a11y-high-contrast .topbar > div {
     -webkit-mask-image: none;
     mask-image: none;
@@ -1211,12 +1210,12 @@ dialog:has(.settings) .modal-content {
 }
 .a11y-high-contrast .topbar .main-nav .nav-item {
   --join-hc: calc(var(--join) + 4px); /* the top bar's border is 2px here */
-  color: #fff;
+  color: var(--ink);
 }
 .a11y-high-contrast .topbar .main-nav .nav-item::before,
 .a11y-high-contrast .subnav .sub-item:not([aria-current='page'])::before,
 .a11y-high-contrast .scorebug::before {
-  background: #fff;
+  background: var(--ink);
 }
 .a11y-high-contrast .topbar .main-nav .nav-item::after,
 .a11y-high-contrast .subnav .sub-item:not([aria-current='page'])::after,
@@ -1227,7 +1226,7 @@ dialog:has(.settings) .modal-content {
   inset: 0;
   z-index: -1;
   height: auto;
-  background: #000;
+  background: var(--page);
   clip-path: polygon(var(--si) 0, 100% 0, calc(100% - var(--si)) 100%, 0 100%);
 }
 .a11y-high-contrast .scorebug::after {
@@ -1249,10 +1248,10 @@ dialog:has(.settings) .modal-content {
 .a11y-high-contrast .subnav .page-action > .primary {
   background: transparent !important;
   border-color: transparent;
-  color: #000 !important;
+  color: var(--page) !important;
 }
 .a11y-high-contrast .subnav .page-action > .primary::before {
-  background: #fff;
+  background: var(--ink);
 }
 .a11y-high-contrast .sb-team::after {
   display: none;
@@ -1261,24 +1260,33 @@ dialog:has(.settings) .modal-content {
   background: transparent;
 }
 .a11y-high-contrast .sb-track i.played {
-  background: #fff;
+  background: var(--ink);
 }
 .a11y-high-contrast .top-coach {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--ink);
   outline-offset: -2px;
 }
 @media (max-width: 620px) {
   .a11y-high-contrast body:not(.live-match) .topbar .main-nav {
-    background: #000;
-    border-top: 2px solid #fff;
+    background: var(--page);
+    border-top: 2px solid var(--ink);
   }
   .a11y-high-contrast body:not(.live-match) .topbar .main-nav .nav-item.active,
   .a11y-high-contrast body:not(.live-match) .topbar .main-nav .nav-item.active .nav-label {
-    color: #000 !important;
+    color: var(--page) !important;
   }
   .a11y-high-contrast body:not(.live-match) .topbar .main-nav .nav-item.active::before {
     bottom: -2px;
-    background: #fff;
+    background: var(--ink);
+  }
+  /* the docked way forward on every page: the band's white plate with black text */
+  .a11y-high-contrast body:not(.live-match) .page-action > .primary {
+    background: transparent !important;
+    border-color: transparent;
+    color: var(--page) !important;
+  }
+  .a11y-high-contrast body:not(.live-match) .page-action > .primary::before {
+    background: var(--ink);
   }
 }
 
@@ -1318,6 +1326,7 @@ dialog:has(.settings) .modal-content {
   .subnav .sub-item::before,
   .subnav .sub-item::after,
   .subnav .page-action > .primary::before,
+  body:not(.live-match) .page-action > .primary::before,
   .scorebug::before,
   .scorebug::after,
   .scorebug dl > div + div::before,

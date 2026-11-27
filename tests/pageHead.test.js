@@ -11,7 +11,9 @@ import {
   ghostSplit,
   GHOST_FLOOR,
   HERO_GROUPS,
+  readyFigures,
 } from '../src/ui/pageHead.js';
+import * as P from '../src/press.js';
 
 const data = JSON.parse(fs.readFileSync(new URL('../public/data/kangs.json', import.meta.url), 'utf8'));
 const season = () => {
@@ -83,6 +85,33 @@ test("Prep's chips are the rotation's energy and the opponent's strength the gam
   );
 });
 
+test("after a press-room answer that changes the next game's energy, Prep's chip and Game day's row say the same", () => {
+  const s = season();
+  E.endBreak(s);
+  E.startMatch(s);
+  while (s.match) E.possession(s);
+  s.pendingEvent = null;
+  P.startPress(s);
+  s.press.questions = [{ id: 'tired', answer: null }];
+  P.answerPress(s, 0, 'rest'); // energy +4 for the next game
+  assert.equal(s.nextMods.energy, 4, 'a next-game energy modifier is pending');
+  const chip = headChips('practice', s).find(c => c.id === 'energy').value,
+    row = readyFigures(s);
+  assert.equal(row.energy, chip, "Game day's Rotation energy row is Prep's chip");
+  assert.equal(row.energy, Math.round(E.modelSnapshot(s).energy));
+  assert.equal(row.morale, Math.round(E.modelSnapshot(s).morale), 'morale from the same model');
+  assert.notEqual(
+    row.energy,
+    E.tipoffPreview(s).energy,
+    'the preview leaves the modifier out; the row does not',
+  );
+  // game.js draws the row from readyFigures, not from the preview
+  const game = fs.readFileSync(new URL('../src/ui/screens/game.js', import.meta.url), 'utf8'),
+    ready = /function readyFacts[\s\S]*?\n}\n/.exec(game)[0];
+  assert.match(ready, /readyFigures\(state\)/);
+  assert.doesNotMatch(ready, /tipoffPreview/);
+});
+
 test('the header enters only when the view changes, never on the way to play or under reduced motion', () => {
   const tab = { from: 'roster', to: 'standings' };
   assert.equal(headEnters(tab), true, 'a tab click to another page');
@@ -145,4 +174,15 @@ test('the two-line split keeps the wider line as short as it can', () => {
     width = (a, b) => words.slice(a, b).reduce((t, x) => t + x, 0) + 40 * (b - a - 1);
   assert.deepEqual(ghostSplit(3, width), { at: 1, widest: 640 });
   assert.equal(ghostSplit(1, width), null, 'one word cannot split');
+});
+test('two lines are two block lines in a column, not a <br> among flex items (which engines lay out differently)', () => {
+  const shell = fs.readFileSync(new URL('../src/ui/shell.js', import.meta.url), 'utf8'),
+    css = fs.readFileSync(new URL('../src/theme.css', import.meta.url), 'utf8'),
+    fit = /export function fitGhost[\s\S]*?\n}\n/.exec(shell)[0];
+  assert.doesNotMatch(fit, /createElement\('br'\)/);
+  assert.match(fit, /classList\.(toggle|add)\('two'/);
+  const rule = /\.ph-ghost\.two\s*\{([^}]*)\}/.exec(css);
+  assert.ok(rule, '.ph-ghost.two');
+  assert.match(rule[1], /flex-direction:\s*column/);
+  assert.match(css, /\.ph-ghost\.two > span\s*\{[^}]*display:\s*block/);
 });

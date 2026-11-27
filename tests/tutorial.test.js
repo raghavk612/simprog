@@ -156,6 +156,32 @@ test("the card's place in the page header is beside its text, never on it", () =
   );
   assert.equal(headRoom({ head: null, text, card, screen }), null, 'a page without a header');
 });
+test("the card's place in the page header clears the page's stat chips too (Prep)", () => {
+  // Prep at 1440: the chips follow the text column, 716 to 1075; the card goes after them or not into the header at all
+  const chips = box(716, 178, 1075, 238);
+  assert.equal(headRoom({ head, text, chips, card, screen }), null, 'no room after the chips at 1440');
+  assert.deepEqual(
+    headRoom({
+      head: box(188, 120, 1732, 296),
+      text: box(188, 120, 936, 296),
+      chips: box(1036, 178, 1395, 238),
+      card,
+      screen: { w: 1920, h: 1080 },
+    }),
+    { left: 1419, top: 138 },
+    'beside the chips on a wide screen',
+  );
+  assert.deepEqual(
+    headRoom({ head, text, chips: box(0, 0, 0, 0), card, screen }),
+    { left: 720, top: 138 },
+    'chips hidden (narrower screens, high contrast keeps them): only the text counts',
+  );
+  assert.deepEqual(
+    headRoom({ head, text, chips: null, card, screen }),
+    { left: 720, top: 138 },
+    'a page without chips',
+  );
+});
 test("a phone's docked card rises above its target only when the page cannot scroll the target clear", () => {
   const vh = 844,
     dockTop = 560,

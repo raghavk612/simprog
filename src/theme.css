@@ -190,8 +190,7 @@ table {
 .primary.small:hover:not(:disabled) {
   background: var(--accent-hover);
 }
-button.primary *,
-.nav-item.active * {
+button.primary * {
   color: inherit;
 }
 .confirm-actions .danger {
@@ -1295,7 +1294,7 @@ body.live-match .subnav {
   place-items: center;
   border: 1px solid var(--line-2);
   color: var(--ink);
-  font: 800 calc(11px * var(--ts, 1) * var(--ls, 1)) / 1 var(--display);
+  font: 800 calc(12px * var(--ts, 1) * var(--ls, 1)) / 1 var(--display);
 }
 .sb-coin {
   flex: none;
@@ -1620,6 +1619,15 @@ body.live-match .subnav {
   pointer-events: none;
   user-select: none;
 }
+/* A name on two lines (fitGhost): each line a block, stacked and centred in the band like the single line. */
+.ph-ghost.two {
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+.ph-ghost.two > span {
+  display: block;
+}
 .ph-text {
   grid-row: 1;
   grid-column: 1;
@@ -1833,6 +1841,38 @@ body.live-match .subnav {
   body:not(.live-match) .page-action > :not(button) {
     margin: 0;
     font-size: calc(13px * var(--ts, 1) * var(--ls, 1));
+  }
+  /* Docked, the way forward is the band's chevron slab on every page, a page's own (Prep, Game day) as much as the
+     band's: the same action keeps the same shape. Its plate changes colour at once (no transition on the way to play). */
+  body:not(.live-match) .page-action > .primary {
+    --s: calc(48px * var(--slant));
+    --c: 0.8em;
+    position: relative;
+    isolation: isolate;
+    min-height: 48px;
+    padding: 0 calc(var(--c) + 0.9em) 0 calc(var(--s) + 0.6em);
+    border: 2px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    color: var(--on-accent);
+    font: italic 800 calc(16px * var(--ts, 1) * var(--ls, 1)) / 1 var(--display);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  body:not(.live-match) .page-action > .primary::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    z-index: -1;
+    background: var(--accent);
+    clip-path: polygon(var(--s) 0, calc(100% - var(--c)) 0, 100% 50%, calc(100% - var(--c)) 100%, 0 100%);
+    transition: none;
+  }
+  body:not(.live-match) .page-action > .primary:hover:not(:disabled) {
+    background: transparent;
+  }
+  body:not(.live-match) .page-action > .primary:hover:not(:disabled)::before {
+    background: var(--accent-hover);
   }
   /* The page keeps the bar's height free at its foot (shell.js measures it into --action-bar-h). */
   body:not(.live-match):has(.page-action) .content {
@@ -2618,6 +2658,18 @@ body[data-view='game'] .court-panel {
   font-weight: 600;
   text-decoration: underline;
 }
+/* The card's top line: what it is, and the change to the five beside it, where it stays in view above the scrolling
+   facts on a desktop. */
+.ready-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+.ready-top .eyebrow {
+  margin: 0;
+}
 /* The starting five: jersey, name, overall and energy in columns. */
 .five-table {
   width: 100%;
@@ -2735,16 +2787,33 @@ body[data-view='game'] .page-action {
   body:not(.live-match) .game-arena {
     height: 100% !important;
   }
+  /* The rail's card is a column: its upper part (the readiness facts and the five) scrolls on its own
+     above a foot that never moves (the week's next step, Tip off and the line under them), so a short screen never
+     hides the way to play or its reason, and nothing is ever under the foot. The rail itself scrolls only when even
+     the foot does not fit (a large text size). */
   body:not(.live-match)[data-view='game'] .right-rail {
     min-height: 0;
     overflow: auto;
   }
-  /* A tighter card, so more of the five shows above the pinned foot. */
   body:not(.live-match)[data-view='game'] .right-rail > .card {
+    display: flex;
+    flex-direction: column;
+    flex: 0 1 auto;
+    min-height: 0;
     padding: 16px 20px 0;
   }
+  body:not(.live-match)[data-view='game'] .ready-body {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
   body:not(.live-match)[data-view='game'] .right-rail h2 {
-    margin: 4px 0 8px;
+    margin: 2px 0 8px;
+  }
+  body:not(.live-match)[data-view='game'] .ready-top .small {
+    min-height: 36px;
+    padding-block: 6px;
   }
   body:not(.live-match)[data-view='game'] .ready-facts {
     gap: 2px;
@@ -2753,12 +2822,8 @@ body[data-view='game'] .page-action {
   body:not(.live-match)[data-view='game'] .five-table :is(td, tbody th) {
     padding-block: 2px;
   }
-  /* The rail's foot is pinned: the week's next step, Tip off and the line under them stay in view while the readiness
-     facts and the five scroll above them, so a short screen never hides the way to play or its reason. */
   body:not(.live-match)[data-view='game'] .tipoff-action {
-    position: sticky;
-    bottom: 0;
-    z-index: 1;
+    flex: none;
     margin-top: 10px;
     padding: 10px 0 16px;
     background: var(--panel);

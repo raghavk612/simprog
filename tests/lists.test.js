@@ -15,6 +15,7 @@ import {
   yearRank,
   heightInches,
   sortHead,
+  pctText,
 } from '../src/ui/lists.js';
 
 const read = f => fs.readFileSync(new URL(f, import.meta.url), 'utf8');
@@ -190,4 +191,11 @@ test('a sortable header is a button inside the th, and only the sorted one carri
   const off = sortHead('stats', s, 'ovr', 'OVR', { first: 'desc' });
   assert.doesNotMatch(off, /aria-sort/);
   assert.match(off, /data-first="desc"/);
+});
+
+test("a winning percentage reads as basketball's .750 (1.000 for a perfect record), a dash before any game", () => {
+  assert.equal(pctText(0.75), '.750');
+  assert.equal(pctText(1), '1.000');
+  assert.equal(pctText(0), '.000');
+  assert.equal(pctText(null), '—');
 });

@@ -17,10 +17,10 @@ import {
   setData,
   sorts,
 } from '../store.js';
-import { sortRows, sortHead, yearRank, heightInches, standingsRows } from '../lists.js';
+import { sortRows, sortHead, yearRank, heightInches, standingsRows, pctText } from '../lists.js';
 import { html, esc, btn, oppBadge, header, LOGO_WHITE, pill } from '../markup.js';
 import { seasonStrip, bracketSeed } from '../seasonModel.js';
-import { withRail, pctText } from '../rail.js';
+import { withRail } from '../rail.js';
 import { emptyArt, emptyPicture } from '../art.js';
 import { notify } from '../toast.js';
 import { $ } from '../page.js';
@@ -106,7 +106,7 @@ function bracket() {
                 <strong>${seed.seed}</strong>
                 <p>${t('bracket.seed')}<small>${t('bracket.seedOf', { n: seed.of })}</small></p>
               </div>
-              ${emptyPicture('empty-bracket', 'empty-art bracket-art', '(max-width: 620px)')}`
+              ${emptyPicture(emptyArt('bracket', state), 'empty-art bracket-art', '(max-width: 620px)')}`
             : ''
         }
       </div>

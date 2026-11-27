@@ -7,8 +7,8 @@ import { standingsRows } from './lists.js';
 import { standingsRank } from '../recap.js';
 import { seasonTrack } from './scorebug.js';
 
-// One card per scheduled game: its number ("01"), the opponent, home or away, the date, and its state as on the scorebug's track ('played', 'next', 'left'). A played game carries its
-// result: won, the Kangs' score first, and the index of the result for its replay.
+// One card per scheduled game: its number ("01"), the opponent, home or away, the date, and its state as on the
+// scorebug's track ('played', 'next', 'left'). A played game carries its result: won, and the Kangs' score first.
 export function seasonStrip(s) {
   const track = seasonTrack(s);
   return s.schedule.map((g, i) => {
@@ -19,7 +19,7 @@ export function seasonStrip(s) {
       home: !!g.home,
       date: g.date,
       status: track[i],
-      result: r ? { won: r.won, for: r.home, against: r.away, index: i } : null,
+      result: r ? { won: r.won, for: r.home, against: r.away } : null,
     };
   });
 }

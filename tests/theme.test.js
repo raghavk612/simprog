@@ -85,3 +85,11 @@ test('italic or uppercase type in theme.css is upright and in its own case for j
         if (!list.includes(sel) && !exempt.includes(sel)) missing.push(sel);
   assert.deepEqual(missing, []);
 });
+test('Devanagari is never tracked: letter-spacing breaks its conjuncts, so Hindi turns it off everywhere', () => {
+  const a11y = read('../src/a11y.css').replace(/\/\*[\s\S]*?\*\//g, '');
+  const rule = /(^|\})\s*:lang\(hi\) \*\s*\{([^}]*)\}/.exec(a11y);
+  assert.ok(rule, 'a :lang(hi) * rule');
+  assert.match(rule[2], /letter-spacing:\s*normal\s*!important/);
+  // the theme does track the navigation's type, which is what the rule undoes
+  assert.ok(/letter-spacing:\s*0\.0[1-9]em/.test(theme));
+});

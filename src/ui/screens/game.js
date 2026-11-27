@@ -25,6 +25,7 @@ import { arena } from '../page.js';
 import { stage } from '../shell.js';
 import { endscreen } from './season.js';
 import { nextStepButton } from './home.js';
+import { readyFigures } from '../pageHead.js';
 
 // The play-by-play is the game's story, so on a desktop it starts open; once the coach closes it (or opens another
 // drawer, which closes it) it stays as they left it. Kept here, not in the DOM, because render() rebuilds the drawers.
@@ -259,10 +260,10 @@ function scoreBug(m, o) {
 }
 // Before tip-off, what a coach needs to judge readiness without opening a drawer: who is stronger on the model's own
 // scale (the rotation's average skill against the opponent's strength, labelled team skill so it is not read as OVR,
-// with favoured / even / underdog), the rotation's energy and morale, and the
+// with favoured / even / underdog), the rotation's energy and morale (pageHead.js readyFigures, as Prep's chip), and the
 // opponent's style, or a way to scout it while a prep slot is left.
 function readyFacts(o) {
-  const v = E.tipoffPreview(state),
+  const v = readyFigures(state),
     M = E.modelSnapshot(state),
     them = Math.round(M.rating),
     odds = matchupLevel(M.skill, M.rating);
@@ -415,7 +416,14 @@ export function game() {
       </div>
       <aside class="right-rail" aria-label="${esc(t('game.controls'))}">
         <section class="card">
-          <span class="eyebrow">${m ? tu('game.sideline') : tu('game.startingFive')}</span>${
+          ${
+            m
+              ? `<span class="eyebrow">${tu('game.sideline')}</span>`
+              : html`
+                <div class="ready-top">
+                  <span class="eyebrow">${tu('game.startingFive')}</span>${btn(t('game.adjust'), 'rotation', 'secondary small')}
+                </div>`
+          }${
             m
               ? html`
                 <h2>${t('game.callPlay')}</h2>
@@ -449,10 +457,11 @@ export function game() {
                 ${btn(t('game.next'), 'step', 'secondary wide', `${hint('nextPlay')} ${arena.isPlaying() || ui.closingMatch ? 'disabled' : ''}`)}
                 ${btn(t('game.timeout', { n: m.timeouts }), 'timeout', 'secondary wide', `${hint('timeout')} ${m.timeouts && !ui.closingMatch ? '' : 'disabled'}`)}`
               : html`
-                <h2>${t('game.ready')}</h2>
-                ${readyFacts(o)}
-                ${fiveTable(lineupBad)}
-                ${btn(t('game.adjust'), 'rotation', 'secondary wide')}
+                <div class="ready-body">
+                  <h2>${t('game.ready')}</h2>
+                  ${readyFacts(o)}
+                  ${fiveTable(lineupBad)}
+                </div>
                 ${tipoffAction(lineupBad)}`
           }
         </section>

@@ -14,10 +14,16 @@ const NO_HEAD = ['home', 'landing'];
 // the rotation's energy (buffs and next-game modifiers in, the bench out) and the next opponent's strength.
 export function headChips(v, s) {
   if (v !== 'practice') return [];
-  const M = E.modelSnapshot(s),
-    chips = [{ id: 'energy', label: 'tipoff.energy', value: Math.round(M.energy) }];
-  if (!s.finished) chips.push({ id: 'opp', label: 'head.opp', value: Math.round(M.rating) });
+  const chips = [{ id: 'energy', label: 'tipoff.energy', value: readyFigures(s).energy }];
+  if (!s.finished) chips.push({ id: 'opp', label: 'head.opp', value: Math.round(E.modelSnapshot(s).rating) });
   return chips;
+}
+// The rotation's energy and morale for the next game as the game model counts them (E.modelSnapshot: buffs and pending
+// next-game modifiers in, such as a press-room answer). Prep's chip and Game day's readiness rows both show these, so the
+// same label never carries two numbers.
+export function readyFigures(s) {
+  const M = E.modelSnapshot(s);
+  return { energy: Math.round(M.energy), morale: Math.round(M.morale) };
 }
 
 // The header's model: the ghost word (a translation key: the page's name, drawn live, never baked into an image), the

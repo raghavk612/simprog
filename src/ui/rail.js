@@ -1,18 +1,12 @@
 // The context rail beside Journal, Bracket, Standings and Skills (seasonModel.js railModel says what it holds): the next
 // game, the last result and the top four. From 1440 px it is a 320 px column to the right of the page; below that it
 // follows the page. Information and secondary links only: the purple way forward stays in the band.
-import { t, formatDate, localeTag } from '../i18n/index.js';
+import { t, formatDate } from '../i18n/index.js';
+import { pctText } from './lists.js';
 import { state } from './store.js';
 import { html, esc, oppMark, crestText, btn } from './markup.js';
 import { railModel } from './seasonModel.js';
 
-// Basketball's ".750" (and "1.000") in the reader's number format; a team yet to play has none.
-export const pctText = v =>
-  v == null
-    ? '—'
-    : v
-        .toLocaleString(localeTag(), { minimumFractionDigits: 3, maximumFractionDigits: 3 })
-        .replace(/^0(?=\D)/, '');
 const crest = n =>
   oppMark(n, 'rail-crest', `<span class="rail-crest ph" aria-hidden="true">${esc(crestText(n))}</span>`);
 const go = (v, label) => `<button class="secondary small" data-view="${v}">${label}</button>`;
